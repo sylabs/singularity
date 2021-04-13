@@ -47,6 +47,7 @@ var buildArgs struct {
 	sandbox       bool
 	update        bool
 	nvidia        bool
+	nvccli        bool
 	rocm          bool
 	writableTmpfs bool // For test section only
 }
@@ -218,6 +219,16 @@ var buildNvFlag = cmdline.Flag{
 	EnvKeys:      []string{"NV"},
 }
 
+// --nvccli
+var buildNvCCLIFlag = cmdline.Flag{
+	ID:           "buildNvCCLIFlag",
+	Value:        &buildArgs.nvccli,
+	DefaultValue: false,
+	Name:         "nvccli",
+	Usage:        "use nvidia-container-cli for GPU setup (experimental)",
+	EnvKeys:      []string{"NVCCLI"},
+}
+
 // --rocm
 var buildRocmFlag = cmdline.Flag{
 	ID:           "rocmFlag",
@@ -285,6 +296,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&commonPEMFlag, buildCmd)
 
 		cmdManager.RegisterFlagForCmd(&buildNvFlag, buildCmd)
+		cmdManager.RegisterFlagForCmd(&buildNvCCLIFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildRocmFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildBindFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildWritableTmpfsFlag, buildCmd)
