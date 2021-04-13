@@ -157,7 +157,18 @@ func (c *Config) KeepFileDescriptor(fd int) error {
 	return nil
 }
 
-// SetHybridWorkflow sets the flag to tell starter container setup
+// SetNvidiaContainerCLICaps sets the flag to tell starter container setup
+// to configure a bounding capabilities set that will permit execution of
+// nvidia-container-cli
+func (c *Config) SetNvidiaContainerCLICaps(enabled bool) {
+	if enabled {
+		c.config.starter.nvidiaContainerCLICaps = C.true
+	} else {
+		c.config.starter.nvidiaContainerCLICaps = C.false
+	}
+}
+
+// Set sets the flag to tell starter container setup
 // will require a hybrid workflow. Typically used for fakeroot.
 // In a hybrid workflow, the master process lives in host user namespace
 // with the ability to escalate privileges, while the container process

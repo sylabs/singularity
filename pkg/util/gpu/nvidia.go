@@ -13,9 +13,27 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
+
+// NvidiaContainerCLIAmbientCaps is the ambient capability set required by nvidia-container-cli
+var NvidiaContainerCLIAmbientCaps = []uintptr{
+	uintptr(capabilities.Map["CAP_KILL"].Value),
+	uintptr(capabilities.Map["CAP_SETUID"].Value),
+	uintptr(capabilities.Map["CAP_SETGID"].Value),
+	uintptr(capabilities.Map["CAP_SYS_CHROOT"].Value),
+	uintptr(capabilities.Map["CAP_CHOWN"].Value),
+	uintptr(capabilities.Map["CAP_FOWNER"].Value),
+	uintptr(capabilities.Map["CAP_MKNOD"].Value),
+	uintptr(capabilities.Map["CAP_SYS_ADMIN"].Value),
+	uintptr(capabilities.Map["CAP_DAC_READ_SEARCH"].Value),
+	uintptr(capabilities.Map["CAP_SYS_PTRACE"].Value),
+	uintptr(capabilities.Map["CAP_DAC_OVERRIDE"].Value),
+	uintptr(capabilities.Map["CAP_SETPCAP"].Value),
+}
 
 // NvidiaPaths returns a list of Nvidia libraries/binaries that should be
 // mounted into the container in order to use Nvidia GPUs
@@ -71,6 +89,12 @@ func NvidiaIpcsPath(envPath string) []string {
 	return nvidiaFiles
 }
 
+// HasNvidiaContainerCli returns true if `nvidia-container-cli` is available.
+func HasNvidiaContainerCli() bool {
+	_, err := exec.LookPath("nvidia-container-cli")
+	return err == nil
+}
+
 // nvidiaContainerCli runs `nvidia-container-cli list` and returns list of
 // libraries, ipcs and binaries for proper NVIDIA work. This may return duplicates!
 func nvidiaContainerCli(args ...string) ([]string, error) {
@@ -124,4 +148,42 @@ func NvidiaDevices(withGPU bool) ([]string, error) {
 		return nil, fmt.Errorf("could not list nvidia devices: %v", err)
 	}
 	return devs, nil
+}
+
+// NVidiaContainerCLIConfigure calls out to the nvidia-container-cli configure operation.
+// This sets up the GPU with the container. Note that the ability to set a fairly broad set of
+// ambient capabilities is required. This function will error if the bounding set does not include
+// NvidiaContainerCLIAmbientCaps.
+func NVidiaContainerCLIConfigure(pathEnv string, flags []string, rootfs string, runAsRoot bool) error {
+	oldPath := os.Getenv("PATH")
+	os.Setenv("PATH", pathEnv)
+	defer os.Setenv("PATH", oldPath)
+
+	nccBin, err := exec.LookPath("nvidia-container-cli")
+	if err != nil {
+		return err
+	}
+
+	nccArgs := []string{"--debug=/tmp/singularity-nvcli-debug", "--user", "configure"}
+	nccArgs = append(nccArgs, flags...)
+	nccArgs = append(nccArgs, rootfs)
+
+	cmd := exec.Command(nccBin, nccArgs...)
+	cmd.Env = os.Environ()
+
+	// We need to run nvidia-container-cli as root when we are in the setuid flow
+	// without a usernamepace in play.
+	if runAsRoot {
+		cmd.SysProcAttr = &syscall.SysProcAttr{
+			Credential: &syscall.Credential{Uid: 0, Gid: 0},
+		}
+	} else {
+		cmd.SysProcAttr = &syscall.SysProcAttr{}
+	}
+	cmd.SysProcAttr.AmbientCaps = NvidiaContainerCLIAmbientCaps
+	stdoutStderr, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("nvidia-container-cli failed with %v: %s", err, stdoutStderr)
+	}
+	return nil
 }

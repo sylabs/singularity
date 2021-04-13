@@ -21,6 +21,7 @@ import (
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/crypt"
+	"github.com/sylabs/singularity/pkg/util/gpu"
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"golang.org/x/sys/unix"
@@ -411,4 +412,28 @@ func (t *Methods) WriteFile(arguments *args.WriteFileArgs, reply *int) error {
 		err = err1
 	}
 	return err
+}
+
+func (t *Methods) NVContainer(arguments *args.NVContainerArgs, reply *int) (err error) {
+	runtime.LockOSThread()
+	defer runtime.UnlockOSThread()
+
+	// In the setuid flow we need CAP_CHOWN here to be able to start
+	// nvidia-container-cli successfully as root.
+	caps := defaultEffective
+	if arguments.RunAsRoot {
+		caps |= uint64(1 << capabilities.Map["CAP_CHOWN"].Value)
+	}
+	oldEffective, err := capabilities.SetProcessEffective(caps)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_, e := capabilities.SetProcessEffective(oldEffective)
+		if err == nil {
+			err = e
+		}
+	}()
+
+	return gpu.NVidiaContainerCLIConfigure(arguments.PathEnv, arguments.Flags, arguments.RootFsPath, arguments.RunAsRoot)
 }
