@@ -1,8 +1,8 @@
 # SingularityCE Changelog
 
-## v3.8.0-rc.1 [2021-05-11]
+## v3.8.0-rc.2 [2021-05-18]
 
-This is the first release candidate for SingularityCE 3.8.0, the Community
+This is the second release candidate for SingularityCE 3.8.0, the Community
 Edition of the Singularity container runtime hosted at
 https://github.com/sylabs/singularity.
 
@@ -51,6 +51,7 @@ of `make test` for ease of use:
   - `make testall` runs the full unit/integration/e2e test suite that
     requires docker credentials to be set with `E2E_DOCKER_USERNAME`
     and `E2E_DOCKER_PASSWORD` environment variables.
+  - Fix privilege handling issue with tests on Go >=1.16.
 
 ----
 

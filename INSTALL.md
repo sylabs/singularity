@@ -1,7 +1,7 @@
 # Installing SingularityCE
 
 **NOTE:** *This installation guide has been updated for the release candidate of
-SingularityCE 3.8.0. The `3.8.0-rc1` version that will be installed is a
+SingularityCE 3.8.0. The `3.8.0-rc2` version that will be installed is a
 pre-release of SingularityCE. To install the latest stable version,
 substitute the version `3.7.3` in the instructions below. See the `release-3.7` branch for the current stable codebase.*
 
@@ -87,7 +87,7 @@ $ mkdir -p ${GOPATH}/src/github.com/sylabs && \
 To build a specific version of SingularityCE, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.8.0-rc.1
+$ git checkout v3.8.0-rc.2
 ```
 
 ## Compiling SingularityCE
@@ -130,7 +130,7 @@ as shown above.  Then download the latest
 and use it to install the RPM like this: 
 
 ```
-$ export VERSION=3.8.0-rc.1  # this is the singularity version, change as you need
+$ export VERSION=3.8.0-rc.2  # this is the singularity version, change as you need
 
 $ wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-ce-${VERSION}.tar.gz && \
     rpmbuild -tb singularity-ce-${VERSION}.tar.gz && \
