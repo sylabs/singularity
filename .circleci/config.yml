@@ -23,7 +23,7 @@ executors:
           password: $CIRCLE_CI_DOCKER_PASSWORD
   macos-machine:
     macos:
-      xcode: "10.2.0"
+      xcode: 12.4.0
   ubuntu-machine:
     working_directory: ~/go/singularity
     machine:
