@@ -122,7 +122,7 @@ jobs:
   check-debian:
     executor:
       name: golang
-      variant: stretch
+      variant: buster
     steps:
       - checkout
       - install-deps-apt:
