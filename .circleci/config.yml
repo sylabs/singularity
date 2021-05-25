@@ -119,10 +119,10 @@ jobs:
           name: Check Module Tidiness
           command: git diff --exit-code -- go.mod go.sum
 
-  check-stretch:
+  check-debian:
     executor:
       name: golang
-      variant: stretch
+      variant: buster
     steps:
       - checkout
       - install-deps-apt:
@@ -226,7 +226,7 @@ workflows:
   build_and_test:
     jobs:
       - check-go-mod
-      - check-stretch
+      - check-debian
       - check-alpine
       - check-darwin
       - short-unit-tests
