@@ -71,7 +71,7 @@ bug(s), and well covered by tests.
 4. Modify the `README.md`, `INSTALL.md`, `CHANGELOG.md` via PR against
    the release branch, so that they reflect the version to be released.
 5. Apply an annotated tag via `git tag -a -m "SingularityCE v3.8.0" v3.8.0`.
-6. Push the tag via `git push upstream v3.8.0-rc.1`.
+6. Push the tag via `git push upstream v3.8.0`.
 7. Create a tarball via `mconfig -v && make dist`.
 8. Test intallation from the tarball.
 9. Compute the sha256sum of the tarball e.g. `sha256sum *.tar.gz > sha256sums`.
