@@ -1,8 +1,8 @@
 # SingularityCE Changelog
 
-## v3.8.0-rc.1 [2021-05-11]
+## v3.8.0 [2021-05-26]
 
-This is the first release candidate for SingularityCE 3.8.0, the Community
+This is the first release of SingularityCE 3.8.0, the Community
 Edition of the Singularity container runtime hosted at
 https://github.com/sylabs/singularity.
 
@@ -62,7 +62,7 @@ The 3.7.4 release is identical to https://github.com/hpcng/singularity/releases/
 
 ### Security Related Fixes
 
-  - [CVE-2021-32635](https://github.com/hpcng/singularity/security/advisories/GHSA-jq42-hfch-42f3):
+  - [CVE-2021-32635](https://github.com/sylabs/singularity/security/advisories/GHSA-5mv9-q7fq-9394):
     Due to incorrect use of a default URL, singularity action commands
     (run/shell/exec) specifying a container using a library:// URI will
     always attempt to retrieve the container from the default remote
