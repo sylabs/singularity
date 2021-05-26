@@ -21,7 +21,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/internal/pkg/client/shub"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -80,11 +79,10 @@ func handleLibrary(ctx context.Context, imgCache *cache.Handle, pullFrom string)
 		return "", err
 	}
 
+	// Default "" = use current remote endpoint
 	var libraryURI string
 	if r.Host != "" {
 		libraryURI = "https://" + r.Host
-	} else {
-		libraryURI = endpoint.SCSDefaultLibraryURI
 	}
 
 	c, err := getLibraryClientConfig(libraryURI)
