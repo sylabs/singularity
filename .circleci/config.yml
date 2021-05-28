@@ -25,7 +25,6 @@ executors:
     macos:
       xcode: 12.4.0
   ubuntu-machine:
-    working_directory: ~/go/singularity
     machine:
       image: ubuntu-2004:202104-01
 
