@@ -143,7 +143,6 @@ jobs:
 
   check-darwin:
     executor: macos-machine
-    working_directory: /Users/distiller/go/src/github.com/sylabs/singularity
     steps:
       - checkout
       - go/install:
