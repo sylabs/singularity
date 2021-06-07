@@ -6,7 +6,7 @@ orbs:
 parameters:
   go-version:
     type: string
-    default: 1.16.4
+    default: 1.16.5
 
 executors:
   golang:
