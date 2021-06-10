@@ -35,7 +35,7 @@ require (
 	github.com/opencontainers/runtime-tools v0.9.1-0.20210326182921-59cdde06764b
 	github.com/opencontainers/selinux v1.8.2
 	github.com/opencontainers/umoci v0.4.7
-	github.com/oras-project/oras-go v0.2.0
+	github.com/oras-project/oras-go v0.3.0
 	github.com/pelletier/go-toml v1.9.2
 	github.com/pkg/errors v0.9.1
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
@@ -67,7 +67,7 @@ require (
 	mvdan.cc/sh/v3 v3.2.4
 )
 
-// These are required for github.com/oras-project/oras-go@v0.2.0
+// These are required for github.com/oras-project/oras-go@v0.3.0
 replace (
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
 	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
