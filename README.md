@@ -6,6 +6,7 @@
 - [Pull Request Template](.github/PULL_REQUEST_TEMPLATE.md)
 - [Project License](LICENSE.md)
 - [Documentation](https://www.sylabs.io/docs/)
+- [Community Meetings / Minutes / Roadmap](https://github.com/sylabs/singularityce-community)
 - [Support](#support)
 - [Citation](#citing-singularity)
 
@@ -35,6 +36,9 @@ and build Singularity containers.
 
 Community contributions are always greatly appreciated. To start developing
 SingularityCE, check out the [guidelines for contributing](CONTRIBUTING.md).
+
+Our roadmap, other documents, and user/developer meeting information can be
+found in the [singularityce-community repository](https://github.com/sylabs/singularityce-community).
 
 We also welcome contributions to our [user
 guide](https://github.com/sylabs/singularity-userdocs) and [admin
