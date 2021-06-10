@@ -74,3 +74,5 @@ replace (
 )
 
 replace golang.org/x/crypto => github.com/sylabs/golang-x-crypto v0.0.0-20181006204705-4bce89e8e9a9
+
+replace github.com/sylabs/sif => github.com/tri-adam/sif v1.2.5-0.20210611184259-4967793a2bd4

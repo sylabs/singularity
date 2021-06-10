@@ -801,8 +801,6 @@ github.com/sylabs/scs-key-client v0.6.2 h1:PTdmkE50rFMrSty9usl8wnzaW+JPK0rjXF4cd
 github.com/sylabs/scs-key-client v0.6.2/go.mod h1:WoTk47nNRrk0uLfblxUFekxDIIVPY4l2/9evME5fgX0=
 github.com/sylabs/scs-library-client v1.0.5 h1:u8ueCIQaa38/B0axtKUzdWSQ6uLXL9HvLQGNkB69Oe0=
 github.com/sylabs/scs-library-client v1.0.5/go.mod h1:ufza0uq4ohT7Fk2Y7vm+uRyMm7gRA+Fde1nxyhGfhTk=
-github.com/sylabs/sif v1.2.4 h1:KDnqjTzKPq9nd6UuDRb33o/CwZUaDBoF/WC+WASvn1s=
-github.com/sylabs/sif v1.2.4/go.mod h1:UdAYLi8oMLJToey+fD/wFVZF4fNUejnKO6UpVz0vgNI=
 github.com/syndtr/gocapability v0.0.0-20170704070218-db04d3cc01c8/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 h1:kdXcSzyDtseVEc4yCz2qF8ZrQvIDBJLl4S1c3GCXmoI=
@@ -818,6 +816,8 @@ github.com/tj/go-kinesis v0.0.0-20171128231115-08b17f58cb1b/go.mod h1:/yhzCV0xPf
 github.com/tj/go-spin v1.1.0/go.mod h1:Mg1mzmePZm4dva8Qz60H2lHwmJ2loum4VIrLgVnKwh4=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20170815181823-89b8d40f7ca8/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
+github.com/tri-adam/sif v1.2.5-0.20210611184259-4967793a2bd4 h1:Ac1WwQqUjUNEYzpFyoPcD7af1CDIJaXZQpY12tq44wM=
+github.com/tri-adam/sif v1.2.5-0.20210611184259-4967793a2bd4/go.mod h1:UdAYLi8oMLJToey+fD/wFVZF4fNUejnKO6UpVz0vgNI=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=
 github.com/ulikunitz/xz v0.5.10 h1:t92gobL9l3HE202wg3rlk19F6X+JOxl9BBrCCMYEYd8=
 github.com/ulikunitz/xz v0.5.10/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
