@@ -67,7 +67,7 @@ require (
 	mvdan.cc/sh/v3 v3.2.4
 )
 
-// These are required for github.com/oras-project/oras-go@v0.2.0
+// These are required for github.com/oras-project/oras-go@v0.3.0
 replace (
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
 	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
