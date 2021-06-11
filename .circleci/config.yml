@@ -21,9 +21,6 @@ executors:
         auth:
           username: $CIRCLE_CI_DOCKER_USERNAME
           password: $CIRCLE_CI_DOCKER_PASSWORD
-  macos-machine:
-    macos:
-      xcode: 12.4.0
   ubuntu-machine:
     machine:
       image: ubuntu-2004:202104-01
@@ -141,15 +138,6 @@ jobs:
       - build-singularity
       - check-singularity
 
-  check-darwin:
-    executor: macos-machine
-    steps:
-      - checkout
-      - go/install:
-          version: << pipeline.parameters.go-version >>
-      - build-singularity
-      - check-singularity
-
   short-unit-tests:
     executor: ubuntu-machine
     steps:
@@ -226,7 +214,6 @@ workflows:
       - check-go-mod
       - check-debian
       - check-alpine
-      - check-darwin
       - short-unit-tests
       - integration-tests
       - e2e-tests
