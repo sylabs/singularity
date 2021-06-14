@@ -18,15 +18,15 @@ import (
 	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes/docker"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/oras-project/oras-go/pkg/content"
-	"github.com/oras-project/oras-go/pkg/context"
-	"github.com/oras-project/oras-go/pkg/oras"
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	syoras "github.com/sylabs/singularity/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"golang.org/x/sys/unix"
+	"oras.land/oras-go/pkg/content"
+	"oras.land/oras-go/pkg/context"
+	"oras.land/oras-go/pkg/oras"
 )
 
 type ctx struct {
