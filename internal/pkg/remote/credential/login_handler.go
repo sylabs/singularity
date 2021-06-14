@@ -13,10 +13,10 @@ import (
 	"net/url"
 	"time"
 
-	auth "github.com/oras-project/oras-go/pkg/auth/docker"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/syfs"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	auth "oras.land/oras-go/pkg/auth/docker"
 )
 
 // loginHandlers contains the registered handlers by scheme.
