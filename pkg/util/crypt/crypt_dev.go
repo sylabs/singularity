@@ -16,7 +16,7 @@ import (
 	"syscall"
 	"time"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/fs/lock"
@@ -247,7 +247,7 @@ func copyDeviceContents(source, dest string, size int64) error {
 }
 
 func getNextAvailableCryptDevice() (string, error) {
-	id, err := uuid.NewV4()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		return "", err
 	}
