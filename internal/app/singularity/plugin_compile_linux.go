@@ -19,8 +19,8 @@ import (
 	"runtime/debug"
 	"strings"
 
-	uuid "github.com/satori/go.uuid"
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/google/uuid"
+	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
@@ -273,7 +273,7 @@ func generateManifest(sourceDir string, bTool buildToolchain) error {
 // makeSIF takes in two arguments: sourceDir, the path to the plugin source directory;
 // and sifPath, the path to the final .sif file which is ready to be used.
 func makeSIF(sourceDir, sifPath string) error {
-	id, err := uuid.NewV4()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		return err
 	}

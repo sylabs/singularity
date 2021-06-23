@@ -11,7 +11,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/util/machine"
 )
 

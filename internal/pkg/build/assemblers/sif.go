@@ -16,8 +16,8 @@ import (
 	"strconv"
 	"syscall"
 
-	uuid "github.com/satori/go.uuid"
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/google/uuid"
+	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/util/machine"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image/packer"
@@ -41,7 +41,7 @@ type encryptionOptions struct {
 func createSIF(path string, b *types.Bundle, squashfile string, encOpts *encryptionOptions, arch string) (err error) {
 	definition := b.Recipe.Raw
 
-	id, err := uuid.NewV4()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		return err
 	}

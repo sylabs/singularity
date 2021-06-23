@@ -11,8 +11,8 @@ import (
 	"runtime"
 	"testing"
 
-	uuid "github.com/satori/go.uuid"
-	"github.com/sylabs/sif/pkg/sif"
+	"github.com/google/uuid"
+	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
@@ -31,7 +31,7 @@ func createSIF(t *testing.T, inputDesc []sif.DescriptorInput, corrupted bool) st
 		}
 	}
 
-	id, err := uuid.NewV4()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		t.Fatal(err)
 	}
