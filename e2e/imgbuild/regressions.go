@@ -15,7 +15,7 @@ import (
 	"testing"
 	"text/template"
 
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
@@ -177,7 +177,7 @@ func (c *imgBuildTests) issue4583(t *testing.T) {
 }
 
 func (c imgBuildTests) issue4837(t *testing.T) {
-	id, err := uuid.NewV4()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		t.Fatal(err)
 	}
