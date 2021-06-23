@@ -16,21 +16,19 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
-	"github.com/sylabs/singularity/pkg/util/fs/proc"
-
-	uuid "github.com/satori/go.uuid"
-
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
 
 // randomName generates a random name based on a UUID.
 func randomName(t *testing.T) string {
 	t.Helper()
 
-	id, err := uuid.NewV4()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		t.Fatal(err)
 	}
