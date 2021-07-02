@@ -133,7 +133,7 @@ jobs:
   check-alpine:
     executor:
       name: golang
-      variant: alpine
+      variant: alpine3.13
     steps:
       - checkout
       - run:
