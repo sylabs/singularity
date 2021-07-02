@@ -1,5 +1,13 @@
 # SingularityCE Changelog
 
+## Changes since last release
+
+### New features / functionalities
+
+  - `--writable-tmpfs` can be used with `singularity build` to run
+    the `%test` section of the build with a ephemeral tmpfs overlay,
+    permitting tests that write to the container filesystem.
+
 ## v3.8.0 [2021-05-26]
 
 This is the first release of SingularityCE 3.8.0, the Community
