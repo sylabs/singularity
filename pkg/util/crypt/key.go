@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -229,13 +229,10 @@ func getEncryptionKeyFromImage(fn string) ([]byte, error) {
 		// TODO(ian): For now, assume the first linked message is what we
 		// are looking for. We should consider what we want to do in the
 		// case of multiple linked messages
-		data := d.GetData(&img)
-		if data == nil {
-			return nil, fmt.Errorf("could not retrieve LUKS key data from %s: %v", fn, ErrNoEncryptedKeyData)
+		key := make([]byte, d.Filelen)
+		if _, err := io.ReadFull(d.GetReader(&img), key); err != nil {
+			return nil, fmt.Errorf("could not retrieve LUKS key data from %s: %w", fn, err)
 		}
-
-		key := make([]byte, len(data))
-		copy(key, data)
 
 		return key, nil
 	}
