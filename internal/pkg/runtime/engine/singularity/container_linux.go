@@ -270,7 +270,7 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 
 		sylog.Debugf("nvidia-container-cli")
 		// For proof of concept, devs and utilities only
-		nvFlags := []string{"--no-cgroups", "--utility", "--ldconfig=@/sbin/ldconfig.real"}
+		nvFlags := []string{"--no-cgroups", "--utility", "--compute", "--ldconfig=@/sbin/ldconfig.real"}
 		runAsRoot := !c.userNS || c.engine.EngineConfig.GetFakeroot()
 		if err := c.rpcOps.NVContainer(env.DefaultPath, nvFlags, c.session.FinalPath(), runAsRoot); err != nil {
 			return err
