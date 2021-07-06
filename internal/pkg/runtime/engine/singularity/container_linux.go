@@ -259,6 +259,15 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 	}
 
 	if engine.EngineConfig.GetNvContainer() {
+		// If a container has a CUDA install in it then nvidia-container-cli will bind mount
+		// from <session_dir>/final/usr/local/cuda/compat into the main container lib dir.
+		// This *requires* that the container rootfs is a private mount, as it is a bind source.
+		// By default, the rootfs will be mounted shared due to requirements of the FUSE mount
+		// handling, so make it private here just before calling nvidia-container-cli.
+		if err := c.rpcOps.Mount("", c.session.FinalPath(), "", syscall.MS_PRIVATE, ""); err != nil {
+			return err
+		}
+
 		sylog.Debugf("nvidia-container-cli")
 		// For proof of concept, devs and utilities only
 		nvFlags := []string{"--no-cgroups", "--utility", "--ldconfig=@/sbin/ldconfig.real"}
