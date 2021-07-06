@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  go: circleci/go@1.6
+  go: circleci/go@1.7
 
 parameters:
   go-version:
@@ -158,7 +158,6 @@ jobs:
       - checkout
       - go/install:
           version: << pipeline.parameters.go-version >>
-          cache: no
       - stop-background-apt
       - install-deps-apt
       - build-singularity
@@ -174,7 +173,6 @@ jobs:
       - check-changes
       - go/install:
           version: << pipeline.parameters.go-version >>
-          cache: no
       - stop-background-apt
       - install-deps-apt
       - build-singularity
@@ -191,7 +189,6 @@ jobs:
       - check-changes
       - go/install:
           version: << pipeline.parameters.go-version >>
-          cache: no
       - stop-background-apt
       - install-deps-apt
       - build-singularity
