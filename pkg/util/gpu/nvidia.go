@@ -15,6 +15,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
@@ -162,6 +163,12 @@ func NVidiaContainerCLIConfigure(pathEnv string, flags []string, rootfs string, 
 	nccBin, err := exec.LookPath("nvidia-container-cli")
 	if err != nil {
 		return err
+	}
+
+	// The nvidia-container-cli binary must be owned by root, as it is called with broad
+	// capabilities, and as root in the setuid flow.
+	if !fs.IsOwner(nccBin, 0) {
+		return fmt.Errorf("nvidia-container-cli is not owned by root user")
 	}
 
 	nccArgs := []string{"--debug=/tmp/singularity-nvcli-debug", "--user", "configure"}
