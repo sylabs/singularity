@@ -386,7 +386,7 @@ static void set_rpc_privileges(void) {
     priv->capabilities.bounding |= capflag(CAP_IPC_LOCK);
     priv->capabilities.bounding |= capflag(CAP_MKNOD);
     /* required by nvidia-container-cli */
-    if (sconfig->starter.nvidiaContainerCLICaps) {
+    if (sconfig->starter.nvCCLICaps) {
         debugf("Enabling bounding capabilities for nvidia-container-cli\n");
         priv->capabilities.bounding |= capflag(CAP_CHOWN);
         priv->capabilities.bounding |= capflag(CAP_DAC_OVERRIDE);

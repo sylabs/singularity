@@ -313,7 +313,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	var gpuConfFile, gpuPlatform string
 	userPath := os.Getenv("USER_PATH")
 
-	nvCli := gpu.HasNvidiaContainerCli()
+	nvCli := gpu.HasNVCLI()
 
 	if !NoNvidia && (Nvidia || engineConfig.File.AlwaysUseNv) {
 		gpuPlatform = "nv"
@@ -443,13 +443,13 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	if Nvidia {
 		if nvCli {
 			sylog.Infof("Using nvidia-container-cli for GPU setup")
-			engineConfig.SetNvContainer(true)
+			engineConfig.SetNvCCLI(true)
 
-			nvcliFlags, err := gpu.NvidiaEnvToFlags()
+			nvcliFlags, err := gpu.NVCLIEnvToFlags()
 			if err != nil {
 				sylog.Fatalf("while configuring GPU: %v", err)
 			}
-			engineConfig.SetNvContainerFlags(nvcliFlags)
+			engineConfig.SetNvCCLIFlags(nvcliFlags)
 			if UserNamespace && !IsWritable {
 				sylog.Fatalf("nvidia-container-cli requires --writable with user namespace/fakeroot")
 			}

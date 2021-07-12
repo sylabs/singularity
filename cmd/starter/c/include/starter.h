@@ -156,7 +156,7 @@ struct starter {
     bool hybridWorkflow;
 
     /* bounding capability set will include caps needed by nvidia-container-cli */
-    bool nvidiaContainerCLICaps;
+    bool nvCCLICaps;
 };
 
 /* engine configuration */

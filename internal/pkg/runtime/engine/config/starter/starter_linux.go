@@ -157,14 +157,14 @@ func (c *Config) KeepFileDescriptor(fd int) error {
 	return nil
 }
 
-// SetNvidiaContainerCLICaps sets the flag to tell starter container setup
+// SetNvCCLICaps sets the flag to tell starter container setup
 // to configure a bounding capabilities set that will permit execution of
 // nvidia-container-cli
-func (c *Config) SetNvidiaContainerCLICaps(enabled bool) {
+func (c *Config) SetNvCCLICaps(enabled bool) {
 	if enabled {
-		c.config.starter.nvidiaContainerCLICaps = C.true
+		c.config.starter.nvCCLICaps = C.true
 	} else {
-		c.config.starter.nvidiaContainerCLICaps = C.false
+		c.config.starter.nvCCLICaps = C.false
 	}
 }
 

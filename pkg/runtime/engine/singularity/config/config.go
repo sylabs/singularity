@@ -137,8 +137,8 @@ type JSONConfig struct {
 	WritableTmpfs     bool              `json:"writableTmpfs,omitempty"`
 	Contain           bool              `json:"container,omitempty"`
 	Nv                bool              `json:"nv,omitempty"`
-	NvContainer       bool              `json:"nvContainer,omitempty"`
-	NvContainerFlags  []string          `json:"NvContainerFlags,omitempty"`
+	NvCCLI            bool              `json:"nvCCLI,omitempty"`
+	NvCCLIFlags       []string          `json:"NvCCLIFlags,omitempty"`
 	Rocm              bool              `json:"rocm,omitempty"`
 	CustomHome        bool              `json:"customHome,omitempty"`
 	Instance          bool              `json:"instance,omitempty"`
@@ -224,24 +224,24 @@ func (e *EngineConfig) GetNv() bool {
 	return e.JSON.Nv
 }
 
-// SetNvContainer sets nvcontainer flag to use nvidia-container-cli for CUDA setup
-func (e *EngineConfig) SetNvContainer(nvContainer bool) {
-	e.JSON.NvContainer = nvContainer
+// SetNvCCLI sets nvcontainer flag to use nvidia-container-cli for CUDA setup
+func (e *EngineConfig) SetNvCCLI(nvCCLI bool) {
+	e.JSON.NvCCLI = nvCCLI
 }
 
-// GetNvContainer returns if nvcontainer flag is set or not.
-func (e *EngineConfig) GetNvContainer() bool {
-	return e.JSON.NvContainer
+// GetNvCCLI returns if NvCCLI flag is set or not.
+func (e *EngineConfig) GetNvCCLI() bool {
+	return e.JSON.NvCCLI
 }
 
-// SetNvContainerFlags sets flags to call nvidia-container-cli with for CUDA setup
-func (e *EngineConfig) SetNvContainerFlags(nvContainerFlags []string) {
-	e.JSON.NvContainerFlags = nvContainerFlags
+// SetNVCCLIFlags sets flags to call nvidia-container-cli with for CUDA setup
+func (e *EngineConfig) SetNvCCLIFlags(NvCCLIFlags []string) {
+	e.JSON.NvCCLIFlags = NvCCLIFlags
 }
 
-// GetNvContainerFlags returns the flags to use in an nvidia-container-cli call
-func (e *EngineConfig) GetNvContainerFlags() []string {
-	return e.JSON.NvContainerFlags
+// GetNvCCLIFlags returns the flags to use in an nvidia-container-cli call
+func (e *EngineConfig) GetNvCCLIFlags() []string {
+	return e.JSON.NvCCLIFlags
 }
 
 // SetRocm sets rocm flag to bind rocm libraries into containee.JSON.
