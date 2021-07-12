@@ -435,5 +435,5 @@ func (t *Methods) NVContainer(arguments *args.NVContainerArgs, reply *int) (err 
 		}
 	}()
 
-	return gpu.NVCLIConfigure(arguments.PathEnv, arguments.Flags, arguments.RootFsPath, arguments.RunAsRoot)
+	return gpu.NVCLIConfigure(arguments.NvCCLIPath, arguments.Flags, arguments.RootFsPath, arguments.RunAsRoot)
 }

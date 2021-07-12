@@ -132,7 +132,7 @@ type WriteFileArgs struct {
 
 // NVContainer defines the arguments to NVContainer.
 type NVContainerArgs struct {
-	PathEnv    string
+	NvCCLIPath string
 	Flags      []string
 	RootFsPath string
 	RunAsRoot  bool

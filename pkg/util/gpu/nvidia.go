@@ -7,12 +7,12 @@ package gpu
 
 import (
 	"fmt"
+	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"os"
 	"os/exec"
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/slice"
 )
@@ -62,31 +62,17 @@ func HasNVCLI() bool {
 // This sets up the GPU with the container. Note that the ability to set a fairly broad set of
 // ambient capabilities is required. This function will error if the bounding set does not include
 // NvidiaContainerCLIAmbientCaps.
-func NVCLIConfigure(pathEnv string, flags []string, rootfs string, runAsRoot bool) error {
-	oldPath := os.Getenv("PATH")
-	os.Setenv("PATH", pathEnv)
-	defer os.Setenv("PATH", oldPath)
-
-	nccBin, err := exec.LookPath("nvidia-container-cli")
-	if err != nil {
-		return err
-	}
-
-	// The nvidia-container-cli binary must be owned by root, as it is called with broad
-	// capabilities, and as root in the setuid flow.
-	if !fs.IsOwner(nccBin, 0) {
-		return fmt.Errorf("nvidia-container-cli is not owned by root user")
-	}
-
+func NVCLIConfigure(nvCCLIPath string, flags []string, rootfs string, runAsRoot bool) error {
 	nccArgs := []string{"configure"}
 	nccArgs = append(nccArgs, flags...)
 	nccArgs = append(nccArgs, rootfs)
 
-	cmd := exec.Command(nccBin, nccArgs...)
+	cmd := exec.Command(nvCCLIPath, nccArgs...)
 	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, "PATH=" +env.DefaultPath )
 
 	// We need to run nvidia-container-cli as root when we are in the setuid flow
-	// without a usernamepace in play.
+	// without a user namespace in play.
 	if runAsRoot {
 		cmd.SysProcAttr = &syscall.SysProcAttr{
 			Credential: &syscall.Credential{Uid: 0, Gid: 0},

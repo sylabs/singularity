@@ -237,9 +237,9 @@ func (t *RPC) WriteFile(filename string, data []byte, perm os.FileMode) error {
 }
 
 // NVContainer calls 'nvidia-container-cli configure' to setup GPU devs/libs
-func (t *RPC) NVContainer(pathEnv string, flags []string, rootFsPath string, runAsRoot bool) error {
+func (t *RPC) NVContainer(nvCCLIPath string, flags []string, rootFsPath string, runAsRoot bool) error {
 	arguments := &args.NVContainerArgs{
-		PathEnv:    pathEnv,
+		NvCCLIPath: nvCCLIPath,
 		Flags:      flags,
 		RootFsPath: rootFsPath,
 		RunAsRoot:  runAsRoot,

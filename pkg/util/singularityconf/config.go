@@ -64,6 +64,7 @@ type File struct {
 	MksquashfsMem           string   `directive:"mksquashfs mem"`
 	CryptsetupPath          string   `directive:"cryptsetup path"`
 	ImageDriver             string   `directive:"image driver"`
+	NvCCLIPath              string   `directive:"nvidia-container-cli path"`
 }
 
 const TemplateAsset = `# SINGULARITY.CONF
@@ -387,4 +388,13 @@ shared loop devices = {{ if eq .SharedLoopDevices true }}yes{{ else }}no{{ end }
 # If the driver name specified has not been registered via a plugin installation
 # the run-time will abort.
 image driver = {{ .ImageDriver }}
+
+# NVIDIA-CONTAINER-CLI PATH: [STRING]
+# DEFAULT: Undefined
+# This allows the administrator to specify the location of nvidia-container-cli
+# if they wish to use a custom location for this installation. If the value is
+# undefined, at runtime singularity will look on the PATH for a root-owned
+# nvidia-container-cli executable.
+# nvidia-container-cli path =
+{{ if ne .NvCCLIPath "" }}nvidia-container-cli path = {{ .NvCCLIPath }}{{ end }}
 `

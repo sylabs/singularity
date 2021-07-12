@@ -20,7 +20,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/singularity/rpc/client"
-	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout"
@@ -269,9 +268,8 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		}
 
 		sylog.Debugf("nvidia-container-cli")
-		// For proof of concept, devs and utilities only
 		runAsRoot := !c.userNS || c.engine.EngineConfig.GetFakeroot()
-		if err := c.rpcOps.NVContainer(env.DefaultPath, engine.EngineConfig.GetNvCCLIFlags(), c.session.FinalPath(), runAsRoot); err != nil {
+		if err := c.rpcOps.NVContainer(engine.EngineConfig.GetNvCCLIPath(), engine.EngineConfig.GetNvCCLIFlags(), c.session.FinalPath(), runAsRoot); err != nil {
 			return err
 		}
 	}

@@ -10,6 +10,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -370,6 +371,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	setNoMountFlags(engineConfig)
 
 	if err := SetGPUConfig(engineConfig); err != nil {
+		// We must fatal on error, as we are checking for correct ownership of nvidia-container-cli,
+		// which is important to maintain security.
 		sylog.Fatalf("while setting GPU configuration: %s", err)
 	}
 
@@ -775,9 +778,24 @@ func SetGPUConfig(engineConfig *singularityConfig.EngineConfig) error {
 }
 
 // setNvCCLIConfig sets up EngineConfig entries for NVIDIA GPU configuration via nvidia-container-cli
-func setNvCCLIConfig(engineConfig *singularityConfig.EngineConfig) error {
+func setNvCCLIConfig(engineConfig *singularityConfig.EngineConfig) (err error) {
 	sylog.Debugf("Using nvidia-container-cli for GPU setup")
 	engineConfig.SetNvCCLI(true)
+
+	// If full path to binary not set in config file, look on PATH for it.
+	nccBin := engineConfig.File.NvCCLIPath
+	if nccBin == "" {
+		nccBin, err = exec.LookPath("nvidia-container-cli")
+		if err != nil {
+			return err
+		}
+	}
+	// The nvidia-container-cli binary must be owned by root, as it is called with broad
+	// capabilities, and as root in the setuid flow.
+	if !fs.IsOwner(nccBin, 0) {
+		return fmt.Errorf("nvidia-container-cli is not owned by root user")
+	}
+	engineConfig.SetNvCCLIPath(nccBin)
 
 	nvCCLIFlags, err := gpu.NVCLIEnvToFlags()
 	if err != nil {
