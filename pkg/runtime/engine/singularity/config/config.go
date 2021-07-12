@@ -136,7 +136,7 @@ type JSONConfig struct {
 	WritableImage     bool              `json:"writableImage,omitempty"`
 	WritableTmpfs     bool              `json:"writableTmpfs,omitempty"`
 	Contain           bool              `json:"container,omitempty"`
-	Nv                bool              `json:"nv,omitempty"`
+	NvLegacy          bool              `json:"nvLegacy,omitempty"`
 	NvCCLI            bool              `json:"nvCCLI,omitempty"`
 	NvCCLIFlags       []string          `json:"NvCCLIFlags,omitempty"`
 	Rocm              bool              `json:"rocm,omitempty"`
@@ -214,14 +214,14 @@ func (e *EngineConfig) GetContain() bool {
 	return e.JSON.Contain
 }
 
-// SetNv sets nv flag to bind cuda libraries into containee.JSON.
-func (e *EngineConfig) SetNv(nv bool) {
-	e.JSON.Nv = nv
+// SetNvLegacy sets nvLegacy flag to bind cuda libraries into containee.JSON.
+func (e *EngineConfig) SetNvLegacy(nv bool) {
+	e.JSON.NvLegacy = nv
 }
 
-// GetNv returns if nv flag is set or not.
-func (e *EngineConfig) GetNv() bool {
-	return e.JSON.Nv
+// GetNvLegacy returns if nv flag is set or not.
+func (e *EngineConfig) GetNvLegacy() bool {
+	return e.JSON.NvLegacy
 }
 
 // SetNvCCLI sets nvcontainer flag to use nvidia-container-cli for CUDA setup

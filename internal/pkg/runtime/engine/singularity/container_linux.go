@@ -1416,7 +1416,7 @@ func (c *container) addDevMount(system *mount.System) error {
 		if err := c.addSessionDev("/dev/urandom", system); err != nil {
 			return err
 		}
-		if c.engine.EngineConfig.GetNv() {
+		if c.engine.EngineConfig.GetNvLegacy() {
 			devs, err := gpu.NvidiaDevices(true)
 			if err != nil {
 				return fmt.Errorf("failed to get nvidia devices: %v", err)
