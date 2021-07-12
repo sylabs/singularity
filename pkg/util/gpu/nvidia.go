@@ -218,9 +218,20 @@ func NVidiaContainerCLIConfigure(pathEnv string, flags []string, rootfs string, 
 // NvidiaEnvToFlags reads the environment variables supported by nvidia-container-runtime
 // and converts them to flags for nvidia-container-cli.
 // See: https://github.com/nvidia/nvidia-container-runtime#environment-variables-oci-spec
-func NvidiaEnvToFlags() (flags []string) {
+func NvidiaEnvToFlags() (flags []string, err error) {
 	// We don't support cgroups related usage yet.
 	flags = []string{"--no-cgroups"}
+
+	// We use the host ldconfig by prefixing '@'
+	// On Debian/Ubuntu `ldconfig` is a script... we need ldconfig.real
+	ldConfig, err := exec.LookPath("ldconfig.real")
+	if err != nil {
+		ldConfig, err = exec.LookPath("ldconfig")
+		if err != nil {
+			return nil, fmt.Errorf("could not lookup ldconfig: %v", err)
+		}
+	}
+	flags = append(flags, "--ldconfig=@"+ldConfig)
 
 	if val := os.Getenv("NVIDIA_VISIBLE_DEVICES"); val != "" {
 		flags = append(flags, "--device="+val)
@@ -244,7 +255,7 @@ func NvidiaEnvToFlags() (flags []string) {
 		if slice.ContainsString(NVidiaDriverCapabilities, cap) {
 			flags = append(flags, "--"+cap)
 		} else {
-			sylog.Warningf("Unknown NVIDIA_DRIVER_CAPABILITIES value: %s", cap)
+			return nil, fmt.Errorf("unknown NVIDIA_DRIVER_CAPABILITIES value: %s", cap)
 		}
 	}
 
@@ -259,5 +270,5 @@ func NvidiaEnvToFlags() (flags []string) {
 		}
 	}
 
-	return flags
+	return flags, nil
 }
