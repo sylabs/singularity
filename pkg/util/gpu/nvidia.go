@@ -18,9 +18,29 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
+	"github.com/sylabs/singularity/pkg/util/slice"
 )
 
-// NvidiaContainerCLIAmbientCaps is the ambient capability set required by nvidia-container-cli
+// NVidiaDriverCapabilities is the set of driver capabilities supported by nvidia-container-cli.
+// See: https://github.com/nvidia/nvidia-container-runtime#nvidia_driver_capabilities
+var NVidiaDriverCapabilities = []string{
+	"compute",
+	"compat32",
+	"graphics",
+	"utility",
+	"video",
+	"display",
+}
+
+// NvidiaDriverDefaultCapabilities is the default set of nvidia-container-cli driver capabilities.
+// It is used if NVIDIA_DRIVER_CAPABILITIES is not set.
+// See: https://github.com/nvidia/nvidia-container-runtime#nvidia_driver_capabilities
+var NvidiaDriverDefaultCapabilities = []string{
+	"compute",
+	"utility",
+}
+
+// NvidiaContainerCLIAmbientCaps is the ambient capability set required by nvidia-container-cli.
 var NvidiaContainerCLIAmbientCaps = []uintptr{
 	uintptr(capabilities.Map["CAP_KILL"].Value),
 	uintptr(capabilities.Map["CAP_SETUID"].Value),
@@ -171,7 +191,7 @@ func NVidiaContainerCLIConfigure(pathEnv string, flags []string, rootfs string, 
 		return fmt.Errorf("nvidia-container-cli is not owned by root user")
 	}
 
-	nccArgs := []string{"--debug=/tmp/singularity-nvcli-debug", "--user", "configure"}
+	nccArgs := []string{"configure"}
 	nccArgs = append(nccArgs, flags...)
 	nccArgs = append(nccArgs, rootfs)
 
@@ -193,4 +213,51 @@ func NVidiaContainerCLIConfigure(pathEnv string, flags []string, rootfs string, 
 		return fmt.Errorf("nvidia-container-cli failed with %v: %s", err, stdoutStderr)
 	}
 	return nil
+}
+
+// NvidiaEnvToFlags reads the environment variables supported by nvidia-container-runtime
+// and converts them to flags for nvidia-container-cli.
+// See: https://github.com/nvidia/nvidia-container-runtime#environment-variables-oci-spec
+func NvidiaEnvToFlags() (flags []string) {
+	// We don't support cgroups related usage yet.
+	flags = []string{"--no-cgroups"}
+
+	if val := os.Getenv("NVIDIA_VISIBLE_DEVICES"); val != "" {
+		flags = append(flags, "--device="+val)
+	}
+
+	if val := os.Getenv("NVIDIA_MIG_CONFIG_DEVICES"); val != "" {
+		flags = append(flags, "--mig-config="+val)
+	}
+
+	if val := os.Getenv("NVIDIA_MIG_MONITOR_DEVICES"); val != "" {
+		flags = append(flags, "--mig-monitor="+val)
+	}
+
+	// Driver capabilities have a default, but can be overridden.
+	caps := NvidiaDriverDefaultCapabilities
+	if val := os.Getenv("NVIDIA_DRIVER_CAPABILITIES"); val != "" {
+		caps = strings.Split(val, ",")
+	}
+
+	for _, cap := range caps {
+		if slice.ContainsString(NVidiaDriverCapabilities, cap) {
+			flags = append(flags, "--"+cap)
+		} else {
+			sylog.Warningf("Unknown NVIDIA_DRIVER_CAPABILITIES value: %s", cap)
+		}
+	}
+
+	// One --require flag for each NVIDIA_REQUIRE_* environment
+	// https://github.com/nvidia/nvidia-container-runtime#nvidia_require_
+	if val := os.Getenv("NVIDIA_DISABLE_REQUIRE"); val == "" {
+		for _, e := range os.Environ() {
+			if strings.HasPrefix(e, "NVIDIA_REQUIRE_") {
+				req := strings.SplitN(e, "=", 2)[1]
+				flags = append(flags, "--require="+req)
+			}
+		}
+	}
+
+	return flags
 }
