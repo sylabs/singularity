@@ -7,12 +7,13 @@ package gpu
 
 import (
 	"fmt"
-	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"os"
 	"os/exec"
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/util/env"
+	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/slice"
 )
@@ -64,8 +65,17 @@ func HasNVCLI() bool {
 // NvidiaContainerCLIAmbientCaps.
 func NVCLIConfigure(nvCCLIPath string, flags []string, rootfs string, runAsRoot bool) error {
 	nccArgs := []string{"configure"}
+
+	// If we will not run as root (i.e. we are in a user namespace), specify --user as a global
+	// flag, or nvidia-container-cli will fail.
+	if !runAsRoot {
+		nccArgs = []string{"--user", "configure"}
+	}
+
 	nccArgs = append(nccArgs, flags...)
 	nccArgs = append(nccArgs, rootfs)
+
+	sylog.Debugf("nvidia-container-cli binary: %q args: %q", nvCCLIPath, nccArgs)
 
 	cmd := exec.Command(nvCCLIPath, nccArgs...)
 	cmd.Env = os.Environ()
