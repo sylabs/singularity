@@ -269,7 +269,7 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 
 		sylog.Debugf("nvidia-container-cli")
 		runAsRoot := !c.userNS || c.engine.EngineConfig.GetFakeroot()
-		if err := c.rpcOps.NVContainer(engine.EngineConfig.GetNvCCLIPath(), engine.EngineConfig.GetNvCCLIFlags(), c.session.FinalPath(), runAsRoot); err != nil {
+		if err := c.rpcOps.NvCCLI(engine.EngineConfig.GetNvCCLIPath(), engine.EngineConfig.GetNvCCLIFlags(), c.session.FinalPath(), runAsRoot); err != nil {
 			return err
 		}
 	}

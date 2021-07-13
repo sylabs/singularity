@@ -414,7 +414,8 @@ func (t *Methods) WriteFile(arguments *args.WriteFileArgs, reply *int) error {
 	return err
 }
 
-func (t *Methods) NVContainer(arguments *args.NVContainerArgs, reply *int) (err error) {
+// NvCCLI will call nvidia-container-cli to configure GPU(s) for the container.
+func (t *Methods) NvCCLI(arguments *args.NvCCLIArgs, reply *int) (err error) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 

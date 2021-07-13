@@ -766,6 +766,12 @@ func SetGPUConfig(engineConfig *singularityConfig.EngineConfig) error {
 	}
 
 	if Nvidia {
+		// If admin is disallowing nvidia-container-cli through config, drop down to legacy handling immediately
+		if !engineConfig.File.UseNvCCLI {
+			sylog.Verbosef("nvidia-container-cli disabled in singularity.conf - using legacy GPU configuration")
+			return setNVLegacyConfig(engineConfig)
+		}
+
 		// TODO: In privileged fakeroot mode we don't have the correct namespace context to run nvidia-container-cli
 		// from  starter, so fall back to legacy NV handling until that workflow is refactored heavily.
 		fakeRootPriv := IsFakeroot && engineConfig.File.AllowSetuid && (buildcfg.SINGULARITY_SUID_INSTALL == 1)

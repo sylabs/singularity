@@ -130,8 +130,8 @@ type WriteFileArgs struct {
 	Perm     os.FileMode
 }
 
-// NVContainer defines the arguments to NVContainer.
-type NVContainerArgs struct {
+// NvCCLIArgs defines the arguments to NvCCLI.
+type NvCCLIArgs struct {
 	NvCCLIPath string
 	Flags      []string
 	RootFsPath string

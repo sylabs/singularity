@@ -42,6 +42,8 @@ type File struct {
 	AllowContainerDir       bool     `default:"yes" authorized:"yes,no" directive:"allow container dir"`
 	AllowContainerEncrypted bool     `default:"yes" authorized:"yes,no" directive:"allow container encrypted"`
 	AlwaysUseNv             bool     `default:"no" authorized:"yes,no" directive:"always use nv"`
+	UseNvCCLI               bool     `default:"yes" authorized:"yes,no" directive:"use nvidia-container-cli"`
+	NvCCLIPath              string   `directive:"nvidia-container-cli path"`
 	AlwaysUseRocm           bool     `default:"no" authorized:"yes,no" directive:"always use rocm"`
 	SharedLoopDevices       bool     `default:"no" authorized:"yes,no" directive:"shared loop devices"`
 	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
@@ -64,7 +66,6 @@ type File struct {
 	MksquashfsMem           string   `directive:"mksquashfs mem"`
 	CryptsetupPath          string   `directive:"cryptsetup path"`
 	ImageDriver             string   `directive:"image driver"`
-	NvCCLIPath              string   `directive:"nvidia-container-cli path"`
 }
 
 const TemplateAsset = `# SINGULARITY.CONF
@@ -307,6 +308,21 @@ allow container encrypted = {{ if eq .AllowContainerEncrypted true }}yes{{ else 
 # environments). 
 always use nv = {{ if eq .AlwaysUseNv true }}yes{{ else }}no{{ end }}
 
+# USE NVIDIA-NVIDIA-CONTAINER-CLI ${TYPE}: [BOOL]
+# DEFAULT: yes
+# If set to yes, Singularity will attempt to use nvidia-container-cli to setup
+# GPUs within a container. If no, the legacy binding of entries in
+# nvbliblist.conf will be used.
+use nvidia-container-cli = {{ if eq .UseNvCCLI true }}yes{{ else }}no{{ end }}
+
+# NVIDIA-CONTAINER-CLI PATH: [STRING]
+# DEFAULT: Undefined
+# This allows the administrator to specify the location of nvidia-container-cli
+# if they wish to use a custom location for this installation. If the value is
+# undefined, at runtime singularity will look on the PATH.
+# nvidia-container-cli path =
+{{ if ne .NvCCLIPath "" }}nvidia-container-cli path = {{ .NvCCLIPath }}{{ end }}
+
 # ALWAYS USE ROCM ${TYPE}: [BOOL]
 # DEFAULT: no
 # This feature allows an administrator to determine that every action command
@@ -388,13 +404,4 @@ shared loop devices = {{ if eq .SharedLoopDevices true }}yes{{ else }}no{{ end }
 # If the driver name specified has not been registered via a plugin installation
 # the run-time will abort.
 image driver = {{ .ImageDriver }}
-
-# NVIDIA-CONTAINER-CLI PATH: [STRING]
-# DEFAULT: Undefined
-# This allows the administrator to specify the location of nvidia-container-cli
-# if they wish to use a custom location for this installation. If the value is
-# undefined, at runtime singularity will look on the PATH for a root-owned
-# nvidia-container-cli executable.
-# nvidia-container-cli path =
-{{ if ne .NvCCLIPath "" }}nvidia-container-cli path = {{ .NvCCLIPath }}{{ end }}
 `

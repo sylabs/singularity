@@ -236,13 +236,13 @@ func (t *RPC) WriteFile(filename string, data []byte, perm os.FileMode) error {
 	return t.Client.Call(t.Name+".WriteFile", arguments, nil)
 }
 
-// NVContainer calls 'nvidia-container-cli configure' to setup GPU devs/libs
-func (t *RPC) NVContainer(nvCCLIPath string, flags []string, rootFsPath string, runAsRoot bool) error {
-	arguments := &args.NVContainerArgs{
+// NvCCLI will call nvidia-container-cli to configure GPU(s) for the container.
+func (t *RPC) NvCCLI(nvCCLIPath string, flags []string, rootFsPath string, runAsRoot bool) error {
+	arguments := &args.NvCCLIArgs{
 		NvCCLIPath: nvCCLIPath,
 		Flags:      flags,
 		RootFsPath: rootFsPath,
 		RunAsRoot:  runAsRoot,
 	}
-	return t.Client.Call(t.Name+".NVContainer", arguments, nil)
+	return t.Client.Call(t.Name+".NvCCLI", arguments, nil)
 }
