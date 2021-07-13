@@ -801,6 +801,13 @@ func setNvCCLIConfig(engineConfig *singularityConfig.EngineConfig, nvcCLIPath st
 	engineConfig.SetNvCCLI(true)
 	engineConfig.SetNvCCLIPath(nvcCLIPath)
 
+	// When we use --contain we don't mount the NV devices by default in the nvidia-container-cli flow,
+	// they must be mounted via specifying with`NVIDIA_VISIBLE_DEVICES`. This differs from the legacy
+	// flow which mounts all GPU devices, always.
+	if (IsContained || IsContainAll) && os.Getenv("NVIDIA_VISIBLE_DEVICES") == "" {
+		sylog.Warningf("When using nvidia-container-cli with --contain NVIDIA_VISIBLE_DEVICES must be set or no GPUs will be available in container.")
+	}
+
 	nvCCLIFlags, err := gpu.NVCLIEnvToFlags()
 	if err != nil {
 		return err
@@ -813,6 +820,7 @@ func setNvCCLIConfig(engineConfig *singularityConfig.EngineConfig, nvcCLIPath st
 		sylog.Infof("Setting --writable-tmpfs (required by nvidia-container-cli)")
 		IsWritableTmpfs = true
 	}
+
 	return nil
 }
 
