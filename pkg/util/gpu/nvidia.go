@@ -6,6 +6,7 @@
 package gpu
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -13,10 +14,14 @@ import (
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/util/env"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 	"github.com/sylabs/singularity/pkg/util/slice"
 )
+
+var ErrNvCCLIInsecure = errors.New("nvidia-container-cli is not owned by root user")
 
 // NVDriverCapabilities is the set of driver capabilities supported by nvidia-container-cli.
 // See: https://github.com/nvidia/nvidia-container-runtime#nvidia_driver_capabilities
@@ -53,10 +58,26 @@ var NVCLIAmbientCaps = []uintptr{
 	uintptr(capabilities.Map["CAP_SETPCAP"].Value),
 }
 
-// HasNVCLI returns true if `nvidia-container-cli` is available.
-func HasNVCLI() bool {
-	_, err := exec.LookPath("nvidia-container-cli")
-	return err == nil
+// GetNvCCLIPath finds the path to nvidia-container-cli.
+// Returns ErrNvCCLIInsecure if it is not owned by root.
+func GetNvCCLIPath() (path string, err error) {
+	nvCCLI := singularityconf.GetCurrentConfig().NvCCLIPath
+
+	// If full path to binary not set in config file, look on PATH for it.
+	if nvCCLI == "" {
+		nvCCLI, err = exec.LookPath("nvidia-container-cli")
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// The nvidia-container-cli binary must be owned by root, as it is called with broad
+	// capabilities, and as root in the setuid flow.
+	if !fs.IsOwner(nvCCLI, 0) {
+		return "", ErrNvCCLIInsecure
+	}
+
+	return nvCCLI, nil
 }
 
 // NVCLIConfigure calls out to the nvidia-container-cli configure operation.
@@ -79,7 +100,7 @@ func NVCLIConfigure(nvCCLIPath string, flags []string, rootfs string, runAsRoot 
 
 	cmd := exec.Command(nvCCLIPath, nccArgs...)
 	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, "PATH=" +env.DefaultPath )
+	cmd.Env = append(cmd.Env, "PATH="+env.DefaultPath)
 
 	// We need to run nvidia-container-cli as root when we are in the setuid flow
 	// without a user namespace in play.

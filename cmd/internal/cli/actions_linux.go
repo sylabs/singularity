@@ -10,7 +10,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -762,15 +761,28 @@ func SetGPUConfig(engineConfig *singularityConfig.EngineConfig) error {
 		sylog.Verbosef("'always use rocm = yes' found in singularity.conf")
 	}
 
-	// Fakeroot hybrid with privilege combination doesn't currently work with nvidia-container-cli
-	fakeRootHybrid := IsFakeroot && engineConfig.File.AllowSetuid
-	if Nvidia && gpu.HasNVCLI() && !fakeRootHybrid {
-		return setNvCCLIConfig(engineConfig)
+	if Nvidia && Rocm {
+		sylog.Warningf("--nv and --rocm cannot be used together. Only --nv will be applied.")
 	}
+
 	if Nvidia {
+		// TODO: In privileged fakeroot mode we don't have the correct namespace context to run nvidia-container-cli
+		// from  starter, so fall back to legacy NV handling until that workflow is refactored heavily.
+		fakeRootPriv := IsFakeroot && engineConfig.File.AllowSetuid && (buildcfg.SINGULARITY_SUID_INSTALL == 1)
+		if !fakeRootPriv {
+			nvCCLIPath, err := gpu.GetNvCCLIPath()
+			if err == nil {
+				return setNvCCLIConfig(engineConfig, nvCCLIPath)
+			}
+			if err != nil {
+				sylog.Warningf("While looking for nividia-container-cli: %v", err)
+			}
+		}
 		sylog.Infof("nvidia-container-cli not available / not supported - using legacy GPU configuration")
 		return setNVLegacyConfig(engineConfig)
+
 	}
+
 	if Rocm {
 		return setRocmConfig(engineConfig)
 	}
@@ -778,24 +790,10 @@ func SetGPUConfig(engineConfig *singularityConfig.EngineConfig) error {
 }
 
 // setNvCCLIConfig sets up EngineConfig entries for NVIDIA GPU configuration via nvidia-container-cli
-func setNvCCLIConfig(engineConfig *singularityConfig.EngineConfig) (err error) {
+func setNvCCLIConfig(engineConfig *singularityConfig.EngineConfig, nvcCLIPath string) (err error) {
 	sylog.Debugf("Using nvidia-container-cli for GPU setup")
 	engineConfig.SetNvCCLI(true)
-
-	// If full path to binary not set in config file, look on PATH for it.
-	nccBin := engineConfig.File.NvCCLIPath
-	if nccBin == "" {
-		nccBin, err = exec.LookPath("nvidia-container-cli")
-		if err != nil {
-			return err
-		}
-	}
-	// The nvidia-container-cli binary must be owned by root, as it is called with broad
-	// capabilities, and as root in the setuid flow.
-	if !fs.IsOwner(nccBin, 0) {
-		return fmt.Errorf("nvidia-container-cli is not owned by root user")
-	}
-	engineConfig.SetNvCCLIPath(nccBin)
+	engineConfig.SetNvCCLIPath(nvcCLIPath)
 
 	nvCCLIFlags, err := gpu.NVCLIEnvToFlags()
 	if err != nil {
