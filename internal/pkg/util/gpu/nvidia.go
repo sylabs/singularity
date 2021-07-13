@@ -23,9 +23,9 @@ import (
 
 var ErrNvCCLIInsecure = errors.New("nvidia-container-cli is not owned by root user")
 
-// NVDriverCapabilities is the set of driver capabilities supported by nvidia-container-cli.
+// nVDriverCapabilities is the set of driver capabilities supported by nvidia-container-cli.
 // See: https://github.com/nvidia/nvidia-container-runtime#nvidia_driver_capabilities
-var NVDriverCapabilities = []string{
+var nVDriverCapabilities = []string{
 	"compute",
 	"compat32",
 	"graphics",
@@ -34,16 +34,16 @@ var NVDriverCapabilities = []string{
 	"display",
 }
 
-// NVDriverDefaultCapabilities is the default set of nvidia-container-cli driver capabilities.
+// nVDriverDefaultCapabilities is the default set of nvidia-container-cli driver capabilities.
 // It is used if NVIDIA_DRIVER_CAPABILITIES is not set.
 // See: https://github.com/nvidia/nvidia-container-runtime#nvidia_driver_capabilities
-var NVDriverDefaultCapabilities = []string{
+var nVDriverDefaultCapabilities = []string{
 	"compute",
 	"utility",
 }
 
-// NVCLIAmbientCaps is the ambient capability set required by nvidia-container-cli.
-var NVCLIAmbientCaps = []uintptr{
+// nVCLIAmbientCaps is the ambient capability set required by nvidia-container-cli.
+var nVCLIAmbientCaps = []uintptr{
 	uintptr(capabilities.Map["CAP_KILL"].Value),
 	uintptr(capabilities.Map["CAP_SETUID"].Value),
 	uintptr(capabilities.Map["CAP_SETGID"].Value),
@@ -111,7 +111,7 @@ func NVCLIConfigure(nvCCLIPath string, flags []string, rootfs string, runAsRoot 
 	} else {
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 	}
-	cmd.SysProcAttr.AmbientCaps = NVCLIAmbientCaps
+	cmd.SysProcAttr.AmbientCaps = nVCLIAmbientCaps
 	stdoutStderr, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("nvidia-container-cli failed with %v: %s", err, stdoutStderr)
@@ -150,13 +150,13 @@ func NVCLIEnvToFlags() (flags []string, err error) {
 	}
 
 	// Driver capabilities have a default, but can be overridden.
-	caps := NVDriverDefaultCapabilities
+	caps := nVDriverDefaultCapabilities
 	if val := os.Getenv("NVIDIA_DRIVER_CAPABILITIES"); val != "" {
 		caps = strings.Split(val, ",")
 	}
 
 	for _, cap := range caps {
-		if slice.ContainsString(NVDriverCapabilities, cap) {
+		if slice.ContainsString(nVDriverCapabilities, cap) {
 			flags = append(flags, "--"+cap)
 		} else {
 			return nil, fmt.Errorf("unknown NVIDIA_DRIVER_CAPABILITIES value: %s", cap)
