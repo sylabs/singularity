@@ -60,6 +60,7 @@ func (c ctx) testNvidia(t *testing.T) {
 		name    string
 		profile e2e.Profile
 		args    []string
+		env     []string
 	}{
 		{
 			name:    "User",
@@ -70,6 +71,7 @@ func (c ctx) testNvidia(t *testing.T) {
 			name:    "UserContain",
 			profile: e2e.UserProfile,
 			args:    []string{"--contain", "--nv", imagePath, "nvidia-smi"},
+			env:     []string{"NVIDIA_VISIBLE_DEVICES=all"},
 		},
 		{
 			name:    "UserNamespace",
@@ -95,6 +97,7 @@ func (c ctx) testNvidia(t *testing.T) {
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.args...),
+			e2e.WithEnv(tt.env),
 			e2e.ExpectExit(0),
 		)
 	}
