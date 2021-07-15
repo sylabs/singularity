@@ -1,5 +1,12 @@
 # SingularityCE Changelog
 
+## Changes since last release
+
+### Bug Fixes
+
+  - Allow escaped `\$` in a SINGULARITYENV_ var to set a literal `$` in
+    a container env var.
+
 ## v3.8.0 [2021-05-26]
 
 This is the first release of SingularityCE 3.8.0, the Community
