@@ -46,7 +46,7 @@ require (
 	github.com/sylabs/scs-build-client v0.1.6
 	github.com/sylabs/scs-key-client v0.6.2
 	github.com/sylabs/scs-library-client v1.0.5
-	github.com/sylabs/sif v1.4.3
+	github.com/sylabs/sif v1.5.0
 	github.com/urfave/cli v1.22.5 // indirect
 	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/vbauerster/mpb/v6 v6.0.4
