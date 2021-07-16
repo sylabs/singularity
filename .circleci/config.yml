@@ -6,7 +6,7 @@ orbs:
 parameters:
   go-version:
     type: string
-    default: 1.16.4
+    default: 1.16.6
 
 executors:
   golang:
@@ -133,7 +133,7 @@ jobs:
   check-alpine:
     executor:
       name: golang
-      variant: alpine
+      variant: alpine3.13
     steps:
       - checkout
       - run:
