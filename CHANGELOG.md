@@ -6,6 +6,8 @@
 
   - Allow escaped `\$` in a SINGULARITYENV_ var to set a literal `$` in
     a container env var.
+  - Handle absolute symlinks correctly in multi-stage build `%copy from`
+    blocks.
 
 ## v3.8.0 [2021-05-26]
 
