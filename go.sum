@@ -859,8 +859,8 @@ github.com/sylabs/scs-key-client v0.6.2 h1:PTdmkE50rFMrSty9usl8wnzaW+JPK0rjXF4cd
 github.com/sylabs/scs-key-client v0.6.2/go.mod h1:WoTk47nNRrk0uLfblxUFekxDIIVPY4l2/9evME5fgX0=
 github.com/sylabs/scs-library-client v1.0.5 h1:u8ueCIQaa38/B0axtKUzdWSQ6uLXL9HvLQGNkB69Oe0=
 github.com/sylabs/scs-library-client v1.0.5/go.mod h1:ufza0uq4ohT7Fk2Y7vm+uRyMm7gRA+Fde1nxyhGfhTk=
-github.com/sylabs/sif v1.5.0 h1:7jTKPcv9Y+HkoAw1nYXssFDtnkSrmUUIYWLBOR0GqUs=
-github.com/sylabs/sif v1.5.0/go.mod h1:7XfhyQDbVIQki/GftRt77khhBvYTOCzPMMI62ZT4Ya8=
+github.com/sylabs/sif v1.5.1 h1:DtnvtQY/NABQx2H7PlCij57L+67fTuG7d2MQJpbeeO8=
+github.com/sylabs/sif v1.5.1/go.mod h1:7XfhyQDbVIQki/GftRt77khhBvYTOCzPMMI62ZT4Ya8=
 github.com/syndtr/gocapability v0.0.0-20170704070218-db04d3cc01c8/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 h1:kdXcSzyDtseVEc4yCz2qF8ZrQvIDBJLl4S1c3GCXmoI=
