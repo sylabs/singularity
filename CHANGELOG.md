@@ -15,10 +15,15 @@
     the `%test` section of the build with a ephemeral tmpfs overlay,
     permitting tests that write to the container filesystem.
 
+## v3.8.1 [2021-07-20]
+
 ### Bug Fixes
 
   - Allow escaped `\$` in a SINGULARITYENV_ var to set a literal `$` in
     a container env var.
+  - Handle absolute symlinks correctly in multi-stage build `%copy from`
+    blocks.
+  - Fix incorrect reference in sandbox restrictive permissions warning.
 
 ## v3.8.0 [2021-05-26]
 
@@ -71,6 +76,7 @@ of `make test` for ease of use:
   - `make testall` runs the full unit/integration/e2e test suite that
     requires docker credentials to be set with `E2E_DOCKER_USERNAME`
     and `E2E_DOCKER_PASSWORD` environment variables.
+  - Fix privilege handling issue with tests on Go >=1.16.
 
 ----
 
