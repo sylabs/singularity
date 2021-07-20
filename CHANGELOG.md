@@ -1,6 +1,6 @@
 # SingularityCE Changelog
 
-## Changes since last release
+## v3.8.1 [2021-07-20]
 
 ### Bug Fixes
 
@@ -8,6 +8,7 @@
     a container env var.
   - Handle absolute symlinks correctly in multi-stage build `%copy from`
     blocks.
+  - Fix incorrect reference in sandbox restrictive permissions warning.
 
 ## v3.8.0 [2021-05-26]
 
