@@ -9,6 +9,9 @@ parameters:
     default: 1.16.6
 
 executors:
+  node:
+    docker:
+      - image: node:16-slim
   golang:
     parameters:
       variant:
@@ -103,6 +106,17 @@ commands:
             scripts/ci-docker-run
 
 jobs:
+  lint-markdown:
+    executor: node
+    steps:
+      - run:
+          name: Install markdownlint
+          command: npm install -g markdownlint-cli
+      - checkout
+      - run:
+          name: Check for Lint
+          command: markdownlint .
+
   check-go-mod:
     executor: golang
     steps:
@@ -213,6 +227,7 @@ workflows:
   version: 2
   build_and_test:
     jobs:
+      - lint-markdown
       - check-go-mod
       - build-source-debian
       - build-source-alpine
