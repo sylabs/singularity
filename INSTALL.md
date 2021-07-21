@@ -8,31 +8,43 @@ For full instructions on installation, including building RPMs, please check the
 
 ## Install system dependencies
 
-You must first install development tools and libraries to your host. On
-Debian-based systems:
+You must first install development tools and libraries to your host.
+
+On Debian-based systems, including Ubuntu:
 
 ```sh
-sudo apt-get update && \
-  sudo apt-get install -y build-essential \
-    libseccomp-dev pkg-config squashfs-tools cryptsetup
+# Ensure repositories are up-to-date
+sudo apt-get update
+# Install debian packages for dependencies
+sudo apt-get install -y \
+    build-essential \
+    libseccomp-dev \
+    pkg-config \
+    squashfs-tools \
+    cryptsetup
 ```
 
 On CentOS/RHEL:
 
 ```sh
-sudo yum groupinstall -y 'Development Tools' && \
-  sudo yum install -y epel-release && \
-  sudo yum install -y golang libseccomp-devel \
-    squashfs-tools cryptsetup
+# Install basic tools for compiling
+sudo yum groupinstall -y 'Development Tools'
+# Ensure EPEL repository is available
+sudo yum install -y epel-release
+# Install RPM packages for dependencies 
+sudo yum install -y \
+    libseccomp-devel \
+    squashfs-tools \
+    cryptsetup
 ```
 
-## Install Golang
+## Install Go
 
-This is one of several ways to
-[install and configure golang](https://golang.org/doc/install). The CentOS/RHEL
-instructions above already installed it so this method is not needed there.
+Singularity is written in Go, and may require a newer version of Go than is
+available in the repositories of your distribution. We recommend installing the
+latest version of Go from the [official binaries](https://golang.org/dl/).
 
-First, download the Golang archive to `/tmp`, then extract the archive to
+First, download the Go tar.gz archive to `/tmp`, then extract the archive to
 `/usr/local`.
 
 _**NOTE:** if you are updating Go from a older version, make sure you remove
@@ -42,50 +54,57 @@ _**NOTE:** if you are updating Go from a older version, make sure you remove
 export VERSION=1.16.6 OS=linux ARCH=amd64  # change this as you need
 
 wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz \
-  https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
+  https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz
 sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
 ```
 
 Finally, set up your environment for Go:
 
 ```sh
-echo 'export GOPATH=${HOME}/go' >> ~/.bashrc && \
-  echo 'export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin' >> ~/.bashrc && \
-  source ~/.bashrc
+echo 'export GOPATH=${HOME}/go' >> ~/.bashrc
+echo 'export PATH=/usr/local/go/bin:${PATH}:${GOPATH}/bin' >> ~/.bashrc
+source ~/.bashrc
 ```
 
 ## Install golangci-lint
 
-This is an optional (but highly recommended!) step. To ensure consistency and to
-catch certain kinds of issues early, we provide a configuration file for
-`golangci-lint`. Every pull request must pass the checks specified there, and
-these will be run automatically before attempting to merge the code. If you are
-modifying Singularity and contributing your changes to the repository, it's
-faster to run these checks locally before uploading your pull request.
+If you will be making changes to the source code, and submitting PRs, you should
+install `golangci-lint`, which is the linting tool used in the SingularityCE
+project to ensure code consistency.
+
+Every pull request must pass the `golangci-lint` checks, and these will be run
+automatically before attempting to merge the code. If you are modifying
+Singularity and contributing your changes to the repository, it's faster to run
+these checks locally before uploading your pull request.
 
 In order to download and install the latest version of `golangci-lint`, you can
 run:
 
 <!-- markdownlint-disable MD013 -->
+
 ```sh
 curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
 ```
+
 <!-- markdownlint-enable MD013 -->
 
 ## Clone the repo
 
-Golang is a bit finicky about where things are placed. Here is the correct way
-to build Singularity from source:
+With the adoption of Go modules you no longer need to clone the SingularityCE
+repository to a specific location.
+
+Clone the repository with `git` in a location of your choice:
 
 ```sh
-mkdir -p ${GOPATH}/src/github.com/sylabs && \
-  cd ${GOPATH}/src/github.com/sylabs && \
-  git clone https://github.com/sylabs/singularity.git && \
-  cd singularity
+git clone https://github.com/sylabs/singularity.git
+cd singularity
 ```
 
-To build a specific version of SingularityCE, check out a
-[release tag](https://github.com/sylabs/singularity/tags) before compiling:
+By default your clone will be on the `master` branch which is where development
+of SingularityCE happens. To build a specific version of SingularityCE, check
+out a [release tag](https://github.com/sylabs/singularity/tags) before
+compiling. E.g. to build the latest stable version (3.8.1) checkout the `v3.8.1`
+tag:
 
 ```sh
 git checkout v3.8.1
@@ -93,74 +112,93 @@ git checkout v3.8.1
 
 ## Compiling SingularityCE
 
-You can build SingularityCE using the following commands:
+You can configure, build, and install SingularityCE using the following
+commands:
 
 ```sh
-cd ${GOPATH}/src/github.com/sylabs/singularity && \
-  ./mconfig && \
-  cd ./builddir && \
-  make && \
-  sudo make install
+./mconfig
+make -C builddir
+sudo make -C builddir install
 ```
 
 And that's it! Now you can check your SingularityCE version by running:
 
 ```sh
-singularity version
+singularity --version
 ```
 
-To build in a different folder and to set the install prefix to a different
-path:
+The `mconfig` command accepts options that can modify the build and installation
+of SingularityCE. For example, to build in a different folder and to set the
+install prefix to a different path:
 
 ```sh
 ./mconfig -b ./buildtree -p /usr/local
 ```
 
-## Install from the RPM
+See the output of `./mconfig -h` for available options.
 
-*NOTE: You should only attempt to build the RPM on a CentOS/RHEL system.*
+## Building & Installing from an RPM
 
-To build the RPM, you first need to install `rpm-build` and `wget`:
+On a RHEL / CentOS / Fedora machine you can build a SingularityCE into an rpm
+package, and install it from the rpm. This is useful if you need to install
+Singularity across multiple machines, or wish to manage all software via
+`yum/dnf`.
+
+To build the RPM, you first need to install `rpm-build` and `wget` and `golang`:
 
 ```sh
-sudo yum -y update && sudo yum install -y rpm-build wget
+sudo yum -y update && sudo yum install -y rpm-build wget golang
 ```
+
+_The rpm build expects to use the distribution or EPEL version of Go. We aim
+to ensure Singularity can be built with the version in the EPEL (EL7) and EL8
+repositories._
 
 Make sure you have also
 [installed the system dependencies](#install-system-dependencies) as shown
 above. Then download the latest
 [release tarball](https://github.com/sylabs/singularity/releases) and use it to
-install the RPM like this:
+build and install the RPM like this:
 
 <!-- markdownlint-disable MD013 -->
+
 ```sh
 export VERSION=3.8.1  # this is the singularity version, change as you need
 
-wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-ce-${VERSION}.tar.gz && \
-  rpmbuild -tb singularity-ce-${VERSION}.tar.gz && \
-  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-ce-${VERSION}-1.el7.x86_64.rpm && \
-  rm -rf ~/rpmbuild singularity-ce-${VERSION}*.tar.gz
+# Fetch the source
+wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-ce-${VERSION}.tar.gz
+# Build the rpm from the source tar.gz
+rpmbuild -tb singularity-ce-${VERSION}.tar.gz
+# Install SingularityCE using the resulting rpm
+sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-ce-${VERSION}-1.el7.x86_64.rpm
+# (Optionally) Remove the build tree and source to save space
+rm -rf ~/rpmbuild singularity-ce-${VERSION}*.tar.gz
 ```
+
 <!-- markdownlint-enable MD013 -->
 
 Alternatively, to build an RPM from the latest master you can
-[clone the repo as detailed above](#clone-the-repo). Then create your own
-tarball and use it to install Singularity:
+[clone the repo as detailed above](#clone-the-repo). Then use the `rpm` make
+target to build SingularityCE as an rpm package:
 
 <!-- markdownlint-disable MD013 -->
+
 ```sh
-cd $GOPATH/src/github.com/sylabs/singularity && \
-  ./mconfig && \
-  make -C builddir rpm && \
-  sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-ce-3.8.1*.x86_64.rpm # or whatever version you built
+./mconfig
+make -C builddir rpm
+sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-ce-3.8.1*.x86_64.rpm # or whatever version you built
 ```
+
 <!-- markdownlint-enable MD013 -->
+
+By default, the rpm will be built so that SingularityCE is installed under
+`/usr/local`.
 
 To build an rpm with an alternative install prefix set RPMPREFIX on the make
 step, for example:
 
 ```sh
-make -C builddir rpm RPMPREFIX=/usr/local
+make -C builddir rpm RPMPREFIX=/opt/singularity-ce
 ```
 
 For more information on installing/updating/uninstalling the RPM, check out our
