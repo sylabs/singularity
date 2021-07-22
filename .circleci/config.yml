@@ -141,7 +141,7 @@ jobs:
   build-source-alpine:
     executor:
       name: golang
-      variant: alpine3.13
+      variant: alpine
     steps:
       - checkout
       - run:
