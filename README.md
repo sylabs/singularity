@@ -9,6 +9,7 @@
 - [Community Meetings / Minutes / Roadmap](https://github.com/sylabs/singularityce-community)
 - [Support](#support)
 - [Citation](#citing-singularity)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
 
 SingularityCE is the Community Edition of Singularity, an open source container
 platform designed to be simple, fast, and secure. Singularity is optimized for
@@ -35,6 +36,9 @@ for details on how to use and build Singularity containers.
 
 Community contributions are always greatly appreciated. To start developing
 SingularityCE, check out the [guidelines for contributing](CONTRIBUTING.md).
+
+Please note we have a [code of conduct](CODE_OF_CONDUCT.md). Please follow it in
+all your interactions with the project members and users.
 
 Our roadmap, other documents, and user/developer meeting information can be
 found in the
