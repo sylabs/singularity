@@ -17,10 +17,10 @@ import (
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
+	"github.com/sylabs/singularity/internal/pkg/util/crypt"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	signalutil "github.com/sylabs/singularity/internal/pkg/util/signal"
 	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/crypt"
 )
 
 func createContainer(ctx context.Context, rpcSocket int, containerPid int, e *engine.Engine, fatalChan chan error) {

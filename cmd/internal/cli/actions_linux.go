@@ -36,7 +36,7 @@ import (
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
-	"github.com/sylabs/singularity/pkg/util/crypt"
+	"github.com/sylabs/singularity/pkg/util/cryptkey"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/gpu"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
@@ -393,7 +393,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 				sylog.Fatalf("Cannot load key for decryption: %v", err)
 			}
 
-			plaintextKey, err := crypt.PlaintextKey(keyInfo, engineConfig.GetImage())
+			plaintextKey, err := cryptkey.PlaintextKey(keyInfo, engineConfig.GetImage())
 			if err != nil {
 				sylog.Errorf("Cannot decrypt %s: %v", engineConfig.GetImage(), err)
 				sylog.Fatalf("Please check you are providing the correct key for decryption")
