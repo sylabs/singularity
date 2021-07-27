@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/pkg/util/archive"
 )
 
 // makeParentDir ensures existence of the expected destination directory for the cp command
@@ -107,33 +108,31 @@ func CopyFromStage(srcRel, dstRel, srcRootfs, dstRootfs string) error {
 		if err != nil {
 			return fmt.Errorf("while resolving source: %s: %s", srcGlobbedRel, err)
 		}
-		// If we are copying into a directory then we must use the original source filename,
-		// for the destination filename, not the one that was resolved out.
-		// I.E. if copying `/opt/view` to `/opt/` where `/opt/view links-> /opt/.view/abc123`
-		// we want to create `/opt/view` in the dest, not `/opt/abc123`.
+
+		// Resolve the destination path, keeping any final slash
 		dstResolved, err := secureJoinKeepSlash(dstRootfs, dstRel)
 		if err != nil {
 			return fmt.Errorf("while resolving destination: %s: %s", dstRel, err)
 		}
+		// Create any parent dirs for dstResolved that don't already exist.
+		if err := makeParentDir(dstResolved, len(paths)); err != nil {
+			return fmt.Errorf("while creating parent dir: %v", err)
+		}
+
+		// If we are copying into a directory then we must use the original source filename,
+		// for the destination filename, not the one that was resolved out.
+		// I.E. if copying `/opt/view` to `/opt/` where `/opt/view links-> /opt/.view/abc123`
+		// we want to create `/opt/view` in the dest, not `/opt/abc123`.
 		if fs.IsDir(dstResolved) {
 			_, srcName := path.Split(srcGlobbedRel)
 			dstResolved = path.Join(dstResolved, srcName)
 		}
 
-		// Create any parent dirs for dst that don't already exist.
-		if err := makeParentDir(dstResolved, len(paths)); err != nil {
-			return fmt.Errorf("while creating parent dir: %v", err)
+		err = archive.CopyWithTar(srcResolved, dstResolved)
+		if err != nil {
+			return fmt.Errorf("while copying %s to %s: %s", paths, dstResolved, err)
 		}
 
-		// Set flags for cp to perform a recursive copy without further symlink dereference.
-		args := []string{"-fr", srcResolved, dstResolved}
-		var output, stderr bytes.Buffer
-		copy := exec.Command("/bin/cp", args...)
-		copy.Stdout = &output
-		copy.Stderr = &stderr
-		if err := copy.Run(); err != nil {
-			return fmt.Errorf("while copying %s to %s: %s: %s", paths, dstResolved, err, stderr.String())
-		}
 	}
 	return nil
 }

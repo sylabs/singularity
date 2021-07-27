@@ -19,6 +19,7 @@ import (
 	"runtime/debug"
 	"strings"
 
+	"github.com/sylabs/singularity/pkg/util/archive"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -149,8 +150,9 @@ func CompilePlugin(sourceDir, destSif, buildTags string, disableMinorCheck bool)
 	}
 
 	pluginDir := filepath.Join(d, "src")
-	cmd := exec.Command("cp", "-a", sourceDir, pluginDir)
-	if err := cmd.Run(); err != nil {
+
+	err = archive.CopyWithTar(sourceDir, pluginDir)
+	if err != nil {
 		return err
 	}
 
@@ -183,7 +185,7 @@ func CompilePlugin(sourceDir, destSif, buildTags string, disableMinorCheck bool)
 
 	// running go mod tidy for plugin go.sum and cleanup
 	var e bytes.Buffer
-	cmd = exec.Command(goPath, "mod", "tidy")
+	cmd := exec.Command(goPath, "mod", "tidy")
 	cmd.Stderr = &e
 	cmd.Dir = pluginDir
 	if err := cmd.Run(); err != nil {

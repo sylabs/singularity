@@ -6,11 +6,10 @@
 package assemblers
 
 import (
-	"bytes"
 	"fmt"
 	"os"
-	"os/exec"
 
+	"github.com/sylabs/singularity/pkg/util/archive"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -30,12 +29,13 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	if a.Copy {
 		sylog.Debugf("Copying sandbox from %v to %v", b.RootfsPath, path)
-		var stderr bytes.Buffer
-		cmd := exec.Command("cp", "-r", b.RootfsPath+`/.`, path)
-		cmd.Stderr = &stderr
-		if err := cmd.Run(); err != nil {
-			return fmt.Errorf("cp Failed: %v: %v", err, stderr.String())
+
+
+		err := archive.CopyWithTar(b.RootfsPath+`/.`, path)
+		if err != nil {
+			return fmt.Errorf("copy Failed: %v", err)
 		}
+
 	} else {
 		sylog.Debugf("Moving sandbox from %v to %v", b.RootfsPath, path)
 
