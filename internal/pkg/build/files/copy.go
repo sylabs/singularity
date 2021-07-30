@@ -48,10 +48,13 @@ func makeParentDir(path string, numSrcPaths int) error {
 // dstRel is a destination path inside dstRootfs
 // All symlinks encountered in the copy will be dereferenced (cp -L behavior).
 func CopyFromHost(src, dstRel, dstRootfs string) error {
-	// resolve any bash globbing in filepath
-	paths, err := expandPath(src)
+	// resolve any globbing in filepath
+	paths, err := filepath.Glob(src)
 	if err != nil {
-		return fmt.Errorf("while expanding source path with bash: %s: %s", src, err)
+		return fmt.Errorf("while expanding source path: %s: %s", src, err)
+	}
+	if len(paths) == 0 {
+		return fmt.Errorf("no source files found matching: %s", src)
 	}
 
 	// Resolve our destination within the container rootfs
@@ -83,19 +86,31 @@ func CopyFromHost(src, dstRel, dstRootfs string) error {
 }
 
 // CopyFromStage should be used to copy files into the rootfs from a previous stage.
-// The srcRel and dstRel are src / dst paths relative to the srcRootfs and dstRootfs.
+// The src and dst are paths relative to the srcRootfs and dstRootfs.
 // Symlinks are only dereferenced for the specified source or files that resolve
 // directly from a specified glob pattern. Any additional links inside a directory
 // being copied are not dereferenced.
-func CopyFromStage(srcRel, dstRel, srcRootfs, dstRootfs string) error {
-	// An absolute path is required for globbing... but with no symlink resolution or
-	// path cleaning yet.
-	srcAbs := joinKeepSlash(srcRootfs, srcRel)
+func CopyFromStage(src, dst, srcRootfs, dstRootfs string) error {
+	// An absolute path on the host is required for globbing.
+	// Make sure the glob pattern doesn't climb out of the srcRootfs, by making it absolute w.r.t.
+	// the srcRootfs, and cleaning any '../' components that lead above the srcRootfs '/' before we
+	// join it to the srcRootfs path on the host.
+	// We aren't globbing paths containing absolute symlinks properly here as it is happening
+	// in the host fs. However, we re-resolve the results below with securejoin before copying
+	// anything, so we can't copy in host files.
+	if !filepath.IsAbs(src) {
+		src = joinKeepSlash("/", src)
+	}
+	src = path.Clean(src)
+	hostSrc := joinKeepSlash(srcRootfs, src)
 
 	// resolve any bash globbing in filepath
-	paths, err := expandPath(srcAbs)
+	paths, err := filepath.Glob(hostSrc)
 	if err != nil {
-		return fmt.Errorf("while expanding source path with bash: %s: %s", srcAbs, err)
+		return fmt.Errorf("while expanding source path: %s: %s", src, err)
+	}
+	if len(paths) == 0 {
+		return fmt.Errorf("no source files found matching: %s", src)
 	}
 
 	// We manually dereference first-level src symlinks only.
@@ -110,9 +125,9 @@ func CopyFromStage(srcRel, dstRel, srcRootfs, dstRootfs string) error {
 		}
 
 		// Resolve the destination path, keeping any final slash
-		dstResolved, err := secureJoinKeepSlash(dstRootfs, dstRel)
+		dstResolved, err := secureJoinKeepSlash(dstRootfs, dst)
 		if err != nil {
-			return fmt.Errorf("while resolving destination: %s: %s", dstRel, err)
+			return fmt.Errorf("while resolving destination: %s: %s", dst, err)
 		}
 		// Create any parent dirs for dstResolved that don't already exist.
 		if err := makeParentDir(dstResolved, len(paths)); err != nil {
@@ -120,7 +135,7 @@ func CopyFromStage(srcRel, dstRel, srcRootfs, dstRootfs string) error {
 		}
 
 		// If we are copying into a directory then we must use the original source filename,
-		// for the destination filename, not the one that was resolved out.
+		// for the destination filename, not the one that was resolved out by symlink.
 		// I.E. if copying `/opt/view` to `/opt/` where `/opt/view links-> /opt/.view/abc123`
 		// we want to create `/opt/view` in the dest, not `/opt/abc123`.
 		if fs.IsDir(dstResolved) {
