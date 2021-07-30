@@ -21,6 +21,11 @@
   section of the build with a ephemeral tmpfs overlay, permitting tests that
   write to the container filesystem.
 
+### Bug Fixes
+
+- When destination is ommitted in `%files` entry in definition file, ensure
+  globbed files are copied to correct resolved path.
+
 ## v3.8.1 \[2021-07-20\]
 
 ### Bug Fixes
