@@ -25,6 +25,19 @@ import (
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 )
 
+// debootstrapArchs is a map of GO Archs to official Debian ports
+// https://www.debian.org/ports/
+var debootstrapArchs = map[string]string{
+	"386":      "i386",
+	"amd64":    "amd64",
+	"arm":      "armhf",
+	"arm64":    "arm64",
+	"ppc64le":  "ppc64el",
+	"mipsle":   "mipsel",
+	"mips64le": "mips64el",
+	"s390x":    "s390x",
+}
+
 // DebootstrapConveyorPacker holds stuff that needs to be packed into the bundle
 type DebootstrapConveyorPacker struct {
 	b         *types.Bundle
@@ -148,6 +161,12 @@ func (cp *DebootstrapConveyorPacker) Get(ctx context.Context, b *types.Bundle) (
 		return fmt.Errorf("you must be root to build with debootstrap")
 	}
 
+	// Debian port arch values do not always match GOARCH values, so we need to look it up.
+	debArch, ok := debootstrapArchs[runtime.GOARCH]
+	if !ok {
+		return fmt.Errorf("Debian arch not known for GOARCH %s", runtime.GOARCH)
+	}
+
 	insideUserNs, setgroupsAllowed := namespaces.IsInsideUserNamespace(os.Getpid())
 	if insideUserNs && setgroupsAllowed {
 		umountFn, err := cp.prepareFakerootEnv(ctx)
@@ -160,7 +179,7 @@ func (cp *DebootstrapConveyorPacker) Get(ctx context.Context, b *types.Bundle) (
 	}
 
 	// run debootstrap command
-	cmd := exec.Command(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+cp.include, `--arch=`+runtime.GOARCH, cp.osversion, cp.b.RootfsPath, cp.mirrorurl)
+	cmd := exec.Command(debootstrapPath, `--variant=minbase`, `--exclude=openssl,udev,debconf-i18n,e2fsprogs`, `--include=apt,`+cp.include, `--arch=`+debArch, cp.osversion, cp.b.RootfsPath, cp.mirrorurl)
 
 	sylog.Debugf("\n\tDebootstrap Path: %s\n\tIncludes: apt(default),%s\n\tDetected Arch: %s\n\tOSVersion: %s\n\tMirrorURL: %s\n", debootstrapPath, cp.include, runtime.GOARCH, cp.osversion, cp.mirrorurl)
 

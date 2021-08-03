@@ -26,6 +26,8 @@
 - When destination is ommitted in `%files` entry in definition file, ensure
   globbed files are copied to correct resolved path.
 - Avoid panic when mountinfo line has a blank field.
+- Call `debootstrap` with correct Debian arch when it is not identical to the
+  value of `runtime.GOARCH`. E.g. `ppc64el -> ppc64le`.
 
 ## v3.8.1 \[2021-07-20\]
 
