@@ -9,9 +9,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sylabs/singularity/pkg/util/archive"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/archive"
 )
 
 // SandboxAssembler assembles a sandbox image.
@@ -29,7 +29,6 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 
 	if a.Copy {
 		sylog.Debugf("Copying sandbox from %v to %v", b.RootfsPath, path)
-
 
 		err := archive.CopyWithTar(b.RootfsPath+`/.`, path)
 		if err != nil {
