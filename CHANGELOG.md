@@ -25,6 +25,7 @@
 
 - When destination is ommitted in `%files` entry in definition file, ensure
   globbed files are copied to correct resolved path.
+- Avoid panic when mountinfo line has a blank field.
 
 ## v3.8.1 \[2021-07-20\]
 
