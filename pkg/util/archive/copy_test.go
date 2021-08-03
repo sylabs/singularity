@@ -16,15 +16,14 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
-
 func TestCopyWithTar(t *testing.T) {
 
-	t.Run("privileged", func(t *testing.T){
+	t.Run("privileged", func(t *testing.T) {
 		test.EnsurePrivilege(t)
 		testCopyWithTar(t)
 	})
 
-	t.Run("unprivileged", func(t *testing.T){
+	t.Run("unprivileged", func(t *testing.T) {
 		test.DropPrivilege(t)
 		defer test.ResetPrivilege(t)
 		testCopyWithTar(t)
@@ -55,13 +54,11 @@ func testCopyWithTar(t *testing.T) {
 		t.Fatal(err)
 	}
 
-
 	dstRoot, err := ioutil.TempDir("", "copywithtar-dst-")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(dstRoot)
-
 
 	// Perform the actual copy to a subdir of our dst tempdir.
 	// This ensures CopyWithTar has to create the dest directory, which is
@@ -86,16 +83,14 @@ func testCopyWithTar(t *testing.T) {
 		{
 			name:       "dir",
 			expectPath: "dst/srcDir",
-			expectDir: true,
+			expectDir:  true,
 		},
 		{
-			name: "symlink",
+			name:       "symlink",
 			expectPath: "dst/srcLink",
 			expectFile: true,
 			expectLink: true,
-
 		},
-		
 	}
 
 	for _, tt := range tests {
@@ -119,13 +114,12 @@ func testCopyWithTar(t *testing.T) {
 				t.Errorf("destination %s should be a directory, but isn't", dstFinal)
 			}
 			// Symlink when expected
-			if tt.expectLink && !fs.IsLink(dstFinal)  {
+			if tt.expectLink && !fs.IsLink(dstFinal) {
 				t.Errorf("destination %s should be a symlink, but isn't", dstFinal)
 			}
-			if !tt.expectLink && fs.IsLink(dstFinal)  {
+			if !tt.expectLink && fs.IsLink(dstFinal) {
 				t.Errorf("destination %s should be a symlink, but is", dstFinal)
 			}
 		})
 	}
 }
-

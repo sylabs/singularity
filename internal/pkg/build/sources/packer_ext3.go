@@ -76,6 +76,5 @@ func unpackExt3(b *types.Bundle, img *image.Image) error {
 		return fmt.Errorf("copy Failed: %v", err)
 	}
 
-
 	return nil
 }

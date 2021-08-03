@@ -16,7 +16,7 @@ require (
 	github.com/containerd/containerd v1.5.5
 	github.com/containernetworking/cni v0.8.1
 	github.com/containernetworking/plugins v0.9.1
-	github.com/containers/image/v5 v5.14.0
+	github.com/containers/image/v5 v5.15.0
 	github.com/cyphar/filepath-securejoin v0.2.3
 	github.com/docker/docker v20.10.7+incompatible
 	github.com/fatih/color v1.12.0

@@ -19,13 +19,13 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/sylabs/singularity/pkg/util/archive"
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/archive"
 )
 
 const version = "v0.0.0"
