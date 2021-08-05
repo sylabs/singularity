@@ -37,6 +37,8 @@
   container env var.
 - Handle absolute symlinks correctly in multi-stage build `%copy from` blocks.
 - Fix incorrect reference in sandbox restrictive permissions warning.
+- Return an error if `--tokenfile` used for `remote login` to an OCI registry,
+  as this is not supported.
 
 ## v3.8.0 \[2021-05-26\]
 
