@@ -28,6 +28,8 @@
 - Avoid panic when mountinfo line has a blank field.
 - Call `debootstrap` with correct Debian arch when it is not identical to the
   value of `runtime.GOARCH`. E.g. `ppc64el -> ppc64le`.
+- Ensure repeated `remote login` to same URI does not create duplicate entries
+  in `~/.singularity/remote.yaml`.
 
 ## v3.8.1 \[2021-07-20\]
 
