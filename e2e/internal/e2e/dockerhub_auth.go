@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	auth "github.com/oras-project/oras-go/pkg/auth/docker"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/syfs"
+	auth "oras.land/oras-go/pkg/auth/docker"
 )
 
 const dockerHub = "docker.io"
