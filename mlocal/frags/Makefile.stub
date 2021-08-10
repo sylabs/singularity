@@ -36,7 +36,10 @@ dist:
 		echo 'E: This is unexpected. Abort.' ; \
 		exit 1 ; \
 	fi
-	$(V) cd $(SOURCEDIR) && $(GO) mod vendor
+	# -e used here as `go mod vendor` doesn't respect build tags, and we may
+	#  be vendoring on an older go without `io/fs` that would otherwise fail
+	#  with an error.
+	$(V) cd $(SOURCEDIR) && $(GO) mod vendor -e
 	$(V) cd $(SOURCEDIR) && $(SOURCEDIR)/scripts/make-dist.sh $(VERSION)
 	$(V) rm -rf '$(SOURCEDIR)/vendor'
 
