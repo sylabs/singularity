@@ -26,7 +26,7 @@ executors:
       - image: golangci/golangci-lint:v1.41
   ubuntu-machine:
     machine:
-      image: ubuntu-2004:202104-01
+      image: ubuntu-2004:202107-02
 
 commands:
   check-changes:
