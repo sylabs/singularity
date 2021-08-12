@@ -38,6 +38,8 @@
   value of `runtime.GOARCH`. E.g. `ppc64el -> ppc64le`.
 - Ensure repeated `remote login` to same URI does not create duplicate entries
   in `~/.singularity/remote.yaml`.
+- `singularity delete` will use the correct library service when the hostname
+  is specified in the `library://` URI.
 
 ## v3.8.1 \[2021-07-20\]
 
