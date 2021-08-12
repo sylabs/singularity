@@ -16,6 +16,8 @@
   syntax.
 - Removed `--nonet` flag, which was intended to disable networking for in-VM
   execution, but has no effect.
+- `--nohttps` flag has been deprecated in favour of `--no-https`. The old flag
+  is still accepted, but will display a deprecation warning.
 
 ### New features / functionalities
 
