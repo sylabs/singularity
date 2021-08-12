@@ -289,7 +289,7 @@ func ParseBindPath(bindpaths string) ([]BindPath, error) {
 	var binds []BindPath
 	var elem int
 
-	var validOptions = map[string]bool{
+	validOptions := map[string]bool{
 		"ro":        true,
 		"rw":        true,
 		"image-src": false,

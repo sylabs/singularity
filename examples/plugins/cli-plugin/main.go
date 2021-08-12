@@ -10,10 +10,10 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // Plugin is the only variable which a plugin MUST export.

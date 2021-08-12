@@ -8,7 +8,7 @@ package shell
 import "testing"
 
 func TestArgsQuoted(t *testing.T) {
-	var quoteTests = []struct {
+	quoteTests := []struct {
 		name     string
 		input    []string
 		expected string
@@ -27,11 +27,10 @@ func TestArgsQuoted(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestEscape(t *testing.T) {
-	var escapeTests = []struct {
+	escapeTests := []struct {
 		input    string
 		expected string
 	}{
@@ -49,11 +48,10 @@ func TestEscape(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestEscapeQuotes(t *testing.T) {
-	var escapeQuotesTests = []struct {
+	escapeQuotesTests := []struct {
 		input    string
 		expected string
 	}{
@@ -70,5 +68,4 @@ func TestEscapeQuotes(t *testing.T) {
 			}
 		})
 	}
-
 }
