@@ -14,6 +14,8 @@
   paths, but not destination paths, leading to unexpected copy behaviour.
   Globbing for source files will now follow the Go `filepath.Match` pattern
   syntax.
+- Removed `--nonet` flag, which was intended to disable networking for in-VM
+  execution, but has no effect.
 
 ### New features / functionalities
 
