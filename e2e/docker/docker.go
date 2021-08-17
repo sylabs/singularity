@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -437,6 +437,19 @@ func (c ctx) testDockerLabels(t *testing.T) {
 	)
 }
 
+// https://github.com/sylabs/singularity/issues/233
+func (c ctx) testDockerCMDQuotes(t *testing.T) {
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("run"),
+		e2e.WithArgs("docker://sylabsio/issue233"),
+		e2e.ExpectExit(0,
+			e2e.ExpectOutput(e2e.ContainMatch, "Test run"),
+		),
+	)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -451,5 +464,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"registry":         c.testDockerRegistry,
 		"whiteout symlink": c.testDockerWhiteoutSymlink,
 		"labels":           c.testDockerLabels,
+		"cmd quotes":       c.testDockerCMDQuotes,
 	}
 }
