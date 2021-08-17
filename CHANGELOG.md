@@ -1,5 +1,11 @@
 # SingularityCE Changelog
 
+### Changes since last release
+
+### Bug fixes
+
+  - Fix download of default `pacman.conf` in `arch` bootstrap.
+
 ## v3.8.1 [2021-07-20]
 
 ### Bug Fixes
