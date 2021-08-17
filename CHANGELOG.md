@@ -6,6 +6,8 @@
 
   - `singularity delete` will use the correct library service when the hostname
     is specified in the `library://` URI.
+  - `singularity build` will use the correct library service when the hostname
+    is specified in the `library://` URI / definition file.
   - Fix download of default `pacman.conf` in `arch` bootstrap.
   - Call `debootstrap` with correct Debian arch when it is not identical to the
     value of `runtime.GOARCH`. E.g. `ppc64el -> ppc64le`.
