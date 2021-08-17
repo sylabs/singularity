@@ -18,6 +18,7 @@
   - Ensure repeated `remote login` to same URI does not create duplicate entries
     in `~/.singularity/remote.yaml`.
   - Avoid panic when mountinfo line has a blank field.
+  - Properly escape single quotes in Docker `CMD` / `ENTRYPOINT` translation.
 
 ## v3.8.1 [2021-07-20]
 
