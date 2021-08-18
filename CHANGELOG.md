@@ -1,14 +1,22 @@
 # SingularityCE Changelog
 
-### Changes since last release
+## Changes since last release
 
 ### Bug fixes
 
+  - `singularity delete` will use the correct library service when the hostname
+    is specified in the `library://` URI.
+  - `singularity build` will use the correct library service when the hostname
+    is specified in the `library://` URI / definition file.
   - Fix download of default `pacman.conf` in `arch` bootstrap.
   - Call `debootstrap` with correct Debian arch when it is not identical to the
     value of `runtime.GOARCH`. E.g. `ppc64el -> ppc64le`.
   - When destination is ommitted in `%files` entry in definition file, ensure
     globbed files are copied to correct resolved path.
+  - Return an error if `--tokenfile` used for `remote login` to an OCI registry,
+    as this is not supported.
+  - Ensure repeated `remote login` to same URI does not create duplicate entries
+    in `~/.singularity/remote.yaml`.
 
 ## v3.8.1 [2021-07-20]
 
