@@ -42,6 +42,8 @@
   in `~/.singularity/remote.yaml`.
 - `singularity delete` will use the correct library service when the hostname
   is specified in the `library://` URI.
+- `singularity build` will use the correct library service when the hostname
+  is specified in the `library://` URI / definition file.
 - Fix download of default `pacman.conf` in `arch` bootstrap.
 - Properly escape single quotes in Docker `CMD` / `ENTRYPOINT` translation.
 
