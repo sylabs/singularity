@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	pacmanConfURL = "https://git.archlinux.org/svntogit/packages.git/plain/trunk/pacman.conf?h=packages/pacman"
+	pacmanConfURL = "https://github.com/archlinux/svntogit-packages/raw/master/pacman/trunk/pacman.conf"
 )
 
 // Default list of packages to install when bootstrapping arch
@@ -195,14 +195,9 @@ func (cp *ArchConveyorPacker) getPacConf(pacmanConfURL string) (pacConf string, 
 	}
 	defer resp.Body.Close()
 
-	bytesWritten, err := io.Copy(pacConfFile, resp.Body)
+	_, err = io.Copy(pacConfFile, resp.Body)
 	if err != nil {
 		return
-	}
-
-	// Simple check to make sure file received is the correct size
-	if bytesWritten != resp.ContentLength {
-		return "", fmt.Errorf("file received is not the right size. supposed to be: %v actually: %v", resp.ContentLength, bytesWritten)
 	}
 
 	return pacConfFile.Name(), nil

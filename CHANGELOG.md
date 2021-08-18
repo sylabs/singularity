@@ -42,6 +42,7 @@
   in `~/.singularity/remote.yaml`.
 - `singularity delete` will use the correct library service when the hostname
   is specified in the `library://` URI.
+- Fix download of default `pacman.conf` in `arch` bootstrap.
 
 ## v3.8.1 \[2021-07-20\]
 
