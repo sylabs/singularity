@@ -107,7 +107,7 @@ compiling. E.g. to build the latest stable version (3.8.1) checkout the `v3.8.1`
 tag:
 
 ```sh
-git checkout v3.8.1
+git checkout v3.8.2
 ```
 
 ## Compiling SingularityCE
@@ -163,7 +163,7 @@ build and install the RPM like this:
 <!-- markdownlint-disable MD013 -->
 
 ```sh
-export VERSION=3.8.1  # this is the singularity version, change as you need
+export VERSION=3.8.2  # this is the singularity version, change as you need
 
 # Fetch the source
 wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-ce-${VERSION}.tar.gz
