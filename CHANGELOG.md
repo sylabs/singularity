@@ -19,6 +19,8 @@
     in `~/.singularity/remote.yaml`.
   - Avoid panic when mountinfo line has a blank field.
   - Properly escape single quotes in Docker `CMD` / `ENTRYPOINT` translation.
+  - Use host uid when choosing unsquashfs flags, to avoid selinux xattr errors
+    with `--fakeroot` on non-EL/Fedora distributions with recent squashfs-tools.
 
 ## v3.8.1 [2021-07-20]
 
