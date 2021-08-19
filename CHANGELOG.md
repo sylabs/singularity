@@ -33,20 +33,24 @@
 - `remote add --insecure` may be used to configure endpoints that are only
   accessible via http.
 
-### Bug Fixes
+## v3.8.2 \[2021-08-19\]
 
-- When destination is ommitted in `%files` entry in definition file, ensure
-  globbed files are copied to correct resolved path.
-- Avoid panic when mountinfo line has a blank field.
-- Call `debootstrap` with correct Debian arch when it is not identical to the
-  value of `runtime.GOARCH`. E.g. `ppc64el -> ppc64le`.
-- Ensure repeated `remote login` to same URI does not create duplicate entries
-  in `~/.singularity/remote.yaml`.
+### Bug fixes
+
 - `singularity delete` will use the correct library service when the hostname
   is specified in the `library://` URI.
 - `singularity build` will use the correct library service when the hostname
   is specified in the `library://` URI / definition file.
 - Fix download of default `pacman.conf` in `arch` bootstrap.
+- Call `debootstrap` with correct Debian arch when it is not identical to the
+  value of `runtime.GOARCH`. E.g. `ppc64el -> ppc64le`.
+- When destination is omitted in `%files` entry in definition file, ensure
+  globbed files are copied to correct resolved path.
+- Return an error if `--tokenfile` used for `remote login` to an OCI registry,
+  as this is not supported.
+- Ensure repeated `remote login` to same URI does not create duplicate entries
+  in `~/.singularity/remote.yaml`.
+- Avoid panic when mountinfo line has a blank field.
 - Properly escape single quotes in Docker `CMD` / `ENTRYPOINT` translation.
 - Use host uid when choosing unsquashfs flags, to avoid selinux xattr errors
   with `--fakeroot` on non-EL/Fedora distributions with recent squashfs-tools.
@@ -59,8 +63,6 @@
   container env var.
 - Handle absolute symlinks correctly in multi-stage build `%copy from` blocks.
 - Fix incorrect reference in sandbox restrictive permissions warning.
-- Return an error if `--tokenfile` used for `remote login` to an OCI registry,
-  as this is not supported.
 
 ## v3.8.0 \[2021-05-26\]
 
