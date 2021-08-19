@@ -48,6 +48,8 @@
   is specified in the `library://` URI / definition file.
 - Fix download of default `pacman.conf` in `arch` bootstrap.
 - Properly escape single quotes in Docker `CMD` / `ENTRYPOINT` translation.
+- Use host uid when choosing unsquashfs flags, to avoid selinux xattr errors
+  with `--fakeroot` on non-EL/Fedora distributions with recent squashfs-tools.
 
 ## v3.8.1 \[2021-07-20\]
 
