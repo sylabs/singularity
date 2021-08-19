@@ -1,6 +1,6 @@
 # SingularityCE Changelog
 
-## Changes since last release
+## v3.8.2 [2021-08-19]
 
 ### Bug fixes
 
