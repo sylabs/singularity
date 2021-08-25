@@ -23,6 +23,7 @@ import (
 	"github.com/sylabs/sif/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	pluginapi "github.com/sylabs/singularity/pkg/plugin"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/archive"
@@ -131,7 +132,7 @@ func CompilePlugin(sourceDir, destSif, buildTags string, disableMinorCheck bool)
 	if err != nil {
 		return errors.New("singularity source directory not found")
 	}
-	goPath, err := exec.LookPath("go")
+	goPath, err := bin.FindBin("go")
 	if err != nil {
 		return errors.New("go compiler not found")
 	}

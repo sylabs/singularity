@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -23,6 +23,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/internal/pkg/security"
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/shell/interpreter"
@@ -311,7 +312,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	var libs, bins, ipcs []string
 	var gpuConfFile, gpuPlatform string
-	userPath := os.Getenv("USER_PATH")
 
 	if !NoNvidia && (Nvidia || engineConfig.File.AlwaysUseNv) {
 		gpuPlatform = "nv"
@@ -324,8 +324,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 
 		// bind persistenced socket if found
-		ipcs = gpu.NvidiaIpcsPath(userPath)
-		libs, bins, err = gpu.NvidiaPaths(gpuConfFile, userPath)
+		ipcs = gpu.NvidiaIpcsPath()
+		libs, bins, err = gpu.NvidiaPaths(gpuConfFile)
 
 	} else if !NoRocm && (Rocm || engineConfig.File.AlwaysUseRocm) { // Mount rocm GPU
 		gpuPlatform = "rocm"
@@ -337,7 +337,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			sylog.Verbosef("binding rocm files into container")
 		}
 
-		libs, bins, err = gpu.RocmPaths(gpuConfFile, userPath)
+		libs, bins, err = gpu.RocmPaths(gpuConfFile)
 	}
 
 	if Nvidia || Rocm {
@@ -613,7 +613,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		currentEnv := append(
 			os.Environ(),
 			"SINGULARITY_IMAGE="+engineConfig.GetImage(),
-			"PATH="+os.Getenv("USER_PATH"),
 		)
 
 		content, err := ioutil.ReadFile(SingularityEnvFile)
@@ -700,10 +699,9 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 
 		if convert {
-			unsquashfsPath := ""
-			if engineConfig.File.MksquashfsPath != "" {
-				d := filepath.Dir(engineConfig.File.MksquashfsPath)
-				unsquashfsPath = filepath.Join(d, "unsquashfs")
+			unsquashfsPath, err := bin.FindBin("unsquashfs")
+			if err != nil {
+				sylog.Fatalf("while extracting %s: %s", image, err)
 			}
 			sylog.Verbosef("User namespace requested, convert image %s to sandbox", image)
 			sylog.Infof("Converting SIF file to temporary sandbox...")
