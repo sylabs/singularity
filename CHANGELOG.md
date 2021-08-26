@@ -4,8 +4,8 @@
 
 ### Bug fixes
 
- - Fix regression when files `source`d from `%environment` contain `\` escaped
-   shell builtins (fixes issue with `source` of conda profile.d script).
+- Fix regression when files `source`d from `%environment` contain `\` escaped
+  shell builtins (fixes issue with `source` of conda profile.d script).
 
 ## v3.8.2 [2021-08-19]
 
