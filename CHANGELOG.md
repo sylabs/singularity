@@ -43,6 +43,11 @@
 - `remote add --insecure` may be used to configure endpoints that are only
   accessible via http.
 
+### Bug fixes
+
+ - Fix regression when files `source`d from `%environment` contain `\` escaped
+   shell builtins (fixes issue with `source` of conda profile.d script).
+
 ## v3.8.2 \[2021-08-19\]
 
 ### Bug fixes
