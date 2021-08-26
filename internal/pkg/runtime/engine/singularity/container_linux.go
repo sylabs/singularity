@@ -27,6 +27,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs/layout/layer/underlay"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/mount"
 	fsoverlay "github.com/sylabs/singularity/internal/pkg/util/fs/overlay"
+	"github.com/sylabs/singularity/internal/pkg/util/gpu"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/internal/pkg/util/priv"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
@@ -36,7 +37,6 @@ import (
 	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
-	"github.com/sylabs/singularity/pkg/util/gpu"
 	"github.com/sylabs/singularity/pkg/util/loop"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
@@ -257,6 +257,23 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 	sylog.Debugf("Mount all")
 	if err := system.MountAll(); err != nil {
 		return err
+	}
+
+	if engine.EngineConfig.GetNvCCLI() {
+		// If a container has a CUDA install in it then nvidia-container-cli will bind mount
+		// from <session_dir>/final/usr/local/cuda/compat into the main container lib dir.
+		// This *requires* that the container rootfs is a private mount, as it is a bind source.
+		// By default, the rootfs will be mounted shared due to requirements of the FUSE mount
+		// handling, so make it private here just before calling nvidia-container-cli.
+		if err := c.rpcOps.Mount("", c.session.FinalPath(), "", syscall.MS_PRIVATE, ""); err != nil {
+			return err
+		}
+
+		sylog.Debugf("nvidia-container-cli")
+		runAsRoot := !c.userNS || c.engine.EngineConfig.GetFakeroot()
+		if err := c.rpcOps.NvCCLI(engine.EngineConfig.GetNvCCLIPath(), engine.EngineConfig.GetNvCCLIFlags(), c.session.FinalPath(), runAsRoot); err != nil {
+			return err
+		}
 	}
 
 	// chroot from RPC server current working directory since
@@ -1399,7 +1416,7 @@ func (c *container) addDevMount(system *mount.System) error {
 		if err := c.addSessionDev("/dev/urandom", system); err != nil {
 			return err
 		}
-		if c.engine.EngineConfig.GetNv() {
+		if c.engine.EngineConfig.GetNvLegacy() {
 			devs, err := gpu.NvidiaDevices(true)
 			if err != nil {
 				return fmt.Errorf("failed to get nvidia devices: %v", err)
