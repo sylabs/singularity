@@ -61,11 +61,18 @@
   capabilities. `--nvccli` is not currently supported in the hybrid fakeroot
   (setuid install + `--fakeroot`) workflow. Please see documentation for more
   details.
+- The `--apply-cgroups` flag can be used to apply cgroups resource and device
+  restrictions on a system using the v2 unified cgroups hierarchy. The resource
+  restrictions must still be specified in the v1 / OCI format, which will be
+  translated into v2 cgroups resource restrictions, and eBPF device
+  restrictions.
 
 ### Bug fixes
 
 - Fix regression when files `source`d from `%environment` contain `\` escaped
   shell builtins (fixes issue with `source` of conda profile.d script).
+- The `oci` commands will operate on systems that use the v2 unified cgroups
+  hierarchy.
 
 ## v3.8.2 \[2021-08-19\]
 
