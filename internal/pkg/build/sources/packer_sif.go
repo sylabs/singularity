@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/sylabs/singularity/internal/pkg/image/unpacker"
 	"github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/image/unpacker"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 

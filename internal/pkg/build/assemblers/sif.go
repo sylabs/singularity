@@ -18,10 +18,10 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/sylabs/sif/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/image/packer"
 	"github.com/sylabs/singularity/internal/pkg/util/crypt"
 	"github.com/sylabs/singularity/internal/pkg/util/machine"
 	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/image/packer"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/cryptkey"
 )

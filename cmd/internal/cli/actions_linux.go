@@ -18,6 +18,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/image/unpacker"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
@@ -31,7 +32,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	imgutil "github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/image/unpacker"
 	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
 	singularitycallback "github.com/sylabs/singularity/pkg/plugin/callback/runtime/engine/singularity"
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
