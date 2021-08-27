@@ -24,9 +24,9 @@ linters:
     - misspell
     - nakedret
     - revive
+    - staticcheck
     # we would like to add these
     # - dupl
-    # - staticcheck
 
 linters-settings:
   misspell:
