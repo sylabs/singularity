@@ -1,8 +1,9 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+//go:build sylog
 // +build sylog
 
 package sylog
@@ -294,7 +295,6 @@ const testStr = "test message"
 type fnOut func(format string, a ...interface{})
 
 func runTestLogFn(t *testing.T, errFd *os.File, fn fnOut) {
-
 	if errFd != nil {
 		fn("%s", testStr)
 		return
@@ -336,7 +336,6 @@ func runTestLogFn(t *testing.T, errFd *os.File, fn fnOut) {
 }
 
 func TestStderrOutput(t *testing.T) {
-
 	tests := []struct {
 		name string
 		out  *os.File

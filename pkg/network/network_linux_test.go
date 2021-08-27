@@ -1,8 +1,9 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+//go:build integration_test
 // +build integration_test
 
 package network
@@ -127,7 +128,7 @@ func TestGetAllNetworkConfigList(t *testing.T) {
 	}
 	defer os.Remove(emptyDir)
 
-	var testCNIPath = []struct {
+	testCNIPath := []struct {
 		name           string
 		cniPath        *CNIPath
 		success        bool
@@ -189,7 +190,7 @@ func TestGetAllNetworkConfigList(t *testing.T) {
 }
 
 func testSetArgs(setup *Setup, t *testing.T) {
-	var testArgs = []struct {
+	testArgs := []struct {
 		desc    string
 		args    []string
 		success bool
@@ -293,11 +294,11 @@ func testSetArgs(setup *Setup, t *testing.T) {
 func TestNewSetup(t *testing.T) {
 	test.EnsurePrivilege(t)
 
-	var cniPath = &CNIPath{
+	cniPath := &CNIPath{
 		Conf:   defaultCNIConfPath,
 		Plugin: defaultCNIPluginPath,
 	}
-	var testSetup = []struct {
+	testSetup := []struct {
 		desc     string
 		networks []string
 		id       string
@@ -530,7 +531,7 @@ func TestAddDelNetworks(t *testing.T) {
 		}
 	}
 
-	var cniPath = &CNIPath{
+	cniPath := &CNIPath{
 		Conf:   defaultCNIConfPath,
 		Plugin: defaultCNIPluginPath,
 	}
