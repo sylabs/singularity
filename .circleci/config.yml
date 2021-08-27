@@ -23,7 +23,7 @@ executors:
       - image: golang:<< pipeline.parameters.go-version >><<# parameters.variant >>-<< parameters.variant >><</ parameters.variant >>
   golangci-lint:
     docker:
-      - image: golangci/golangci-lint:v1.41
+      - image: golangci/golangci-lint:v1.42
   ubuntu-machine:
     machine:
       image: ubuntu-2004:202107-02
