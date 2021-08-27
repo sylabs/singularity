@@ -3,6 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+//go:build go1.13
 // +build go1.13
 
 package goversion
