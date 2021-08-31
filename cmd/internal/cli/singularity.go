@@ -35,7 +35,7 @@ import (
 	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 // cmdInits holds all the init function to be called
@@ -254,7 +254,7 @@ func setSylogMessageLevel() {
 	}
 
 	color := true
-	if nocolor || !terminal.IsTerminal(2) {
+	if nocolor || !term.IsTerminal(2) {
 		color = false
 	}
 
