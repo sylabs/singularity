@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	"github.com/sylabs/singularity/pkg/sylog"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 var errInvalidChoice = errors.New("invalid choice")
@@ -133,9 +133,9 @@ func AskQuestionNoEcho(format string, a ...interface{}) (string, error) {
 	// underlying file descriptor is associated to a VT100 terminal, not with
 	// other file descriptors, including when redirecting Stdin to an actual
 	// file in the context of testing or in the context of pipes.
-	if terminal.IsTerminal(int(os.Stdin.Fd())) {
+	if term.IsTerminal(int(os.Stdin.Fd())) {
 		var resp []byte
-		resp, err = terminal.ReadPassword(int(os.Stdin.Fd()))
+		resp, err = term.ReadPassword(int(os.Stdin.Fd()))
 		if err != nil {
 			return "", err
 		}
