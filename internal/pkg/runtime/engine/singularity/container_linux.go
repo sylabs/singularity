@@ -41,8 +41,8 @@ import (
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
 	"github.com/sylabs/singularity/pkg/util/slice"
-	"golang.org/x/crypto/ssh/terminal"
 	"golang.org/x/sys/unix"
+	"golang.org/x/term"
 )
 
 // global variables used by master process only at various steps:
@@ -1360,7 +1360,7 @@ func (c *container) addDevMount(system *mount.System) error {
 		}
 		// add /dev/console mount pointing to original tty if there is one
 		for fd := 0; fd <= 2; fd++ {
-			if !terminal.IsTerminal(fd) {
+			if !term.IsTerminal(fd) {
 				continue
 			}
 			// Found a tty on stdin, stdout, or stderr.

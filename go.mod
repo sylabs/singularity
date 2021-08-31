@@ -61,6 +61,7 @@ require (
 	golang.org/x/crypto v0.0.0-20210711020723-a769d52b0f97
 	golang.org/x/net v0.0.0-20210510120150-4163338589ed // indirect
 	golang.org/x/sys v0.0.0-20210820121016-41cdb8703e55
+	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
 	mvdan.cc/sh/v3 v3.3.1
