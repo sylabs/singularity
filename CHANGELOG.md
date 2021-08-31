@@ -38,6 +38,8 @@
 - Example log-plugin rewritten as a CLI callback that can log all commands
   executed, intead of only container execution, and has access to command
   arguments.
+- An invalid remote build source (bootstrap) will be identified before
+  attempting to submit the build.
 
 ### New features / functionalities
 
