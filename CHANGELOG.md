@@ -35,6 +35,9 @@
   specified via the `NVIDIA_VISIBLE_DEVICES` environment variable will be
   exposed within the container. Use `NVIDIA_VISIBLE_DEVICES=all` to access all
   GPUs inside a container run with `--nvccli`.
+- Example log-plugin rewritten as a CLI callback that can log all commands
+  executed, intead of only container execution, and has access to command
+  arguments.
 
 ### New features / functionalities
 
