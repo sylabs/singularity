@@ -74,10 +74,19 @@
 
 ### Bug fixes
 
-- Fix regression when files `source`d from `%environment` contain `\` escaped
-  shell builtins (fixes issue with `source` of conda profile.d script).
 - The `oci` commands will operate on systems that use the v2 unified cgroups
   hierarchy.
+
+## v3.8.3 \[2021-09-01\]
+
+## Bug fixes
+
+- Fix regression when files `source`d from `%environment` contain `\` escaped
+  shell builtins (fixes issue with `source` of conda profile.d script).
+
+Additional changes include dependency updates for the SIF module (to v2.0.0),
+and migration to maintained versions of other modules. There is no change to
+functionality, on-disk SIF format etc.
 
 ## v3.8.2 \[2021-08-19\]
 
