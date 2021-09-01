@@ -31,7 +31,7 @@ On CentOS/RHEL:
 sudo yum groupinstall -y 'Development Tools'
 # Ensure EPEL repository is available
 sudo yum install -y epel-release
-# Install RPM packages for dependencies 
+# Install RPM packages for dependencies
 sudo yum install -y \
     libseccomp-devel \
     squashfs-tools \
@@ -103,11 +103,11 @@ cd singularity
 By default your clone will be on the `master` branch which is where development
 of SingularityCE happens. To build a specific version of SingularityCE, check
 out a [release tag](https://github.com/sylabs/singularity/tags) before
-compiling. E.g. to build the latest stable version (3.8.1) checkout the `v3.8.1`
+compiling. E.g. to build the latest stable version (3.8.3) checkout the `v3.8.3`
 tag:
 
 ```sh
-git checkout v3.8.2
+git checkout v3.8.3
 ```
 
 ## Compiling SingularityCE
@@ -186,7 +186,7 @@ target to build SingularityCE as an rpm package:
 ```sh
 ./mconfig
 make -C builddir rpm
-sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-ce-3.8.1*.x86_64.rpm # or whatever version you built
+sudo rpm -ivh ~/rpmbuild/RPMS/x86_64/singularity-ce-3.8.3*.x86_64.rpm # or whatever version you built
 ```
 
 <!-- markdownlint-enable MD013 -->
