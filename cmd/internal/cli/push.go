@@ -9,7 +9,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
@@ -125,7 +124,6 @@ var PushCmd = &cobra.Command{
 				fmt.Printf("TIP: You can push unsigned images with 'singularity push -U %s'.\n", file)
 				fmt.Printf("TIP: Learn how to sign your own containers by using 'singularity help sign'\n\n")
 				sylog.Fatalf("Unable to upload container: unable to verify signature")
-				os.Exit(3)
 			} else if err != nil {
 				sylog.Fatalf("Unable to push image to library: %v", err)
 			}
