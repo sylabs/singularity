@@ -1067,7 +1067,9 @@ func (c actionTests) actionBinds(t *testing.T) {
 	hostCanaryFile := filepath.Join(hostCanaryDir, "file")
 
 	canaryFileBind := hostCanaryFile + ":" + contCanaryFile
+	canaryFileMount := "type=bind,source=" + hostCanaryFile + ",destination=" + contCanaryFile
 	canaryDirBind := hostCanaryDir + ":" + contCanaryDir
+	canaryDirMount := "type=bind,source=" + hostCanaryDir + ",destination=" + contCanaryDir
 
 	hostHomeDir := filepath.Join(workspace, "home")
 	hostWorkDir := filepath.Join(workspace, "workdir")
@@ -1465,6 +1467,31 @@ func (c actionTests) actionBinds(t *testing.T) {
 				"test", "-f", "/scratch/dir/file",
 			},
 			postRun: checkHostDir(filepath.Join(hostWorkDir, "scratch/scratch", "dir")),
+			exit:    0,
+		},
+		// For the --mount variants we are really just verifying the CLI
+		// acceptance of one or more --mount flags. Translation from --mount
+		// strings to BindPath structs is checked in unit tests. The
+		// functionality of bind mounts of various kinds is already checked
+		// above, with --bind flags. No need to duplicate all of these.
+		{
+			name: "MountSingle",
+			args: []string{
+				"--mount", canaryFileMount,
+				sandbox,
+				"test", "-f", contCanaryFile,
+			},
+			exit: 0,
+		},
+		{
+			name: "MountNested",
+			args: []string{
+				"--mount", canaryDirMount,
+				"--mount", "source=" + hostCanaryFile + ",destination=" + filepath.Join(contCanaryDir, "file3"),
+				sandbox,
+				"test", "-f", "/canary/file3",
+			},
+			postRun: checkHostFile(filepath.Join(hostCanaryDir, "file3")),
 			exit:    0,
 		},
 	}
@@ -2026,6 +2053,33 @@ func (c actionTests) bindImage(t *testing.T) {
 			},
 			exit: 0,
 		},
+		// For the --mount variants we are really just verifying the CLI
+		// acceptance of one or more image bind mount strings. Translation from
+		// --mount strings to BindPath structs is checked in unit tests. The
+		// functionality of image mounts of various kinds is already checked
+		// above, with --bind flags. No need to duplicate all of these.
+		{
+			name:    "MountSifWithID",
+			profile: e2e.UserProfile,
+			args: []string{
+				// rootfs ID is now '4'
+				"--mount", "type=bind,source=" + c.env.ImagePath + ",destination=/rootfs,id=4",
+				c.env.ImagePath,
+				"test", "-d", "/rootfs/etc",
+			},
+			exit: 0,
+		},
+		{
+			name:    "MountSifDataExt3AndSquash",
+			profile: e2e.UserProfile,
+			args: []string{
+				"--mount", "type=bind,source=" + sifExt3Image + ",destination=/ext3,image-src=/",
+				"--mount", "type=bind,source=" + sifSquashImage + ",destination=/squash,image-src=/",
+				c.env.ImagePath,
+				"test", "-f", filepath.Join("/squash", squashMarkerFile), "-a", "-f", "/ext3/ext3_marker",
+			},
+			exit: 0,
+		},
 	}
 
 	for _, tt := range tests {
@@ -2281,10 +2335,10 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"issue 5631":            c.issue5631,           // https://github.com/sylabs/singularity/issues/5631
 		"issue 5690":            c.issue5690,           // https://github.com/sylabs/singularity/issues/5690
 		"network":               c.actionNetwork,       // test basic networking
-		"binds":                 c.actionBinds,         // test various binds
+		"binds":                 c.actionBinds,         // test various binds with --bind and --mount
 		"exit and signals":      c.exitSignals,         // test exit and signals propagation
 		"fuse mount":            c.fuseMount,           // test fusemount option
-		"bind image":            c.bindImage,           // test bind image
+		"bind image":            c.bindImage,           // test bind image with --bind and --mount
 		"umask":                 c.actionUmask,         // test umask propagation
 		"no-mount":              c.actionNoMount,       // test --no-mount
 		"compat":                c.actionCompat,        // test --compat
