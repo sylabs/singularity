@@ -49,7 +49,7 @@ func TestParseMountString(t *testing.T) {
 		},
 		{
 			name:        "invalidField",
-			mountString: "type=bind,source=/opt,destination=/opt,colour=turquoise",
+			mountString: "type=bind,source=/opt,destination=/opt,color=turquoise",
 			want:        []BindPath{},
 			wantErr:     true,
 		},
