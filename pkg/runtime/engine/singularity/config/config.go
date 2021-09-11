@@ -59,7 +59,7 @@ type FuseMount struct {
 	Cmd           *exec.Cmd `json:"-"`                       // holds the process exec command when FUSE driver run in foreground mode
 }
 
-// JSONConfig stores engine specific confguration that is allowed to be set by the user.
+// JSONConfig stores engine specific configuration that is allowed to be set by the user.
 type JSONConfig struct {
 	ScratchDir        []string          `json:"scratchdir,omitempty"`
 	OverlayImage      []string          `json:"overlayImage,omitempty"`

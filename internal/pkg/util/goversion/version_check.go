@@ -17,6 +17,6 @@
 // https://github.com/theckman/goconstraint
 package goversion
 
-// keep the variable here in sync with the mininum required version
+// keep the variable here in sync with the minimum required version
 // specified in goversion.go
 var _ = __BUILD_REQUIRES_GO_VERSION_1_13_OR_LATER__

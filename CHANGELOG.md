@@ -36,7 +36,7 @@
   exposed within the container. Use `NVIDIA_VISIBLE_DEVICES=all` to access all
   GPUs inside a container run with `--nvccli`.
 - Example log-plugin rewritten as a CLI callback that can log all commands
-  executed, intead of only container execution, and has access to command
+  executed, instead of only container execution, and has access to command
   arguments.
 - An invalid remote build source (bootstrap) will be identified before
   attempting to submit the build.
@@ -233,7 +233,7 @@ convenience to users arriving from outdated links.
 - Allow configuration of global custom keyservers, separate from remote
   endpoints.
 - Add a new global keyring, for public keys only (used for ECL).
-- The `remote login` commmand now suports authentication to Docker/OCI
+- The `remote login` command now supports authentication to Docker/OCI
   registries and custom keyservers.
 - New `--exclusive` option for `remote use` allows admin to lock usage to a
   specific remote.
@@ -242,7 +242,7 @@ convenience to users arriving from outdated links.
   fingerprints.
 - Labels can be set dynamically from a build's `%post` section by setting them
   in the `SINGULARITY_LABELS` environment variable.
-- New `build-arch` label is automatically set to the architecure of the host
+- New `build-arch` label is automatically set to the architecture of the host
   during a container build.
 - New `-D/--description` flag for `singularity push` sets description for a
   library container image.
