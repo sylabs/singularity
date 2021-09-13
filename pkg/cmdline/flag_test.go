@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -17,6 +17,7 @@ var (
 	testString      string
 	testBool        bool
 	testStringSlice []string
+	testStringArray []string
 	testInt         int
 	testUint32      uint32
 )
@@ -148,6 +149,34 @@ var ttData = []struct {
 			Name:         "string-slice-short",
 			ShortHand:    "l",
 			Usage:        "a string slice flag (short)",
+		},
+		cmd: parentCmd,
+	},
+	{
+		desc: "string array flag",
+		flag: &Flag{
+			ID:           "testStringArrayFlag",
+			Value:        &testStringArray,
+			DefaultValue: testStringArray,
+			Name:         "string-array",
+			Usage:        "a string array flag",
+			EnvKeys:      []string{"STRING_ARRAY"},
+			StringArray:  true,
+		},
+		cmd:      parentCmd,
+		envValue: "arg1,arg2",
+		// Should not split on commas
+		matchValue: "[\"arg1,arg2\"]",
+	},
+	{
+		desc: "string array flag (short)",
+		flag: &Flag{
+			ID:           "testStringArrayShortFlag",
+			Value:        &testStringArray,
+			DefaultValue: testStringArray,
+			Name:         "string-array-short",
+			ShortHand:    "a",
+			Usage:        "a string array flag (short)",
 		},
 		cmd: parentCmd,
 	},

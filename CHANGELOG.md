@@ -71,6 +71,11 @@
   restrictions must still be specified in the v1 / OCI format, which will be
   translated into v2 cgroups resource restrictions, and eBPF device
   restrictions.
+- A new `--mount` flag and `SINGULARITY_MOUNT` environment variable can be used
+  to specify bind mounts in
+  `type=bind,source=<src>,destination=<dst>[,options...]` format. This improves
+  CLI compatibility with other runtimes, and allows binding paths containing
+  `:` and `,` characters (using CSV style escaping).
 
 ### Bug fixes
 

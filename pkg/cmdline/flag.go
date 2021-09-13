@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -27,6 +27,10 @@ type Flag struct {
 	Required     bool
 	EnvKeys      []string
 	EnvHandler   EnvHandler
+	// When Value is a []String:
+	// If true, will use pFlag StringArrayVar(P) type, where values are not split on comma.
+	// If false, will use pFlag StringSliceVar(P) type, where a single value is split on commas.
+	StringArray bool
 }
 
 // flagManager manages cobra command flags and store them
@@ -76,7 +80,11 @@ func (m *flagManager) registerFlagForCmd(flag *Flag, cmds ...*cobra.Command) err
 	case string:
 		m.registerStringVar(flag, cmds)
 	case []string:
-		m.registerStringSliceVar(flag, cmds)
+		if flag.StringArray {
+			m.registerStringArrayVar(flag, cmds)
+		} else {
+			m.registerStringSliceVar(flag, cmds)
+		}
 	case bool:
 		m.registerBoolVar(flag, cmds)
 	case int:
@@ -108,6 +116,18 @@ func (m *flagManager) registerStringSliceVar(flag *Flag, cmds []*cobra.Command) 
 			c.Flags().StringSliceVarP(flag.Value.(*[]string), flag.Name, flag.ShortHand, flag.DefaultValue.([]string), flag.Usage)
 		} else {
 			c.Flags().StringSliceVar(flag.Value.(*[]string), flag.Name, flag.DefaultValue.([]string), flag.Usage)
+		}
+		m.setFlagOptions(flag, c)
+	}
+	return nil
+}
+
+func (m *flagManager) registerStringArrayVar(flag *Flag, cmds []*cobra.Command) error {
+	for _, c := range cmds {
+		if flag.ShortHand != "" {
+			c.Flags().StringArrayVarP(flag.Value.(*[]string), flag.Name, flag.ShortHand, flag.DefaultValue.([]string), flag.Usage)
+		} else {
+			c.Flags().StringArrayVar(flag.Value.(*[]string), flag.Name, flag.DefaultValue.([]string), flag.Usage)
 		}
 		m.setFlagOptions(flag, c)
 	}

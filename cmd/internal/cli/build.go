@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -31,6 +31,7 @@ import (
 var buildArgs struct {
 	sections      []string
 	bindPaths     []string
+	mounts        []string
 	arch          string
 	builderURL    string
 	libraryURL    string
@@ -255,6 +256,19 @@ var buildBindFlag = cmdline.Flag{
 	EnvHandler: cmdline.EnvAppendValue,
 }
 
+// --mount
+var buildMountFlag = cmdline.Flag{
+	ID:           "buildMountFlag",
+	Value:        &buildArgs.mounts,
+	DefaultValue: []string{},
+	Name:         "mount",
+	Usage:        "a mount specification e.g. 'type=bind,source=/opt,destination=/hostopt'.",
+	EnvKeys:      []string{"MOUNT"},
+	Tag:          "<spec>",
+	EnvHandler:   cmdline.EnvAppendValue,
+	StringArray:  true,
+}
+
 // --writable-tmpfs
 var buildWritableTmpfsFlag = cmdline.Flag{
 	ID:           "buildWritableTmpfsFlag",
@@ -299,6 +313,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&buildNvCCLIFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildRocmFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildBindFlag, buildCmd)
+		cmdManager.RegisterFlagForCmd(&buildMountFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildWritableTmpfsFlag, buildCmd)
 	})
 }
