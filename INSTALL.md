@@ -36,7 +36,7 @@ _**NOTE:** if you are updating Go from a older version, make sure you remove `/u
 reinstalling it._
 
 ```sh
-$ export VERSION=1.17 OS=linux ARCH=amd64  # change this as you need
+$ export VERSION=1.17.1 OS=linux ARCH=amd64  # change this as you need
 
 $ wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz && \
   sudo tar -C /usr/local -xzf /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz
