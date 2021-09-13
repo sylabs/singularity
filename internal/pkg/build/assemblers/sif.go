@@ -117,8 +117,10 @@ func createSIF(path string, b *types.Bundle, squashfile string, encOpts *encrypt
 	// remove anything that may exist at the build destination at last moment
 	os.RemoveAll(path)
 
-	// test container creation with two partition input descriptors
-	f, err := sif.CreateContainerAtPath(path, sif.OptCreateWithDescriptors(dis...))
+	f, err := sif.CreateContainerAtPath(path,
+		sif.OptCreateWithLaunchScript("#!/usr/bin/env run-singularity\n"),
+		sif.OptCreateWithDescriptors(dis...),
+	)
 	if err != nil {
 		return fmt.Errorf("while creating container: %w", err)
 	}
