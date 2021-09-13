@@ -37,6 +37,7 @@ The following have contributed code and/or documentation to this repository.
 - Dave Love <d.love@liverpool.ac.uk>
 - David Trudgian <david.trudgian@sylabs.io>, <dave@trudgian.net>
 - Diana Langenbach <dcl@dcl.sh>
+- Dimitri Papadopoulos <3234522+DimitriPapadopoulos@users.noreply.github.com>
 - Divya Cote <divya.cote@gmail.com>
 - Eduardo Arango <eduardo@sylabs.io>, <arangogutierrez@gmail.com>
 - Egbert Eich <eich@suse.com>
