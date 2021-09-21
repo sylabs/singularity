@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/AdamKorcz/go-fuzz-headers v0.0.0-20210319161527-f761c2329661 // indirect
 	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
-	github.com/ProtonMail/go-crypto v0.0.0-20210707164159-52430bf6b52c
+	github.com/ProtonMail/go-crypto v0.0.0-20210920160938-87db9fbc61c7
 	github.com/adigunhammedolalekan/registry-auth v0.0.0-20200730122110-8cde180a3a60
 	github.com/alexflint/go-filemutex v0.0.0-20171028004239-d358565f3c3f // indirect
 	github.com/apex/log v1.9.0
@@ -47,7 +47,7 @@ require (
 	github.com/sylabs/scs-build-client v0.2.1
 	github.com/sylabs/scs-key-client v0.6.2
 	github.com/sylabs/scs-library-client v1.0.5
-	github.com/sylabs/sif/v2 v2.1.0
+	github.com/sylabs/sif/v2 v2.1.1
 	github.com/urfave/cli v1.22.5 // indirect
 	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/vbauerster/mpb/v6 v6.0.4
