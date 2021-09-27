@@ -40,6 +40,10 @@
   arguments.
 - An invalid remote build source (bootstrap) will be identified before
   attempting to submit the build.
+- The bundled reference CNI plugins are updated to v1.0.1. The `flannel` plugin
+  is no longer included, as it is maintained as a separate plugin at:
+  <https://github.com/flannel-io/cni-plugin>. If you use the flannel CNI plugin
+  you should install it from this repository.
 
 ### New features / functionalities
 
