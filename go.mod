@@ -56,10 +56,10 @@ require (
 	github.com/yvasiyarov/gorelic v0.0.6 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	golang.org/x/sys v0.0.0-20211001092434-39dca1131b70
-	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b
+	golang.org/x/term v0.0.0-20210916214954-140adaaadfaf
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
-	mvdan.cc/sh/v3 v3.3.1
+	mvdan.cc/sh/v3 v3.4.0
 	oras.land/oras-go v0.4.0
 	rsc.io/letsencrypt v0.0.3 // indirect
 )
