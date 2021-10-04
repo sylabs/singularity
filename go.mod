@@ -48,7 +48,7 @@ require (
 	github.com/sylabs/scs-build-client v0.2.1
 	github.com/sylabs/scs-key-client v0.6.2
 	github.com/sylabs/scs-library-client v1.0.5
-	github.com/sylabs/sif/v2 v2.1.1
+	github.com/sylabs/sif/v2 v2.2.0
 	github.com/urfave/cli v1.22.5 // indirect
 	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/vbauerster/mpb/v6 v6.0.4
@@ -56,8 +56,7 @@ require (
 	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
 	github.com/yvasiyarov/gorelic v0.0.6 // indirect
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
-	golang.org/x/net v0.0.0-20210510120150-4163338589ed // indirect
-	golang.org/x/sys v0.0.0-20210820121016-41cdb8703e55
+	golang.org/x/sys v0.0.0-20211001092434-39dca1131b70
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
