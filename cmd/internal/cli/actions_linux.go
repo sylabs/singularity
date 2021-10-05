@@ -492,7 +492,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 	/* if name submitted, run as instance */
 	if name != "" {
 		PidNamespace = true
-		IpcNamespace = true
 		engineConfig.SetInstance(true)
 		engineConfig.SetBootInstance(IsBoot)
 
