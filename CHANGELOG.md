@@ -44,6 +44,8 @@
   is no longer included, as it is maintained as a separate plugin at:
   <https://github.com/flannel-io/cni-plugin>. If you use the flannel CNI plugin
   you should install it from this repository.
+- Instances are no longer created with an IPC namespace by default. An IPC
+  namespace can be specified with the `-i|--ipc` flag.
 
 ### New features / functionalities
 
