@@ -144,7 +144,10 @@ Singularity across multiple machines, or wish to manage all software via
 
 To build the RPM, you first need to install the
 [system dependencies](#install-system-dependencies) and
-[Go toolchain](#install-go) as shown above.
+[Go toolchain](#install-go) as shown above. The RPM spec does not declare Go as
+a build dependency, as SingularityCE may require a newer version of Go than is
+available in distribution / EPEL repositories. Go should be installed manually,
+so that the go executable is on `$PATH` in the build environment.
 
 Download the latest
 [release tarball](https://github.com/sylabs/singularity/releases) and use it to
