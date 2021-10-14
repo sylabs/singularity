@@ -41,13 +41,6 @@ ExclusiveOS: linux
 BuildRoot: /var/tmp/singularity-%{version}-build
 %endif
 
-%if "%{_target_vendor}" == "suse"
-%if "%{sles_version}" != "11"
-BuildRequires: go
-%endif
-%else
-BuildRequires: golang
-%endif
 BuildRequires: git
 BuildRequires: gcc
 BuildRequires: make

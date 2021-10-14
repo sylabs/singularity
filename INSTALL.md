@@ -29,8 +29,6 @@ On CentOS/RHEL:
 ```sh
 # Install basic tools for compiling
 sudo yum groupinstall -y 'Development Tools'
-# Ensure EPEL repository is available
-sudo yum install -y epel-release
 # Install RPM packages for dependencies
 sudo yum install -y \
     libseccomp-devel \
@@ -139,24 +137,19 @@ See the output of `./mconfig -h` for available options.
 
 ## Building & Installing from an RPM
 
-On a RHEL / CentOS / Fedora machine you can build a SingularityCE into an rpm
-package, and install it from the rpm. This is useful if you need to install
+On a RHEL / CentOS / Fedora machine you can build a SingularityCE into an RPM
+package, and install it from the RPM. This is useful if you need to install
 Singularity across multiple machines, or wish to manage all software via
 `yum/dnf`.
 
-To build the RPM, you first need to install `rpm-build` and `wget` and `golang`:
+To build the RPM, you first need to install the
+[system dependencies](#install-system-dependencies) and
+[Go toolchain](#install-go) as shown above. The RPM spec does not declare Go as
+a build dependency, as SingularityCE may require a newer version of Go than is
+available in distribution / EPEL repositories. Go should be installed manually,
+so that the go executable is on `$PATH` in the build environment.
 
-```sh
-sudo yum -y update && sudo yum install -y rpm-build wget golang
-```
-
-_The rpm build expects to use the distribution or EPEL version of Go. We aim
-to ensure Singularity can be built with the version in the EPEL (EL7) and EL8
-repositories._
-
-Make sure you have also
-[installed the system dependencies](#install-system-dependencies) as shown
-above. Then download the latest
+Download the latest
 [release tarball](https://github.com/sylabs/singularity/releases) and use it to
 build and install the RPM like this:
 

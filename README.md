@@ -72,6 +72,14 @@ best place, and how, to raise different kinds of issues and questions.
 For additional support, [contact us](https://www.sylabs.io/contact/) to receive
 more information.
 
+## Go Version Compatibility
+
+SingularityCE aims to maintain support for the two most recent stable versions
+of Go. This corresponds to the Go
+[Release Maintenance Policy](https://github.com/golang/go/wiki/Go-Release-Cycle#release-maintenance)
+and [Security Policy](https://golang.org/security), ensuring critical bug
+fixes and security patches are available for all supported language versions.
+
 ## Citing Singularity
 
 The SingularityCE software may be cited using our Zenodo DOI `10.5281/zenodo.5564905`:

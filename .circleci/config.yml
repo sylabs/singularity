@@ -21,6 +21,12 @@ executors:
     docker:
       # Resolves to golang:<go-version> or golang:<go-version>-<variant> (if variant supplied)
       - image: golang:<< pipeline.parameters.go-version >><<# parameters.variant >>-<< parameters.variant >><</ parameters.variant >>
+  centos7:
+    docker:
+      - image: centos:7
+  centos8:
+    docker:
+      - image: centos:8
   golangci-lint:
     docker:
       - image: golangci/golangci-lint:v1.42
@@ -98,24 +104,6 @@ commands:
       - run:
           name: Install Singularity
           command: sudo make -C ./builddir install
-  buildtest-rpm:
-    parameters:
-      os-type:
-        type: string
-        default: centos
-      os-version:
-        type: string
-    steps:
-      - run:
-          name: Build and Test RPM
-          no_output_timeout: 10m
-          environment:
-            OS_TYPE: << parameters.os-type >>
-            OS_VERSION: << parameters.os-version >>
-          command: |-
-            export E2E_DOCKER_USERNAME=$CIRCLE_CI_DOCKER_USERNAME && \
-            export E2E_DOCKER_PASSWORD=$CIRCLE_CI_DOCKER_PASSWORD && \
-            scripts/ci-docker-run
 
 jobs:
   lint-markdown:
@@ -222,19 +210,33 @@ jobs:
       - store_artifacts:
           path: builddir/e2e-cmd-report.txt
 
-  rpmbuild-centos7:
-    executor: ubuntu-machine
+  build-rpm:
+    parameters:
+      e:
+        type: executor
+    executor: << parameters.e >>
     steps:
       - checkout
-      - buildtest-rpm:
-          os-version: '7'
-
-  rpmbuild-centos8:
-    executor: ubuntu-machine
-    steps:
-      - checkout
-      - buildtest-rpm:
-          os-version: '8'
+      - run:
+          name: Install dependencies
+          command: |-
+            yum groupinstall -q -y 'Development Tools'
+            yum install -q -y cryptsetup libseccomp-devel squashfs-tools
+      - run:
+          name: Install Go
+          command: |-
+            curl -f -L -sS "https://dl.google.com/go/go<< pipeline.parameters.go-version >>.linux-amd64.tar.gz" | tar -z -x -C /usr/local/
+            echo "export PATH=$PATH:/usr/local/go/bin" >> $BASH_ENV
+      - configure-singularity
+      - run:
+          name: Build RPM
+          command: make -C builddir rpm
+      - run:
+          name: Install RPM
+          command: yum install -q -y $HOME/rpmbuild/RPMS/*/*.rpm
+      - run:
+          name: Run SingularityCE
+          command: singularity version
 
 workflows:
   version: 2
@@ -248,5 +250,7 @@ workflows:
       - short-unit-tests
       - integration-tests
       - e2e-tests
-      - rpmbuild-centos7
-      - rpmbuild-centos8
+      - build-rpm:
+          matrix:
+            parameters:
+              e: ["centos7", "centos8"]
