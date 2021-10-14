@@ -38,9 +38,7 @@ ExclusiveOS: linux
 BuildRequires: git
 BuildRequires: gcc
 BuildRequires: make
-%if ! 0%{?el6}
 BuildRequires: libseccomp-devel
-%endif
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
 %else
