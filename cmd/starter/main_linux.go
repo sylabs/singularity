@@ -20,7 +20,6 @@ import (
 	"github.com/sylabs/singularity/internal/app/starter"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
 	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/config/starter"
-	_ "github.com/sylabs/singularity/internal/pkg/util/goversion"
 	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/pkg/sylog"
 

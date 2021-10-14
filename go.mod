@@ -1,6 +1,6 @@
 module github.com/sylabs/singularity
 
-go 1.13
+go 1.16
 
 require (
 	github.com/AdamKorcz/go-fuzz-headers v0.0.0-20210319161527-f761c2329661 // indirect
