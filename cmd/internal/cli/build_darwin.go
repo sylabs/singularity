@@ -7,8 +7,6 @@
 package cli
 
 import (
-	"context"
-
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -63,7 +61,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("Failed to create builder: %v", err)
 	}
 
-	err = b.Build(context.TODO())
+	err = b.Build(cmd.Context())
 	if err != nil {
 		sylog.Fatalf("While performing build: %v", err)
 	}
