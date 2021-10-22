@@ -73,7 +73,7 @@ func getResolver(ociAuth *ocitypes.DockerAuthConfig) (remotes.Resolver, error) {
 }
 
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
-func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
+func DownloadImage(ctx context.Context, imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 	ref = strings.TrimPrefix(ref, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
@@ -124,7 +124,9 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 	}
 	pullHandler := oras.WithPullBaseHandler(images.HandlerFunc(handlerFunc))
 
-	_, _, err = oras.Pull(orasctx.Background(), resolver, spec.String(), store, allowedMediaTypes, pullHandler)
+	ctx = orasctx.WithLoggerDiscarded(ctx)
+
+	_, _, err = oras.Pull(ctx, resolver, spec.String(), store, allowedMediaTypes, pullHandler)
 	if err != nil {
 		return fmt.Errorf("unable to pull from registry: %s", err)
 	}
@@ -146,7 +148,7 @@ func DownloadImage(imagePath, ref string, ociAuth *ocitypes.DockerAuthConfig) er
 
 // UploadImage uploads the image specified by path and pushes it to the provided oci reference,
 // it will use credentials if supplied
-func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
+func UploadImage(ctx context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 	// ensure that are uploading a SIF
 	if err := ensureSIF(path); err != nil {
 		return err
@@ -197,10 +199,12 @@ func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 
 	descriptors := []ocispec.Descriptor{desc}
 
+	ctx = orasctx.WithLoggerDiscarded(ctx)
+
 	// First push with our null config of the SIF config type. This is the
 	// approach given in most oras CLI and code examples and works with the
 	// majority of registries.
-	if _, err := oras.Push(orasctx.Background(), resolver, spec.String(), store, descriptors, oras.WithConfig(conf)); err == nil {
+	if _, err := oras.Push(ctx, resolver, spec.String(), store, descriptors, oras.WithConfig(conf)); err == nil {
 		return nil
 	}
 
@@ -208,7 +212,7 @@ func UploadImage(path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 	// Harbor 2.2. Unfortunately the error we get when we need to retry this way
 	// isn't useful to be more specific on when this is needed.
 	sylog.Debugf("ORAS push not accepted, retrying without config for registry compatibility")
-	if _, err := oras.Push(orasctx.Background(), resolver, spec.String(), store, descriptors); err != nil {
+	if _, err := oras.Push(ctx, resolver, spec.String(), store, descriptors); err != nil {
 		return fmt.Errorf("unable to push: %s", err)
 	}
 
