@@ -1,5 +1,14 @@
 # SingularityCE Changelog
 
+## v3.8.4 [2021-10-28]
+
+### Bug fixes
+
+- Update `oras-go` dependency to address push failures to some registry
+  configurations.
+- Implement context cancellation when a signal is received in several CLI
+  commands.
+
 ## v3.8.3 [2021-09-01]
 
 ### Bug fixes
