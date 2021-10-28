@@ -82,7 +82,7 @@ $ mkdir -p ${GOPATH}/src/github.com/sylabs && \
 To build a specific version of SingularityCE, check out a [release tag](https://github.com/sylabs/singularity/tags) before compiling:
 
 ```
-$ git checkout v3.8.3
+$ git checkout v3.8.4
 ```
 
 ## Compiling SingularityCE
@@ -125,7 +125,7 @@ as shown above.  Then download the latest
 and use it to install the RPM like this: 
 
 ```
-$ export VERSION=3.8.3  # this is the singularity version, change as you need
+$ export VERSION=3.8.4  # this is the singularity version, change as you need
 
 $ wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-ce-${VERSION}.tar.gz && \
     rpmbuild -tb singularity-ce-${VERSION}.tar.gz && \
