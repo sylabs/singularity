@@ -36,6 +36,11 @@ import (
 )
 
 func fakerootExec(cmdArgs []string) {
+	if buildArgs.nvccli && !buildArgs.noTest {
+		sylog.Warningf("Due to writable-tmpfs limitations, %%test sections will fail with --nvccli & --fakeroot")
+		sylog.Infof("Use -T / --notest to disable running tests during the build")
+	}
+
 	useSuid := buildcfg.SINGULARITY_SUID_INSTALL == 1
 
 	short := "-" + buildFakerootFlag.ShortHand
@@ -95,8 +100,6 @@ func fakerootExec(cmdArgs []string) {
 }
 
 func runBuild(cmd *cobra.Command, args []string) {
-	ctx := context.TODO()
-
 	if buildArgs.nvidia {
 		if buildArgs.remote {
 			sylog.Fatalf("--nv option is not supported for remote build")
@@ -150,9 +153,9 @@ func runBuild(cmd *cobra.Command, args []string) {
 	}
 
 	if buildArgs.remote {
-		runBuildRemote(ctx, cmd, dest, spec)
+		runBuildRemote(cmd.Context(), cmd, dest, spec)
 	} else {
-		runBuildLocal(ctx, cmd, dest, spec)
+		runBuildLocal(cmd.Context(), cmd, dest, spec)
 	}
 	sylog.Infof("Build complete: %s", dest)
 }

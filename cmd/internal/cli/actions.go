@@ -49,9 +49,7 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 	userPath := strings.Join([]string{os.Getenv("PATH"), defaultPath}, ":")
 	os.Setenv("USER_PATH", userPath)
 
-	ctx := context.TODO()
-
-	replaceURIWithImage(ctx, cmd, args)
+	replaceURIWithImage(cmd.Context(), cmd, args)
 
 	// --compat infers other options that give increased OCI / Docker compatibility
 	// Excludes uts/user/net namespaces as these are restrictive for many Singularity

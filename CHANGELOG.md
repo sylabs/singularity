@@ -1,5 +1,35 @@
 # SingularityCE Changelog
 
+## v3.9.0-rc.2 \[2021-10-28\]
+
+This is a _release candidate_ for SingularityCE 3.9.0
+
+### Security related fixes
+
+- Due to trusting a path to an executable that was incorrectly
+  generated in code that could be manipulated by an unprivileged user,
+  privilege escalation was possible when using the new `--nvccli` GPU
+  configuration option. This vulnerability affected the 3.9.0-rc.1
+  release candidate only. Stable releases of SingularityCE are not
+  impacted.
+
+  All users who have installed 3.9.0-rc.1 should update to 3.9.0-rc.2
+
+  Thanks to @cclerget for reporting this issue.
+
+### Changed defaults / behaviours
+
+- The location of the `cryptsetup`, `ldconfig` and `nvidia-container-cli`
+  binaries are always taken from `singularity.conf`. No `$PATH` search is
+  performed.
+
+### Bug fixes
+
+- Ensure a build with `--nvccli` runs using `nvidia-container-cli` and
+  not the legacy gpu support.
+- Advise on limitations and provide workaround for inability to run
+  `%test` in `--fakeroot` `--nvccli` builds.
+
 ## v3.9.0-rc.1 \[2021-10-14\]
 
 This is a _release candidate_ for SingularityCE 3.9.0
@@ -94,6 +124,15 @@ This is a _release candidate_ for SingularityCE 3.9.0
 
 - The `oci` commands will operate on systems that use the v2 unified cgroups
   hierarchy.
+
+## v3.8.4 \[2021-10-28\]
+
+### Bug fixes
+
+- Update `oras-go` dependency to address push failures to some registry
+  configurations.
+- Implement context cancellation when a signal is received in several CLI
+  commands.
 
 ## v3.8.3 \[2021-09-01\]
 

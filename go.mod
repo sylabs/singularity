@@ -18,14 +18,11 @@ require (
 	github.com/containernetworking/plugins v1.0.1
 	github.com/containers/image/v5 v5.16.1
 	github.com/cyphar/filepath-securejoin v0.2.3
-	github.com/docker/docker v20.10.9+incompatible
+	github.com/docker/docker v20.10.10+incompatible
 	github.com/fatih/color v1.13.0
-	github.com/garyburd/redigo v1.6.0 // indirect
 	github.com/go-log/log v0.2.0
-	github.com/gofrs/uuid v3.2.0+incompatible // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/uuid v1.3.0
-	github.com/gorilla/handlers v1.4.0 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/gosimple/slug v1.11.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
@@ -48,7 +45,7 @@ require (
 	github.com/sylabs/scs-build-client v0.2.1
 	github.com/sylabs/scs-key-client v0.7.1
 	github.com/sylabs/scs-library-client v1.1.2
-	github.com/sylabs/sif/v2 v2.2.0
+	github.com/sylabs/sif/v2 v2.2.1
 	github.com/urfave/cli v1.22.5 // indirect
 	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/vbauerster/mpb/v6 v6.0.4
@@ -61,6 +58,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.0.3
 	mvdan.cc/sh/v3 v3.4.0
-	oras.land/oras-go v0.4.0
-	rsc.io/letsencrypt v0.0.3 // indirect
+	oras.land/oras-go v0.5.0
 )
