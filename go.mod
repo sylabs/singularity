@@ -44,7 +44,7 @@ require (
 	github.com/sylabs/json-resp v0.8.0
 	github.com/sylabs/scs-build-client v0.2.1
 	github.com/sylabs/scs-key-client v0.7.1
-	github.com/sylabs/scs-library-client v1.1.2
+	github.com/sylabs/scs-library-client v1.2.0
 	github.com/sylabs/sif/v2 v2.2.1
 	github.com/urfave/cli v1.22.5 // indirect
 	github.com/vbauerster/mpb/v4 v4.12.2
