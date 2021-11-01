@@ -261,6 +261,23 @@ func (i *Image) GetDataPartitions() ([]Section, error) {
 	return i.getPartitions(DataUsage)
 }
 
+// HasEncryptedRootFs returns true if the image contains an encrypted
+// rootfs partition.
+func (i *Image) HasEncryptedRootFs() (encrypted bool, err error) {
+	rootFsParts, err := i.GetRootFsPartitions()
+	if err != nil {
+		return false, fmt.Errorf("while getting root FS partitions: %v", err)
+	}
+
+	for _, p := range rootFsParts {
+		if p.Type == ENCRYPTSQUASHFS {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 // initFile ensures file descriptor is associated to a file handle.
 func (i *Image) initFile() error {
 	if i.File != nil {
