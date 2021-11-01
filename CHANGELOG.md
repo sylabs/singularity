@@ -1,5 +1,13 @@
 # SingularityCE Changelog
 
+## Changes since last release
+
+### New features
+
+- Perform concurrent multi-part downloads for `library://` URIs. Uses 3
+  concurrent downloads by default, and is configurable in `singularity.conf` or
+  via environment variables.
+
 ## v3.9.0-rc.2 \[2021-10-28\]
 
 This is a _release candidate_ for SingularityCE 3.9.0
