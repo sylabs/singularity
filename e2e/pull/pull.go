@@ -652,7 +652,8 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 
 			t.Run("pull", c.testPullCmd)
 			t.Run("pullDisableCache", c.testPullDisableCacheCmd)
-			t.Run("downloadConcurrency", c.testDownloadConcurrency)
+			t.Run("concurrencyConfig", c.testConcurrencyConfig)
+			t.Run("concurrentPulls", c.testConcurrentPulls)
 
 			// Regressions
 			t.Run("issue5808", c.issue5808)
