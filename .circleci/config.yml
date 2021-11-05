@@ -29,7 +29,7 @@ executors:
       - image: centos:8
   golangci-lint:
     docker:
-      - image: golangci/golangci-lint:v1.42
+      - image: golangci/golangci-lint:v1.43
   ubuntu-machine:
     machine:
       image: ubuntu-2004:202107-02
