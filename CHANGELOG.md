@@ -24,6 +24,11 @@ This is a _release candidate_ for SingularityCE 3.9.0
   concurrent downloads by default, and is configurable in `singularity.conf` or
   via environment variables.
 
+### Bug fixes
+
+- Ensure invalid values passed to `config global --set` cannot lead to an empty
+  configuration file being written.
+
 ## v3.9.0-rc.2 \[2021-10-28\]
 
 This is a _release candidate_ for SingularityCE 3.9.0
