@@ -1,5 +1,29 @@
 # SingularityCE Changelog
 
+## v3.9.0-rc.3 \[2021-11-05\]
+
+This is a _release candidate_ for SingularityCE 3.9.0
+
+### Changed defaults / behaviours
+
+- The behaviour of the `allow container` directives in `singularity.conf` has
+  been modified, to support more intuitive limitations on the usage of SIF and non-SIF
+  container images. If you use these directives, _you may need to make changes
+  to singularity.conf to preserve behaviour_.
+  - A new `allow container sif` directive permits or denies usage of
+    _unencrypted_ SIF images, irrespective of the filesystem(s) inside the SIF.
+  - The `allow container encrypted` directive permits or denies usage of SIF
+    images with an encrypted root filesystem.
+  - The `allow container squashfs/extfs` directives in `singularity.conf`
+    permit or deny usage of bare SquashFS and EXT image files only.
+  - The effect of the `allow container dir` directive is unchanged.
+
+### New features
+
+- Perform concurrent multi-part downloads for `library://` URIs. Uses 3
+  concurrent downloads by default, and is configurable in `singularity.conf` or
+  via environment variables.
+
 ## v3.9.0-rc.2 \[2021-10-28\]
 
 This is a _release candidate_ for SingularityCE 3.9.0

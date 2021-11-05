@@ -37,10 +37,11 @@ type File struct {
 	EnableFusemount         bool     `default:"yes" authorized:"yes,no" directive:"enable fusemount"`
 	EnableUnderlay          bool     `default:"yes" authorized:"yes,no" directive:"enable underlay"`
 	MountSlave              bool     `default:"yes" authorized:"yes,no" directive:"mount slave"`
+	AllowContainerSIF       bool     `default:"yes" authorized:"yes,no" directive:"allow container sif"`
+	AllowContainerEncrypted bool     `default:"yes" authorized:"yes,no" directive:"allow container encrypted"`
 	AllowContainerSquashfs  bool     `default:"yes" authorized:"yes,no" directive:"allow container squashfs"`
 	AllowContainerExtfs     bool     `default:"yes" authorized:"yes,no" directive:"allow container extfs"`
 	AllowContainerDir       bool     `default:"yes" authorized:"yes,no" directive:"allow container dir"`
-	AllowContainerEncrypted bool     `default:"yes" authorized:"yes,no" directive:"allow container encrypted"`
 	AlwaysUseNv             bool     `default:"no" authorized:"yes,no" directive:"always use nv"`
 	UseNvCCLI               bool     `default:"no" authorized:"yes,no" directive:"use nvidia-container-cli"`
 	AlwaysUseRocm           bool     `default:"no" authorized:"yes,no" directive:"always use rocm"`
@@ -69,6 +70,9 @@ type File struct {
 	NvidiaContainerCliPath  string   `directive:"nvidia-container-cli path"`
 	UnsquashfsPath          string   `directive:"unsquashfs path"`
 	ImageDriver             string   `directive:"image driver"`
+	DownloadConcurrency     uint     `default:"3" directive:"download concurrency"`
+	DownloadPartSize        uint     `default:"5242880" directive:"download part size"`
+	DownloadBufferSize      uint     `default:"32768" directive:"download buffer size"`
 }
 
 const TemplateAsset = `# SINGULARITY.CONF
@@ -265,10 +269,17 @@ sessiondir max size = {{ .SessiondirMaxSize }}
 # DEFAULT: yes
 # This feature limits what kind of containers that Singularity will allow
 # users to use (note this does not apply for root).
+#
+# Allow use of unencrypted SIF containers
+allow container sif = {{ if eq .AllowContainerSIF true}}yes{{ else }}no{{ end }}
+#
+# Allow use of encrypted SIF containers
+allow container encrypted = {{ if eq .AllowContainerEncrypted true }}yes{{ else }}no{{ end }}
+#
+# Allow use of non-SIF image formats
 allow container squashfs = {{ if eq .AllowContainerSquashfs true }}yes{{ else }}no{{ end }}
 allow container extfs = {{ if eq .AllowContainerExtfs true }}yes{{ else }}no{{ end }}
 allow container dir = {{ if eq .AllowContainerDir true }}yes{{ else }}no{{ end }}
-allow container encrypted = {{ if eq .AllowContainerEncrypted true }}yes{{ else }}no{{ end }}
 
 # ALLOW NET USERS: [STRING]
 # DEFAULT: NULL
@@ -434,4 +445,22 @@ shared loop devices = {{ if eq .SharedLoopDevices true }}yes{{ else }}no{{ end }
 # If the driver name specified has not been registered via a plugin installation
 # the run-time will abort.
 image driver = {{ .ImageDriver }}
+
+# DOWNLOAD CONCURRENCY: [UINT]
+# DEFAULT: 3
+# This option specifies how many concurrent streams when downloading (pulling)
+# an image from cloud library.
+download concurrency = {{ .DownloadConcurrency }}
+
+# DOWNLOAD PART SIZE: [UINT]
+# DEFAULT: 5242880
+# This option specifies the size of each part when concurrent downloads are
+# enabled.
+download part size = {{ .DownloadPartSize }}
+
+# DOWNLOAD BUFFER SIZE: [UINT]
+# DEFAULT: 32768
+# This option specifies the transfer buffer size when concurrent downloads
+# are enabled.
+download buffer size = {{ .DownloadBufferSize }}
 `
