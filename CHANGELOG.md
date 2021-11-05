@@ -1,6 +1,6 @@
 # SingularityCE Changelog
 
-## v3.9.0-rc.3 \[2021-11-04\]
+## v3.9.0-rc.3 \[2021-11-05\]
 
 This is a _release candidate_ for SingularityCE 3.9.0
 
