@@ -15,7 +15,9 @@ linters:
   disable-all: true
   enable-all: false
   enable:
+    - contextcheck
     - deadcode
+    - dupl
     - gofumpt
     - goimports
     - gosimple
@@ -25,8 +27,6 @@ linters:
     - nakedret
     - revive
     - staticcheck
-    # we would like to add these
-    # - dupl
 
 linters-settings:
   misspell:

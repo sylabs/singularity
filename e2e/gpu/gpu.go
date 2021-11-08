@@ -271,6 +271,7 @@ func (c ctx) testRocm(t *testing.T) {
 	}
 }
 
+//nolint:dupl
 func (c ctx) testBuildNvidiaLegacy(t *testing.T) {
 	require.Nvidia(t)
 
@@ -430,6 +431,7 @@ func (c ctx) testBuildNvCCLI(t *testing.T) {
 	}
 }
 
+//nolint:dupl
 func (c ctx) testBuildRocm(t *testing.T) {
 	require.Rocm(t)
 
