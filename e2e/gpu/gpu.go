@@ -93,7 +93,7 @@ func (c ctx) testNvidiaLegacy(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithProfile(tt.profile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.args...),
 			e2e.WithEnv(tt.env),
@@ -183,7 +183,7 @@ func (c ctx) testNvCCLI(t *testing.T) {
 		{
 			name:    "UserNamespace",
 			profile: e2e.UserNamespaceProfile,
-			args:    []string{"--nv", "--nvccli", imagePath, "nvidia-smi"},
+			args:    []string{"--nv", "--nvccli", "--writable", imagePath, "nvidia-smi"},
 		},
 		{
 			name:    "Root",
@@ -196,7 +196,7 @@ func (c ctx) testNvCCLI(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithProfile(tt.profile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.args...),
 			e2e.WithEnv(tt.env),
@@ -263,7 +263,7 @@ func (c ctx) testRocm(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithProfile(tt.profile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.args...),
 			e2e.ExpectExit(0),
