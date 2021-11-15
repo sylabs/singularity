@@ -1,67 +1,9 @@
 # SingularityCE Changelog
 
-## v3.9.0-rc.3 \[2021-11-05\]
+## v3.9.0 \[2021-11-16\]
 
-This is a _release candidate_ for SingularityCE 3.9.0
-
-### Changed defaults / behaviours
-
-- The behaviour of the `allow container` directives in `singularity.conf` has
-  been modified, to support more intuitive limitations on the usage of SIF and non-SIF
-  container images. If you use these directives, _you may need to make changes
-  to singularity.conf to preserve behaviour_.
-  - A new `allow container sif` directive permits or denies usage of
-    _unencrypted_ SIF images, irrespective of the filesystem(s) inside the SIF.
-  - The `allow container encrypted` directive permits or denies usage of SIF
-    images with an encrypted root filesystem.
-  - The `allow container squashfs/extfs` directives in `singularity.conf`
-    permit or deny usage of bare SquashFS and EXT image files only.
-  - The effect of the `allow container dir` directive is unchanged.
-
-### New features
-
-- Perform concurrent multi-part downloads for `library://` URIs. Uses 3
-  concurrent downloads by default, and is configurable in `singularity.conf` or
-  via environment variables.
-
-### Bug fixes
-
-- Ensure invalid values passed to `config global --set` cannot lead to an empty
-  configuration file being written.
-
-## v3.9.0-rc.2 \[2021-10-28\]
-
-This is a _release candidate_ for SingularityCE 3.9.0
-
-### Security related fixes
-
-- Due to trusting a path to an executable that was incorrectly
-  generated in code that could be manipulated by an unprivileged user,
-  privilege escalation was possible when using the new `--nvccli` GPU
-  configuration option. This vulnerability affected the 3.9.0-rc.1
-  release candidate only. Stable releases of SingularityCE are not
-  impacted.
-
-  All users who have installed 3.9.0-rc.1 should update to 3.9.0-rc.2
-
-  Thanks to @cclerget for reporting this issue.
-
-### Changed defaults / behaviours
-
-- The location of the `cryptsetup`, `ldconfig` and `nvidia-container-cli`
-  binaries are always taken from `singularity.conf`. No `$PATH` search is
-  performed.
-
-### Bug fixes
-
-- Ensure a build with `--nvccli` runs using `nvidia-container-cli` and
-  not the legacy gpu support.
-- Advise on limitations and provide workaround for inability to run
-  `%test` in `--fakeroot` `--nvccli` builds.
-
-## v3.9.0-rc.1 \[2021-10-14\]
-
-This is a _release candidate_ for SingularityCE 3.9.0
+This is the first release of SingularityCE 3.9, the Community Edition of the
+Singularity container runtime hosted at <https://github.com/sylabs/singularity>.
 
 ### Changed defaults / behaviours
 
@@ -87,10 +29,9 @@ This is a _release candidate_ for SingularityCE 3.9.0
 - Paths for `cryptsetup`, `go`, `ldconfig`, `mksquashfs`, `nvidia-container-cli`,
   `unsquashfs` are now found at build time by `mconfig` and written into
   `singularity.conf`. The path to these executables can be overridden by
-  changing the value in `singularity.conf`. If the path is not set in
-  `singularity.conf` then the the executable will be found by searching `$PATH`.
+  changing the value in `singularity.conf`.
 - When calling `ldconfig` to find GPU libraries, singularity will *not* fall back
-  to `/sbin/ldconfig` if the `ldconfig` on `$PATH` errors. If installing in a
+  to `/sbin/ldconfig` if the configured `ldconfig` errors. If installing in a
   Guix/Nix on environment on top of a standard host distribution you *must* set
   `ldconfig path = /sbin/ldconfig` to use the host distribution `ldconfig` to
   find GPU libraries.
@@ -104,26 +45,33 @@ This is a _release candidate_ for SingularityCE 3.9.0
 - Example log-plugin rewritten as a CLI callback that can log all commands
   executed, instead of only container execution, and has access to command
   arguments.
-- An invalid remote build source (bootstrap) will be identified before
-  attempting to submit the build.
 - The bundled reference CNI plugins are updated to v1.0.1. The `flannel` plugin
   is no longer included, as it is maintained as a separate plugin at:
   <https://github.com/flannel-io/cni-plugin>. If you use the flannel CNI plugin
   you should install it from this repository.
 - Instances are no longer created with an IPC namespace by default. An IPC
   namespace can be specified with the `-i|--ipc` flag.
+- The behaviour of the `allow container` directives in `singularity.conf` has
+  been modified, to support more intuitive limitations on the usage of SIF and non-SIF
+  container images. If you use these directives, _you may need to make changes
+  to singularity.conf to preserve behaviour_.
+  - A new `allow container sif` directive permits or denies usage of
+    _unencrypted_ SIF images, irrespective of the filesystem(s) inside the SIF.
+  - The `allow container encrypted` directive permits or denies usage of SIF
+    images with an encrypted root filesystem.
+  - The `allow container squashfs/extfs` directives in `singularity.conf`
+    permit or deny usage of bare SquashFS and EXT image files only.
+  - The effect of the `allow container dir` directive is unchanged.
 
 ### New features / functionalities
 
 - `--writable-tmpfs` can be used with `singularity build` to run the `%test`
   section of the build with a ephemeral tmpfs overlay, permitting tests that
   write to the container filesystem.
-- `--compat` flag for actions is a new short-hand to enable a number of
+- The `--compat` flag for actions is a new short-hand to enable a number of
   options that increase OCI/Docker compatibility. Infers `--containall,
   --no-init, --no-umask, --writable-tmpfs`. Does not use user, uts, or
   network namespaces as these may not be supported on many installations.
-- `--no-https` now applies to connections made to library services specified
-  in `--library://<hostname>/...` URIs.
 - `remote add --insecure` may be used to configure endpoints that are only
   accessible via http.
 - The experimental `--nvccli` flag will use `nvidia-container-cli` to setup the
@@ -148,11 +96,20 @@ This is a _release candidate_ for SingularityCE 3.9.0
   `type=bind,source=<src>,destination=<dst>[,options...]` format. This improves
   CLI compatibility with other runtimes, and allows binding paths containing
   `:` and `,` characters (using CSV style escaping).
+- Perform concurrent multi-part downloads for `library://` URIs. Uses 3
+  concurrent downloads by default, and is configurable in `singularity.conf` or
+  via environment variables.
 
 ### Bug fixes
 
 - The `oci` commands will operate on systems that use the v2 unified cgroups
   hierarchy.
+- Ensure invalid values passed to `config global --set` cannot lead to an empty
+  configuration file being written.
+- An invalid remote build source (bootstrap) will be identified before
+  attempting to submit the build.
+- `--no-https` now applies to connections made to library services specified
+  in `library://<hostname>/...` URIs.
 
 ## v3.8.4 \[2021-10-28\]
 
