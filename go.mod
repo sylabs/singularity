@@ -24,7 +24,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.4.2
-	github.com/gosimple/slug v1.11.0
+	github.com/gosimple/slug v1.11.2
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kr/pty v1.1.8
 	github.com/moby/sys/mount v0.2.0 // indirect
@@ -45,7 +45,7 @@ require (
 	github.com/sylabs/scs-build-client v0.2.1
 	github.com/sylabs/scs-key-client v0.7.1
 	github.com/sylabs/scs-library-client v1.2.0
-	github.com/sylabs/sif/v2 v2.2.3
+	github.com/sylabs/sif/v2 v2.3.0
 	github.com/urfave/cli v1.22.5 // indirect
 	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/vbauerster/mpb/v6 v6.0.4
