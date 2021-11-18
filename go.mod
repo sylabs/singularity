@@ -18,7 +18,7 @@ require (
 	github.com/containernetworking/plugins v1.0.1
 	github.com/containers/image/v5 v5.16.1
 	github.com/cyphar/filepath-securejoin v0.2.3
-	github.com/docker/docker v20.10.10+incompatible
+	github.com/docker/docker v20.10.11+incompatible
 	github.com/fatih/color v1.13.0
 	github.com/go-log/log v0.2.0
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
