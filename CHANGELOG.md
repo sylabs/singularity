@@ -1,5 +1,13 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### New features / functionalities
+
+- Updated seccomp support allows use of seccomp profiles that set an error
+  return code with `errnoRet` and `defaultErrnoRet`. Previously EPERM was hard
+  coded. The example `etc/seccomp-profiles/default.json` has been updated.
+
 ## v3.9.0 \[2021-11-16\]
 
 This is the first release of SingularityCE 3.9, the Community Edition of the
