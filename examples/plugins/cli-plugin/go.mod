@@ -1,9 +1,9 @@
 module github.com/sylabs/singularity/cli-example-plugin
 
-go 1.13
+go 1.16
 
 require (
-	github.com/spf13/cobra v1.1.3
+	github.com/spf13/cobra v1.2.1
 	github.com/sylabs/singularity v0.0.0
 )
 
