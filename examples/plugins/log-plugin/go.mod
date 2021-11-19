@@ -1,6 +1,6 @@
 module github.com/sylabs/singularity/log-plugin
 
-go 1.13
+go 1.16
 
 require (
 	github.com/spf13/cobra v1.2.1
