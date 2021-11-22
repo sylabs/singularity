@@ -107,10 +107,10 @@ cd singularity
 By default your clone will be on the `master` branch which is where development
 of SingularityCE happens. To build a specific version of SingularityCE, check
 out a [release tag](https://github.com/sylabs/singularity/tags) before
-compiling. E.g. to build the 3.9.0 release checkout the `v3.9.0` tag:
+compiling. E.g. to build the 3.9.1 release checkout the `v3.9.1` tag:
 
 ```sh
-git checkout v3.9.0
+git checkout v3.9.1
 ```
 
 ## Compiling SingularityCE
@@ -161,7 +161,7 @@ build and install the RPM like this:
 <!-- markdownlint-disable MD013 -->
 
 ```sh
-export VERSION=3.9.0  # this is the singularity version, change as you need
+export VERSION=3.9.1  # this is the singularity version, change as you need
 
 # Fetch the source
 wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-ce-${VERSION}.tar.gz
