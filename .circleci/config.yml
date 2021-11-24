@@ -27,6 +27,12 @@ executors:
   centos8:
     docker:
       - image: centos:8
+  ubuntu1804:
+    docker:
+      - image: ubuntu:18.04
+  ubuntu2004:
+    docker:
+      - image: ubuntu:20.04
   golangci-lint:
     docker:
       - image: golangci/golangci-lint:v1.43
@@ -237,6 +243,41 @@ jobs:
       - run:
           name: Run SingularityCE
           command: singularity version
+      - store_artifacts:
+          path: ~/rpmbuild/RPMS
+
+  build-deb:
+    parameters:
+      e:
+        type: executor
+    executor: << parameters.e >>
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |-
+            apt-get update
+            DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential git libseccomp-dev pkg-config squashfs-tools cryptsetup dh-golang devscripts fakeroot
+      - run:
+          name: Install Go
+          command: |-
+            curl -f -L -sS "https://dl.google.com/go/go<< pipeline.parameters.go-version >>.linux-amd64.tar.gz" | tar -z -x -C /usr/local/
+            echo "export PATH=$PATH:/usr/local/go/bin" >> $BASH_ENV
+      - run:
+          name: Build DEB
+          command: |- 
+            dpkg-buildpackage -b -rfakeroot -us -uc
+            mkdir -p ~/deb
+            cp ../*.deb ~/deb/
+      - run:
+          name: Install DEB
+          command: apt install -y ~/deb/*.deb
+      - run:
+          name: Run SingularityCE
+          command: singularity version
+      - store_artifacts:
+          path: ~/deb
+
 
 workflows:
   version: 2
@@ -254,3 +295,7 @@ workflows:
           matrix:
             parameters:
               e: ["centos7", "centos8"]
+      - build-deb:
+          matrix:
+            parameters:
+              e: ["ubuntu1804", "ubuntu2004"]
