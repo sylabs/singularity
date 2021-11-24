@@ -8,6 +8,20 @@
   return code with `errnoRet` and `defaultErrnoRet`. Previously EPERM was hard
   coded. The example `etc/seccomp-profiles/default.json` has been updated.
 
+## v3.9.1 \[2021-11-22\]
+
+This is a security release for SingularityCE 3.9, addressing a security issue in
+SingularityCE's dependencies.
+
+### Security Related Fixes
+
+- [CVE-2021-41190](https://github.com/advisories/GHSA-mc8v-mgrf-8f4m) /
+  [GHSA-77vh-xpmg-72qh](https://github.com/opencontainers/image-spec/security/advisories/GHSA-77vh-xpmg-72qh):
+  OCI specifications allow ambiguous documents that contain both "manifests" and
+  "layers" fields. Interpretation depends on the presence / value of a
+  Content-Type header. SingularityCE dependencies handling the retrieval of OCI
+  images have been updated to versions that reject ambiguous documents.
+
 ## v3.9.0 \[2021-11-16\]
 
 This is the first release of SingularityCE 3.9, the Community Edition of the
