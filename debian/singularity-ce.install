@@ -1,0 +1,15 @@
+usr/bin/singularity
+usr/bin/run-singularity
+usr/lib/*/singularity/bin/starter
+usr/lib/*/singularity/bin/starter-suid
+usr/lib/*/singularity/cni/*
+etc/singularity/*.conf
+etc/singularity/*.toml
+etc/singularity/*.json
+etc/singularity/*.yaml
+etc/singularity/global-pgp-public
+etc/singularity/cgroups/*
+etc/singularity/network/*
+etc/singularity/seccomp-profiles/*
+#etc/bash_completion.d/singularity/*
+var/lib/singularity/mnt/session
