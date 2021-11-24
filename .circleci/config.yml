@@ -257,7 +257,7 @@ jobs:
           name: Install dependencies
           command: |-
             apt-get update
-            DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential git libseccomp-dev pkg-config squashfs-tools cryptsetup dh-golang fakeroot
+            DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential git libseccomp-dev pkg-config squashfs-tools cryptsetup dh-golang devscripts fakeroot
       - run:
           name: Install Go
           command: |-
@@ -266,8 +266,6 @@ jobs:
       - run:
           name: Build DEB
           command: |- 
-            CODENAME=$(awk -F "=" '/VERSION_CODENAME=/ {print $2}' /etc/os-release)
-            sed -i "s/@CODENAME@/${CODENAME}/" debian/changelog
             dpkg-buildpackage -b -rfakeroot -us -uc
             mkdir -p ~/deb
             cp ../*.deb ~/deb/

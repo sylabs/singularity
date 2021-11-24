@@ -1,9 +1,9 @@
 Source: singularity-ce
 Section: admin
 Priority: optional
-Maintainer: Sylabs Inc. <community@sylabs.io>
+Maintainer: Sylabs Community Packaging <community@sylabs.io>
 Uploaders:
-  David C. Trudgian <david.trudgian@sylabs.io>
+  Sylabs Community Packaging <community@sylabs.io>
 Build-Depends:
  cryptsetup,
  git,

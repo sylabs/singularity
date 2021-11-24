@@ -1,4 +1,4 @@
-singularity-ce (3.9.1-@CODENAME@) unstable; urgency=high
+singularity-ce (3.9.1) unstable; urgency=high
 
   * See: https://github.com/sylabs/singularity/blob/master/CHANGELOG.md
 

@@ -1,8 +1,7 @@
 #!/usr/bin/make -f
 
-srcpkg = $(shell LC_ALL=C dpkg-parsechangelog | grep '^Source:' | cut -d ' ' -f 2,2)
-debver = $(shell LC_ALL=C dpkg-parsechangelog | grep '^Version:' | cut -d ' ' -f 2,2 )
-uver = $(shell echo $(debver) | cut -d '-' -f 1,1 )
+srcver = $(shell scripts/get-version)
+dist   = $(shell lsb_release -s -c)
 
 DH_VERBOSE=1
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
@@ -37,6 +36,10 @@ override_dh_auto_clean:
 	dh_auto_clean
 
 override_dh_auto_configure:
+# Override the changelog file by adding an entry for our git-derived version number
+	dch -D unstable -v "$(srcver)-$(dist)" -M "See: https://github.com/sylabs/singularity/blob/master/CHANGELOG.md"
+	dch -r ""
+
 	dh_auto_configure --builddirectory=_build
 # Reset permissions lost in the copy to _build/src on Ubuntu
 	cd $(SRCDIR)/$(DH_GOPKG) && \
@@ -46,7 +49,7 @@ override_dh_auto_configure:
 	cd $(SRCDIR)/$(DH_GOPKG) && \
 	./mconfig -v \
 	  -b builddir \
-	  -V $(debver) \
+	  -V $(srcver)-$(dist) \
 	  --prefix=/usr \
 	  --sysconfdir=/etc \
 	  --libexecdir=/usr/lib/$(DEB_HOST_MULTIARCH) \
@@ -63,8 +66,6 @@ override_dh_auto_install:
 # install standard build
 	cd $(SRCDIR)/$(DH_GOPKG) && \
 	make -C builddir install
-
-override_dh_installman:
 
 override_dh_fixperms:
 # dh_install copies from debian/tmp into debian/<package name> in the multi-package
