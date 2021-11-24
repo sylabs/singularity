@@ -1,0 +1,77 @@
+#!/usr/bin/make -f
+
+srcver = $(shell scripts/get-version)
+dist   = $(shell lsb_release -s -c)
+
+DH_VERBOSE=1
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# Set a package name for dh-golang equal to the repo name
+# The name doesn't really matter as we aren't doing a GOPATH build
+# and are using modules
+export DH_GOPKG=singularity-ce
+# Make sure all files are copied into the _build/src dir
+export DH_GOLANG_INSTALL_ALL := 1
+
+# Build out of the main source tree
+BUILDDIR = $(CURDIR)/_build
+SRCDIR = $(BUILDDIR)/src
+
+# Force use of a GO in /usr/local/go - the distro Go is likely to be too old
+export PATH := /usr/local/go/bin:$(PATH)
+
+# Install to debian/tmp as dh_install will then split from there into
+# multiple packages according to our <package>.install files.
+export DESTDIR=$(CURDIR)/debian/tmp
+
+# Use a GOPATH that's independent of anything that's already set
+export GOPATH=$(CURDIR)/_build/gopath
+
+%:
+	dh $@ --builddirectory=$(BUILDDIR) --buildsystem=golang
+
+override_dh_auto_clean:
+# Go makes some pkg cache etc. read-only, chmod before we try to remove
+	-chmod -R +w _build
+	dh_auto_clean
+
+override_dh_auto_configure:
+# Override the changelog file by adding an entry for our git-derived version number
+	dch -D unstable -v "$(srcver)-$(dist)" -M "See: https://github.com/sylabs/singularity/blob/master/CHANGELOG.md"
+	dch -r ""
+
+	dh_auto_configure --builddirectory=_build
+# Reset permissions lost in the copy to _build/src on Ubuntu
+	cd $(SRCDIR)/$(DH_GOPKG) && \
+	chmod +x mconfig scripts/* makeit/* e2e/testdata/*.sh
+
+# Configure the standard build
+	cd $(SRCDIR)/$(DH_GOPKG) && \
+	./mconfig -v \
+	  -b builddir \
+	  -V $(srcver)-$(dist) \
+	  --prefix=/usr \
+	  --sysconfdir=/etc \
+	  --libexecdir=/usr/lib/$(DEB_HOST_MULTIARCH) \
+	  --localstatedir=/var/lib
+
+override_dh_auto_build:
+# build standard install
+	cd $(SRCDIR)/$(DH_GOPKG) && \
+	make -C builddir
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+# install standard build
+	cd $(SRCDIR)/$(DH_GOPKG) && \
+	make -C builddir install
+
+override_dh_fixperms:
+# dh_install copies from debian/tmp into debian/<package name> in the multi-package
+# flow, and we need to set the suid perms in the final location, as we are running
+# after this copy/split has happened.
+	dh_fixperms
+# perms for standard build
+	chown root.root $(CURDIR)/debian/singularity-ce/usr/lib/$(DEB_HOST_MULTIARCH)/singularity/bin/*
+	chmod 4755 $(CURDIR)/debian/singularity-ce/usr/lib/$(DEB_HOST_MULTIARCH)/singularity/bin/*-suid

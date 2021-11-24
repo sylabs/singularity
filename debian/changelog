@@ -1,0 +1,5 @@
+singularity-ce (3.9.1) unstable; urgency=high
+
+  * See: https://github.com/sylabs/singularity/blob/master/CHANGELOG.md
+
+ -- Sylabs Community Packaging <community@sylabs.io>  Wed, 24 Nov 2021 12:00:00 +0000

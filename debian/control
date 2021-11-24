@@ -1,0 +1,31 @@
+Source: singularity-ce
+Section: admin
+Priority: optional
+Maintainer: Sylabs Community Packaging <community@sylabs.io>
+Uploaders:
+  Sylabs Community Packaging <community@sylabs.io>
+Build-Depends:
+ cryptsetup,
+ git,
+ libseccomp-dev,
+ pkg-config,
+ squashfs-tools
+Standards-Version: 3.9.8
+Homepage: https://sylabs.io/singularity
+Vcs-Git: https://github.com/sylabs/singularity.git
+Vcs-Browser: https://github.com/sylabs/singularity
+
+Package: singularity-ce
+Architecture: any
+Depends: ${misc:Depends}, ${shlibs:Depends}, cryptsetup-bin, squashfs-tools
+Conflicts:
+ singularity-container,
+ singularitypro24,
+ singularitypro25,
+ singularitypro26,
+ singularitypro31,
+ singularitypro35,
+ singularitypro37,
+ singularitypro39
+Description: SingularityCE is the Community Edition of Singularity, an
+ open source container platform designed to be simple, fast, and secure. 
