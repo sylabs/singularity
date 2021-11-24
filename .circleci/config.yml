@@ -244,7 +244,7 @@ jobs:
           name: Run SingularityCE
           command: singularity version
       - store_artifacts:
-          path: ../rpmbuild/RPMS
+          path: ~/rpmbuild/RPMS
 
   build-deb:
     parameters:
