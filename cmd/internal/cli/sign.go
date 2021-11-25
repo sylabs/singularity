@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	privKey int // -k encryption key (index from 'keys list') specification
+	privKey int // -k encryption key (index from 'key list --secret') specification
 	signAll bool
 )
 
@@ -68,7 +68,7 @@ var signKeyIdxFlag = cmdline.Flag{
 	DefaultValue: 0,
 	Name:         "keyidx",
 	ShortHand:    "k",
-	Usage:        "private key to use (index from 'key list')",
+	Usage:        "private key to use (index from 'key list --secret')",
 }
 
 // -a|--all (deprecated)
