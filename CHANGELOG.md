@@ -9,6 +9,7 @@
   definition files (via dependency update).
 - Ensure a local build does not fail unnecessarily if a keyserver
   config cannot be retrieved from the remote endpoint.
+- Correct documentation for sign command r.e. source of key index.
 
 ## v3.9.1 \[2021-11-22\]
 
