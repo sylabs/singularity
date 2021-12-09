@@ -1,5 +1,11 @@
 # SingularityCE Changelog
 
+## v3.9.2 \[2021-12-10\]
+
+### Bug fixes
+
+- Ensure `gengodep` in build uses vendor dir when present.
+
 ## v3.9.1 \[2021-11-22\]
 
 This is a security release for SingularityCE 3.9, addressing a security issue in
