@@ -5,6 +5,8 @@
 ### Bug fixes
 
 - Ensure `gengodep` in build uses vendor dir when present.
+- Fix `source` of a script on `PATH` and scoping of environment variables in
+  definition files (via dependency update).
 
 ## v3.9.1 \[2021-11-22\]
 
