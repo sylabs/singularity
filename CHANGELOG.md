@@ -8,6 +8,11 @@
   return code with `errnoRet` and `defaultErrnoRet`. Previously EPERM was hard
   coded. The example `etc/seccomp-profiles/default.json` has been updated.
 
+### Bug Fixes
+
+- Ensure a local build does not fail unnecessarily if a keyserver
+  config cannot be retrieved from the remote endpoint.
+
 ## v3.9.1 \[2021-11-22\]
 
 This is a security release for SingularityCE 3.9, addressing a security issue in
