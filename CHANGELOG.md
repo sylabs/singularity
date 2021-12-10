@@ -8,10 +8,20 @@
   return code with `errnoRet` and `defaultErrnoRet`. Previously EPERM was hard
   coded. The example `etc/seccomp-profiles/default.json` has been updated.
 
-### Bug Fixes
+## v3.9.2 \[2021-12-10\]
 
+### Bug fixes
+
+- Ensure `gengodep` in build uses vendor dir when present.
+- Fix `source` of a script on `PATH` and scoping of environment variables in
+  definition files (via dependency update).
 - Ensure a local build does not fail unnecessarily if a keyserver
   config cannot be retrieved from the remote endpoint.
+- Correct documentation for sign command r.e. source of key index.
+- Restructure loop device discovery to address an issue where a transient `EBUSY`
+  error could lead to failure under Arvados. Also greedily try for a working
+  loop device, rather than perform delayed retries on encountering `EAGAIN`,
+  since we hold an exclusive lock which can block other processes.
 
 ## v3.9.1 \[2021-11-22\]
 
