@@ -7,6 +7,8 @@
 - Ensure `gengodep` in build uses vendor dir when present.
 - Fix `source` of a script on `PATH` and scoping of environment variables in
   definition files (via dependency update).
+- Ensure a local build does not fail unnecessarily if a keyserver
+  config cannot be retrieved from the remote endpoint.
 
 ## v3.9.1 \[2021-11-22\]
 
