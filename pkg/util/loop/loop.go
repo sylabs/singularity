@@ -222,6 +222,7 @@ func (loop *Device) attachLoop(image *os.File, mode int, number *int) error {
 		}
 
 		if _, _, err := syscall.Syscall(syscall.SYS_FCNTL, uintptr(loopFd), syscall.F_SETFD, syscall.FD_CLOEXEC); err != 0 {
+			syscall.Close(loopFd)
 			return fmt.Errorf("failed to set close-on-exec on loop device %s: %s", path, err.Error())
 		}
 
@@ -230,6 +231,7 @@ func (loop *Device) attachLoop(image *os.File, mode int, number *int) error {
 			syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopFd), CmdClrFd, 0)
 			// EAGAIN and EBUSY will likely clear themselves... so track we hit one and keep trying
 			if err == syscall.EAGAIN || err == syscall.EBUSY {
+				syscall.Close(loopFd)
 				sylog.Debugf("transient error %v for loop device %d, continuing", err, device)
 				transientError = err
 				continue
