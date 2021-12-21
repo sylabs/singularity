@@ -8,6 +8,11 @@
   return code with `errnoRet` and `defaultErrnoRet`. Previously EPERM was hard
   coded. The example `etc/seccomp-profiles/default.json` has been updated.
 
+### Bug fixes
+
+- Ensure MIGs are visible with `--nvccli` in non-contained mode, to match the
+  legacy GPU binding behaviour.
+
 ## v3.9.2 \[2021-12-10\]
 
 ### Bug fixes
