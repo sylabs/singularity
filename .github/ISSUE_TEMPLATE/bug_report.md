@@ -11,7 +11,7 @@ assignees: ''
 What version of Singularity are you using? Run:
 
 ```
-$ singularity version
+$ singularity --version
 ```
 
 **Describe the bug**
