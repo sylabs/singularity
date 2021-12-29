@@ -1,5 +1,13 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug fixes
+
+- Ensure MIGs are visible with `--nvccli` in non-contained mode, to match the
+  legacy GPU binding behaviour.
+- Avoid fd leak in loop device transient error path.
+
 ## v3.9.2 \[2021-12-10\]
 
 ### Bug fixes
