@@ -1,6 +1,12 @@
 # SingularityCE Changelog
 
-## v3.9.3 \[2021-01-11\]
+## v3.9.4 \[2022-01-19\]
+
+### Bug fixes
+
+- Address timeout in library pull single stream download.
+
+## v3.9.3 \[2022-01-11\]
 
 ### Bug fixes
 
