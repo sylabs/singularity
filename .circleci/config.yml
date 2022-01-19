@@ -265,7 +265,7 @@ jobs:
             echo "export PATH=$PATH:/usr/local/go/bin" >> $BASH_ENV
       - run:
           name: Build DEB
-          command: |- 
+          command: |-
             dpkg-buildpackage -b -rfakeroot -us -uc
             mkdir -p ~/deb
             cp ../*.deb ~/deb/
