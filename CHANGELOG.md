@@ -8,6 +8,12 @@
   return code with `errnoRet` and `defaultErrnoRet`. Previously EPERM was hard
   coded. The example `etc/seccomp-profiles/default.json` has been updated.
 
+## v3.9.4 \[2022-01-19\]
+
+### Bug fixes
+
+- Address timeout in library pull single stream download.
+
 ## v3.9.3 \[2022-01-11\]
 
 ### Bug fixes
