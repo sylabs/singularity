@@ -38,7 +38,7 @@ override_dh_auto_clean:
 override_dh_auto_configure:
 # Override the changelog file by adding an entry for our git-derived version number
 	dch -D unstable -v "$(srcver)-$(dist)" -M "See: https://github.com/sylabs/singularity/blob/master/CHANGELOG.md"
-	dch -r ""
+	dch -r "" -M
 
 	dh_auto_configure --builddirectory=_build
 # Reset permissions lost in the copy to _build/src on Ubuntu
