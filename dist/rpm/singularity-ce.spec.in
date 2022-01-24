@@ -115,8 +115,7 @@ cd %{name}-%{version}
 export GOPATH=$PWD/gopath
 cd %{name}-@PACKAGE_VERSION@
 
-mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
-make -C builddir DESTDIR=$RPM_BUILD_ROOT install man
+make -C builddir DESTDIR=$RPM_BUILD_ROOT install
 
 %files
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/starter-suid
