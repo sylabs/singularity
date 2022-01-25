@@ -2,6 +2,11 @@
 
 ## Changes Since Last Release
 
+### Changed defaults / behaviours
+
+- `make install` now installs man pages. A separate `make man` is not
+  required.
+
 ### New features / functionalities
 
 - Updated seccomp support allows use of seccomp profiles that set an error

@@ -1,0 +1,2 @@
+singularity-ce: binary-without-manpage usr/bin/run-singularity
+singularity-ce: setuid-binary usr/lib/x86_64-linux-gnu/singularity/bin/starter-suid 4755 root/root
