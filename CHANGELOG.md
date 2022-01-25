@@ -13,6 +13,11 @@
   return code with `errnoRet` and `defaultErrnoRet`. Previously EPERM was hard
   coded. The example `etc/seccomp-profiles/default.json` has been updated.
 
+### Bug fixes
+
+- Don't prompt for y/n to overwrite an existing file when build is
+  called from a non-interactive environment. Fail with an error.
+
 ## v3.9.4 \[2022-01-19\]
 
 ### Bug fixes

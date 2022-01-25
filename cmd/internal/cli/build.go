@@ -11,6 +11,7 @@ import (
 	"io/ioutil"
 	"os"
 	"runtime"
+	"syscall"
 
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
@@ -26,6 +27,7 @@ import (
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/sylog"
+	"golang.org/x/term"
 )
 
 var buildArgs struct {
@@ -379,6 +381,10 @@ func checkBuildTarget(path string) error {
 			}
 		}
 		if !buildArgs.update && !forceOverwrite {
+			// If non-interactive, die... don't try to prompt the user y/n
+			if !term.IsTerminal(syscall.Stdin) {
+				return fmt.Errorf("build target '%s' already exists. Use --force if you want to overwrite it", f.Name())
+			}
 
 			question := fmt.Sprintf("Build target '%s' already exists and will be deleted during the build process. Do you want to continue? [N/y] ", f.Name())
 
