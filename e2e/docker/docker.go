@@ -285,9 +285,9 @@ func (c ctx) testDockerDefFile(t *testing.T) {
 			from:                "centos:7",
 		},
 		{
-			name:                "CentOS_8",
+			name:                "AlmaLinux_8",
 			kernelMajorRequired: 3,
-			from:                "centos:8",
+			from:                "almalinux:8",
 		},
 		{
 			name:                "Ubuntu_1604",

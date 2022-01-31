@@ -1,5 +1,5 @@
 BootStrap: docker
-From: centos:8
+From: almalinux:8
 
 %post
     # Set build time env variable
