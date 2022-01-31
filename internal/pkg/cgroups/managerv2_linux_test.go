@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -18,22 +18,28 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
+//nolint:dupl
 func TestCgroupsV2(t *testing.T) {
 	test.EnsurePrivilege(t)
-	require.CgroupsV2(t)
+	require.CgroupsV2Unified(t)
 
 	// Create process to put into a cgroup
 	cmd := exec.Command("/bin/cat", "/dev/zero")
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}
-	defer cmd.Process.Kill()
 
 	pid := cmd.Process.Pid
 	strPid := strconv.Itoa(pid)
 	group := filepath.Join("/singularity", strPid)
 
-	manager := &ManagerV2{pid: pid, group: group}
+	manager := &ManagerLC{pid: pid, group: group}
+
+	defer func() {
+		cmd.Process.Kill()
+		cmd.Process.Wait()
+		manager.Remove()
+	}()
 
 	// Example sets various things - we will check [pids] limit = 1024
 	cgroupsToml := "example/cgroups.toml"
@@ -49,11 +55,10 @@ func TestCgroupsV2(t *testing.T) {
 	if err := manager.ApplyFromFile(cgroupsToml); err != nil {
 		t.Fatal(err)
 	}
-	defer manager.Remove()
 
 	// For cgroups v2 [pids] limit -> pids.max
 	// Check for correct 1024 value
-	pidsMax := filepath.Join(mountPoint, group, "pids.max")
+	pidsMax := filepath.Join("/sys/fs/cgroup", group, "pids.max")
 	ensureIntInFile(t, pidsMax, 1024)
 
 	// Write a new config with [pids] limit = 512
@@ -71,7 +76,7 @@ func TestCgroupsV2(t *testing.T) {
 	}
 
 	// test update/load from PID
-	manager = &ManagerV2{pid: pid}
+	manager = &ManagerLC{pid: pid}
 
 	// Update existing cgroup from new config
 	if err := manager.UpdateFromFile(tmpfile.Name()); err != nil {
@@ -82,11 +87,12 @@ func TestCgroupsV2(t *testing.T) {
 	ensureIntInFile(t, pidsMax, 512)
 }
 
+//nolint:dupl
 func TestPauseResumeV2(t *testing.T) {
 	test.EnsurePrivilege(t)
-	require.CgroupsV2(t)
+	require.CgroupsV2Unified(t)
 
-	manager := &ManagerV2{}
+	manager := &ManagerLC{}
 	if err := manager.Pause(); err == nil {
 		t.Errorf("unexpected success with PID 0")
 	}
@@ -98,22 +104,26 @@ func TestPauseResumeV2(t *testing.T) {
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}
-	defer cmd.Process.Kill()
 
 	manager.pid = cmd.Process.Pid
 	manager.group = filepath.Join("/singularity", strconv.Itoa(manager.pid))
 
+	defer func() {
+		cmd.Process.Kill()
+		cmd.Process.Wait()
+		manager.Remove()
+	}()
+
 	if err := manager.ApplyFromFile("example/cgroups.toml"); err != nil {
 		t.Fatal(err)
 	}
-	defer manager.Remove()
 
 	manager.Pause()
 	// cgroups v2 freeze is to interruptible sleep, which could actually occur
 	// for our cat /dev/zero while it's running, so check freeze marker as well
 	// as the process state here.
 	ensureState(t, manager.pid, "S")
-	freezePath := path.Join(mountPoint, manager.group, "cgroup.freeze")
+	freezePath := path.Join("/sys/fs/cgroup", manager.group, "cgroup.freeze")
 	ensureIntInFile(t, freezePath, 1)
 
 	manager.Resume()

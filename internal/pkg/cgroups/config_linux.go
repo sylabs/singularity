@@ -17,8 +17,6 @@ func Int64ptr(i int) *int64 {
 	return &t
 }
 
-var wildcard = Int64ptr(-1)
-
 // LinuxHugepageLimit structure corresponds to limiting kernel hugepages
 type LinuxHugepageLimit struct {
 	// Pagesize is the hugepage size

@@ -9,8 +9,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/containerd/cgroups"
 	cseccomp "github.com/containers/common/pkg/seccomp"
+	"github.com/opencontainers/runc/libcontainer/cgroups"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
@@ -39,7 +39,7 @@ func (c *Config) UnmarshalJSON(b []byte) error {
 // DefaultConfig returns an OCI config generator with a
 // default OCI configuration for cgroups v1 or v2 dependent on the current host.
 func DefaultConfig() (*generate.Generator, error) {
-	if cgroups.Mode() == cgroups.Unified {
+	if cgroups.IsCgroup2HybridMode() {
 		return DefaultConfigV2()
 	}
 	return DefaultConfigV1()
