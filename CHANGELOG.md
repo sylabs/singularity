@@ -6,6 +6,10 @@
 
 - `make install` now installs man pages. A separate `make man` is not
   required.
+- `oci mount` sets `Process.Terminal: true` when creating an OCI `config.json`,
+  so that `oci run` provides expected interactive behavior by default.
+- Default hostname for `oci mount` containers is now `singularity` instead of
+  `mrsdalloway`.
 
 ### New features / functionalities
 
