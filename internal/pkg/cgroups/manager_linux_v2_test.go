@@ -18,6 +18,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
+// This file contains tests that will run under cgroups v2 only.
+
 //nolint:dupl
 func TestCgroupsV2(t *testing.T) {
 	test.EnsurePrivilege(t)
@@ -33,15 +35,6 @@ func TestCgroupsV2(t *testing.T) {
 	strPid := strconv.Itoa(pid)
 	group := filepath.Join("/singularity", strPid)
 
-	manager := &ManagerLC{pid: pid, group: group}
-
-	defer func() {
-		cmd.Process.Kill()
-		cmd.Process.Wait()
-		manager.Remove()
-	}()
-
-	// Example sets various things - we will check [pids] limit = 1024
 	cgroupsToml := "example/cgroups.toml"
 	// Some systems, e.g. ppc64le may not have a 2MB page size, so don't
 	// apply a 2MB hugetlb limit if that's the case.
@@ -51,10 +44,16 @@ func TestCgroupsV2(t *testing.T) {
 		cgroupsToml = "example/cgroups-no-hugetlb.toml"
 	}
 
-	// Create a new cgroup with example config
-	if err := manager.ApplyFromFile(cgroupsToml); err != nil {
+	manager, err := NewManagerWithFile(cgroupsToml, pid, group)
+	if err != nil {
 		t.Fatal(err)
 	}
+
+	defer func() {
+		cmd.Process.Kill()
+		cmd.Process.Wait()
+		manager.Destroy()
+	}()
 
 	// For cgroups v2 [pids] limit -> pids.max
 	// Check for correct 1024 value
@@ -75,8 +74,10 @@ func TestCgroupsV2(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// test update/load from PID
-	manager = &ManagerLC{pid: pid}
+	manager, err = GetManagerForPid(pid)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Update existing cgroup from new config
 	if err := manager.UpdateFromFile(tmpfile.Name()); err != nil {
@@ -92,11 +93,11 @@ func TestPauseResumeV2(t *testing.T) {
 	test.EnsurePrivilege(t)
 	require.CgroupsV2Unified(t)
 
-	manager := &ManagerLC{}
-	if err := manager.Pause(); err == nil {
+	manager := &Manager{}
+	if err := manager.Freeze(); err == nil {
 		t.Errorf("unexpected success with PID 0")
 	}
-	if err := manager.Resume(); err == nil {
+	if err := manager.Thaw(); err == nil {
 		t.Errorf("unexpected success with PID 0")
 	}
 
@@ -105,28 +106,27 @@ func TestPauseResumeV2(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	manager.pid = cmd.Process.Pid
-	manager.group = filepath.Join("/singularity", strconv.Itoa(manager.pid))
+	group := filepath.Join("/singularity", strconv.Itoa(cmd.Process.Pid))
+	manager, err := NewManagerWithFile("example/cgroups.toml", cmd.Process.Pid, group)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	defer func() {
 		cmd.Process.Kill()
 		cmd.Process.Wait()
-		manager.Remove()
+		manager.Destroy()
 	}()
 
-	if err := manager.ApplyFromFile("example/cgroups.toml"); err != nil {
-		t.Fatal(err)
-	}
-
-	manager.Pause()
+	manager.Freeze()
 	// cgroups v2 freeze is to interruptible sleep, which could actually occur
 	// for our cat /dev/zero while it's running, so check freeze marker as well
 	// as the process state here.
-	ensureState(t, manager.pid, "S")
+	ensureState(t, cmd.Process.Pid, "S")
 	freezePath := path.Join("/sys/fs/cgroup", manager.group, "cgroup.freeze")
 	ensureIntInFile(t, freezePath, 1)
 
-	manager.Resume()
-	ensureState(t, manager.pid, "RS")
+	manager.Thaw()
+	ensureState(t, cmd.Process.Pid, "RS")
 	ensureIntInFile(t, freezePath, 0)
 }
