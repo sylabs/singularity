@@ -24,9 +24,9 @@ executors:
   centos7:
     docker:
       - image: centos:7
-  centos8:
+  almalinux8:
     docker:
-      - image: centos:8
+      - image: almalinux:8
   ubuntu1804:
     docker:
       - image: ubuntu:18.04
@@ -294,7 +294,7 @@ workflows:
       - build-rpm:
           matrix:
             parameters:
-              e: ["centos7", "centos8"]
+              e: ["centos7", "almalinux8"]
       - build-deb:
           matrix:
             parameters:
