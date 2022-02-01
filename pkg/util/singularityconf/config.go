@@ -73,6 +73,7 @@ type File struct {
 	DownloadConcurrency     uint     `default:"3" directive:"download concurrency"`
 	DownloadPartSize        uint     `default:"5242880" directive:"download part size"`
 	DownloadBufferSize      uint     `default:"32768" directive:"download buffer size"`
+	SystemdCgroups          bool     `default:"yes" authorized:"yes,no" directive:"systemd cgroups"`
 }
 
 const TemplateAsset = `# SINGULARITY.CONF
@@ -463,4 +464,10 @@ download part size = {{ .DownloadPartSize }}
 # This option specifies the transfer buffer size when concurrent downloads
 # are enabled.
 download buffer size = {{ .DownloadBufferSize }}
+
+# SYSTEMD CGROUPS: [BOOL]
+# DEFAULT: yes
+# Whether to use systemd to manage container cgroups. Required for rootless cgroups
+# functionality. 'no' will manage cgroups directly via cgroupfs.
+systemd cgroups = {{ if eq .SystemdCgroups true }}yes{{ else }}no{{ end }}
 `
