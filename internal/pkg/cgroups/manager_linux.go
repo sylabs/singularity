@@ -67,8 +67,7 @@ func (m *Manager) GetCgroupRootPath() (rootPath string, err error) {
 }
 
 // UpdateFromSpec updates the existing managed cgroup using configuration from
-// an OCI LinuxResources spec struct. The `Unified` key for native v2 cgroup
-// specifications is not yet supported.
+// an OCI LinuxResources spec struct.
 func (m *Manager) UpdateFromSpec(resources *specs.LinuxResources) (err error) {
 	if m.group == "" || m.cgroup == nil {
 		return ErrUnitialized
@@ -106,7 +105,7 @@ func (m *Manager) UpdateFromSpec(resources *specs.LinuxResources) (err error) {
 func (m *Manager) UpdateFromFile(path string) error {
 	spec, err := LoadResources(path)
 	if err != nil {
-		return err
+		return fmt.Errorf("while loading cgroups file %s: %w", path, err)
 	}
 	return m.UpdateFromSpec(&spec)
 }
