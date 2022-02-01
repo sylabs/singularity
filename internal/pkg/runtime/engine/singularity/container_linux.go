@@ -54,7 +54,7 @@ var (
 	networkSetup   *network.Setup
 	imageDriver    image.Driver
 	umountPoints   []string
-	cgroupsManager cgroups.Manager
+	cgroupsManager *cgroups.Manager
 )
 
 // defaultCNIConfPath is the default directory to CNI network configuration files.
@@ -299,7 +299,7 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 	if os.Geteuid() == 0 && !c.userNS {
 		path := engine.EngineConfig.GetCgroupsPath()
 		if path != "" {
-			cgroupsManager, err = cgroups.NewManagerFromFile(path, pid, "")
+			cgroupsManager, err = cgroups.NewManagerWithFile(path, pid, "")
 			if err != nil {
 				return fmt.Errorf("while applying cgroups config: %v", err)
 			}
