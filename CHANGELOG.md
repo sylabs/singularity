@@ -12,7 +12,9 @@
 - GitHub .deb packages correctly include man pages.
 - Update dependency to correctly unset variables in container startup
   environment processing. Fixes regression in v3.9.2.
-
+- Remove subshell overhead when processing large environments on container
+  startup.
+  
 ## v3.9.4 \[2022-01-19\]
 
 ### Bug fixes
