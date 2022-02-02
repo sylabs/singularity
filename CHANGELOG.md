@@ -21,6 +21,8 @@
 
 - Don't prompt for y/n to overwrite an existing file when build is
   called from a non-interactive environment. Fail with an error.
+- Update dependency to correctly unset variables in container startup
+  environment processing. Fixes regression in v3.9.2.
 
 ## v3.9.4 \[2022-01-19\]
 
