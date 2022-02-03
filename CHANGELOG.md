@@ -1,5 +1,16 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Changed defaults / behaviours
+
+- `make install` now installs man pages. A separate `make man` is not
+  required.
+
+### Bug fixes
+
+- GitHub .deb packages correctly include man pages.
+
 ## v3.9.4 \[2022-01-19\]
 
 ### Bug fixes

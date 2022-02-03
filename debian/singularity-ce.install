@@ -13,3 +13,4 @@ etc/singularity/network/*
 etc/singularity/seccomp-profiles/*
 #etc/bash_completion.d/singularity/*
 var/lib/singularity/mnt/session
+usr/share/man/man1/singularity*
