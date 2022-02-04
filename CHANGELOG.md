@@ -1,6 +1,6 @@
 # SingularityCE Changelog
 
-## Changes Since Last Release
+## v3.9.5 \[2022-02-04\]
 
 ### Changed defaults / behaviours
 
