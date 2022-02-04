@@ -10,6 +10,8 @@
 ### Bug fixes
 
 - GitHub .deb packages correctly include man pages.
+- Update dependency to correctly unset variables in container startup
+  environment processing. Fixes regression in v3.9.2.
 
 ## v3.9.4 \[2022-01-19\]
 
