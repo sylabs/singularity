@@ -85,3 +85,19 @@ $(remote_config_INSTALL): $(remote_config)
 	$(V)install -m 0644 $< $@
 
 INSTALLFILES += $(remote_config_INSTALL)
+
+man_pages := $(BUILDDIR)$(MANDIR)/man1
+$(man_pages): singularity
+	@echo " MAN" $@
+	mkdir -p $@
+	$(V)$(GO) run $(GO_MODFLAGS) -tags "$(GO_TAGS)" $(GO_GCFLAGS) $(GO_ASMFLAGS) \
+		$(SOURCEDIR)/cmd/docs/docs.go man --dir $@
+
+man_pages_INSTALL := $(DESTDIR)$(MANDIR)/man1
+$(man_pages_INSTALL): $(man_pages)
+	@echo " INSTALL" $@
+	$(V)umask 0022 && mkdir -p $@
+	$(V)install -m 0644 -t $@ $(man_pages)/*
+
+INSTALLFILES += $(man_pages_INSTALL)
+ALL += $(man_pages)
