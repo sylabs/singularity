@@ -12,6 +12,8 @@
 - Updated seccomp support allows use of seccomp profiles that set an error
   return code with `errnoRet` and `defaultErrnoRet`. Previously EPERM was hard
   coded. The example `etc/seccomp-profiles/default.json` has been updated.
+- Native cgroups v2 resource limits can be specified using the `[unified]` key
+  in a cgroups toml file applied via `--apply-cgroups`.
 
 ### Bug fixes
 
