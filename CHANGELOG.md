@@ -2,10 +2,6 @@
 
 ## Changes Since Last Release
 
-### Changed defaults / behaviours
-
-- `make install` now installs man pages. A separate `make man` is not
-  required.
 - `oci mount` sets `Process.Terminal: true` when creating an OCI `config.json`,
   so that `oci run` provides expected interactive behavior by default.
 - Default hostname for `oci mount` containers is now `singularity` instead of
@@ -21,6 +17,17 @@
 
 - Don't prompt for y/n to overwrite an existing file when build is
   called from a non-interactive environment. Fail with an error.
+
+## v3.9.5 \[2022-02-04\]
+
+### Changed defaults / behaviours
+
+- `make install` now installs man pages. A separate `make man` is not
+  required.
+
+### Bug fixes
+
+- GitHub .deb packages correctly include man pages.
 - Update dependency to correctly unset variables in container startup
   environment processing. Fixes regression in v3.9.2.
 - Remove subshell overhead when processing large environments on container
