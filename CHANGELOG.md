@@ -131,10 +131,10 @@ Singularity container runtime hosted at <https://github.com/sylabs/singularity>.
   namespace can be specified with the `-i|--ipc` flag.
 - The behaviour of the `allow container` directives in `singularity.conf` has
   been modified, to support more intuitive limitations on the usage of SIF and non-SIF
-  container images. If you use these directives, _you may need to make changes
-  to singularity.conf to preserve behaviour_.
+  container images. If you use these directives, *you may need to make changes
+  to singularity.conf to preserve behaviour*.
   - A new `allow container sif` directive permits or denies usage of
-    _unencrypted_ SIF images, irrespective of the filesystem(s) inside the SIF.
+    *unencrypted* SIF images, irrespective of the filesystem(s) inside the SIF.
   - The `allow container encrypted` directive permits or denies usage of SIF
     images with an encrypted root filesystem.
   - The `allow container squashfs/extfs` directives in `singularity.conf`
@@ -1046,7 +1046,7 @@ This point release addresses the following issues:
 - Uppercase proxy environment variables are now rightly respected
 - Add http/https protocols for singularity run/pull commands
 - Update to SIF 1.0.2
-- Add _noPrompt_ parameter to `pkg/signing/Verify` function to enable silent
+- Add *noPrompt* parameter to `pkg/signing/Verify` function to enable silent
   verification
 
 ## v3.0.2 - \[2019-01-04\]
