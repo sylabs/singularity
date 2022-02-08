@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017-2021, SyLabs, Inc. All rights reserved.
+# Copyright (c) 2017-2022, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -29,8 +29,11 @@ Summary: Application and environment virtualization
 Name: singularity-ce
 Version: @PACKAGE_RPM_VERSION@
 Release: @PACKAGE_RELEASE@%{?dist}
-# https://spdx.org/licenses/BSD-3-Clause-LBNL.html
-License: BSD-3-Clause-LBNL
+# See LICENSE.md for first party code (BSD-3-Clause and LBNL BSD)
+# See LICENSE_THIRD_PARTY.md for incorporated code (ASL 2.0)
+# See LICENSE_DEPENDENCIES.md for dependencies
+# License identifiers taken from: https://fedoraproject.org/wiki/Licensing
+License: BSD-3-Clause and LBNL BSD and ASL 2.0
 URL: https://www.sylabs.io/singularity/
 Source: %{name}-@PACKAGE_VERSION@.tar.gz
 ExclusiveOS: linux
@@ -139,7 +142,13 @@ make -C builddir DESTDIR=$RPM_BUILD_ROOT install
 %dir %{_localstatedir}/singularity/mnt
 %dir %{_localstatedir}/singularity/mnt/session
 %{_mandir}/man1/singularity*
-
+%license %{name}-%{version}/%{name}-@PACKAGE_VERSION@/LICENSE.md
+%license %{name}-%{version}/%{name}-@PACKAGE_VERSION@/LICENSE_THIRD_PARTY.md
+%license %{name}-%{version}/%{name}-@PACKAGE_VERSION@/LICENSE_DEPENDENCIES.md
+%doc %{name}-%{version}/%{name}-@PACKAGE_VERSION@/README.md
+%doc %{name}-%{version}/%{name}-@PACKAGE_VERSION@/CHANGELOG.md
+%doc %{name}-%{version}/%{name}-@PACKAGE_VERSION@/CONTRIBUTING.md
+%doc %{name}-%{version}/%{name}-@PACKAGE_VERSION@/CONTRIBUTORS.md
 
 %changelog
 
