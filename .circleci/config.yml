@@ -134,6 +134,17 @@ jobs:
           name: Check Module Tidiness
           command: git diff --exit-code -- go.mod go.sum
 
+  check-license-dependencies:
+    executor: golang
+    steps:
+      - checkout
+      - run:
+          name: Update LICENSE_DEPENDENCIES.md
+          command: scripts/update-license-dependencies.sh
+      - run:
+          name: Check License Changes
+          command: git diff --exit-code -- LICENSE_DEPENDENCIES.md
+
   build-source-debian:
     executor:
       name: golang
@@ -285,6 +296,7 @@ workflows:
     jobs:
       - lint-markdown
       - check-go-mod
+      - check-license-dependencies
       - build-source-debian
       - build-source-alpine
       - lint-source
