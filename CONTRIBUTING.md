@@ -62,7 +62,9 @@ all your interactions with the project members and users.
    - Backwards incompatible changes
    - New features / functionalities
 1. PRs which introduce a new Go dependency to the project via `go get` and
-   additions to `go.mod` should explain why the dependency is required.
+   additions to `go.mod` should explain why the dependency is required. Any
+   new dependency should be added to the `LICENSE_DEPENDENCIES.md` by
+   running `scripts/update-license-dependencies.md`.
 
 ## Documentation
 
