@@ -6,6 +6,9 @@
   so that `oci run` provides expected interactive behavior by default.
 - Default hostname for `oci mount` containers is now `singularity` instead of
   `mrsdalloway`.
+- systemd is now supported and used as the default cgroups manager. Set
+  `systemd cgroups = no` in `singularity.conf` to manage cgroups directly via
+  the cgroupfs.
 
 ### New features / functionalities
 

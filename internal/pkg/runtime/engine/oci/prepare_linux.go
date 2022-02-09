@@ -11,11 +11,14 @@ import (
 
 	"github.com/kr/pty"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/starter"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/ociruntime"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 // make master/slave as global variable to avoid GC close file descriptor
@@ -53,6 +56,16 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	if e.EngineConfig.OciConfig.Linux == nil {
 		return fmt.Errorf("empty OCI linux configuration")
 	}
+
+	// TODO - investigate whether this is the highest place to pull this value from singularity.conf
+	if !fs.IsOwner(buildcfg.SINGULARITY_CONF_FILE, 0) {
+		return fmt.Errorf("%s must be owned by root", buildcfg.SINGULARITY_CONF_FILE)
+	}
+	sConf, err := singularityconf.Parse(buildcfg.SINGULARITY_CONF_FILE)
+	if err != nil {
+		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
+	}
+	e.EngineConfig.SystemdCgroups = sConf.SystemdCgroups
 
 	// reset state config that could be passed to engine
 	e.EngineConfig.State = ociruntime.State{}
