@@ -22,6 +22,9 @@
 
 - Don't prompt for y/n to overwrite an existing file when build is
   called from a non-interactive environment. Fail with an error.
+- Correct library bindings for `unsquashfs` containment. Fixes errors where
+  resolved library filename does not match library filename in binary (e.g. EL8,
+  POWER9 with glibc-hwcaps).
 
 ## v3.9.5 \[2022-02-04\]
 
