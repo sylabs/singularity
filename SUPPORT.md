@@ -99,5 +99,15 @@ For real time conversation with the community, you can join our Slack at
 [https://singularityce.slack.com/](https://singularityce.slack.com/). Ping the
 Google Group or one of the admins here to request to be added.
 
+## Community Calls
+
+Regular community calls are held for the project, on the first Thursday of each
+month, via Zoom. These calls are an excellent place to raise feature suggestions
+or kick-off discussion about something you'd like to see in SingularityCE.
+Meeting details are posted in our [SingularityCE Community
+Repository](https://github.com/sylabs/singularityce-community), and recordings
+at the [Sylabs YouTube
+Channel](https://www.youtube.com/channel/UCsxpqAJKGJBMEFHFr-5VL2w).
+
 Is there something missing here you'd like to see? Please
 [let us know](https://github.com/sylabs/singularity/issues).

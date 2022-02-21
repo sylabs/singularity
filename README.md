@@ -2,13 +2,14 @@
 
 [![CircleCI](https://circleci.com/gh/sylabs/singularity/tree/master.svg?style=svg)](https://circleci.com/gh/sylabs/singularity/tree/master)
 
+## Quick Links
+
 - [Documentation](https://www.sylabs.io/docs/)
-- [Support](#support)
+- [Getting Support](#support)
 - [Community Meetings / Minutes / Roadmap](https://github.com/sylabs/singularityce-community)
 - [Project License](LICENSE.md)
 - [Guidelines for Contributing](CONTRIBUTING.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
-- [Citation](#citing-singularity)
 
 ## What is SingularityCE?
 
@@ -28,9 +29,6 @@ high performance computing (HPC) environments. It features:
   default.
 
 SingularityCE is open source software, distributed under the [BSD License](LICENSE.md).
-
-Check out [talks about Singularity](https://www.sylabs.io/videos) and some
-[use cases of Singularity](https://sylabs.io/case-studies) on our website.
 
 ## Getting Started with SingularityCE
 
@@ -64,13 +62,37 @@ We also welcome contributions to our
 ## Support
 
 To get help with SingularityCE, check out the community spaces detailed at our
-[Community Portal](https://www.sylabs.io/singularity/community/).
+[Community Portal](https://sylabs.io/singularity#community), or the
+[SingularityCE Community
+Repository](https://github.com/sylabs/singularityce-community), which also
+houses our open roadmap, and meeting information.
 
 See also our [Support Guidelines](SUPPORT.md) for further information about the
 best place, and how, to raise different kinds of issues and questions.
 
-For additional support, [contact us](https://www.sylabs.io/contact/) to receive
+For additional support, [contact Sylabs](https://sylabs.io/contact-us) to receive
 more information.
+
+## Community Calls & Roadmap
+
+We maintain our roadmap as an open living document in our [SingularityCE
+Community
+Repository](https://github.com/sylabs/singularityce-community/blob/main/roadmap.md).
+Users and interested developers are welcome to add to, and comment on the
+roadmap via HackMD.
+
+Regular community calls are held for the project, on the first Thursday of each
+month, via Zoom. The agenda for each call includes a demonstration of new
+features, or a project / workflow related to SingularityCE. This is followed by
+development updates & discussion, before open questions. Meeting details are
+posted in our [SingularityCE Community
+Repository](https://github.com/sylabs/singularityce-community), and recordings
+at the [Sylabs YouTube
+Channel](https://www.youtube.com/channel/UCsxpqAJKGJBMEFHFr-5VL2w).
+
+If you work on a project related to Singularity, or use Singularity in an
+interesting workflow, [let us know](mailto:community@sylabs.io) if you'd like to
+present to the community!
 
 ## Go Version Compatibility
 
