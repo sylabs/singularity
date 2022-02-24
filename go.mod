@@ -14,7 +14,7 @@ require (
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/containerd/containerd v1.6.0
 	github.com/containernetworking/cni v1.0.1
-	github.com/containernetworking/plugins v1.0.1
+	github.com/containernetworking/plugins v1.1.0
 	github.com/containers/common v0.47.4
 	github.com/containers/image/v5 v5.19.1
 	github.com/cyphar/filepath-securejoin v0.2.3
