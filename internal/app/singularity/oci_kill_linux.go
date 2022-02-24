@@ -7,64 +7,23 @@ package singularity
 
 import (
 	"fmt"
-	"io"
 	"syscall"
-	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/util/signal"
-	"github.com/sylabs/singularity/pkg/ociruntime"
-	"github.com/sylabs/singularity/pkg/util/unix"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // OciKill kills container process
-func OciKill(containerID string, killSignal string, killTimeout int) error {
-	// send signal to the instance
-	state, err := getState(containerID)
-	if err != nil {
-		return err
+func OciKill(containerID string, killSignal string) error {
+	runcArgs := []string{
+		"--root=" + OciStateDir,
+		"kill",
+		containerID,
+		killSignal,
 	}
 
-	if state.Status != ociruntime.Created && state.Status != ociruntime.Running {
-		return fmt.Errorf("cannot kill '%s', the state of the container must be created or running", containerID)
-	}
-
-	sig := syscall.SIGTERM
-
-	if killSignal != "" {
-		sig, err = signal.Convert(killSignal)
-		if err != nil {
-			return err
-		}
-	}
-
-	if killTimeout > 0 {
-		c, err := unix.Dial(state.ControlSocket)
-		if err != nil {
-			return fmt.Errorf("failed to connect to control socket")
-		}
-		defer c.Close()
-
-		killed := make(chan bool, 1)
-
-		go func() {
-			// wait runtime close socket connection for ACK
-			d := make([]byte, 1)
-			if _, err := c.Read(d); err == io.EOF {
-				killed <- true
-			}
-		}()
-
-		if err := syscall.Kill(state.Pid, sig); err != nil {
-			return err
-		}
-
-		select {
-		case <-killed:
-		case <-time.After(time.Duration(killTimeout) * time.Second):
-			return syscall.Kill(state.Pid, syscall.SIGKILL)
-		}
-	} else {
-		return syscall.Kill(state.Pid, sig)
+	sylog.Debugf("Calling runc with args %v", runcArgs)
+	if err := syscall.Exec(runc, runcArgs, []string{}); err != nil {
+		return fmt.Errorf("while calling runc: %w", err)
 	}
 
 	return nil

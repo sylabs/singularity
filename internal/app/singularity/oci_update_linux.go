@@ -6,58 +6,25 @@
 package singularity
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"os"
+	"syscall"
 
-	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/cgroups"
-	"github.com/sylabs/singularity/pkg/ociruntime"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // OciUpdate updates container cgroups resources
 func OciUpdate(containerID string, args *OciArgs) error {
-	var reader io.Reader
-
-	state, err := getState(containerID)
-	if err != nil {
-		return err
+	runcArgs := []string{
+		"--root=" + OciStateDir,
+		"update",
+		"-r", args.FromFile,
+		containerID,
 	}
 
-	if state.State.Status != ociruntime.Running && state.State.Status != ociruntime.Created {
-		return fmt.Errorf("container %s is neither running nor created", containerID)
+	sylog.Debugf("Calling runc with args %v", runcArgs)
+	if err := syscall.Exec(runc, runcArgs, []string{}); err != nil {
+		return fmt.Errorf("while calling runc: %w", err)
 	}
 
-	if args.FromFile == "" {
-		return fmt.Errorf("you must specify --from-file")
-	}
-
-	resources := &specs.LinuxResources{}
-	manager, err := cgroups.GetManagerForPid(state.State.Pid)
-	if err != nil {
-		return fmt.Errorf("failed to get cgroups manager: %v", err)
-	}
-
-	if args.FromFile == "-" {
-		reader = os.Stdin
-	} else {
-		f, err := os.Open(args.FromFile)
-		if err != nil {
-			return err
-		}
-		reader = f
-	}
-
-	data, err := ioutil.ReadAll(reader)
-	if err != nil {
-		return fmt.Errorf("failed to read cgroups config file: %s", err)
-	}
-
-	if err := json.Unmarshal(data, resources); err != nil {
-		return err
-	}
-
-	return manager.UpdateFromSpec(resources)
+	return nil
 }

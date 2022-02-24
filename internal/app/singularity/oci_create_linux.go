@@ -6,27 +6,16 @@
 package singularity
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
+	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/oci"
-	"github.com/sylabs/singularity/internal/pkg/util/starter"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // OciCreate creates a container from an OCI bundle
 func OciCreate(containerID string, args *OciArgs) error {
-	_, err := getState(containerID)
-	if err == nil {
-		return fmt.Errorf("%s already exists", containerID)
-	}
-
-	os.Clearenv()
-
 	absBundle, err := filepath.Abs(args.BundlePath)
 	if err != nil {
 		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
@@ -36,46 +25,20 @@ func OciCreate(containerID string, args *OciArgs) error {
 		return fmt.Errorf("failed to change directory to %s: %s", absBundle, err)
 	}
 
-	engineConfig := oci.NewConfig()
-	generator := generate.New(&engineConfig.OciConfig.Spec)
-	engineConfig.SetBundlePath(absBundle)
-	engineConfig.SetLogPath(args.LogPath)
-	engineConfig.SetLogFormat(args.LogFormat)
-	engineConfig.SetPidFile(args.PidFile)
+	cmdArgs := []string{
+		"--root=" + OciStateDir,
+		"create",
+		"-b", absBundle,
+	}
+	if args.PidFile != "" {
+		cmdArgs = append(cmdArgs, "--pid-file="+args.PidFile)
+	}
+	cmdArgs = append(cmdArgs, containerID)
 
-	// load config.json from bundle path
-	configJSON := filepath.Join(absBundle, "config.json")
-	fb, err := os.Open(configJSON)
-	if err != nil {
-		return fmt.Errorf("oci specification file %q is missing or cannot be read", configJSON)
+	sylog.Debugf("Calling runc with args %v", cmdArgs)
+	if err := syscall.Exec(runc, cmdArgs, []string{}); err != nil {
+		return fmt.Errorf("while calling runc: %w", err)
 	}
 
-	data, err := ioutil.ReadAll(fb)
-	if err != nil {
-		return fmt.Errorf("failed to read OCI specification file %s: %s", configJSON, err)
-	}
-
-	fb.Close()
-
-	if err := json.Unmarshal(data, generator.Config); err != nil {
-		return fmt.Errorf("failed to parse OCI specification file %s: %s", configJSON, err)
-	}
-
-	engineConfig.EmptyProcess = args.EmptyProcess
-	engineConfig.SyncSocket = args.SyncSocketPath
-
-	commonConfig := &config.Common{
-		ContainerID:  containerID,
-		EngineName:   oci.Name,
-		EngineConfig: engineConfig,
-	}
-
-	procName := fmt.Sprintf("Singularity OCI %s", containerID)
-	return starter.Run(
-		procName,
-		commonConfig,
-		starter.WithStdin(os.Stdin),
-		starter.WithStderr(os.Stderr),
-		starter.WithStdout(os.Stdout),
-	)
+	return nil
 }

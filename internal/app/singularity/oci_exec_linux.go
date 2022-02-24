@@ -7,35 +7,24 @@ package singularity
 
 import (
 	"fmt"
-	"os"
-	"strings"
+	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/oci"
-	"github.com/sylabs/singularity/internal/pkg/util/starter"
-	"github.com/sylabs/singularity/pkg/ociruntime"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // OciExec executes a command in a container
 func OciExec(containerID string, cmdArgs []string) error {
-	commonConfig, err := getCommonConfig(containerID)
-	if err != nil {
-		return fmt.Errorf("%s doesn't exist", containerID)
+	runcArgs := []string{
+		"--root=" + OciStateDir,
+		"exec",
+		containerID,
+	}
+	runcArgs = append(runcArgs, cmdArgs...)
+
+	sylog.Debugf("Calling runc with args %v", runcArgs)
+	if err := syscall.Exec(runc, runcArgs, []string{}); err != nil {
+		return fmt.Errorf("while calling runc: %w", err)
 	}
 
-	engineConfig := commonConfig.EngineConfig.(*oci.EngineConfig)
-
-	switch engineConfig.GetState().Status {
-	case ociruntime.Running, ociruntime.Paused:
-	default:
-		args := strings.Join(cmdArgs, " ")
-		return fmt.Errorf("cannot execute command %q, container '%s' is not running", args, containerID)
-	}
-
-	engineConfig.Exec = true
-	engineConfig.OciConfig.SetProcessArgs(cmdArgs)
-
-	os.Clearenv()
-
-	procName := fmt.Sprintf("Singularity OCI %s", containerID)
-	return starter.Exec(procName, commonConfig)
+	return nil
 }
