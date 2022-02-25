@@ -8,7 +8,9 @@ package singularity
 import (
 	"context"
 	"fmt"
-	"syscall"
+	"os"
+	"os/exec"
+	"path/filepath"
 
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -16,15 +18,37 @@ import (
 // OciDelete deletes container resources
 func OciDelete(ctx context.Context, containerID string) error {
 	runcArgs := []string{
-		"--root=" + OciStateDir,
+		"--root", RuncStateDir,
 		"delete",
 		containerID,
 	}
 
+	cmd := exec.Command(runc, runcArgs...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling runc with args %v", runcArgs)
-	if err := syscall.Exec(runc, runcArgs, []string{}); err != nil {
-		return fmt.Errorf("while calling runc: %w", err)
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("while calling runc delete: %w", err)
 	}
 
-	return nil
+	sd, err := stateDir(containerID)
+	if err != nil {
+		return fmt.Errorf("while computing state directory: %w", err)
+	}
+
+	bLink := filepath.Join(sd, bundleLink)
+	bundle, err := filepath.EvalSymlinks(bLink)
+	if err != nil {
+		return fmt.Errorf("while finding bundle directory: %w", err)
+	}
+
+	sylog.Debugf("Removing bundle symlink")
+	if err := os.Remove(bLink); err != nil {
+		return fmt.Errorf("while removing bundle symlink: %w", err)
+	}
+
+	sylog.Debugf("Releasing bundle lock")
+	return releaseBundle(bundle)
 }

@@ -6,8 +6,8 @@
 package singularity
 
 import (
-	"fmt"
-	"syscall"
+	"os"
+	"os/exec"
 
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -15,31 +15,31 @@ import (
 // OciPause pauses processes in a container
 func OciPause(containerID string) error {
 	runcArgs := []string{
-		"--root=" + OciStateDir,
+		"--root", RuncStateDir,
 		"pause",
 		containerID,
 	}
 
+	cmd := exec.Command(runc, runcArgs...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling runc with args %v", runcArgs)
-	if err := syscall.Exec(runc, runcArgs, []string{}); err != nil {
-		return fmt.Errorf("while calling runc: %w", err)
-	}
-
-	return nil
+	return cmd.Run()
 }
 
 // OciResume pauses processes in a container
 func OciResume(containerID string) error {
 	runcArgs := []string{
-		"--root=" + OciStateDir,
+		"--root", RuncStateDir,
 		"resume",
 		containerID,
 	}
 
+	cmd := exec.Command(runc, runcArgs...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling runc with args %v", runcArgs)
-	if err := syscall.Exec(runc, runcArgs, []string{}); err != nil {
-		return fmt.Errorf("while calling runc: %w", err)
-	}
-
-	return nil
+	return cmd.Run()
 }

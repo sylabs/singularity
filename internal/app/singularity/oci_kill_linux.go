@@ -6,8 +6,8 @@
 package singularity
 
 import (
-	"fmt"
-	"syscall"
+	"os"
+	"os/exec"
 
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -15,16 +15,16 @@ import (
 // OciKill kills container process
 func OciKill(containerID string, killSignal string) error {
 	runcArgs := []string{
-		"--root=" + OciStateDir,
+		"--root", RuncStateDir,
 		"kill",
 		containerID,
 		killSignal,
 	}
 
+	cmd := exec.Command(runc, runcArgs...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling runc with args %v", runcArgs)
-	if err := syscall.Exec(runc, runcArgs, []string{}); err != nil {
-		return fmt.Errorf("while calling runc: %w", err)
-	}
-
-	return nil
+	return cmd.Run()
 }

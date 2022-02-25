@@ -92,7 +92,7 @@ commands:
           command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q update
       - run:
           name: Install dependencies
-          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin
+          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin conmon runc
   configure-singularity:
     steps:
       - run:

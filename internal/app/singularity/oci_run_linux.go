@@ -9,8 +9,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
-	"syscall"
 
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -27,19 +27,18 @@ func OciRun(ctx context.Context, containerID string, args *OciArgs) error {
 	}
 
 	runcArgs := []string{
-		"--root=" + OciStateDir,
-		"create",
+		"--root", RuncStateDir,
+		"run",
 		"-b", absBundle,
 	}
 	if args.PidFile != "" {
 		runcArgs = append(runcArgs, "--pid-file="+args.PidFile)
 	}
 	runcArgs = append(runcArgs, containerID)
-
+	cmd := exec.Command(runc, runcArgs...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling runc with args %v", runcArgs)
-	if err := syscall.Exec(runc, runcArgs, []string{}); err != nil {
-		return fmt.Errorf("while calling runc: %w", err)
-	}
-
-	return nil
+	return cmd.Run()
 }

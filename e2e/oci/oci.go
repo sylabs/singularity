@@ -291,7 +291,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 		t,
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci kill"),
-		e2e.WithArgs("-t", "2", containerID, "KILL"),
+		e2e.WithArgs(containerID, "KILL"),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
 				c.checkOciState(t, containerID, ociruntime.Stopped)

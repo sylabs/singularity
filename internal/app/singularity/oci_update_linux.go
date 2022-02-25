@@ -6,8 +6,8 @@
 package singularity
 
 import (
-	"fmt"
-	"syscall"
+	"os"
+	"os/exec"
 
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -15,16 +15,16 @@ import (
 // OciUpdate updates container cgroups resources
 func OciUpdate(containerID string, args *OciArgs) error {
 	runcArgs := []string{
-		"--root=" + OciStateDir,
+		"--root", RuncStateDir,
 		"update",
 		"-r", args.FromFile,
 		containerID,
 	}
 
+	cmd := exec.Command(runc, runcArgs...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling runc with args %v", runcArgs)
-	if err := syscall.Exec(runc, runcArgs, []string{}); err != nil {
-		return fmt.Errorf("while calling runc: %w", err)
-	}
-
-	return nil
+	return cmd.Run()
 }
