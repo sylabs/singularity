@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -36,6 +36,7 @@ var (
 // dropped by the time PrepareConfig is called. However, most likely this
 // still will be executed as root since `singularity oci` command set
 // requires privileged execution.
+//nolint:maintidx
 func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	if e.CommonConfig.EngineName != Name {
 		return fmt.Errorf("incorrect engine")
