@@ -6,12 +6,12 @@ orbs:
 parameters:
   go-version:
     type: string
-    default: '1.17.6'
+    default: '1.17.7'
 
 executors:
   node:
     docker:
-      - image: node:16-slim
+      - image: node:17-slim
   golang:
     parameters:
       variant:
@@ -35,10 +35,10 @@ executors:
       - image: ubuntu:20.04
   golangci-lint:
     docker:
-      - image: golangci/golangci-lint:v1.43
+      - image: golangci/golangci-lint:v1.44
   ubuntu-machine:
     machine:
-      image: ubuntu-2004:202107-02
+      image: ubuntu-2004:202111-02
 
 commands:
   check-changes:
@@ -288,7 +288,6 @@ jobs:
           command: singularity version
       - store_artifacts:
           path: ~/deb
-
 
 workflows:
   version: 2

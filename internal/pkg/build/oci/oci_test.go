@@ -380,7 +380,7 @@ func TestNewImageSource(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		ctx       context.Context
+		ctx       context.Context //nolint:containedctx
 		sys       *types.SystemContext
 		shallPass bool
 	}{
