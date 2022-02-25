@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -56,6 +56,7 @@ const defaultShell = "/bin/sh"
 // No additional privileges can be gained during this call (unless container
 // is executed as root intentionally) as starter will set uid/euid/suid
 // to the targetUID (PrepareConfig will set it by calling starter.Config.SetTargetUID).
+//nolint:maintidx
 func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 	// Manage all signals.
 	// Queue them until they're ready to be handled below.
