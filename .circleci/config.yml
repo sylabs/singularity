@@ -11,7 +11,7 @@ parameters:
 executors:
   node:
     docker:
-      - image: node:16-slim
+      - image: node:17-slim
   golang:
     parameters:
       variant:
@@ -288,7 +288,6 @@ jobs:
           command: singularity version
       - store_artifacts:
           path: ~/deb
-
 
 workflows:
   version: 2
