@@ -4,7 +4,6 @@
 // rights to use or distribute this software.
 
 //go:build singularity_engine
-// +build singularity_engine
 
 package unpacker
 
