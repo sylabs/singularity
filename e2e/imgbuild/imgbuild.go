@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -540,6 +540,7 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 	}
 }
 
+//nolint:maintidx
 func (c imgBuildTests) buildDefinition(t *testing.T) {
 	tmpfile, err := e2e.WriteTempFile(c.env.TestDir, "testFile-", testFileContent)
 	if err != nil {
