@@ -148,7 +148,7 @@ jobs:
   build-source-debian:
     executor:
       name: golang
-      variant: buster
+      variant: bullseye
     steps:
       - checkout
       - install-deps-apt:
