@@ -35,11 +35,11 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/containernetworking/plugins/blob/master/LICENSE>
 
-## github.com/containers/common/pkg/seccomp
+## github.com/containers/common
 
 **License:** Apache-2.0
 
-**License URL:** <https://github.com/containers/common/blob/master/pkg/seccomp/LICENSE>
+**License URL:** <https://github.com/containers/common/blob/master/LICENSE>
 
 ## github.com/containers/image/v5
 
@@ -59,11 +59,11 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/containers/ocicrypt/blob/master/LICENSE>
 
-## github.com/containers/storage/pkg
+## github.com/containers/storage
 
 **License:** Apache-2.0
 
-**License URL:** <https://github.com/containers/storage/blob/master/pkg/LICENSE>
+**License URL:** <https://github.com/containers/storage/blob/master/LICENSE>
 
 ## github.com/coreos/go-iptables/iptables
 
@@ -196,6 +196,12 @@ The dependencies and their licenses are as follows:
 **License:** Apache-2.0
 
 **License URL:** <https://github.com/opencontainers/runtime-spec/blob/master/specs-go/LICENSE>
+
+## github.com/opencontainers/selinux
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/opencontainers/selinux/blob/master/LICENSE>
 
 ## github.com/opencontainers/umoci
 
@@ -461,11 +467,11 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/vbatts/go-mtree/blob/master/LICENSE>
 
-## github.com/vbatts/tar-split/archive/tar
+## github.com/vbatts/tar-split
 
 **License:** BSD-3-Clause
 
-**License URL:** <https://github.com/vbatts/tar-split/blob/master/archive/tar/LICENSE>
+**License URL:** <https://github.com/vbatts/tar-split/blob/master/LICENSE>
 
 ## golang.org/x/crypto
 
