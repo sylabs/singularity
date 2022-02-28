@@ -25,10 +25,6 @@ import (
 )
 
 const (
-	// Absolute path for runc
-	runc = "/usr/bin/runc"
-	// Absolute path for conmon
-	conmon = "/usr/bin/conmon"
 	// Absolute path for the runc state
 	RuncStateDir = "/run/singularity-oci"
 	// Relative path inside ~/.singularity for conmon and singularity state

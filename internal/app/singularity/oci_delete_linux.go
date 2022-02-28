@@ -12,11 +12,16 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // OciDelete deletes container resources
 func OciDelete(ctx context.Context, containerID string) error {
+	runc, err := bin.FindBin("runc")
+	if err != nil {
+		return err
+	}
 	runcArgs := []string{
 		"--root", RuncStateDir,
 		"delete",
@@ -28,7 +33,7 @@ func OciDelete(ctx context.Context, containerID string) error {
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling runc with args %v", runcArgs)
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("while calling runc delete: %w", err)
 	}

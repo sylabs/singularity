@@ -9,11 +9,16 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // OciKill kills container process
 func OciKill(containerID string, killSignal string) error {
+	runc, err := bin.FindBin("runc")
+	if err != nil {
+		return err
+	}
 	runcArgs := []string{
 		"--root", RuncStateDir,
 		"kill",

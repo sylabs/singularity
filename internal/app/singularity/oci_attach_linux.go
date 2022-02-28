@@ -44,11 +44,11 @@ func OciAttach(ctx context.Context, containerID string) error {
 	attachSock := filepath.Join(sd, bundleLink, attachSocket)
 	conn, err := openUnixSocket(attachSock)
 	if err != nil {
-		return errors.Wrapf(err, "while connecting to attach socket: %w", attachSock)
+		return fmt.Errorf("while connecting to attach socket: %w", err)
 	}
 	defer func() {
 		if err := conn.Close(); err != nil {
-			sylog.Errorf("while closing attach socket: %w", err)
+			sylog.Errorf("while closing attach socket: %v", err)
 		}
 	}()
 

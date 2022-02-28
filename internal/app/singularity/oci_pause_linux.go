@@ -9,11 +9,16 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // OciPause pauses processes in a container
 func OciPause(containerID string) error {
+	runc, err := bin.FindBin("runc")
+	if err != nil {
+		return err
+	}
 	runcArgs := []string{
 		"--root", RuncStateDir,
 		"pause",
@@ -30,6 +35,10 @@ func OciPause(containerID string) error {
 
 // OciResume pauses processes in a container
 func OciResume(containerID string) error {
+	runc, err := bin.FindBin("runc")
+	if err != nil {
+		return err
+	}
 	runcArgs := []string{
 		"--root", RuncStateDir,
 		"resume",

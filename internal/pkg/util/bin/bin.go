@@ -34,6 +34,9 @@ func FindBin(name string) (path string, err error) {
 	// distro provided setUID executables that are used in the fakeroot flow to setup subuid/subgid mappings
 	case "newuidmap", "newgidmap":
 		return findOnPath(name)
+	// distro provided OCI runtime dependencies
+	case "conmon", "runc":
+		return findOnPath(name)
 	// cryptsetup & nvidia-container-cli paths must be explicitly specified
 	// They are called as root from the RPC server in a setuid install, so this
 	// limits to sysadmin controlled paths.

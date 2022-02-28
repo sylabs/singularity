@@ -9,11 +9,16 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // OciExec executes a command in a container
 func OciExec(containerID string, cmdArgs []string) error {
+	runc, err := bin.FindBin("runc")
+	if err != nil {
+		return err
+	}
 	runcArgs := []string{
 		"--root", RuncStateDir,
 		"exec",

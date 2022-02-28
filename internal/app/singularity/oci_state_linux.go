@@ -9,11 +9,16 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // OciState query container state
 func OciState(containerID string, args *OciArgs) error {
+	runc, err := bin.FindBin("runc")
+	if err != nil {
+		return err
+	}
 	runcArgs := []string{
 		"--root", RuncStateDir,
 		"state",
