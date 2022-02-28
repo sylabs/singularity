@@ -20,8 +20,6 @@ import (
 )
 
 const (
-	// OciSubDir represents directory where OCI instance files are stored
-	OciSubDir = "oci"
 	// SingSubDir represents directory where Singularity instance files are stored
 	SingSubDir = "sing"
 	// LogSubDir represents directory where Singularity instance log files are stored
