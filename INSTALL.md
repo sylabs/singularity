@@ -19,6 +19,7 @@ sudo apt-get update
 sudo apt-get install -y \
     build-essential \
     libseccomp-dev \
+    libglib2.0-dev \
     pkg-config \
     squashfs-tools \
     cryptsetup
@@ -32,6 +33,7 @@ sudo yum groupinstall -y 'Development Tools'
 # Install RPM packages for dependencies
 sudo yum install -y \
     libseccomp-devel \
+    glib2-devel \
     squashfs-tools \
     cryptsetup
 ```
@@ -100,7 +102,7 @@ repository to a specific location.
 Clone the repository with `git` in a location of your choice:
 
 ```sh
-git clone https://github.com/sylabs/singularity.git
+git clone --recurse-submodules https://github.com/sylabs/singularity.git
 cd singularity
 ```
 
@@ -110,7 +112,7 @@ out a [release tag](https://github.com/sylabs/singularity/tags) before
 compiling. E.g. to build the 3.9.5 release checkout the `v3.9.5` tag:
 
 ```sh
-git checkout v3.9.5
+git checkout --recurse-submodules v3.9.5
 ```
 
 ## Compiling SingularityCE

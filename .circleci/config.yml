@@ -41,6 +41,11 @@ executors:
       image: ubuntu-2004:202111-02
 
 commands:
+  update-submodules:
+    steps:
+      - run:
+          name: Update submodules
+          command: git submodule update --init
   check-changes:
     steps:
       - run:
@@ -92,7 +97,7 @@ commands:
           command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q update
       - run:
           name: Install dependencies
-          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin conmon runc
+          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin runc libglib2.0-dev
   configure-singularity:
     steps:
       - run:
@@ -153,6 +158,7 @@ jobs:
       - checkout
       - install-deps-apt:
           sudo: false
+      - update-submodules
       - build-singularity
 
   build-source-alpine:
@@ -163,7 +169,8 @@ jobs:
       - checkout
       - run:
           name: Fetch deps
-          command: apk add -q --no-cache git alpine-sdk automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup
+          command: apk add -q --no-cache git alpine-sdk automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup libseccomp-dev glib-dev
+      - update-submodules
       - build-singularity
 
   lint-source:
@@ -172,6 +179,7 @@ jobs:
       - checkout
       - install-deps-apt:
           sudo: false
+      - update-submodules
       - configure-singularity
       - run:
           name: Check for Lint
@@ -186,6 +194,7 @@ jobs:
           version: << pipeline.parameters.go-version >>
       - stop-background-apt
       - install-deps-apt
+      - update-submodules
       - install-singularity
       - run:
           name: Run unit tests
@@ -200,6 +209,7 @@ jobs:
           version: << pipeline.parameters.go-version >>
       - stop-background-apt
       - install-deps-apt
+      - update-submodules
       - install-singularity
       - run:
           name: Run integration tests
@@ -215,6 +225,7 @@ jobs:
           version: << pipeline.parameters.go-version >>
       - stop-background-apt
       - install-deps-apt
+      - update-submodules
       - install-singularity
       - run:
           name: Run E2E tests
@@ -238,12 +249,13 @@ jobs:
           name: Install dependencies
           command: |-
             yum groupinstall -q -y 'Development Tools'
-            yum install -q -y cryptsetup libseccomp-devel squashfs-tools
+            yum install -q -y cryptsetup libseccomp-devel squashfs-tools glib2-devel
       - run:
           name: Install Go
           command: |-
             curl -f -L -sS "https://dl.google.com/go/go<< pipeline.parameters.go-version >>.linux-amd64.tar.gz" | tar -z -x -C /usr/local/
             echo "export PATH=$PATH:/usr/local/go/bin" >> $BASH_ENV
+      - update-submodules
       - configure-singularity
       - run:
           name: Build RPM
@@ -268,12 +280,13 @@ jobs:
           name: Install dependencies
           command: |-
             apt-get update
-            DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential git libseccomp-dev pkg-config squashfs-tools cryptsetup dh-golang devscripts fakeroot
+            DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential git libseccomp-dev pkg-config squashfs-tools cryptsetup dh-golang devscripts fakeroot libglib2.0-dev
       - run:
           name: Install Go
           command: |-
             curl -f -L -sS "https://dl.google.com/go/go<< pipeline.parameters.go-version >>.linux-amd64.tar.gz" | tar -z -x -C /usr/local/
             echo "export PATH=$PATH:/usr/local/go/bin" >> $BASH_ENV
+      - update-submodules
       - run:
           name: Build DEB
           command: |-

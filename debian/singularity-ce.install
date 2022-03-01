@@ -1,5 +1,6 @@
 usr/bin/singularity
 usr/bin/run-singularity
+usr/lib/*/singularity/bin/conmon
 usr/lib/*/singularity/bin/starter
 usr/lib/*/singularity/bin/starter-suid
 usr/lib/*/singularity/cni/*

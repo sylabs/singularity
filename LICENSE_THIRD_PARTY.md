@@ -291,6 +291,14 @@ The source files:
 
 Contain code from the podman project, under the Apache License, Version 2.0.
 
+## github.com/containers/conmon
+
+The source files:
+
+* `third_party/conmon/*`
+
+Are code from the conmon project, under the Apache License, Version 2.0.
+
 ```text
                                  Apache License
                            Version 2.0, January 2004

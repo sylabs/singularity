@@ -124,7 +124,7 @@ cscope:
 		>/dev/null 2>&1 || true)
 
 .PHONY: clean
-clean:
+clean: $(CLEANTARGETS)
 	@printf " CLEAN\n"
 	$(V)rm -rf $(BUILDDIR)/mergeddeps cscope.* $(CLEANFILES)
 

@@ -41,6 +41,12 @@ if test ! -d vendor ; then
     exit 1
 fi
 
+# conmon should have been vendored as a submodule
+if test ! -f third_party/conmon/Makefile ; then
+    echo 'E: conmon source not found. Abort.'
+    exit 1
+fi
+
 # XXX(mem): In order to accept filenames with colons in it (because of a
 # version number like x.y.z:1.2.3), pass the --force-local flag to tar.
 # This is understood by GNU tar. If other tar programs (also called

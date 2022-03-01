@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -34,8 +35,14 @@ func FindBin(name string) (path string, err error) {
 	// distro provided setUID executables that are used in the fakeroot flow to setup subuid/subgid mappings
 	case "newuidmap", "newgidmap":
 		return findOnPath(name)
-	// distro provided OCI runtime dependencies
-	case "conmon", "runc":
+	// distro provided OCI runtime
+	case "runc":
+		return findOnPath(name)
+	// our, or distro provided conmon
+	case "conmon":
+		if buildcfg.CONMON_LIBEXEC == 1 {
+			return filepath.Join(buildcfg.LIBEXECDIR, "singularity", "bin", name), nil
+		}
 		return findOnPath(name)
 	// cryptsetup & nvidia-container-cli paths must be explicitly specified
 	// They are called as root from the RPC server in a setuid install, so this

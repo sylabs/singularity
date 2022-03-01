@@ -45,6 +45,7 @@ config_add_def NVIDIALIBS_FILE SINGULARITY_CONFDIR \"/nvliblist.conf\"
 config_add_def SESSIONDIR LOCALSTATEDIR \"/singularity/mnt/session\"
 config_add_def SINGULARITY_SUID_INSTALL $with_suid
 config_add_def PLUGIN_ROOTDIR LIBEXECDIR \"/singularity/plugin\"
+config_add_def CONMON_LIBEXEC $with_conmon 
 
 # engine configuration constants
 engine_config_env="ENGINE_CONFIG"
@@ -303,7 +304,7 @@ fi
 ########################
 # libseccomp dev
 ########################
-if [ "$with_seccomp_check" = "1" ];then
+if [ "$with_seccomp_check" = "1" ]; then
     printf " checking: libseccomp+headers... "
     seccomp_iflags=`pkg-config --cflags-only-I libseccomp 2>/dev/null || true`
     if ! printf "#include <seccomp.h>\nint main() { seccomp_syscall_resolve_name(\"read\"); }" | \
@@ -315,6 +316,40 @@ if [ "$with_seccomp_check" = "1" ];then
 	appsec=1
     fi
 fi
+
+
+########################
+# conmon deps
+########################
+if [ "$with_conmon" = "1" ]; then
+   printf " checking: conmon source... "
+   if [ ! -f "$sourcedir/third_party/conmon/Makefile" ]; then
+      echo "no"
+      echo
+      echo "conmon source not found"
+      echo
+      echo "Unless you are building --without-conmon you must 'git clone recursive'"
+      echo "or 'git submodule update --init'."
+      echo
+      exit 2
+   fi
+   echo "yes"
+
+   printf " checking: conmon glib-2.0 headers... "
+   glib2_iflags=`pkg-config --cflags-only-I glib-2.0 2>/dev/null || true`
+   glib2_lflags=`pkg-config --libs glib-2.0 2>/dev/null || true`
+   if ! printf "#include <glib.h>\nint main() { }" | \
+      $tgtcc $user_cflags $ldflags $glib2_iflags -x c -o /dev/null - $glib2_lflags >/dev/null 2>&1; then  
+      echo "no"
+      echo
+      echo "glib-2.0 headers are required to build conmon."
+      echo
+      exit 2
+   else
+   echo "yes"
+   fi
+fi
+
 
 ################################
 # Configurable external programs
