@@ -21,7 +21,6 @@ import (
 	"time"
 
 	golog "github.com/go-log/log"
-	"github.com/gorilla/websocket"
 	"github.com/pkg/errors"
 	buildclient "github.com/sylabs/scs-build-client/client"
 	client "github.com/sylabs/scs-library-client/client"
@@ -113,8 +112,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	}
 
 	// We're doing an attached build, stream output and then download the resulting file
-	var outputLogger stdoutLogger
-	err = rb.BuildClient.GetOutput(ctx, bi.ID, outputLogger)
+	err = rb.BuildClient.GetOutput(ctx, bi.ID, os.Stdout)
 	if err != nil {
 		return errors.Wrap(err, "failed to stream output from remote build service")
 	}
@@ -161,21 +159,4 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	}
 
 	return nil
-}
-
-// stdoutLogger implements the buildclient.OutputReader interface and writes
-// messages to stdout
-type stdoutLogger struct{}
-
-// Read implements the buildclient.OutputReader Read interface, writing messages
-// to the console/terminal
-func (c stdoutLogger) Read(messageType int, msg []byte) (int, error) {
-	// Print to terminal
-	switch messageType {
-	case websocket.TextMessage:
-		fmt.Printf("%s", msg)
-	case websocket.BinaryMessage:
-		fmt.Print("Ignoring binary message")
-	}
-	return len(msg), nil
 }
