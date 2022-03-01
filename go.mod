@@ -22,7 +22,6 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/go-log/log v0.2.0
 	github.com/google/uuid v1.3.0
-	github.com/gorilla/websocket v1.5.0
 	github.com/gosimple/slug v1.12.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/kr/pty v1.1.8
