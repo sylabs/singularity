@@ -324,6 +324,15 @@ func WithEnv(envs []string) SingularityCmdOp {
 	}
 }
 
+// WithRootlessEnv passes through XDG_RUNTIME_DIR and DBUS_SESSION_BUS_ADDRESS
+// for rootless operations that need these e.g. systemd cgroups interaction.
+func WithRootlessEnv() SingularityCmdOp {
+	return func(s *singularityCmd) {
+		s.envs = append(s.envs, "XDG_RUNTIME_DIR="+os.Getenv("XDG_RUNTIME_DIR"))
+		s.envs = append(s.envs, "DBUS_SESSION_BUS_ADDRESS="+os.Getenv("DBUS_SESSION_BUS_ADDRESS"))
+	}
+}
+
 // WithDir sets the current working directory for the execution of a command.
 func WithDir(dir string) SingularityCmdOp {
 	return func(s *singularityCmd) {
