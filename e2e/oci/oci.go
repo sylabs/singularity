@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -18,6 +18,16 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/pkg/ociruntime"
 )
+
+//  NOTE
+//  ----
+//  Tests in this package/topic are run in a a mount namespace only. There is
+//  no PID namespace, in order that the systemd cgroups manager functionality
+//  can be exercised.
+//
+//  You must take extra care not to leave detached process etc. that will
+//  pollute the host PID namespace.
+//
 
 func randomContainerID(t *testing.T) string {
 	t.Helper()
@@ -400,9 +410,12 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	}
 
 	return testhelper.Tests{
-		"basic":  c.testOciBasic,
-		"attach": c.testOciAttach,
-		"run":    c.testOciRun,
-		"help":   c.testOciHelp,
+		"ordered": testhelper.NoParallel(
+			env.WithCgroupManagers(func(t *testing.T) {
+				t.Run("basic", c.testOciBasic)
+				t.Run("attach", c.testOciAttach)
+				t.Run("run", c.testOciRun)
+				t.Run("help", c.testOciHelp)
+			})),
 	}
 }
