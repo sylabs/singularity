@@ -135,7 +135,6 @@ func (ep *Config) BuilderClientConfig(uri string) (*buildclient.Config, error) {
 	config := &buildclient.Config{
 		BaseURL:   uri,
 		UserAgent: useragent.Value(),
-		Logger:    (golog.Logger)(sylog.DebugLogger{}),
 		HTTPClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
