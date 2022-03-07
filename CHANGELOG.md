@@ -17,6 +17,9 @@
   coded. The example `etc/seccomp-profiles/default.json` has been updated.
 - Native cgroups v2 resource limits can be specified using the `[unified]` key
   in a cgroups toml file applied via `--apply-cgroups`.
+- The `--no-mount` flag & `SINGULARITY_NO_MOUNT` env var can now be used to
+  disable a `bind path` entry from `singularity.conf` by specifying the
+  absolute path to the destination of the bind.
 
 ### Bug fixes
 

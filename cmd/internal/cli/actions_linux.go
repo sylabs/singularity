@@ -142,6 +142,7 @@ func hidepidProc() bool {
 // Set engine flags to disable mounts, to allow overriding them if they are set true
 // in the singularity.conf
 func setNoMountFlags(c *singularityConfig.EngineConfig) {
+	skipBinds := []string{}
 	for _, v := range NoMount {
 		switch v {
 		case "proc":
@@ -161,9 +162,14 @@ func setNoMountFlags(c *singularityConfig.EngineConfig) {
 		case "cwd":
 			c.SetNoCwd(true)
 		default:
+			if filepath.IsAbs(v) {
+				skipBinds = append(skipBinds, v)
+				continue
+			}
 			sylog.Warningf("Ignoring unknown mount type '%s'", v)
 		}
 	}
+	c.SetSkipBinds(skipBinds)
 }
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
