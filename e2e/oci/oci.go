@@ -283,8 +283,9 @@ func (c ctx) testOciBasic(t *testing.T) {
 		t,
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("oci exec"),
-		e2e.WithArgs(containerID, "id"),
-		e2e.ExpectExit(0),
+		e2e.WithArgs(containerID, "hostname"),
+		e2e.ExpectExit(0,
+			e2e.ExpectOutput(e2e.ContainMatch, "singularity")),
 	)
 
 	c.env.RunSingularity(
