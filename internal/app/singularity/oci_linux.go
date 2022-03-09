@@ -9,7 +9,6 @@
 package singularity
 
 import (
-	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -58,11 +57,11 @@ type OciArgs struct {
 // AttachStreams contains streams that will be attached to the container
 type AttachStreams struct {
 	// OutputStream will be attached to container's STDOUT
-	OutputStream io.WriteCloser
+	OutputStream io.Writer
 	// ErrorStream will be attached to container's STDERR
-	ErrorStream io.WriteCloser
+	ErrorStream io.Writer
 	// InputStream will be attached to container's STDIN
-	InputStream *bufio.Reader
+	InputStream io.Reader
 	// AttachOutput is whether to attach to STDOUT
 	// If false, stdout will not be attached
 	AttachOutput bool
