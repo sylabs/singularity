@@ -2,6 +2,10 @@
 
 ## Changes Since Last Release
 
+### New features / functionalities
+
+- SingularityCE now supports the `riscv64` architecture.
+
 ### Bug fixes
 
 - Correct library bindings for `unsquashfs` containment. Fixes errors where
