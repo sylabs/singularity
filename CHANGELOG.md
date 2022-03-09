@@ -9,6 +9,13 @@
 - systemd is now supported and used as the default cgroups manager. Set
   `systemd cgroups = no` in `singularity.conf` to manage cgroups directly via
   the cgroupfs.
+- The `singularity oci` command group now uses `runc` to manage containers.
+- The `singularity oci` commands use `conmon` which is built from a git submodule,
+  unless `--without-conmon` is specified as an argument to `mconfig`, in which
+  case Singularity will search `PATH` for conmon. Version >=2.0.24 of conmon
+  is required.
+- The `singularity oci` flags `--sync-socket`, `--empty-process`, and
+  `--timeout` have been removed.
 
 ### New features / functionalities
 

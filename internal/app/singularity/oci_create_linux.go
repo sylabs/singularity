@@ -1,81 +1,235 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// Includes code from https://github.com/containers/podman
+// Released under the Apache License Version 2.0
+
 package singularity
 
 import (
+	"bufio"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
+	"path"
 	"path/filepath"
+	"syscall"
+	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/oci"
-	"github.com/sylabs/singularity/internal/pkg/util/starter"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
+	"github.com/google/uuid"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/pkg/sylog"
+	"golang.org/x/sys/unix"
 )
 
 // OciCreate creates a container from an OCI bundle
 func OciCreate(containerID string, args *OciArgs) error {
-	_, err := getState(containerID)
-	if err == nil {
-		return fmt.Errorf("%s already exists", containerID)
+	conmon, err := bin.FindBin("conmon")
+	if err != nil {
+		return err
 	}
-
-	os.Clearenv()
-
+	runc, err := bin.FindBin("runc")
+	if err != nil {
+		return err
+	}
+	// chdir to bundle and lock it, so another oci create cannot use the same bundle
 	absBundle, err := filepath.Abs(args.BundlePath)
 	if err != nil {
-		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
+		return fmt.Errorf("failed to determine bundle absolute path: %w", err)
 	}
-
 	if err := os.Chdir(absBundle); err != nil {
-		return fmt.Errorf("failed to change directory to %s: %s", absBundle, err)
+		return fmt.Errorf("failed to change directory to %s: %w", absBundle, err)
+	}
+	if err := lockBundle(absBundle); err != nil {
+		return fmt.Errorf("while locking bundle: %w", err)
 	}
 
-	engineConfig := oci.NewConfig()
-	generator := generate.New(&engineConfig.OciConfig.Spec)
-	engineConfig.SetBundlePath(absBundle)
-	engineConfig.SetLogPath(args.LogPath)
-	engineConfig.SetLogFormat(args.LogFormat)
-	engineConfig.SetPidFile(args.PidFile)
-
-	// load config.json from bundle path
-	configJSON := filepath.Join(absBundle, "config.json")
-	fb, err := os.Open(configJSON)
+	// Create our own state location for conmon and singularity related files
+	sd, err := stateDir(containerID)
 	if err != nil {
-		return fmt.Errorf("oci specification file %q is missing or cannot be read", configJSON)
+		return fmt.Errorf("while computing state directory: %w", err)
 	}
-
-	data, err := ioutil.ReadAll(fb)
+	err = os.MkdirAll(sd, 0o700)
 	if err != nil {
-		return fmt.Errorf("failed to read OCI specification file %s: %s", configJSON, err)
+		return fmt.Errorf("while creating state directory: %w", err)
+	}
+	containerUUID, err := uuid.NewRandom()
+	if err != nil {
+		return err
 	}
 
-	fb.Close()
+	// Pipes for sync and start communication with conmon
+	syncFds, err := unix.Socketpair(unix.AF_LOCAL, unix.SOCK_SEQPACKET|unix.SOCK_CLOEXEC, 0)
+	if err != nil {
+		return fmt.Errorf("could not create sync socket pair: %w", err)
+	}
+	syncChild := os.NewFile(uintptr(syncFds[0]), "sync_child")
+	syncParent := os.NewFile(uintptr(syncFds[1]), "sync_parent")
+	defer syncParent.Close()
 
-	if err := json.Unmarshal(data, generator.Config); err != nil {
-		return fmt.Errorf("failed to parse OCI specification file %s: %s", configJSON, err)
+	startFds, err := unix.Socketpair(unix.AF_LOCAL, unix.SOCK_SEQPACKET|unix.SOCK_CLOEXEC, 0)
+	if err != nil {
+		return fmt.Errorf("could not create sync socket pair: %w", err)
+	}
+	startChild := os.NewFile(uintptr(startFds[0]), "start_child")
+	startParent := os.NewFile(uintptr(startFds[1]), "start_parent")
+	defer startParent.Close()
+
+	singularityBin := filepath.Join(buildcfg.BINDIR, "singularity")
+	cmdArgs := []string{
+		"--api-version", "1",
+		"--cid", containerID,
+		"--name", containerID,
+		"--cuuid", containerUUID.String(),
+		"--runtime", runc,
+		"--conmon-pidfile", path.Join(sd, conmonPidFile),
+		"--container-pidfile", path.Join(sd, containerPidFile),
+		"--log-path", path.Join(sd, containerLogFile),
+		"--runtime-arg", "--root",
+		"--runtime-arg", RuncStateDir,
+		"--runtime-arg", "--log",
+		"--runtime-arg", path.Join(sd, runcLogFile),
+		"--full-attach",
+		"--terminal",
+		"--bundle", absBundle,
+		"--exit-command", singularityBin,
+		"--exit-command-arg", "--debug",
+		"--exit-command-arg", "oci",
+		"--exit-command-arg", "cleanup",
+		"--exit-command-arg", containerID,
 	}
 
-	engineConfig.EmptyProcess = args.EmptyProcess
-	engineConfig.SyncSocket = args.SyncSocketPath
+	cmd := exec.Command(conmon, cmdArgs...)
+	cmd.Dir = absBundle
+	cmd.Env = append(cmd.Env, fmt.Sprintf("_OCI_SYNCPIPE=%d", 3), fmt.Sprintf("_OCI_STARTPIPE=%d", 4))
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setpgid: true,
+	}
+	cmd.ExtraFiles = append(cmd.ExtraFiles, syncChild, startChild)
 
-	commonConfig := &config.Common{
-		ContainerID:  containerID,
-		EngineName:   oci.Name,
-		EngineConfig: engineConfig,
+	// Run conmon and close it's end of the pipes in our parent process
+	sylog.Debugf("Starting conmon with args %v", cmdArgs)
+	if err := cmd.Start(); err != nil {
+		if err2 := releaseBundle(absBundle); err2 != nil {
+			sylog.Errorf("while releasing bundle: %v", err)
+		}
+		return fmt.Errorf("while starting conmon: %w", err)
+	}
+	syncChild.Close()
+	startChild.Close()
+
+	// No other setup at present... just signal conmon to start work
+	writeConmonPipeData(startParent)
+	// After conmon receives from start pipe it should start container and exit
+	// without error.
+	err = cmd.Wait()
+	if err != nil {
+		if err2 := releaseBundle(absBundle); err2 != nil {
+			sylog.Errorf("while releasing bundle: %v", err)
+		}
+		return fmt.Errorf("while starting conmon: %w", err)
 	}
 
-	procName := fmt.Sprintf("Singularity OCI %s", containerID)
-	return starter.Run(
-		procName,
-		commonConfig,
-		starter.WithStdin(os.Stdin),
-		starter.WithStderr(os.Stderr),
-		starter.WithStdout(os.Stdout),
-	)
+	// We check for errors from runc (which conmon invokes) via the sync pipe
+	pid, err := readConmonPipeData(syncParent, path.Join(sd, runcLogFile))
+	if err != nil {
+		if err2 := OciDelete(context.TODO(), containerID); err2 != nil {
+			sylog.Errorf("Removing container %s from runtime after creation failed", containerID)
+		}
+		return err
+	}
+
+	// Create a symlink from the state dir to the bundle, so it's easy to find later on.
+	bundleLink := path.Join(sd, "bundle")
+	if err := os.Symlink(absBundle, bundleLink); err != nil {
+		return fmt.Errorf("could not link attach socket: %w", err)
+	}
+
+	sylog.Infof("Container %s created with PID %d", containerID, pid)
+	return nil
+}
+
+// The following utility functions are taken from https://github.com/containers/podman
+// Released under the Apache License Version 2.0
+
+func readConmonPipeData(pipe *os.File, ociLog string) (int, error) {
+	// syncInfo is used to return data from monitor process to daemon
+	type syncInfo struct {
+		Data    int    `json:"data"`
+		Message string `json:"message,omitempty"`
+	}
+
+	// Wait to get container pid from conmon
+	type syncStruct struct {
+		si  *syncInfo
+		err error
+	}
+	ch := make(chan syncStruct)
+	go func() {
+		var si *syncInfo
+		rdr := bufio.NewReader(pipe)
+		b, err := rdr.ReadBytes('\n')
+		if err != nil {
+			ch <- syncStruct{err: err}
+		}
+		if err := json.Unmarshal(b, &si); err != nil {
+			ch <- syncStruct{err: err}
+			return
+		}
+		ch <- syncStruct{si: si}
+	}()
+
+	data := -1
+	select {
+	case ss := <-ch:
+		if ss.err != nil {
+			if ociLog != "" {
+				ociLogData, err := ioutil.ReadFile(ociLog)
+				if err == nil {
+					var ociErr ociError
+					if err := json.Unmarshal(ociLogData, &ociErr); err == nil {
+						return -1, fmt.Errorf("runc error: %s", ociErr.Msg)
+					}
+				}
+			}
+			return -1, fmt.Errorf("container create failed (no logs from conmon): %w", ss.err)
+		}
+		sylog.Debugf("Received: %d", ss.si.Data)
+		if ss.si.Data < 0 {
+			if ociLog != "" {
+				ociLogData, err := ioutil.ReadFile(ociLog)
+				if err == nil {
+					var ociErr ociError
+					if err := json.Unmarshal(ociLogData, &ociErr); err == nil {
+						return ss.si.Data, fmt.Errorf("runc error: %s", ociErr.Msg)
+					}
+				}
+			}
+			// If we failed to parse the JSON errors, then print the output as it is
+			if ss.si.Message != "" {
+				return ss.si.Data, fmt.Errorf("runc error: %s", ss.si.Message)
+			}
+			return ss.si.Data, fmt.Errorf("container creation failed")
+		}
+		data = ss.si.Data
+	case <-time.After(createTimeout):
+		return -1, fmt.Errorf("container creation timeout")
+	}
+	return data, nil
+}
+
+// writeConmonPipeData writes nonce data to a pipe
+func writeConmonPipeData(pipe *os.File) error {
+	someData := []byte{0}
+	_, err := pipe.Write(someData)
+	return err
 }

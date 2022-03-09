@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,32 +6,29 @@
 package singularity
 
 import (
-	"encoding/json"
-	"fmt"
+	"os"
+	"os/exec"
 
-	"github.com/sylabs/singularity/pkg/util/unix"
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // OciState query container state
 func OciState(containerID string, args *OciArgs) error {
-	// query instance files and returns state
-	state, err := getState(containerID)
+	runc, err := bin.FindBin("runc")
 	if err != nil {
 		return err
 	}
-	if args.SyncSocketPath != "" {
-		data, err := json.Marshal(state)
-		if err != nil {
-			return fmt.Errorf("failed to marshal state data: %s", err)
-		} else if err := unix.WriteSocket(args.SyncSocketPath, data); err != nil {
-			return err
-		}
-	} else {
-		c, err := json.MarshalIndent(state, "", "\t")
-		if err != nil {
-			return err
-		}
-		fmt.Println(string(c))
+	runcArgs := []string{
+		"--root", RuncStateDir,
+		"state",
+		containerID,
 	}
-	return nil
+
+	cmd := exec.Command(runc, runcArgs...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdout
+	sylog.Debugf("Calling runc with args %v", runcArgs)
+	return cmd.Run()
 }

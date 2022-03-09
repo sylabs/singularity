@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,66 +6,30 @@
 package singularity
 
 import (
-	"fmt"
-	"io"
-	"syscall"
-	"time"
+	"os"
+	"os/exec"
 
-	"github.com/sylabs/singularity/internal/pkg/util/signal"
-	"github.com/sylabs/singularity/pkg/ociruntime"
-	"github.com/sylabs/singularity/pkg/util/unix"
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // OciKill kills container process
-func OciKill(containerID string, killSignal string, killTimeout int) error {
-	// send signal to the instance
-	state, err := getState(containerID)
+func OciKill(containerID string, killSignal string) error {
+	runc, err := bin.FindBin("runc")
 	if err != nil {
 		return err
 	}
-
-	if state.Status != ociruntime.Created && state.Status != ociruntime.Running {
-		return fmt.Errorf("cannot kill '%s', the state of the container must be created or running", containerID)
+	runcArgs := []string{
+		"--root", RuncStateDir,
+		"kill",
+		containerID,
+		killSignal,
 	}
 
-	sig := syscall.SIGTERM
-
-	if killSignal != "" {
-		sig, err = signal.Convert(killSignal)
-		if err != nil {
-			return err
-		}
-	}
-
-	if killTimeout > 0 {
-		c, err := unix.Dial(state.ControlSocket)
-		if err != nil {
-			return fmt.Errorf("failed to connect to control socket")
-		}
-		defer c.Close()
-
-		killed := make(chan bool, 1)
-
-		go func() {
-			// wait runtime close socket connection for ACK
-			d := make([]byte, 1)
-			if _, err := c.Read(d); err == io.EOF {
-				killed <- true
-			}
-		}()
-
-		if err := syscall.Kill(state.Pid, sig); err != nil {
-			return err
-		}
-
-		select {
-		case <-killed:
-		case <-time.After(time.Duration(killTimeout) * time.Second):
-			return syscall.Kill(state.Pid, syscall.SIGKILL)
-		}
-	} else {
-		return syscall.Kill(state.Pid, sig)
-	}
-
-	return nil
+	cmd := exec.Command(runc, runcArgs...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdout
+	sylog.Debugf("Calling runc with args %v", runcArgs)
+	return cmd.Run()
 }

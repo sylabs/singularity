@@ -42,6 +42,7 @@ BuildRequires: git
 BuildRequires: gcc
 BuildRequires: make
 BuildRequires: libseccomp-devel
+BuildRequires: glib2-devel
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
 %else
@@ -126,6 +127,7 @@ make -C builddir DESTDIR=$RPM_BUILD_ROOT install
 %{_bindir}/run-singularity
 %dir %{_libexecdir}/singularity
 %{_libexecdir}/singularity/bin/starter
+%{_libexecdir}/singularity/bin/conmon
 %{_libexecdir}/singularity/cni/*
 %dir %{_sysconfdir}/singularity
 %config(noreplace) %{_sysconfdir}/singularity/*.conf

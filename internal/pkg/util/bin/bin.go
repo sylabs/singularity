@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -33,6 +34,15 @@ func FindBin(name string) (path string, err error) {
 		return findFromConfigOrPath(name)
 	// distro provided setUID executables that are used in the fakeroot flow to setup subuid/subgid mappings
 	case "newuidmap", "newgidmap":
+		return findOnPath(name)
+	// distro provided OCI runtime
+	case "runc":
+		return findOnPath(name)
+	// our, or distro provided conmon
+	case "conmon":
+		if buildcfg.CONMON_LIBEXEC == 1 {
+			return filepath.Join(buildcfg.LIBEXECDIR, "singularity", "bin", name), nil
+		}
 		return findOnPath(name)
 	// cryptsetup & nvidia-container-cli paths must be explicitly specified
 	// They are called as root from the RPC server in a setuid install, so this

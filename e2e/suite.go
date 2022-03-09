@@ -148,13 +148,24 @@ func Run(t *testing.T) {
 	// If you need the test image, add the call at the top of your
 	// own test.
 
-	testenv.TestRegistry = "localhost:5000"
-	testenv.OrasTestImage = fmt.Sprintf("oras://%s/oras_test_sif:latest", testenv.TestRegistry)
+	if os.Getenv("SINGULARITY_E2E_NO_PID_NS") != "" {
+		// e2e tests that will run in a mount namespace only
+		// They do not currently require the OCI registry instance.
+		suite := testhelper.NewSuite(t, testenv)
+		suite.AddGroup("CGROUPS", cgroups.E2ETests)
+		suite.AddGroup("OCI", oci.E2ETests)
+		suite.Run()
+		return
+	}
+
+	// e2e tests that will run in a mount and PID namespace are below
 
 	// Because tests are parallelized, and PrepRegistry temporarily masks
 	// the Singularity instance directory we *must* now call it before we
 	// start running tests which could use instance and oci functionality.
 	// See: https://github.com/hpcng/singularity/issues/5744
+	testenv.TestRegistry = "localhost:5000"
+	testenv.OrasTestImage = fmt.Sprintf("oras://%s/oras_test_sif:latest", testenv.TestRegistry)
 	t.Run("PrepRegistry", func(t *testing.T) {
 		e2e.PrepRegistry(t, testenv)
 	})
@@ -163,16 +174,6 @@ func Run(t *testing.T) {
 	defer e2e.KillRegistry(t, testenv)
 
 	suite := testhelper.NewSuite(t, testenv)
-
-	if os.Getenv("SINGULARITY_E2E_NO_PID_NS") != "" {
-		// e2e tests that will run in a mount namespace only
-		suite.AddGroup("CGROUPS", cgroups.E2ETests)
-		suite.AddGroup("OCI", oci.E2ETests)
-		suite.Run()
-		return
-	}
-
-	// e2e tests that will run in a mount and PID namespace
 	suite.AddGroup("ACTIONS", actions.E2ETests)
 	suite.AddGroup("BUILDCFG", e2ebuildcfg.E2ETests)
 	suite.AddGroup("BUILD", imgbuild.E2ETests)

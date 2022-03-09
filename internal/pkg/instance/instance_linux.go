@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -20,8 +20,6 @@ import (
 )
 
 const (
-	// OciSubDir represents directory where OCI instance files are stored
-	OciSubDir = "oci"
 	// SingSubDir represents directory where Singularity instance files are stored
 	SingSubDir = "sing"
 	// LogSubDir represents directory where Singularity instance log files are stored

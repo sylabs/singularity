@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,69 +6,49 @@
 package singularity
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
+	"os"
+	"os/exec"
 
-	"github.com/sylabs/singularity/pkg/ociruntime"
-	"github.com/sylabs/singularity/pkg/util/unix"
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
-// OciPauseResume pauses/resumes processes in a container
-func OciPauseResume(containerID string, pause bool) error {
-	state, err := getState(containerID)
+// OciPause pauses processes in a container
+func OciPause(containerID string) error {
+	runc, err := bin.FindBin("runc")
 	if err != nil {
 		return err
 	}
-
-	if state.ControlSocket == "" {
-		return fmt.Errorf("can't find control socket")
+	runcArgs := []string{
+		"--root", RuncStateDir,
+		"pause",
+		containerID,
 	}
 
-	if pause && state.Status != ociruntime.Running {
-		return fmt.Errorf("container %s is not running", containerID)
-	} else if !pause && state.Status != ociruntime.Paused {
-		return fmt.Errorf("container %s is not paused", containerID)
-	}
+	cmd := exec.Command(runc, runcArgs...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdout
+	sylog.Debugf("Calling runc with args %v", runcArgs)
+	return cmd.Run()
+}
 
-	ctrl := &ociruntime.Control{}
-	if pause {
-		ctrl.Pause = true
-	} else {
-		ctrl.Resume = true
-	}
-
-	c, err := unix.Dial(state.ControlSocket)
-	if err != nil {
-		return fmt.Errorf("failed to connect to control socket")
-	}
-	defer c.Close()
-
-	enc := json.NewEncoder(c)
-	if enc == nil {
-		return fmt.Errorf("cannot instantiate new JSON encoder")
-	}
-
-	if err := enc.Encode(ctrl); err != nil {
-		return err
-	}
-
-	// wait runtime close socket connection for ACK
-	d := make([]byte, 1)
-	if _, err := c.Read(d); err != io.EOF {
-		return err
-	}
-
-	// check status
-	state, err = getState(containerID)
+// OciResume pauses processes in a container
+func OciResume(containerID string) error {
+	runc, err := bin.FindBin("runc")
 	if err != nil {
 		return err
 	}
-	if pause && state.Status != ociruntime.Paused {
-		return fmt.Errorf("bad status %s returned instead of paused", state.Status)
-	} else if !pause && state.Status != ociruntime.Running {
-		return fmt.Errorf("bad status %s returned instead of running", state.Status)
+	runcArgs := []string{
+		"--root", RuncStateDir,
+		"resume",
+		containerID,
 	}
 
-	return nil
+	cmd := exec.Command(runc, runcArgs...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdout
+	sylog.Debugf("Calling runc with args %v", runcArgs)
+	return cmd.Run()
 }

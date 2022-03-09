@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -26,28 +26,6 @@ var ociBundleFlag = cmdline.Flag{
 	Usage:        "specify the OCI bundle path (required)",
 	Tag:          "<path>",
 	EnvKeys:      []string{"BUNDLE"},
-}
-
-// -s|--sync-socket
-var ociSyncSocketFlag = cmdline.Flag{
-	ID:           "ociSyncSocketFlag",
-	Value:        &ociArgs.SyncSocketPath,
-	DefaultValue: "",
-	Name:         "sync-socket",
-	ShortHand:    "s",
-	Usage:        "specify the path to unix socket for state synchronization",
-	Tag:          "<path>",
-	EnvKeys:      []string{"SYNC_SOCKET"},
-}
-
-// --empty-process
-var ociCreateEmptyProcessFlag = cmdline.Flag{
-	ID:           "ociCreateEmptyProcessFlag",
-	Value:        &ociArgs.EmptyProcess,
-	DefaultValue: false,
-	Name:         "empty-process",
-	Usage:        "run container without executing container process (eg: for POD container)",
-	EnvKeys:      []string{"EMPTY_PROCESS"},
 }
 
 // -l|--log-path
@@ -107,16 +85,6 @@ var ociKillForceFlag = cmdline.Flag{
 	EnvKeys:      []string{"FORCE"},
 }
 
-// -t|--timeout
-var ociKillTimeoutFlag = cmdline.Flag{
-	ID:           "ociKillTimeoutFlag",
-	Value:        &ociArgs.KillTimeout,
-	DefaultValue: uint32(0),
-	Name:         "timeout",
-	ShortHand:    "t",
-	Usage:        "timeout in second before killing container",
-}
-
 // -f|--from-file
 var ociUpdateFromFileFlag = cmdline.Flag{
 	ID:           "ociUpdateFromFileFlag",
@@ -149,16 +117,12 @@ func init() {
 		createRunCmd := cmdManager.GetCmdGroup("create_run")
 
 		cmdManager.RegisterFlagForCmd(&ociBundleFlag, createRunCmd...)
-		cmdManager.RegisterFlagForCmd(&ociSyncSocketFlag, createRunCmd...)
 		cmdManager.RegisterFlagForCmd(&ociLogPathFlag, createRunCmd...)
 		cmdManager.RegisterFlagForCmd(&ociLogFormatFlag, createRunCmd...)
 		cmdManager.RegisterFlagForCmd(&ociPidFileFlag, createRunCmd...)
-		cmdManager.RegisterFlagForCmd(&ociCreateEmptyProcessFlag, OciCreateCmd)
 		cmdManager.RegisterFlagForCmd(&ociKillForceFlag, OciKillCmd)
 		cmdManager.RegisterFlagForCmd(&ociKillSignalFlag, OciKillCmd)
-		cmdManager.RegisterFlagForCmd(&ociKillTimeoutFlag, OciKillCmd)
 		cmdManager.RegisterFlagForCmd(&ociUpdateFromFileFlag, OciUpdateCmd)
-		cmdManager.RegisterFlagForCmd(&ociSyncSocketFlag, OciStateCmd)
 	})
 }
 
@@ -232,7 +196,6 @@ var OciKillCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
 	Run: func(cmd *cobra.Command, args []string) {
-		timeout := int(ociArgs.KillTimeout)
 		killSignal := ""
 		if len(args) > 1 && args[1] != "" {
 			killSignal = args[1]
@@ -242,7 +205,7 @@ var OciKillCmd = &cobra.Command{
 		if ociArgs.ForceKill {
 			killSignal = "SIGKILL"
 		}
-		if err := singularity.OciKill(args[0], killSignal, timeout); err != nil {
+		if err := singularity.OciKill(args[0], killSignal); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -322,7 +285,7 @@ var OciPauseCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.OciPauseResume(args[0], true); err != nil {
+		if err := singularity.OciPause(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -338,7 +301,7 @@ var OciResumeCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.OciPauseResume(args[0], false); err != nil {
+		if err := singularity.OciResume(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},

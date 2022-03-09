@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,36 +6,29 @@
 package singularity
 
 import (
-	"fmt"
 	"os"
-	"strings"
+	"os/exec"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/oci"
-	"github.com/sylabs/singularity/internal/pkg/util/starter"
-	"github.com/sylabs/singularity/pkg/ociruntime"
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // OciExec executes a command in a container
 func OciExec(containerID string, cmdArgs []string) error {
-	commonConfig, err := getCommonConfig(containerID)
+	runc, err := bin.FindBin("runc")
 	if err != nil {
-		return fmt.Errorf("%s doesn't exist", containerID)
+		return err
 	}
-
-	engineConfig := commonConfig.EngineConfig.(*oci.EngineConfig)
-
-	switch engineConfig.GetState().Status {
-	case ociruntime.Running, ociruntime.Paused:
-	default:
-		args := strings.Join(cmdArgs, " ")
-		return fmt.Errorf("cannot execute command %q, container '%s' is not running", args, containerID)
+	runcArgs := []string{
+		"--root", RuncStateDir,
+		"exec",
+		containerID,
 	}
-
-	engineConfig.Exec = true
-	engineConfig.OciConfig.SetProcessArgs(cmdArgs)
-
-	os.Clearenv()
-
-	procName := fmt.Sprintf("Singularity OCI %s", containerID)
-	return starter.Exec(procName, commonConfig)
+	runcArgs = append(runcArgs, cmdArgs...)
+	cmd := exec.Command(runc, runcArgs...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdout
+	sylog.Debugf("Calling runc with args %v", runcArgs)
+	return cmd.Run()
 }

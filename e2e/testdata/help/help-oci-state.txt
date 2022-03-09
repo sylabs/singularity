@@ -8,9 +8,7 @@ Description:
   container identified by container ID.
 
 Options:
-  -h, --help                 help for state
-  -s, --sync-socket string   specify the path to unix socket for state
-                             synchronization
+  -h, --help   help for state
 
 
 Examples:

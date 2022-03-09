@@ -5,7 +5,6 @@ run:
     - containers_image_openpgp
     - e2e_test
     - fakeroot_engine
-    - oci_engine
     - seccomp
     - selinux
     - singularity_engine
