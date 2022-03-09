@@ -1110,8 +1110,9 @@ github.com/sylabs/scs-key-client v0.7.1/go.mod h1:/5RJxsW7iIKDD9FU2qfGvlCs+Mfjig
 github.com/sylabs/scs-library-client v1.2.1 h1:L8vOoG1/ByN0VSMgQjbhd8X8DbidA10nPuIiUd0oJFM=
 github.com/sylabs/scs-library-client v1.2.1/go.mod h1:WddtCtL42AAsmCiUe8oxjHKbER5vbXtaO7Cxlmf+n0c=
 github.com/sylabs/sif/v2 v2.3.1/go.mod h1:NnvveH62GiibimL00MrI6YYcZfb7DnZMcRo/40giY+0=
-github.com/sylabs/sif/v2 v2.3.2 h1:Kj60dUcE3TSM8Px4TaIbX7PUafB1QGhUi70Fz5Gf7iU=
 github.com/sylabs/sif/v2 v2.3.2/go.mod h1:IrLX2pzmQ2O4qgv5iy3HdKJcBNYds9DTMd9Je8A9tX4=
+github.com/sylabs/sif/v2 v2.4.0 h1:ikDJvXoXG1s4AChO4xSq5zxskw/bc2crTbBYN7bet5U=
+github.com/sylabs/sif/v2 v2.4.0/go.mod h1:IrLX2pzmQ2O4qgv5iy3HdKJcBNYds9DTMd9Je8A9tX4=
 github.com/syndtr/gocapability v0.0.0-20170704070218-db04d3cc01c8/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 h1:kdXcSzyDtseVEc4yCz2qF8ZrQvIDBJLl4S1c3GCXmoI=
