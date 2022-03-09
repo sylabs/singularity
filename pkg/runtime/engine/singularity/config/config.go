@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -115,6 +115,7 @@ type JSONConfig struct {
 	NoTmp             bool              `json:"noTmp,omitempty"`
 	NoHostfs          bool              `json:"noHostfs,omitempty"`
 	NoCwd             bool              `json:"noCwd,omitempty"`
+	SkipBinds         []string          `json:"skipBinds,omitempty"`
 	NoInit            bool              `json:"noInit,omitempty"`
 	Fakeroot          bool              `json:"fakeroot,omitempty"`
 	SignalPropagation bool              `json:"signalPropagation,omitempty"`
@@ -471,6 +472,16 @@ func (e *EngineConfig) SetNoCwd(val bool) {
 // GetNoCwd returns if no-cwd flag is set or not.
 func (e *EngineConfig) GetNoCwd() bool {
 	return e.JSON.NoCwd
+}
+
+// SetSkipBinds sets bind paths to skip
+func (e *EngineConfig) SetSkipBinds(val []string) {
+	e.JSON.SkipBinds = val
+}
+
+// GetSkipBinds gets bind paths to skip
+func (e *EngineConfig) GetNoBinds() []string {
+	return e.JSON.SkipBinds
 }
 
 // SetNoInit set noinit flag to not start shim init process.
