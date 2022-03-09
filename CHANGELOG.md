@@ -27,6 +27,7 @@
 - The `--no-mount` flag & `SINGULARITY_NO_MOUNT` env var can now be used to
   disable a `bind path` entry from `singularity.conf` by specifying the
   absolute path to the destination of the bind.
+- SingularityCE now supports the `riscv64` architecture.
 
 ### Bug fixes
 
