@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019,2020 Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -22,6 +22,7 @@ import (
 	"github.com/sylabs/singularity/e2e/actions"
 	e2ebuildcfg "github.com/sylabs/singularity/e2e/buildcfg"
 	"github.com/sylabs/singularity/e2e/cache"
+	"github.com/sylabs/singularity/e2e/cgroups"
 	"github.com/sylabs/singularity/e2e/cmdenvvars"
 	"github.com/sylabs/singularity/e2e/config"
 	"github.com/sylabs/singularity/e2e/delete"
@@ -163,9 +164,15 @@ func Run(t *testing.T) {
 
 	suite := testhelper.NewSuite(t, testenv)
 
-	// RunE2ETests by functionality.
-	//
-	// Please keep this list sorted.
+	if os.Getenv("SINGULARITY_E2E_NO_PID_NS") != "" {
+		// e2e tests that will run in a mount namespace only
+		suite.AddGroup("CGROUPS", cgroups.E2ETests)
+		suite.AddGroup("OCI", oci.E2ETests)
+		suite.Run()
+		return
+	}
+
+	// e2e tests that will run in a mount and PID namespace
 	suite.AddGroup("ACTIONS", actions.E2ETests)
 	suite.AddGroup("BUILDCFG", e2ebuildcfg.E2ETests)
 	suite.AddGroup("BUILD", imgbuild.E2ETests)
@@ -181,7 +188,6 @@ func Run(t *testing.T) {
 	suite.AddGroup("INSPECT", inspect.E2ETests)
 	suite.AddGroup("INSTANCE", instance.E2ETests)
 	suite.AddGroup("KEY", key.E2ETests)
-	suite.AddGroup("OCI", oci.E2ETests)
 	suite.AddGroup("OVERLAY", overlay.E2ETests)
 	suite.AddGroup("PLUGIN", plugin.E2ETests)
 	suite.AddGroup("PULL", pull.E2ETests)
@@ -193,6 +199,5 @@ func Run(t *testing.T) {
 	suite.AddGroup("SIGN", sign.E2ETests)
 	suite.AddGroup("VERIFY", verify.E2ETests)
 	suite.AddGroup("VERSION", version.E2ETests)
-
 	suite.Run()
 }
