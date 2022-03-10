@@ -8,15 +8,19 @@ package cgroups
 import (
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
+	"github.com/opencontainers/runc/libcontainer/cgroups"
 	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 	lcmanager "github.com/opencontainers/runc/libcontainer/cgroups/manager"
 	lcconfigs "github.com/opencontainers/runc/libcontainer/configs"
 	lcspecconv "github.com/opencontainers/runc/libcontainer/specconv"
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/sylabs/singularity/internal/pkg/util/env"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 var ErrUnitialized = errors.New("cgroups manager is not initialized")
@@ -202,6 +206,34 @@ func (m *Manager) Destroy() (err error) {
 	return m.cgroup.Destroy()
 }
 
+// checkRootless identifies if rootless cgroups are required / supported
+func checkRootless(group string, systemd bool) (rootless bool, err error) {
+	if os.Getuid() == 0 {
+		if systemd {
+			if !strings.HasPrefix(group, "system.slice:") {
+				return false, fmt.Errorf("systemd cgroups require a cgroups path beginning with 'system.slice:'")
+			}
+		}
+		return false, nil
+	}
+
+	if !cgroups.IsCgroup2HybridMode() && !cgroups.IsCgroup2UnifiedMode() {
+		return false, fmt.Errorf("rootless cgroups requires cgroups v2")
+	}
+	if !systemd {
+		return false, fmt.Errorf("rootless cgroups require 'systemd cgroups' to be enabled in singularity.conf")
+	}
+	if os.Getenv("XDG_RUNTIME_DIR") == "" || os.Getenv("DBUS_SESSION_BUS_ADDRESS") == "" {
+		return false, fmt.Errorf("rootless cgroups require a D-Bus session - check that XDG_RUNTIME_DIR and DBUS_SESSION_BUS_ADDRESS are set")
+	}
+
+	if !strings.HasPrefix(group, "user.slice:") {
+		return false, fmt.Errorf("rootless cgroups require a cgroups path beginning with 'user.slice:'")
+	}
+
+	return true, nil
+}
+
 // newManager creates a new Manager, with the associated resources and cgroup.
 // The Manager is ready to manage the cgroup but does not apply limits etc.
 func newManager(resources *specs.LinuxResources, group string, systemd bool) (manager *Manager, err error) {
@@ -210,6 +242,25 @@ func newManager(resources *specs.LinuxResources, group string, systemd bool) (ma
 	}
 	if group == "" {
 		return nil, fmt.Errorf("a cgroup name/path must is required")
+	}
+
+	rootless, err := checkRootless(group, systemd)
+	if err != nil {
+		return nil, err
+	}
+	// Rootless manager code invokes systemctl, which it expects to be on PATH.
+	// Must set default PATH as starter sets up a very stripped down environment.
+	if rootless {
+		sylog.Debugf("Using rootless cgroups")
+		oldPath := os.Getenv("PATH")
+		if err := os.Setenv("PATH", env.DefaultPath); err != nil {
+			return nil, fmt.Errorf("could not set default PATH for cgroups manager to locate systemctl: %w", err)
+		}
+		defer os.Setenv("PATH", oldPath)
+
+		if len(resources.Devices) > 0 {
+			sylog.Warningf("Device limits will not be applied with rootless cgroups")
+		}
 	}
 
 	spec := &specs.Spec{
@@ -222,7 +273,7 @@ func newManager(resources *specs.LinuxResources, group string, systemd bool) (ma
 	opts := &lcspecconv.CreateOpts{
 		CgroupName:       group,
 		UseSystemdCgroup: systemd,
-		RootlessCgroups:  false,
+		RootlessCgroups:  rootless,
 		Spec:             spec,
 	}
 
@@ -255,8 +306,14 @@ func NewManagerWithSpec(spec *specs.LinuxResources, pid int, group string, syste
 		group = filepath.Join("/singularity", strconv.Itoa(pid))
 	}
 	if group == "" && systemd {
-		group = "system.slice:singularity:" + strconv.Itoa(pid)
+		if os.Getuid() == 0 {
+			group = "system.slice:singularity:" + strconv.Itoa(pid)
+		} else {
+			group = "user.slice:singularity:" + strconv.Itoa(pid)
+		}
 	}
+
+	sylog.Debugf("Creating cgroups manager for %s", group)
 
 	// Create the manager
 	mgr, err := newManager(spec, group, systemd)
