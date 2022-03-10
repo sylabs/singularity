@@ -2,6 +2,8 @@
 
 ## Changes Since Last Release
 
+### Changed defaults / behaviours
+
 - `oci mount` sets `Process.Terminal: true` when creating an OCI `config.json`,
   so that `oci run` provides expected interactive behavior by default.
 - Default hostname for `oci mount` containers is now `singularity` instead of
@@ -16,6 +18,8 @@
   is required.
 - The `singularity oci` flags `--sync-socket`, `--empty-process`, and
   `--timeout` have been removed.
+- Don't prompt for y/n to overwrite an existing file when build is
+  called from a non-interactive environment. Fail with an error.
 
 ### New features / functionalities
 
@@ -32,10 +36,14 @@
   container resource usage on a system using cgroups v2 and the systemd cgroups
   manager.
 
+## v3.9.6 \[2022-03-10\]
+
+### New features / functionalities
+
+- SingularityCE now supports the `riscv64` architecture.
+
 ### Bug fixes
 
-- Don't prompt for y/n to overwrite an existing file when build is
-  called from a non-interactive environment. Fail with an error.
 - Correct library bindings for `unsquashfs` containment. Fixes errors where
   resolved library filename does not match library filename in binary (e.g. EL8,
   POWER9 with glibc-hwcaps).
