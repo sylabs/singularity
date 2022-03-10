@@ -15,7 +15,7 @@ require (
 	github.com/containerd/cgroups v1.0.3
 	github.com/containerd/containerd v1.6.1
 	github.com/containernetworking/cni v1.0.1
-	github.com/containernetworking/plugins v1.1.0
+	github.com/containernetworking/plugins v1.1.1
 	github.com/containers/image/v5 v5.20.0
 	github.com/cyphar/filepath-securejoin v0.2.3
 	github.com/docker/docker v20.10.12+incompatible
