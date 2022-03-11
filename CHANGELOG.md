@@ -1,5 +1,11 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Support nvidia-container-cli v1.8.0 and above, via fix to capability set.
+
 ## v3.9.6 \[2022-03-10\]
 
 ### New features / functionalities
