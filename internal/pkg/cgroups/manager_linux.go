@@ -58,15 +58,21 @@ func NewManagerFromFile(specPath string, pid int, group string) (manager Manager
 	if cgroups.Mode() == cgroups.Unified {
 		sylog.Debugf("Applying cgroups v2 configuration")
 		mgrv2 := ManagerV2{pid: pid, group: group}
-		return &mgrv2, mgrv2.ApplyFromFile(specPath)
+		if err := mgrv2.ApplyFromFile(specPath); err != nil {
+			return nil, err
+		}
+		return &mgrv2, err
 	}
 
 	sylog.Debugf("Applying cgroups v1 configuration")
 	mgrv1 := ManagerV1{pid: pid, path: group}
-	return &mgrv1, mgrv1.ApplyFromFile(specPath)
+	if err := mgrv1.ApplyFromFile(specPath); err != nil {
+		return nil, err
+	}
+	return &mgrv1, nil
 }
 
-// NewManagerFromFile creates a Manager, applies the configuration in spec, and adds pid to the cgroup.
+// NewManagerFromSpec creates a Manager, applies the configuration in spec, and adds pid to the cgroup.
 // If a group name is supplied, it will be used by the manager.
 // If group = "" then "/singularity/<pid>" is used as a default.
 func NewManagerFromSpec(spec *specs.LinuxResources, pid int, group string) (manager Manager, err error) {
@@ -77,12 +83,18 @@ func NewManagerFromSpec(spec *specs.LinuxResources, pid int, group string) (mana
 	if cgroups.Mode() == cgroups.Unified {
 		sylog.Debugf("Applying cgroups v2 configuration")
 		mgrv2 := ManagerV2{pid: pid, group: group}
-		return &mgrv2, mgrv2.ApplyFromSpec(spec)
+		if err := mgrv2.ApplyFromSpec(spec); err != nil {
+			return nil, err
+		}
+		return &mgrv2, err
 	}
 
 	sylog.Debugf("Applying cgroups v1 configuration")
 	mgrv1 := ManagerV1{pid: pid, path: group}
-	return &mgrv1, mgrv1.ApplyFromSpec(spec)
+	if err := mgrv1.ApplyFromSpec(spec); err != nil {
+		return nil, err
+	}
+	return &mgrv1, nil
 }
 
 // GetManager returns a Manager for the provided cgroup name/path.
