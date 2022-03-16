@@ -1092,8 +1092,8 @@ github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69
 github.com/sylabs/json-resp v0.8.0 h1:bZ932uaF220aPqT0+x/vakoaGCGNbpLCjUFm1f+JKlY=
 github.com/sylabs/json-resp v0.8.0/go.mod h1:bUGV9cqShOyxz7RxBq03Yt9raKGfELKrfN6Yac3lfiw=
 github.com/sylabs/release-tools v0.1.0/go.mod h1:pqP/z/11/rYMQ0OM/Nn7TxGijw7KfZwW9UolD/J1TUo=
-github.com/sylabs/scs-build-client v0.4.0 h1:aKLYWaQu6Zp/GS1v54q5MNkClXepqMBuP7/38qjPqt0=
-github.com/sylabs/scs-build-client v0.4.0/go.mod h1:crwbuQ6C8Cgzz/3I6TI5DLl5xU/7Z3cDaqvvLYM/3sY=
+github.com/sylabs/scs-build-client v0.4.1 h1:b7kqP19eFZ92hMp8DJgQfurnn92L47BvDO7gEKQ4eXo=
+github.com/sylabs/scs-build-client v0.4.1/go.mod h1:ywvU50Pe47r6HHIHoWOdpwVAg7yZ5FlU/LsKbT+eqcw=
 github.com/sylabs/scs-key-client v0.7.1 h1:m8w1fK5Ja/ahdgDRiAaFJ8CMOIOm8m37gKgSCwOgoeY=
 github.com/sylabs/scs-key-client v0.7.1/go.mod h1:/5RJxsW7iIKDD9FU2qfGvlCs+MfjigV7InUDE1SIR30=
 github.com/sylabs/scs-library-client v1.2.1/go.mod h1:WddtCtL42AAsmCiUe8oxjHKbER5vbXtaO7Cxlmf+n0c=
