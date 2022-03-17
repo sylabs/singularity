@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019,2020 Sylabs Inc. All rights reserved.
+// Copyright (c) 2019,2022 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -22,6 +22,7 @@ import (
 	"github.com/sylabs/singularity/e2e/actions"
 	e2ebuildcfg "github.com/sylabs/singularity/e2e/buildcfg"
 	"github.com/sylabs/singularity/e2e/cache"
+	"github.com/sylabs/singularity/e2e/cgroups"
 	"github.com/sylabs/singularity/e2e/cmdenvvars"
 	"github.com/sylabs/singularity/e2e/config"
 	"github.com/sylabs/singularity/e2e/delete"
@@ -170,6 +171,7 @@ func Run(t *testing.T) {
 	suite.AddGroup("BUILDCFG", e2ebuildcfg.E2ETests)
 	suite.AddGroup("BUILD", imgbuild.E2ETests)
 	suite.AddGroup("CACHE", cache.E2ETests)
+	suite.AddGroup("CGROUPS", cgroups.E2ETests)
 	suite.AddGroup("CMDENVVARS", cmdenvvars.E2ETests)
 	suite.AddGroup("CONFIG", config.E2ETests)
 	suite.AddGroup("DELETE", delete.E2ETests)

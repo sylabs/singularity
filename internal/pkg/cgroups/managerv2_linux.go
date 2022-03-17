@@ -159,6 +159,11 @@ func (m *ManagerV2) UpdateFromFile(path string) error {
 // Remove deletes the managed cgroup.
 func (m *ManagerV2) Remove() (err error) {
 	// deletes subgroup
+	if m.cgroup == nil {
+		if err := m.load(); err != nil {
+			return err
+		}
+	}
 	return m.cgroup.Delete()
 }
 

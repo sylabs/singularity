@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 - Support nvidia-container-cli v1.8.0 and above, via fix to capability set.
+- Avoid cleanup panic when invalid file specified for --apply-cgroups.
 
 ## v3.9.6 \[2022-03-10\]
 
