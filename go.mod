@@ -38,9 +38,9 @@ require (
 	github.com/seccomp/libseccomp-golang v0.9.2-0.20210429002308-3879420cc921
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
-	github.com/sylabs/json-resp v0.8.0
+	github.com/sylabs/json-resp v0.8.1
 	github.com/sylabs/scs-build-client v0.4.1
-	github.com/sylabs/scs-key-client v0.7.1
+	github.com/sylabs/scs-key-client v0.7.2
 	github.com/sylabs/scs-library-client v1.2.2
 	github.com/sylabs/sif/v2 v2.4.1
 	github.com/urfave/cli v1.22.5 // indirect
