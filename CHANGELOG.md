@@ -1,8 +1,8 @@
 # SingularityCE Changelog
 
-## Changes Since Last Release
+## v3.9.7 \[2022-03-23\]
 
-### Bug Fixes
+### Bug fixes
 
 - Support nvidia-container-cli v1.8.0 and above, via fix to capability set.
 - Avoid cleanup panic when invalid file specified for --apply-cgroups.
