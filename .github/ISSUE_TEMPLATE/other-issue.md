@@ -9,7 +9,7 @@ assignees: ''
 
 *Note*: We encourage questions about usage of SingularityCE to be made via the Google Group or Slack channels. Other users frequent these communities, and may already have the answer to your question!
 
-See: https://sylabs.io/resources/community for links.
+See: https://sylabs.io/singularity#community for links.
 
 **Type of issue**
 E.g. test problem / technical debt / release tracking
