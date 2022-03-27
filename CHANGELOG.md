@@ -7,6 +7,12 @@
   in the next minor release (3.10.x). Users utilizing plugins with
   SingularityCE 3.9.x should use version 1.17.x of the Go toolchain.
 
+## Changes Since Last Release
+
+### Bug fixes
+
+- Do not truncate environment variables with commas
+
 ## v3.9.7 \[2022-03-23\]
 
 ### Bug fixes

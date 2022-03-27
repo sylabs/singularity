@@ -583,18 +583,34 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		// --env variables will take precedence over variables
 		// defined by the environment file
 		sylog.Debugf("Setting environment variables from file %s", SingularityEnvFile)
-		SingularityEnv = append(env, SingularityEnv...)
+
+		// Update SingularityEnv with those from file
+		for _, envar := range env {
+			e := strings.SplitN(envar, "=", 2)
+			if len(e) != 2 {
+				sylog.Warningf("Ignore environment variable %q: '=' is missing", envar)
+				continue
+			}
+
+			// Ensure we don't overwrite --env variables with environment file
+			if _, ok := SingularityEnv[e[0]]; ok {
+				sylog.Warningf("Ignore environment variable %s from %s: override from --env", e[0], SingularityEnvFile)
+			} else {
+				SingularityEnv[e[0]] = e[1]
+			}
+		}
 	}
 
 	// process --env and --env-file variables for injection
 	// into the environment by prefixing them with SINGULARITYENV_
-	for _, env := range SingularityEnv {
-		e := strings.SplitN(env, "=", 2)
-		if len(e) != 2 {
-			sylog.Warningf("Ignore environment variable %q: '=' is missing", env)
+	for envName, envValue := range SingularityEnv {
+
+		// We can allow envValue to be empty (explicit set to empty) but not name!
+		if envName == "" {
+			sylog.Warningf("Ignore environment variable %s=%s: variable name missing", envName, envValue)
 			continue
 		}
-		os.Setenv("SINGULARITYENV_"+e[0], e[1])
+		os.Setenv("SINGULARITYENV_"+envName, envValue)
 	}
 
 	// Copy and cache environment
