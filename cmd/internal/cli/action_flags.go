@@ -33,7 +33,7 @@ var (
 	VMIP               string
 	ContainLibsPath    []string
 	FuseMount          []string
-	SingularityEnv     []string
+	SingularityEnv     map[string]string
 	SingularityEnvFile string
 	NoMount            []string
 
@@ -619,7 +619,7 @@ var actionAllowSetuidFlag = cmdline.Flag{
 var actionEnvFlag = cmdline.Flag{
 	ID:           "actionEnvFlag",
 	Value:        &SingularityEnv,
-	DefaultValue: []string{},
+	DefaultValue: map[string]string{},
 	Name:         "env",
 	Usage:        "pass environment variable to contained process",
 }
