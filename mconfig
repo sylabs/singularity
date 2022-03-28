@@ -113,7 +113,7 @@ usage_args () {
 	echo "  Singularity options:"
 	echo "     --without-suid    do not install SUID binary (linux only)"
 	echo "     --without-network do not compile/install network plugins (linux only)"
-	echo "     --without-seccomp do not compile/install seccomp support even if available"
+	echo "     --without-seccomp do not compile/install seccomp support (linux only)"
   echo
   echo "  Third-party dependencies:"
   echo "     --without-conmon  do not build conmon, use distro provided version"
@@ -903,6 +903,11 @@ if [ "$with_network" = 0 ]; then
 	echo "    - Network plugins: no"
 else
 	echo "    - Network plugins: yes"
+fi
+if [ "$appsec" = 0 ]; then
+	echo "    - seccomp support: no"
+else
+	echo "    - seccomp support: yes"
 fi
 if [ "$with_conmon" = 0 ]; then
 	echo "    - Build conmon: no"
