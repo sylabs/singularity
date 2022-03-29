@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2022 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,15 +14,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
-
-const goMod = `module %s
-
-go 1.13
-
-require github.com/sylabs/singularity v0.0.0
-
-replace github.com/sylabs/singularity => ./singularity_source
-`
 
 const mainGo = `package main
 
@@ -72,16 +63,9 @@ func Create(path, name string) error {
 		return fmt.Errorf("while creating plugin directory %s: %s", dir, err)
 	}
 
-	// create go.mod skeleton
-	filename := filepath.Join(dir, "go.mod")
-	content := fmt.Sprintf(goMod, name)
-	if err := ioutil.WriteFile(filename, []byte(content), 0o644); err != nil {
-		return fmt.Errorf("while creating plugin %s: %s", filename, err)
-	}
-
 	// create main.go skeleton
-	filename = filepath.Join(dir, "main.go")
-	content = fmt.Sprintf(mainGo, name)
+	filename := filepath.Join(dir, "main.go")
+	content := fmt.Sprintf(mainGo, name)
 	if err := ioutil.WriteFile(filename, []byte(content), 0o644); err != nil {
 		return fmt.Errorf("while creating plugin %s: %s", filename, err)
 	}
