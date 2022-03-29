@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -48,13 +48,13 @@ func callbackCgroups(common *config.Common) {
 	if err != nil {
 		sylog.Errorf("Could not get cgroups path: %s", path)
 	}
-	err = cgroups.PutConfig(cfg, path)
+	err = cgroups.SaveConfig(cfg, path)
 	if err != nil {
 		log.Printf("Put c error: %v", err)
 	}
-	if path := c.GetCgroupsPath(); path != "" {
+	if path := c.GetCgroupsTOML(); path != "" {
 		sylog.Infof("Old cgroups path: %s", path)
 	}
 	sylog.Infof("Setting cgroups path to %s", path)
-	c.SetCgroupsPath(path)
+	c.SetCgroupsTOML(path)
 }
