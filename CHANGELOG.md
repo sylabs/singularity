@@ -23,6 +23,10 @@
 - Plugins must be compiled from inside the SingularityCE source directory,
   and will use the main SingularityCE `go.mod` file. Required for Go 1.18
   support.
+- seccomp support is not disabled automatically in the absence of
+  seccomp headers at build time. Run `mconfig` using `--without-seccomp` and
+  `--without-conmon` to disable seccomp support and building of `conmon`
+  (which requires seccomp headers).
 
 ### New features / functionalities
 
