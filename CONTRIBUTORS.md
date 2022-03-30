@@ -96,7 +96,7 @@ The following have contributed code and/or documentation to this repository.
 - Tim Wright <7im.Wright@protonmail.com>
 - Tru Huynh <tru@pasteur.fr>
 - Tyson Whitehead <twhitehead@gmail.com>
-- Vanessa Sochat <vsochat@stanford.edu>
+- Vanessa Sochat <vsoch@users.noreply.github.com>
 - Westley Kurtzer <westley@sylabs.io>, <westleyk@nym.hush.com>
 - Yannick Cote <y@sylabs.io>, <yhcote@gmail.com>
 - Yaroslav Halchenko <debian@onerussian.com>
