@@ -20,6 +20,9 @@
   `--timeout` have been removed.
 - Don't prompt for y/n to overwrite an existing file when build is
   called from a non-interactive environment. Fail with an error.
+- Plugins must be compiled from inside the SingularityCE source directory,
+  and will use the main SingularityCE `go.mod` file. Required for Go 1.18
+  support.
 
 ### New features / functionalities
 

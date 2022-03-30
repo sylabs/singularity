@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -29,21 +29,9 @@ var pluginCompileOutFlag = cmdline.Flag{
 	Usage:        "path of the SIF output file",
 }
 
-// --disable-minor-check
-var disableMinorCheck bool
-
-var pluginCompileDisableMinorCheckFlag = cmdline.Flag{
-	ID:           "pluginCompileDisableMinorCheckFlag",
-	Value:        &disableMinorCheck,
-	DefaultValue: false,
-	Name:         "disable-minor-check",
-	Usage:        "disable minor package version check",
-}
-
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterFlagForCmd(&pluginCompileOutFlag, PluginCompileCmd)
-		cmdManager.RegisterFlagForCmd(&pluginCompileDisableMinorCheckFlag, PluginCompileCmd)
 	})
 }
 
@@ -74,7 +62,7 @@ var PluginCompileCmd = &cobra.Command{
 		buildTags := buildcfg.GO_BUILD_TAGS
 
 		sylog.Debugf("sourceDir: %s; sifPath: %s", sourceDir, destSif)
-		err = singularity.CompilePlugin(sourceDir, destSif, buildTags, disableMinorCheck)
+		err = singularity.CompilePlugin(sourceDir, destSif, buildTags)
 		if err != nil {
 			sylog.Fatalf("Plugin compile failed with error: %s", err)
 		}
