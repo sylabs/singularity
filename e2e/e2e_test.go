@@ -4,7 +4,6 @@
 // rights to use or distribute this software.
 
 //go:build e2e_test
-// +build e2e_test
 
 package e2e
 
