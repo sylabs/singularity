@@ -64,19 +64,12 @@ var (
 	runTests    = flag.String("e2e_tests", "", "specify a regex matching e2e tests to run")
 )
 
-// Groups run without a PID NS (systemd cgroups related)
-var e2eGroupsNoPIDNS = map[string]testhelper.Group{
-	"CGROUPS":  cgroups.E2ETests,
-	"INSTANCE": instance.E2ETests,
-	"OCI":      oci.E2ETests,
-}
-
-// Groups run inside a PID NS
 var e2eGroups = map[string]testhelper.Group{
 	"ACTIONS":    actions.E2ETests,
 	"BUILDCFG":   e2ebuildcfg.E2ETests,
 	"BUILD":      imgbuild.E2ETests,
 	"CACHE":      cache.E2ETests,
+	"CGROUPS":    cgroups.E2ETests,
 	"CMDENVVARS": cmdenvvars.E2ETests,
 	"CONFIG":     config.E2ETests,
 	"DELETE":     delete.E2ETests,
@@ -86,7 +79,9 @@ var e2eGroups = map[string]testhelper.Group{
 	"GPU":        gpu.E2ETests,
 	"HELP":       help.E2ETests,
 	"INSPECT":    inspect.E2ETests,
+	"INSTANCE":   instance.E2ETests,
 	"KEY":        key.E2ETests,
+	"OCI":        oci.E2ETests,
 	"OVERLAY":    overlay.E2ETests,
 	"PLUGIN":     plugin.E2ETests,
 	"PULL":       pull.E2ETests,
@@ -211,27 +206,6 @@ func Run(t *testing.T) {
 	// WARNING(Sylabs-team): Please DO NOT add a call to e2e.EnsureImage here.
 	// If you need the test image, add the call at the top of your
 	// own test.
-
-	if os.Getenv("SINGULARITY_E2E_NO_PID_NS") != "" {
-		// e2e tests that will run in a mount namespace only
-		// They do not currently require the OCI registry instance.
-		suite := testhelper.NewSuite(t, testenv)
-
-		groups := []string{}
-		if runGroups != nil && *runGroups != "" {
-			groups = strings.Split(*runGroups, ",")
-		}
-
-		for key, val := range e2eGroupsNoPIDNS {
-			if len(groups) == 0 || slice.ContainsString(groups, key) {
-				suite.AddGroup(key, val)
-			}
-		}
-		suite.Run(runTests)
-		return
-	}
-
-	// e2e tests that will run in a mount and PID namespace are below
 
 	// Provision local registry
 	testenv.TestRegistry = e2e.StartRegistry(t, testenv)
