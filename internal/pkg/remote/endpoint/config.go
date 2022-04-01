@@ -65,7 +65,6 @@ func (e *Config) GetURL() (string, error) {
 	} else {
 		u.Scheme = "https"
 	}
-
 	return u.String(), nil
 }
 
