@@ -1,3 +1,4 @@
+// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -253,7 +254,7 @@ func TestBuilderClientConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config, err := tt.endpoint.BuilderClientConfig(tt.uri)
+			uri, authToken, err := tt.endpoint.BuilderClientConfig(tt.uri)
 			if err != nil && tt.expectSuccess {
 				t.Errorf("unexpected error: %s", err)
 			} else if err == nil && !tt.expectSuccess {
@@ -261,10 +262,10 @@ func TestBuilderClientConfig(t *testing.T) {
 			} else if err != nil && !tt.expectSuccess {
 				return
 			}
-			if config.BaseURL != tt.uri {
-				t.Errorf("unexpected uri returned: %s instead of %s", config.BaseURL, tt.uri)
-			} else if config.AuthToken != "" {
-				t.Errorf("unexpected token returned: %s", config.AuthToken)
+			if uri != tt.uri {
+				t.Errorf("unexpected uri returned: %s instead of %s", uri, tt.uri)
+			} else if authToken != "" {
+				t.Errorf("unexpected token returned: %s", authToken)
 			}
 		})
 	}
