@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -21,7 +21,6 @@ import (
 
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
-	scsbuildclient "github.com/sylabs/scs-build-client/client"
 	scskeyclient "github.com/sylabs/scs-key-client/client"
 	scslibclient "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
@@ -638,10 +637,10 @@ func getLibraryClientConfig(uri string) (*scslibclient.Config, error) {
 	return currentRemoteEndpoint.LibraryClientConfig(uri)
 }
 
-// getBuilderClientConfig returns client config for build server access.
-// A "" value for uri will return client config for the current endpoint.
-// A specified uri will return client options for that build server.
-func getBuilderClientConfig(uri string) (*scsbuildclient.Config, error) {
+// getBuilderClientConfig returns the base URI and auth token to use for build server access. A ""
+// value for uri will use the current endpoint. A specified uri will return client options for that
+// build server.
+func getBuilderClientConfig(uri string) (baseURI, authToken string, err error) {
 	if currentRemoteEndpoint == nil {
 		var err error
 
@@ -649,7 +648,7 @@ func getBuilderClientConfig(uri string) (*scsbuildclient.Config, error) {
 		// otherwise fall back on regular authtoken and URI behavior
 		currentRemoteEndpoint, err = sylabsRemote()
 		if err != nil {
-			return nil, fmt.Errorf("unable to load remote configuration: %v", err)
+			return "", "", fmt.Errorf("unable to load remote configuration: %v", err)
 		}
 	}
 	if currentRemoteEndpoint == endpoint.DefaultEndpointConfig {

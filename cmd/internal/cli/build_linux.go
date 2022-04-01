@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -169,12 +169,18 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 
 	// TODO - the keyserver config needs to go to the remote builder for fingerprint verification at
 	// build time to be fully supported.
-	bc, lc, _, err := getServiceConfigs(buildArgs.builderURL, buildArgs.libraryURL, buildArgs.keyServerURL)
+
+	lc, err := getLibraryClientConfig(buildArgs.libraryURL)
 	if err != nil {
-		sylog.Fatalf("Unable to get builder and library client configuration: %v", err)
+		sylog.Fatalf("Unable to get library client configuration: %v", err)
 	}
 	buildArgs.libraryURL = lc.BaseURL
-	buildArgs.builderURL = bc.BaseURL
+
+	baseURI, authToken, err := getBuilderClientConfig(buildArgs.builderURL)
+	if err != nil {
+		sylog.Fatalf("Unable to get builder client configuration: %v", err)
+	}
+	buildArgs.builderURL = baseURI
 
 	// To provide a web link to detached remote builds we need to know the web frontend URI.
 	// We only know this working forward from a remote config, and not if the user has set custom
@@ -189,7 +195,7 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 	}
 
 	// submitting a remote build requires a valid authToken
-	if bc.AuthToken == "" {
+	if authToken == "" {
 		sylog.Fatalf("Unable to submit build job: %v", remoteWarning)
 	}
 
@@ -265,7 +271,7 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		}()
 	}
 
-	b, err := remotebuilder.New(rbDst, buildArgs.libraryURL, def, buildArgs.detached, forceOverwrite, buildArgs.builderURL, bc.AuthToken, buildArgs.arch, buildArgs.webURL)
+	b, err := remotebuilder.New(rbDst, buildArgs.libraryURL, def, buildArgs.detached, forceOverwrite, buildArgs.builderURL, authToken, buildArgs.arch, buildArgs.webURL)
 	if err != nil {
 		sylog.Fatalf("Failed to create builder: %v", err)
 	}
