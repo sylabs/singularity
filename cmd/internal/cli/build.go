@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,11 +14,7 @@ import (
 
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
-	scsbuildclient "github.com/sylabs/scs-build-client/client"
-	scskeyclient "github.com/sylabs/scs-key-client/client"
-	scslibclient "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -484,21 +480,4 @@ func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthCon
 	// pointer, which will mean containers/image falls back to looking for
 	// .docker/config.json
 	return nil, nil
-}
-
-// get configuration for remote library, builder, keyserver that may be used in the build
-func getServiceConfigs(buildURI, libraryURI, keyserverURI string) (*scsbuildclient.Config, *scslibclient.Config, []scskeyclient.Option, error) {
-	lc, err := getLibraryClientConfig(libraryURI)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	bc, err := getBuilderClientConfig(buildURI)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	co, err := getKeyserverClientOpts(keyserverURI, endpoint.KeyserverVerifyOp)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	return bc, lc, co, nil
 }
