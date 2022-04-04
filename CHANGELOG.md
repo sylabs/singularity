@@ -47,6 +47,7 @@
 
 - Support nvidia-container-cli v1.8.0 and above, via fix to capability set.
 - Do not truncate environment variables with commas
+- Show an informative error when `exec` target is not executable.
 
 ## v3.9.6 \[2022-03-10\]
 

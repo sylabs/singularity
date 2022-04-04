@@ -157,7 +157,14 @@ sylog debug "Running action command ${__singularity_cmd__}"
 
 case "${__singularity_cmd__}" in
 exec)
-    exec "$@" ;;
+    # This uses the limited type -p behavior of mvdan.cc/sh and is *not* POSIX.
+    execbin=$(type -p "$1")
+    if test $? -ne 0 || test -z "${execbin}" ; then
+        sylog error "$1 is not an executable file in the container. Check it exists and has executable permissions."
+        exit 1
+    fi
+    exec "$@"   
+    ;;
 shell)
     if test -n "${SINGULARITY_SHELL:-}" -a -x "${SINGULARITY_SHELL:-}"; then
         exec "${SINGULARITY_SHELL:-}" "$@"

@@ -109,9 +109,10 @@ func (c actionTests) actionExec(t *testing.T) {
 	homePath := filepath.Join("/home", basename)
 
 	tests := []struct {
-		name string
-		argv []string
-		exit int
+		name          string
+		argv          []string
+		exit          int
+		errorContains string
 	}{
 		{
 			name: "NoCommand",
@@ -250,9 +251,20 @@ func (c actionTests) actionExec(t *testing.T) {
 			argv: []string{"--no-home", c.env.ImagePath, "ls", "-ld", user.Dir},
 			exit: 1,
 		},
+		{
+			name:          "NotExecutable",
+			argv:          []string{c.env.ImagePath, "/etc/hosts"},
+			exit:          1,
+			errorContains: "/etc/hosts is not an executable file in the container. Check it exists and has executable permissions.",
+		},
 	}
 
 	for _, tt := range tests {
+		resultOps := []e2e.SingularityCmdResultOp{}
+		if tt.errorContains != "" {
+			resultOps = append(resultOps, e2e.ExpectError(e2e.ContainMatch, tt.errorContains))
+		}
+
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
@@ -260,7 +272,7 @@ func (c actionTests) actionExec(t *testing.T) {
 			e2e.WithCommand("exec"),
 			e2e.WithDir("/tmp"),
 			e2e.WithArgs(tt.argv...),
-			e2e.ExpectExit(tt.exit),
+			e2e.ExpectExit(tt.exit, resultOps...),
 		)
 	}
 }
