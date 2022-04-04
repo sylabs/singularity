@@ -37,7 +37,7 @@ require (
 	github.com/sylabs/scs-build-client v0.5.0
 	github.com/sylabs/scs-key-client v0.7.2
 	github.com/sylabs/scs-library-client v1.2.2
-	github.com/sylabs/sif/v2 v2.4.1
+	github.com/sylabs/sif/v2 v2.4.2
 	github.com/vbauerster/mpb/v4 v4.12.2
 	github.com/vbauerster/mpb/v6 v6.0.4
 	golang.org/x/sys v0.0.0-20220128215802-99c3d69c2c27
