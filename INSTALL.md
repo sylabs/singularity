@@ -107,10 +107,10 @@ cd singularity
 By default your clone will be on the `master` branch which is where development
 of SingularityCE happens. To build a specific version of SingularityCE, check
 out a [release tag](https://github.com/sylabs/singularity/tags) before
-compiling. E.g. to build the 3.9.7 release checkout the `v3.9.7` tag:
+compiling. E.g. to build the 3.9.8 release checkout the `v3.9.8` tag:
 
 ```sh
-git checkout v3.9.7
+git checkout v3.9.8
 ```
 
 ## Compiling SingularityCE
