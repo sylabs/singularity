@@ -286,6 +286,11 @@ func (e *EngineOperations) CleanupContainer(context.Context, error, syscall.Wait
 	return nil
 }
 
+// CleanupHost does nothing for the fakeroot engine.
+func (e *EngineOperations) CleanupHost() error {
+	return nil
+}
+
 // PostStartProcess does nothing for the fakeroot engine.
 func (e *EngineOperations) PostStartProcess(ctx context.Context, pid int) error {
 	return nil

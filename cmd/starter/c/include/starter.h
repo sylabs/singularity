@@ -38,10 +38,11 @@
 #define ENTER_NAMESPACE     1
 
 enum goexec {
-    STAGE1      = 1,
-    STAGE2      = 2,
-    MASTER      = 3,
-    RPC_SERVER  = 4
+    STAGE1             = 1,
+    STAGE2             = 2,
+    MASTER             = 3,
+    RPC_SERVER         = 4,
+    CLEANUP_HOST       = 5
 };
 
 #ifndef NS_CLONE_NEWPID
@@ -144,6 +145,9 @@ struct starter {
     /* control starter working directory from a file descriptor */
     int workingDirectoryFd;
 
+    /* image FD that we need to close on cleanup if it's FUSE mounted */
+    int imageFd;
+
     /* hold file descriptors that need to be remains open after stage 1 */
     int fds[MAX_STARTER_FDS];
     int numfds;
@@ -157,6 +161,9 @@ struct starter {
 
     /* bounding capability set will include caps needed by nvidia-container-cli */
     bool nvCCLICaps;
+
+    /* is a CLEANUP_HOST process require outside of namespaces for SIF FUSE cleanup */
+    bool cleanupHost;
 };
 
 /* engine configuration */

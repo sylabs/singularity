@@ -6,6 +6,7 @@
 package actions
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"io"
@@ -14,6 +15,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -2324,6 +2326,50 @@ func (c actionTests) actionCompat(t *testing.T) {
 	}
 }
 
+// actionSquashfuse tests that experimental unpriv squashfuse SIF mount works.
+func (c actionTests) actionSIFFUSE(t *testing.T) {
+	require.Command(t, "squashfuse")
+	require.Command(t, "fusermount")
+	e2e.EnsureImage(t, c.env)
+
+	beforeCount := countSquashfuseMounts(t)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserNamespaceProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--sif-fuse", c.env.ImagePath, "/bin/true"),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectError(e2e.ContainMatch, "Mounting SIF with FUSE"),
+			e2e.ExpectError(e2e.ContainMatch, "Unmounting SIF with FUSE"),
+		),
+	)
+
+	afterCount := countSquashfuseMounts(t)
+	if afterCount != beforeCount {
+		t.Errorf("found %d squashfuse mounts before execution, and %d remaining after", beforeCount, afterCount)
+	}
+}
+
+func countSquashfuseMounts(t *testing.T) int {
+	count := 0
+
+	mi, err := os.Open("/proc/self/mountinfo")
+	if err != nil {
+		t.Errorf("failed to open /proc/self/mountinfo: %s", err)
+	}
+	defer mi.Close()
+
+	scanner := bufio.NewScanner(mi)
+	for scanner.Scan() {
+		if strings.Contains(scanner.Text(), "squashfuse") {
+			count++
+		}
+	}
+	return count
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := actionTests{
@@ -2366,5 +2412,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"no-mount":              c.actionNoMount,       // test --no-mount
 		"compat":                c.actionCompat,        // test --compat
 		"invalidRemote":         np(c.invalidRemote),   // GHSA-5mv9-q7fq-9394
+		"SIFFUSE":               np(c.actionSIFFUSE),   // test --sif-fuse
 	}
 }

@@ -50,6 +50,9 @@ func FindBin(name string) (path string, err error) {
 	// ldconfig is invoked by nvidia-container-cli, so must be trusted also.
 	case "cryptsetup", "ldconfig", "nvidia-container-cli":
 		return findFromConfigOnly(name)
+	// distro provided squashfuse & fusermount for unpriv SIF mount
+	case "squashfuse", "fusermount":
+		return findOnPath(name)
 	}
 	return "", fmt.Errorf("unknown executable name %q", name)
 }

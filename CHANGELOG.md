@@ -55,6 +55,8 @@
   manager.
 - Added `--cpu*`, `--blkio*`, `--memory*`, `--pids-limit` flags to apply cgroups
   resource limits to a container directly.
+- Allow direct mount of SIF images with `squashfuse` in user-namespace / no-setuid
+  mode.
 
 ### Bug Fixes
 
