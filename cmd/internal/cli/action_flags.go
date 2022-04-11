@@ -48,6 +48,7 @@ var (
 	Nvidia          bool
 	NvCCLI          bool
 	Rocm            bool
+	NoEval          bool
 	NoHome          bool
 	NoInit          bool
 	NoNvidia        bool
@@ -353,7 +354,7 @@ var actionCompatFlag = cmdline.Flag{
 	Value:        &IsCompat,
 	DefaultValue: false,
 	Name:         "compat",
-	Usage:        "apply settings for increased OCI/Docker compatibility. Infers --containall, --no-init, --no-umask, --writable-tmpfs.",
+	Usage:        "apply settings for increased OCI/Docker compatibility. Infers --containall, --no-init, --no-umask, --no-eval, --writable-tmpfs.",
 	EnvKeys:      []string{"COMPAT"},
 }
 
@@ -636,12 +637,22 @@ var actionEnvFileFlag = cmdline.Flag{
 
 // --no-umask
 var actionNoUmaskFlag = cmdline.Flag{
-	ID:           " actionNoUmask",
+	ID:           "actionNoUmask",
 	Value:        &NoUmask,
 	DefaultValue: false,
 	Name:         "no-umask",
 	Usage:        "do not propagate umask to the container, set default 0022 umask",
 	EnvKeys:      []string{"NO_UMASK"},
+}
+
+// --no-eval
+var actionNoEvalFlag = cmdline.Flag{
+	ID:           "actionNoEval",
+	Value:        &NoEval,
+	DefaultValue: false,
+	Name:         "no-eval",
+	Usage:        "do not shell evaluate env vars or OCI container CMD/ENTRYPOINT/ARGS",
+	EnvKeys:      []string{"NO_EVAL"},
 }
 
 func init() {
@@ -722,5 +733,6 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionEnvFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionEnvFileFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoUmaskFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionNoEvalFlag, actionsInstanceCmd...)
 	})
 }

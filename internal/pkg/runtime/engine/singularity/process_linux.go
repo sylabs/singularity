@@ -626,7 +626,12 @@ func (b *bufferCloser) Close() error {
 // after /.singularity.d/env/99-base.sh or /environment.
 // This handler turns all SINGUALRITYENV_KEY=VAL defined variables into their form:
 // export KEY=VAL. It can be sourced only once otherwise it returns an empty content.
-func injectEnvHandler(senv map[string]string) interpreter.OpenHandler {
+// If noEval is true then exports are single quoted so their content is not evaluated
+// when the script is sourced (OCI compatible behavior).
+// If noEval is false then exports are double quoted, and their content is evaluated,
+// consuming one level of shell escaping and performing any unescaped var substitution,
+// subshell execution etc (Singularity historic behavior).
+func injectEnvHandler(senv map[string]string, noEval bool) interpreter.OpenHandler {
 	var once sync.Once
 
 	return func(_ string, _ int, _ os.FileMode) (io.ReadWriteCloser, error) {
@@ -640,22 +645,24 @@ func injectEnvHandler(senv map[string]string) interpreter.OpenHandler {
 			`
 			b.WriteString(fmt.Sprintf(defaultPathSnippet, env.DefaultPath))
 
-			// https://github.com/sylabs/singularity/issues/43
-			// We wrap the value of the export in double quotes manually, and do not use
-			// go's %q format string as it prevents passing an escaped literal $ in
-			// a SINGULARITYENV_ as \$
 			snippet := `
 			if test -v %[1]s; then
 				sylog debug "Overriding %[1]s environment variable"
 			fi
-			export %[1]s="%[2]s"
+			export %[1]s=%[2]s
 			`
 			for key, value := range senv {
 				if key == "LD_LIBRARY_PATH" && value != "" {
-					b.WriteString(fmt.Sprintf(snippet, key, value+":/.singularity.d/libs"))
-					continue
+					value = value + ":/.singularity.d/libs"
 				}
-				b.WriteString(fmt.Sprintf(snippet, key, shell.EscapeDoubleQuotes(value)))
+				if noEval {
+					// No evaluation when the export is sourced
+					value = "'" + shell.EscapeSingleQuotes(value) + "'"
+				} else {
+					// Shell evaluation when the export is sourced
+					value = "\"" + shell.EscapeDoubleQuotes(value) + "\""
+				}
+				b.WriteString(fmt.Sprintf(snippet, key, value))
 			}
 		})
 
@@ -800,7 +807,7 @@ func runActionScript(engineConfig *singularityConfig.EngineConfig) ([]string, []
 
 	// inject SINGULARITYENV_ defined variables
 	senv := engineConfig.GetSingularityEnv()
-	shell.RegisterOpenHandler("/.inject-singularity-env.sh", injectEnvHandler(senv))
+	shell.RegisterOpenHandler("/.inject-singularity-env.sh", injectEnvHandler(senv, engineConfig.GetNoEval()))
 
 	shell.RegisterOpenHandler("/.singularity.d/env/99-runtimevars.sh", runtimeVarsHandler(senv))
 
