@@ -27,6 +27,8 @@
   seccomp headers at build time. Run `mconfig` using `--without-seccomp` and
   `--without-conmon` to disable seccomp support and building of `conmon`
   (which requires seccomp headers).
+- SingularityCE now requires squashfs-tools >=4.3, which is satisfied by
+  current EL / Ubuntu / Debian and other distributions.
 
 ### New features / functionalities
 
