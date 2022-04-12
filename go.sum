@@ -116,8 +116,9 @@ github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAE
 github.com/ProtonMail/go-crypto v0.0.0-20210428141323-04723f9f07d7/go.mod h1:z4/9nQmJSSwwds7ejkxaJwO37dru3geImFUdJlaLzQo=
 github.com/ProtonMail/go-crypto v0.0.0-20210920160938-87db9fbc61c7/go.mod h1:z4/9nQmJSSwwds7ejkxaJwO37dru3geImFUdJlaLzQo=
 github.com/ProtonMail/go-crypto v0.0.0-20211112122917-428f8eabeeb3/go.mod h1:z4/9nQmJSSwwds7ejkxaJwO37dru3geImFUdJlaLzQo=
-github.com/ProtonMail/go-crypto v0.0.0-20220113124808-70ae35bab23f h1:J2FzIrXN82q5uyUraeJpLIm7U6PffRwje2ORho5yIik=
 github.com/ProtonMail/go-crypto v0.0.0-20220113124808-70ae35bab23f/go.mod h1:z4/9nQmJSSwwds7ejkxaJwO37dru3geImFUdJlaLzQo=
+github.com/ProtonMail/go-crypto v0.0.0-20220407094043-a94812496cf5 h1:cSHEbLj0GZeHM1mWG84qEnGFojNEQ83W7cwaPRjcwXU=
+github.com/ProtonMail/go-crypto v0.0.0-20220407094043-a94812496cf5/go.mod h1:z4/9nQmJSSwwds7ejkxaJwO37dru3geImFUdJlaLzQo=
 github.com/PuerkitoBio/purell v1.0.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/purell v1.1.1/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/urlesc v0.0.0-20160726150825-5bd2802263f2/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
@@ -1125,8 +1126,9 @@ github.com/sylabs/scs-key-client v0.7.2/go.mod h1:cmD4C9QfNLXW4QSXvwoaPZAuwaToIs
 github.com/sylabs/scs-library-client v1.3.1 h1:Vi2UfWZYwQS7f4UYMUNYyrcFnnG672qPEHj2Afi7U3Q=
 github.com/sylabs/scs-library-client v1.3.1/go.mod h1:gnWVZDatyKHdAG104OQicNxXB3adG0giuQlkJhPs3TI=
 github.com/sylabs/sif/v2 v2.3.1/go.mod h1:NnvveH62GiibimL00MrI6YYcZfb7DnZMcRo/40giY+0=
-github.com/sylabs/sif/v2 v2.4.2 h1:L4jcqeOF33JfSnH+8GJKC7/ooVpzpZ2K7wotGG4ZzqQ=
 github.com/sylabs/sif/v2 v2.4.2/go.mod h1:6gQvzNKRIqr4FS08XBfHpkpnxv9b7h58GLkSJ1zdK9A=
+github.com/sylabs/sif/v2 v2.5.0 h1:VGsJG0eIkYGLjYe7Wic6mYQGUe1oeJUlw0sslaFmmPs=
+github.com/sylabs/sif/v2 v2.5.0/go.mod h1:TiyBWsgWeh5yBeQFNuQnvROwswqK7YJT8JA1L53bsXQ=
 github.com/syndtr/gocapability v0.0.0-20170704070218-db04d3cc01c8/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/syndtr/gocapability v0.0.0-20180916011248-d98352740cb2/go.mod h1:hkRG7XYTFWNJGYcbNJQlaLq0fg1yr4J4t/NcTQtrfww=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 h1:kdXcSzyDtseVEc4yCz2qF8ZrQvIDBJLl4S1c3GCXmoI=
