@@ -10,7 +10,9 @@ package singularityenv
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -457,6 +459,191 @@ func (c ctx) singularityEnvFile(t *testing.T) {
 	}
 }
 
+// Check for evaluation of env vars with / without `--no-eval`. By default,
+// Singularity will evaluate the value of injected env vars when sourcing the
+// shell script that injects them. With --no-eval it should match Docker, with
+// no evaluation:
+//
+//   WHO='$(id -u)' docker run -it --env WHO --rm alpine sh -c 'echo $WHO'
+//   $(id -u)
+//
+func (c ctx) singularityEnvEval(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	testArgs := []string{"/bin/sh", "-c", "echo $WHO"}
+
+	tests := []struct {
+		name         string
+		env          []string
+		args         []string
+		noeval       bool
+		expectOutput string
+	}{
+		// Singularity historic behavior (without --no-eval)
+		{
+			name:         "no env",
+			args:         testArgs,
+			env:          []string{},
+			noeval:       false,
+			expectOutput: "",
+		},
+		{
+			name:         "string env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=ME"},
+			noeval:       false,
+			expectOutput: "ME",
+		},
+		{
+			name:         "env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=$UID"},
+			noeval:       false,
+			expectOutput: strconv.Itoa(os.Getuid()),
+		},
+		{
+			name:         "double quoted env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\"$UID\""},
+			noeval:       false,
+			expectOutput: "\"" + strconv.Itoa(os.Getuid()) + "\"",
+		},
+		{
+			name:         "single quoted env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO='$UID'"},
+			noeval:       false,
+			expectOutput: "'" + strconv.Itoa(os.Getuid()) + "'",
+		},
+		{
+			name:         "escaped env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\\$UID"},
+			noeval:       false,
+			expectOutput: "$UID",
+		},
+		{
+			name:         "subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=$(id -u)"},
+			noeval:       false,
+			expectOutput: strconv.Itoa(os.Getuid()),
+		},
+		{
+			name:         "double quoted subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\"$(id -u)\""},
+			noeval:       false,
+			expectOutput: "\"" + strconv.Itoa(os.Getuid()) + "\"",
+		},
+		{
+			name:         "single quoted subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO='$(id -u)'"},
+			noeval:       false,
+			expectOutput: "'" + strconv.Itoa(os.Getuid()) + "'",
+		},
+		{
+			name:         "escaped subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\\$(id -u)"},
+			noeval:       false,
+			expectOutput: "$(id -u)",
+		},
+		// Docker/OCI behavior (with --no-eval)
+		{
+			name:         "no-eval/no env",
+			args:         testArgs,
+			env:          []string{},
+			noeval:       false,
+			expectOutput: "",
+		},
+		{
+			name:         "no-eval/string env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=ME"},
+			noeval:       false,
+			expectOutput: "ME",
+		},
+		{
+			name:         "no-eval/env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=$UID"},
+			noeval:       true,
+			expectOutput: "$UID",
+		},
+		{
+			name:         "no-eval/double quoted env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\"$UID\""},
+			noeval:       true,
+			expectOutput: "\"$UID\"",
+		},
+		{
+			name:         "no-eval/single quoted env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO='$UID'"},
+			noeval:       true,
+			expectOutput: "'$UID'",
+		},
+		{
+			name:         "no-eval/escaped env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\\$UID"},
+			noeval:       true,
+			expectOutput: "\\$UID",
+		},
+		{
+			name:         "no-eval/subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=$(id -u)"},
+			noeval:       true,
+			expectOutput: "$(id -u)",
+		},
+		{
+			name:         "no-eval/double quoted subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\"$(id -u)\""},
+			noeval:       true,
+			expectOutput: "\"$(id -u)\"",
+		},
+		{
+			name:         "no-eval/single quoted subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO='$(id -u)'"},
+			noeval:       true,
+			expectOutput: "'$(id -u)'",
+		},
+		{
+			name:         "no-eval/escaped subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\\$(id -u)"},
+			noeval:       true,
+			expectOutput: "\\$(id -u)",
+		},
+	}
+
+	for _, tt := range tests {
+		cmdArgs := []string{}
+		if tt.noeval {
+			cmdArgs = append(cmdArgs, "--no-eval")
+		}
+		cmdArgs = append(cmdArgs, c.env.ImagePath)
+		cmdArgs = append(cmdArgs, tt.args...)
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithEnv(tt.env),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(cmdArgs...),
+			e2e.ExpectExit(0,
+				e2e.ExpectOutput(e2e.ExactMatch, tt.expectOutput),
+			),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -467,6 +654,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"environment manipulation": c.singularityEnv,
 		"environment option":       c.singularityEnvOption,
 		"environment file":         c.singularityEnvFile,
+		"env eval":                 c.singularityEnvEval,
 		"issue 5057":               c.issue5057, // https://github.com/sylabs/hpcng/issues/5057
 		"issue 5426":               c.issue5426, // https://github.com/sylabs/hpcng/issues/5426
 		"issue 43":                 c.issue43,   // https://github.com/sylabs/singularity/issues/43

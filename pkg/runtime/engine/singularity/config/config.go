@@ -124,6 +124,7 @@ type JSONConfig struct {
 	Umask                 int               `json:"umask,omitempty"`
 	XdgRuntimeDir         string            `json:"xdgRuntimeDir,omitempty"`
 	DbusSessionBusAddress string            `json:"dbusSessionBusAddress,omitempty"`
+	NoEval                bool              `json:"noEval,omitempty"`
 }
 
 // SetImage sets the container image path to be used by EngineConfig.JSON.
@@ -808,4 +809,16 @@ func (e *EngineConfig) SetDbusSessionBusAddress(address string) {
 // GetDbusSessionBusAddress gets the DBUS_SESSION_BUS_ADDRESS value for rootless operations
 func (e *EngineConfig) GetDbusSessionBusAddress() string {
 	return e.JSON.DbusSessionBusAddress
+}
+
+// SetNoEval sets whether to avoid a shell eval on SINGULARITYENV_ and in
+// runscripts generated from OCI containers CMD/ENTRYPOINT.
+func (e *EngineConfig) SetNoEval(noEval bool) {
+	e.JSON.NoEval = noEval
+}
+
+// GetNoEval sets whether to avoid a shell eval on SINGULARITYENV_ and in
+// runscripts generated from OCI containers CMD/ENTRYPOINT.
+func (e *EngineConfig) GetNoEval() bool {
+	return e.JSON.NoEval
 }
