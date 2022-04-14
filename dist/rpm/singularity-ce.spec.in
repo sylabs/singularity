@@ -45,8 +45,10 @@ BuildRequires: libseccomp-devel
 BuildRequires: glib2-devel
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
+Requires: libseccomp2
 %else
 Requires: squashfs-tools
+Requires: libseccomp
 %endif
 BuildRequires: cryptsetup
 
@@ -54,14 +56,15 @@ BuildRequires: cryptsetup
 ExcludeArch: ppc64
 
 Provides: %{name}-runtime
-Obsoletes: %{name}-runtime
+
+# Conflicts with non-CE packages
 Conflicts: singularity
+# Conflicts with Apptainer, which installs the `/usr/bin/singularity` compatibility executable
+Conflicts: apptainer
+# Conflicts with SingularityPRO basic packaging (not other variants).
 Conflicts: singularitypro24
-Conflicts: singularitypro24-runtime
 Conflicts: singularitypro25
-Conflicts: singularitypro25-runtime
 Conflicts: singularitypro26
-Conflicts: singularitypro26-runtime
 Conflicts: singularitypro31
 Conflicts: singularitypro35
 Conflicts: singularitypro37
