@@ -17,9 +17,10 @@ Vcs-Browser: https://github.com/sylabs/singularity
 
 Package: singularity-ce
 Architecture: any
-Depends: ${misc:Depends}, ${shlibs:Depends}, cryptsetup-bin, squashfs-tools
+Depends: ${misc:Depends}, ${shlibs:Depends}, cryptsetup-bin, libseccomp2, squashfs-tools
 Conflicts:
  singularity-container,
+ apptainer,
  singularitypro24,
  singularitypro25,
  singularitypro26,
