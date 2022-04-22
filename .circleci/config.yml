@@ -6,7 +6,7 @@ orbs:
 parameters:
   go-version:
     type: string
-    default: '1.17.8'
+    default: '1.17.9'
 
 executors:
   node:
