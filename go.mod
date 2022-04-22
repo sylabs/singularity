@@ -16,6 +16,7 @@ require (
 	github.com/containers/image/v5 v5.21.0
 	github.com/cyphar/filepath-securejoin v0.2.3
 	github.com/docker/docker v20.10.14+incompatible
+	github.com/docker/go-units v0.4.0
 	github.com/fatih/color v1.13.0
 	github.com/go-log/log v0.2.0
 	github.com/google/uuid v1.3.0
@@ -31,6 +32,7 @@ require (
 	github.com/pelletier/go-toml v1.9.5
 	github.com/pkg/errors v0.9.1
 	github.com/seccomp/libseccomp-golang v0.9.2-0.20211028222634-77bddc247e72
+	github.com/shopspring/decimal v1.3.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.8.1
@@ -78,7 +80,6 @@ require (
 	github.com/docker/docker-credential-helpers v0.6.4 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
-	github.com/docker/go-units v0.4.0 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
