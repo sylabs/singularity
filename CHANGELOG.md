@@ -7,12 +7,12 @@
   in the next minor release (3.10.x). Users utilizing plugins with
   SingularityCE 3.9.x should use version 1.17.x of the Go toolchain.
 
-## Changes since last release
+## v3.9.9 \[2022-04-22\]
 
 ### Bug Fixes
 
-- Use HEAD request when checking digest of remote OCI image sources, instead of
-  GET. Greatly reduces Singularity's impact on Docker Hub API limits.
+- Use HEAD request when checking digest of remote OCI image sources, with GET as
+  a fall-back. Greatly reduces Singularity's impact on Docker Hub API limits.
 
 ## v3.9.8 \[2022-04-07\]
 
