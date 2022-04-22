@@ -122,7 +122,13 @@ func ImageDigest(ctx context.Context, uri string, sys *types.SystemContext) (str
 func getRefDigest(ctx context.Context, ref types.ImageReference, sys *types.SystemContext) (digest string, err error) {
 	// Handle docker references specially, using a HEAD request to ensure we don't hit API limits
 	if ref.Transport().Name() == "docker" {
-		return getDockerRefDigest(ctx, ref, sys)
+		digest, err := getDockerRefDigest(ctx, ref, sys)
+		if err == nil {
+			return digest, err
+		}
+		// Need to have a fallback path, as the Docker-Content-Digest header is
+		// not required in oci-distribution-spec.
+		sylog.Debugf("Falling back to GetManifest digest: %s", err)
 	}
 
 	// Otherwise get the manifest and calculate sha256 over it
@@ -144,7 +150,7 @@ func getRefDigest(ctx context.Context, ref types.ImageReference, sys *types.Syst
 	// Previously we didn't include the algorithm, but we should, in case
 	// alternatives are introduced.
 	digest = fmt.Sprintf("sha256.%x", sha256.Sum256(man))
-	sylog.Debugf("Digest for %s is %s", transports.ImageName(ref), digest)
+	sylog.Debugf("GetManifest digest for %s is %s", transports.ImageName(ref), digest)
 	return digest, nil
 }
 
@@ -158,6 +164,6 @@ func getDockerRefDigest(ctx context.Context, ref types.ImageReference, sys *type
 	// Previously we didn't include the algorithm, but we should, in case
 	// alternatives are introduced.
 	digest = d.Algorithm().String() + "." + d.Encoded()
-	sylog.Debugf("Digest for %s is %s", transports.ImageName(ref), digest)
+	sylog.Debugf("docker.GetDigest digest for %s is %s", transports.ImageName(ref), digest)
 	return digest, nil
 }
