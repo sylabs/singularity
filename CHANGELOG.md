@@ -55,15 +55,37 @@
   manager.
 - Added `--cpu*`, `--blkio*`, `--memory*`, `--pids-limit` flags to apply cgroups
   resource limits to a container directly.
-- Add package build for Ubuntu 22.04 LTS.
 
 ### Bug Fixes
 
 - Support nvidia-container-cli v1.8.0 and above, via fix to capability set.
 - Do not truncate environment variables with commas.
 - Allow `newgidmap / newuidmap` that use capabilities instead of setuid root.
-- Use HEAD request when checking digest of remote OCI image sources, instead
-  of GET. Greatly reduces Singularity's impact on Docker Hub API limits.
+
+## v3.9.9 \[2022-04-22\]
+
+### Bug Fixes
+
+- Use HEAD request when checking digest of remote OCI image sources, with GET as
+  a fall-back. Greatly reduces Singularity's impact on Docker Hub API limits.
+
+### New features / functionalities
+
+- Add package build for Ubuntu 22.04 LTS.
+
+## v3.9.8 \[2022-04-07\]
+
+### Bug fixes
+
+- Do not truncate environment variables with commas.
+- Fix error when pushing to host-less `library://` URIs.
+
+## v3.9.7 \[2022-03-23\]
+
+### Bug fixes
+
+- Support nvidia-container-cli v1.8.0 and above, via fix to capability set.
+- Avoid cleanup panic when invalid file specified for --apply-cgroups.
 
 ## v3.9.6 \[2022-03-10\]
 
