@@ -33,6 +33,9 @@ executors:
   ubuntu2004:
     docker:
       - image: ubuntu:20.04
+  ubuntu2204:
+    docker:
+      - image: ubuntu:22.04
   golangci-lint:
     docker:
       - image: golangci/golangci-lint:v1.44
@@ -309,4 +312,4 @@ workflows:
       - build-deb:
           matrix:
             parameters:
-              e: ["ubuntu1804", "ubuntu2004"]
+              e: ["ubuntu1804", "ubuntu2004", "ubuntu2204"]

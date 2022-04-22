@@ -21,6 +21,10 @@
 - Do not truncate environment variables with commas.
 - Fix error when pushing to host-less `library://` URIs.
 
+### New features / functionalities
+
+- Add package build for Ubuntu 22.04 LTS.
+
 ## v3.9.7 \[2022-03-23\]
 
 ### Bug fixes
