@@ -55,6 +55,7 @@
   manager.
 - Added `--cpu*`, `--blkio*`, `--memory*`, `--pids-limit` flags to apply cgroups
   resource limits to a container directly.
+- Add package build for Ubuntu 22.04 LTS.
 
 ### Bug Fixes
 
