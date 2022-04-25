@@ -6,6 +6,7 @@
 package starter
 
 import (
+	"context"
 	"net"
 	"os"
 
@@ -23,13 +24,15 @@ func CleanupHost(cleanupSocket int, e *engine.Engine) {
 	comm.Close()
 	defer conn.Close()
 
+	ctx := context.TODO()
+
 	// Wait for a write into the socket from master to trigger cleanup
 	data := make([]byte, 1)
 	if _, err := conn.Read(data); err != nil {
 		sylog.Fatalf("While reading from cleanup socket: %s", err)
 	}
 
-	if err := e.CleanupHost(); err != nil {
+	if err := e.CleanupHost(ctx); err != nil {
 		if _, err := conn.Write([]byte{'f'}); err != nil {
 			sylog.Fatalf("Could not write to master: %s", err)
 		}

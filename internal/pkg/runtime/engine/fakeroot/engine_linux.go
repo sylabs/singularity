@@ -287,7 +287,7 @@ func (e *EngineOperations) CleanupContainer(context.Context, error, syscall.Wait
 }
 
 // CleanupHost does nothing for the fakeroot engine.
-func (e *EngineOperations) CleanupHost() error {
+func (e *EngineOperations) CleanupHost(ctx context.Context) error {
 	return nil
 }
 

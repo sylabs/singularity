@@ -94,7 +94,7 @@ type Operations interface {
 	//
 	// No additional privileges can be gained during this call, as privileges are
 	// dropped permanently after forking in starter.
-	CleanupHost() error
+	CleanupHost(context.Context) error
 }
 
 // getName returns the engine name set in JSON []byte configuration.

@@ -87,7 +87,7 @@ func mkContainerDirs() (tempDir, imageDir string, err error) {
 // caller's responsibility to remove tempDir when no longer needed. If isFUSE is
 // returned true, then the imageDir is a FUSE mount, and must be unmounted
 // during cleanup.
-func handleImage(filename string, tryFUSE bool) (isFUSE bool, tempDir, imageDir string, err error) {
+func handleImage(ctx context.Context, filename string, tryFUSE bool) (isFUSE bool, tempDir, imageDir string, err error) {
 	img, err := imgutil.Init(filename, false)
 	if err != nil {
 		return false, "", "", fmt.Errorf("could not open image %s: %s", filename, err)
@@ -119,7 +119,7 @@ func handleImage(filename string, tryFUSE bool) (isFUSE bool, tempDir, imageDir 
 
 	// Attempt squashfuse mount
 	if tryFUSE {
-		err := squashfuseMount(img, imageDir)
+		err := squashfuseMount(ctx, img, imageDir)
 		if err == nil {
 			return true, tempDir, imageDir, nil
 		}
@@ -167,7 +167,7 @@ func extractImage(img *imgutil.Image, imageDir string) error {
 
 // squashfuseMount mounts img using squashfuse to directory imageDir. It is the
 // caller's responsibility to umount imageDir when no longer needed.
-func squashfuseMount(img *imgutil.Image, imageDir string) (err error) {
+func squashfuseMount(ctx context.Context, img *imgutil.Image, imageDir string) (err error) {
 	part, err := img.GetRootFsPartition()
 	if err != nil {
 		return fmt.Errorf("while getting root filesystem : %s", err)
@@ -188,7 +188,7 @@ func squashfuseMount(img *imgutil.Image, imageDir string) (err error) {
 		return fmt.Errorf("fusermount is required: %w", err)
 	}
 
-	return sifuser.Mount(context.TODO(), img.Path, imageDir,
+	return sifuser.Mount(ctx, img.Path, imageDir,
 		sifuser.OptMountStdout(os.Stdout),
 		sifuser.OptMountStderr(os.Stderr),
 		sifuser.OptMountSquashfusePath(squashfusePath))
@@ -771,7 +771,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 		if convert {
 			tryFUSE := SIFFUSE || engineConfig.File.SIFFUSE
-			fuse, tempDir, imageDir, err := handleImage(image, tryFUSE)
+			fuse, tempDir, imageDir, err := handleImage(cobraCmd.Context(), image, tryFUSE)
 			if err != nil {
 				sylog.Fatalf("while handling %s: %s", image, err)
 			}

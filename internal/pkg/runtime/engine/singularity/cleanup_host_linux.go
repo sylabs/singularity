@@ -17,7 +17,7 @@ import (
 
 // CleanupHost cleans up a SIF FUSE mount and temporary directory. It is called
 // from a HOST_CLEANUP process that exists in the original host namespaces.
-func (e *EngineOperations) CleanupHost() (err error) {
+func (e *EngineOperations) CleanupHost(ctx context.Context) (err error) {
 	if e.EngineConfig.GetImageFuse() {
 		sylog.Infof("Unmounting SIF with FUSE...")
 		fusermountPath, err := bin.FindBin("fusermount")
@@ -25,7 +25,7 @@ func (e *EngineOperations) CleanupHost() (err error) {
 			return fmt.Errorf("while unmounting fuse directory: %s: %w", e.EngineConfig.GetImage(), err)
 		}
 
-		err = sifuser.Unmount(context.TODO(), e.EngineConfig.GetImage(),
+		err = sifuser.Unmount(ctx, e.EngineConfig.GetImage(),
 			sifuser.OptUnmountStdout(os.Stdout),
 			sifuser.OptUnmountStderr(os.Stderr),
 			sifuser.OptUnmountFusermountPath(fusermountPath))
