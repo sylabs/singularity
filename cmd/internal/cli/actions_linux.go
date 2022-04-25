@@ -770,7 +770,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 
 		if convert {
-			fuse, tempDir, imageDir, err := handleImage(image, SIFFUSE)
+			tryFUSE := SIFFUSE || engineConfig.File.SIFFUSE
+			fuse, tempDir, imageDir, err := handleImage(image, tryFUSE)
 			if err != nil {
 				sylog.Fatalf("while handling %s: %s", image, err)
 			}
