@@ -43,7 +43,8 @@ func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, st
 	e.stopFuseDrivers()
 
 	if imageDriver != nil {
-		if err := umount(); err != nil {
+		// Strict umount to be sure imageDriver mounts not held
+		if err := umount(false); err != nil {
 			sylog.Errorf("%s", err)
 		}
 		if err := imageDriver.Stop(); err != nil {
@@ -51,7 +52,16 @@ func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, st
 		}
 	}
 
-	if tempDir := e.EngineConfig.GetDeleteTempDir(); tempDir != "" {
+	if e.EngineConfig.GetImageFuse() && imageDriver == nil {
+		// Lazy unmount so any underlay mount points don't block umount call against rootfs,
+		// which must be unmounted from master to proceed with the host cleanup.
+		// Everything is tidied up as the container mount namespace disappears.
+		if err := umount(true); err != nil {
+			sylog.Errorf("%s", err)
+		}
+	}
+
+	if tempDir := e.EngineConfig.GetDeleteTempDir(); tempDir != "" && !e.EngineConfig.GetImageFuse() {
 		sylog.Verbosef("Removing image tempDir %s", tempDir)
 		sylog.Infof("Cleaning up image...")
 
@@ -112,11 +122,16 @@ func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, st
 	return nil
 }
 
-func umount() (err error) {
+func umount(lazy bool) (err error) {
 	var oldEffective uint64
 
 	caps := uint64(0)
 	caps |= uint64(1 << capabilities.Map["CAP_SYS_ADMIN"].Value)
+
+	umountFlags := 0
+	if lazy {
+		umountFlags = syscall.MNT_DETACH
+	}
 
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
@@ -137,7 +152,7 @@ func umount() (err error) {
 		sylog.Debugf("Umount %s", p)
 		retries := 0
 	retry:
-		err = syscall.Unmount(p, 0)
+		err = syscall.Unmount(p, umountFlags)
 		// ignore EINVAL meaning it's not a mount point
 		if err != nil && err.(syscall.Errno) != syscall.EINVAL {
 			// when rootfs mount point is a sandbox, the unmount
@@ -156,7 +171,8 @@ func umount() (err error) {
 }
 
 func cleanupCrypt(path string) error {
-	if err := umount(); err != nil {
+	// Strict umount to be sure crypt device not in use
+	if err := umount(false); err != nil {
 		return err
 	}
 

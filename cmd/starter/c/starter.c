@@ -64,6 +64,7 @@ struct starterConfig *sconfig;
 /* Socket process communication */
 int rpc_socket[2] = {-1, -1};
 int master_socket[2] = {-1, -1};
+int cleanup_socket[2] = {-1, -1};
 
 /* set Go execution call after init function returns */
 enum goexec goexecute;
@@ -1296,11 +1297,32 @@ __attribute__((constructor)) static void init(void) {
     /* fix I/O streams to point to /dev/null if they are closed */
     fix_streams();
 
-    /* save opened file descriptors that won't be closed when stage 1 exits */
-    master_fds = list_fd();
-
     /* set an invalid value for check */
     sconfig->starter.workingDirectoryFd = -1;
+
+    // Unpriv host cleanup in calling namespaces for SIF FUSE mount
+    if ( !sconfig->starter.cleanupHost ) {   
+        debugf("Create socketpair for cleanup communication channel\n");
+            if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, cleanup_socket) < 0 ) {
+                fatalf("Failed to create communication socket: %s\n", strerror(errno));
+            }
+        process = fork();
+        if ( process == 0 ) {
+            // Close master end of cleanup socket
+            close(cleanup_socket[0]);
+        
+            set_parent_death_signal(SIGTERM);
+            verbosef("Spawn CleanupHost\n");
+            goexecute = CLEANUP_HOST;
+            return;
+        }else{
+            // In master - Close child end of cleanup socket
+            close(cleanup_socket[1]);
+        }
+    }
+
+    /* save opened file descriptors that won't be closed when stage 1 exits */
+    master_fds = list_fd();
 
     /*
      *  CLONE_FILES will share file descriptors opened during stage 1,

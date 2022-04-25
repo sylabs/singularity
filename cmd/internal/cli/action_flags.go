@@ -45,6 +45,7 @@ var (
 	IsContainAll    bool
 	IsWritable      bool
 	IsWritableTmpfs bool
+	SIFFUSE         bool
 	Nvidia          bool
 	NvCCLI          bool
 	Rocm            bool
@@ -777,6 +778,16 @@ var actionPidsLimitFlag = cmdline.Flag{
 	EnvKeys:      []string{"PIDS_LIMIT"},
 }
 
+// --sif-fuse
+var actionSIFFUSEFlag = cmdline.Flag{
+	ID:           "actionSIFFUSE",
+	Value:        &SIFFUSE,
+	DefaultValue: false,
+	Name:         "sif-fuse",
+	Usage:        "attempt FUSE mount of SIF (unprivileged / user namespace only) (experimental)",
+	EnvKeys:      []string{"SIF_FUSE"},
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(ExecCmd)
@@ -867,5 +878,6 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionMemorySwapFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionOomKillDisableFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionPidsLimitFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionSIFFUSEFlag, actionsCmd...)
 	})
 }

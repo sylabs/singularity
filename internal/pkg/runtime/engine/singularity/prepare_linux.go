@@ -195,6 +195,10 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	if e.EngineConfig.GetNvCCLI() {
 		starterConfig.SetNvCCLICaps(true)
 	}
+	// If using a SIF FUSE mount, we need to cleanup in host namespaces.
+	if e.EngineConfig.GetImageFuse() {
+		starterConfig.SetCleanupHost(true)
+	}
 
 	return nil
 }
@@ -715,6 +719,9 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	// right process
 	starterConfig.SetWorkingDirectoryFd(fd)
 
+	// If our image is FUSE mounted, we need the fd to close on cleanup
+	starterConfig.SetImageFd(fd)
+
 	// enforce checks while joining an instance process with SUID workflow
 	// since instance file is stored in user home directory, we can't trust
 	// its content when using SUID workflow
@@ -1143,6 +1150,9 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 
 		// C starter code will position current working directory
 		starterConfig.SetWorkingDirectoryFd(int(img.Fd))
+
+		// If our image is FUSE mounted, we need the fd to close on cleanup
+		starterConfig.SetImageFd(int(img.Fd))
 
 		if e.EngineConfig.GetSessionLayer() == singularityConfig.OverlayLayer {
 			if err := overlay.CheckLower(img.Path); overlay.IsIncompatible(err) {

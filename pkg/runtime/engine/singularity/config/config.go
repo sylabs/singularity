@@ -121,6 +121,7 @@ type JSONConfig struct {
 	SignalPropagation     bool              `json:"signalPropagation,omitempty"`
 	RestoreUmask          bool              `json:"restoreUmask,omitempty"`
 	DeleteTempDir         string            `json:"deleteTempDir,omitempty"`
+	ImageFuse             bool              `json:"imageFuse,omitempty"`
 	Umask                 int               `json:"umask,omitempty"`
 	XdgRuntimeDir         string            `json:"xdgRuntimeDir,omitempty"`
 	DbusSessionBusAddress string            `json:"dbusSessionBusAddress,omitempty"`
@@ -660,6 +661,16 @@ func (e *EngineConfig) GetDeleteTempDir() string {
 // which must be deleted after use.
 func (e *EngineConfig) SetDeleteTempDir(dir string) {
 	e.JSON.DeleteTempDir = dir
+}
+
+// SetImageFuse sets whether the ImageDir is a FUSE mount.
+func (e *EngineConfig) SetImageFuse(fuse bool) {
+	e.JSON.ImageFuse = fuse
+}
+
+// GetFakeroot returns if the ImageDir is a FUSE mount or not.
+func (e *EngineConfig) GetImageFuse() bool {
+	return e.JSON.ImageFuse
 }
 
 // SetSignalPropagation sets if engine must propagate signals from

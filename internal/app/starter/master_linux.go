@@ -111,12 +111,53 @@ func startContainer(ctx context.Context, masterSocket int, containerPid int, e *
 	}
 }
 
+func hostCleanup(cleanupSocket, imageFd int) error {
+	// If starter didn't create a host cleanup process, then nothing to do
+	if cleanupSocket == -1 {
+		return nil
+	}
+	// Master must close its image fd in order for us to unmount the a squashfuse SIF
+	sylog.Debugf("Close Image fd: %d", imageFd)
+	if err := syscall.Close(imageFd); err != nil {
+		sylog.Errorf("failed to close image: %s", err)
+	}
+
+	comm := os.NewFile(uintptr(cleanupSocket), "cleanup-socket")
+	if comm == nil {
+		return fmt.Errorf("bad host cleanup socket file descriptor")
+	}
+	cleanupConn, err := net.FileConn(comm)
+	comm.Close()
+	if err != nil {
+		return fmt.Errorf("failed to copy unix socket descriptor: %s", err)
+	}
+	defer cleanupConn.Close()
+
+	// Trigger cleanup
+	if _, err := cleanupConn.Write([]byte{'c'}); err != nil {
+		return fmt.Errorf("error signaling host cleanup: %s", err)
+	}
+
+	// Wait for cleanup completion
+	data := make([]byte, 1)
+	if _, err := cleanupConn.Read(data); err != nil {
+		return fmt.Errorf("error waiting for host cleanup: %s", err)
+	}
+
+	if data[0] == 'c' {
+		sylog.Debugf("host cleanup completed")
+		return nil
+	}
+
+	return fmt.Errorf("host cleanup failed")
+}
+
 // Master initializes a runtime engine and runs it.
 //
 // Saved uid 0 is preserved when run with suid flow, so that
 // the master is capable to escalate its privileges to setup
 // container environment properly.
-func Master(rpcSocket, masterSocket int, containerPid int, e *engine.Engine) {
+func Master(rpcSocket, masterSocket, cleanupSocket, containerPid, imageFd int, e *engine.Engine) {
 	var status syscall.WaitStatus
 	fatalChan := make(chan error, 1)
 
@@ -143,7 +184,11 @@ func Master(rpcSocket, masterSocket int, containerPid int, e *engine.Engine) {
 	fatal := <-fatalChan
 
 	if err := e.CleanupContainer(ctx, fatal, status); err != nil {
-		sylog.Errorf("container cleanup failed: %s", err)
+		sylog.Errorf("Container cleanup failed: %s", err)
+	}
+
+	if err := hostCleanup(cleanupSocket, imageFd); err != nil {
+		sylog.Errorf("Unprivileged host cleanup failed: %s", err)
 	}
 
 	if fatal != nil {

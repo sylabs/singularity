@@ -88,6 +88,13 @@ type Operations interface {
 	// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
 	// and thus no additional privileges can be gained.
 	CleanupContainer(context.Context, error, syscall.WaitStatus) error
+	// CleanupHost is called after CleanupContainer, before master exits.
+	// It is run in the process forked from starter before namespace setup etc. and
+	// will perform any cleanup in the host mount namespace at time of CLI execution.
+	//
+	// No additional privileges can be gained during this call, as privileges are
+	// dropped permanently after forking in starter.
+	CleanupHost(context.Context) error
 }
 
 // getName returns the engine name set in JSON []byte configuration.

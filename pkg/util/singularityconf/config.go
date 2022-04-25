@@ -74,6 +74,7 @@ type File struct {
 	DownloadPartSize        uint     `default:"5242880" directive:"download part size"`
 	DownloadBufferSize      uint     `default:"32768" directive:"download buffer size"`
 	SystemdCgroups          bool     `default:"yes" authorized:"yes,no" directive:"systemd cgroups"`
+	SIFFUSE                 bool     `default:"no" authorized:"yes,no" directive:"sif fuse"`
 }
 
 const TemplateAsset = `# SINGULARITY.CONF
@@ -470,4 +471,12 @@ download buffer size = {{ .DownloadBufferSize }}
 # Whether to use systemd to manage container cgroups. Required for rootless cgroups
 # functionality. 'no' will manage cgroups directly via cgroupfs.
 systemd cgroups = {{ if eq .SystemdCgroups true }}yes{{ else }}no{{ end }}
+
+# SIF FUSE: [BOOL]
+# DEFAULT: no
+# EXPERIMENTAL
+# Whether to try mounting SIF images with Squashfuse by default.
+# Applies only to unprivileged / user namespace flows. Requires squashfuse and
+# fusermount on PATH. Will fall back to extracting the SIF on failure.
+sif fuse = {{ if eq .SIFFUSE true }}yes{{ else }}no{{ end }}
 `

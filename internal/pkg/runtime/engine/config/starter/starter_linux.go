@@ -144,6 +144,16 @@ func (c *Config) SetWorkingDirectoryFd(fd int) {
 	c.config.starter.workingDirectoryFd = C.int(fd)
 }
 
+// SetImageFd changes starter config and sets fd for the image in use.
+func (c *Config) SetImageFd(fd int) {
+	c.config.starter.imageFd = C.int(fd)
+}
+
+// GetImageFd returns the fd for the image in use.
+func (c *Config) GetImageFd() int {
+	return int(c.config.starter.imageFd)
+}
+
 // KeepFileDescriptor adds a file descriptor to an array of file
 // descriptors that starter will keep open. All files opened during
 // stage 1 will be shared with starter process. Once stage 1 returns,
@@ -187,6 +197,17 @@ func (c *Config) SetAllowSetgroups(allow bool) {
 		c.config.container.privileges.allowSetgroups = C.true
 	} else {
 		c.config.container.privileges.allowSetgroups = C.false
+	}
+}
+
+// SetCleanupHost sets the flag to tell starter container setup
+// to spawn a cleanup process for SIF FUSE mounts early, in the
+// original host namespaces.
+func (c *Config) SetCleanupHost(enabled bool) {
+	if enabled {
+		c.config.starter.cleanupHost = C.true
+	} else {
+		c.config.starter.cleanupHost = C.false
 	}
 }
 
