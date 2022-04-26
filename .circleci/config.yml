@@ -153,17 +153,6 @@ jobs:
           name: Check License Changes
           command: git diff --exit-code -- LICENSE_DEPENDENCIES.md
 
-  build-source-debian:
-    executor:
-      name: golang
-      variant: bullseye
-    steps:
-      - checkout
-      - install-deps-apt:
-          sudo: false
-      - update-submodules
-      - build-singularity
-
   build-source-alpine:
     executor:
       name: golang
@@ -312,7 +301,6 @@ workflows:
       - lint-markdown
       - check-go-mod
       - check-license-dependencies
-      - build-source-debian
       - build-source-alpine
       - lint-source
       - short-unit-tests
@@ -322,7 +310,18 @@ workflows:
           matrix:
             parameters:
               e: ["centos7", "almalinux8"]
+          filters:
+            branches:
+              only:
+                - master
+                - /release-.*/
+
       - build-deb:
           matrix:
             parameters:
               e: ["ubuntu1804", "ubuntu2004", "ubuntu2204"]
+          filters:
+            branches:
+              only:
+                - master
+                - /release-.*/
