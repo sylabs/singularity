@@ -285,6 +285,13 @@ func (c ctx) singularityEnvOption(t *testing.T) {
 			matchVal: "Hello\nWorld",
 		},
 		{
+			name:     "TestEscapedNewline",
+			image:    c.env.ImagePath,
+			hostEnv:  []string{"ESCAPED=Hello\\nWorld"},
+			matchEnv: "ESCAPED",
+			matchVal: "Hello\\nWorld",
+		},
+		{
 			name:  "TestInvalidKey",
 			image: c.env.ImagePath,
 			// We try to set an invalid env var... and make sure
