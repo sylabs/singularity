@@ -65,6 +65,7 @@
 - Allow `newgidmap / newuidmap` that use capabilities instead of setuid root.
 - Corrected `key search` output for results from some servers, and keys
   with multiple names.
+- Pass through a literal `\n` in host environment variables to container.
 
 ## v3.9.9 \[2022-04-22\]
 
