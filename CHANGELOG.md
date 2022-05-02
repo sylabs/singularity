@@ -63,6 +63,8 @@
 - Support nvidia-container-cli v1.8.0 and above, via fix to capability set.
 - Do not truncate environment variables with commas.
 - Allow `newgidmap / newuidmap` that use capabilities instead of setuid root.
+- Corrected `key search` output for results from some servers, and keys
+  with multiple names.
 
 ## v3.9.9 \[2022-04-22\]
 
