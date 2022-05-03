@@ -40,8 +40,7 @@ require (
 	github.com/sylabs/scs-key-client v0.7.2
 	github.com/sylabs/scs-library-client v1.3.1
 	github.com/sylabs/sif/v2 v2.7.0
-	github.com/vbauerster/mpb/v4 v4.12.2
-	github.com/vbauerster/mpb/v6 v6.0.4
+	github.com/vbauerster/mpb/v7 v7.4.1
 	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	gopkg.in/yaml.v2 v2.4.0
@@ -128,7 +127,6 @@ require (
 	github.com/urfave/cli v1.22.5 // indirect
 	github.com/vbatts/go-mtree v0.5.0 // indirect
 	github.com/vbatts/tar-split v0.11.2 // indirect
-	github.com/vbauerster/mpb/v7 v7.4.1 // indirect
 	github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5 // indirect
 	github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
@@ -149,8 +147,3 @@ require (
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 )
-
-// Temporarily force an image-spec that has the main branch commits not in 1.0.2 which is being brought in by oras-go
-// These commits are needed by containers/image/v5 and the replace is necessary given how image-spec v1.0.2 has been
-// tagged / rebased.
-replace github.com/opencontainers/image-spec => github.com/opencontainers/image-spec v1.0.2-0.20211117181255-693428a734f5
