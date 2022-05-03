@@ -43,6 +43,11 @@ BuildRequires: gcc
 BuildRequires: make
 BuildRequires: libseccomp-devel
 BuildRequires: glib2-devel
+BuildRequires: cryptsetup
+
+Requires: cryptsetup
+Requires: glib2
+Requires: runc
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
 Requires: libseccomp2
@@ -50,7 +55,6 @@ Requires: libseccomp2
 Requires: squashfs-tools
 Requires: libseccomp
 %endif
-BuildRequires: cryptsetup
 
 # there's no golang for ppc64, just ppc64le
 ExcludeArch: ppc64

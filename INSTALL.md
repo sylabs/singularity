@@ -22,7 +22,8 @@ sudo apt-get install -y \
     libglib2.0-dev \
     pkg-config \
     squashfs-tools \
-    cryptsetup
+    cryptsetup \
+    runc
 ```
 
 On CentOS/RHEL:
@@ -35,8 +36,12 @@ sudo yum install -y \
     libseccomp-devel \
     glib2-devel \
     squashfs-tools \
-    cryptsetup
+    cryptsetup \
+    runc
 ```
+
+_Note - `runc` can be ommitted if you will not use the `singularity oci`
+commands._
 
 ## Install Go
 
