@@ -29,15 +29,8 @@
   (which requires seccomp headers).
 - SingularityCE now requires squashfs-tools >=4.3, which is satisfied by
   current EL / Ubuntu / Debian and other distributions.
-- New action flag `--no-eval` which:
-  - Prevents shell evaluation of `SINGULARITYENV_ / --env / --env-file`
-    environment variables as they are injected in the container, to match OCI
-    behavior. *Applies to all containers*.
-  - Prevents shell evaluation of the values of `CMD / ENTRYPOINT` and command
-    line arguments for containers run or built directly from an OCI/Docker
-    source. *Applies to newly built containers only, use `singularity inspect`
-    to check version that container was built with*.
-- Added `--no-eval` to the list of flags set by the OCI/Docker `--compat` mode.
+- Added `--no-eval` to the list of flags set by the OCI/Docker `--compat` mode
+  (see below).
 
 ### New features / functionalities
 
@@ -49,19 +42,24 @@
 - The `--no-mount` flag & `SINGULARITY_NO_MOUNT` env var can now be used to
   disable a `bind path` entry from `singularity.conf` by specifying the
   absolute path to the destination of the bind.
-- SingularityCE now supports the `riscv64` architecture.
 - Non-root users can now use `--apply-cgroups` with `run/shell/exec` to limit
   container resource usage on a system using cgroups v2 and the systemd cgroups
   manager.
 - Added `--cpu*`, `--blkio*`, `--memory*`, `--pids-limit` flags to apply cgroups
   resource limits to a container directly.
-- Allow direct mount of SIF images with `squashfuse` in user-namespace / no-setuid
-  mode.
+- Allow experimental direct mount of SIF images with `squashfuse` in
+  user-namespace / no-setuid mode.
+- New action flag `--no-eval` which:
+  - Prevents shell evaluation of `SINGULARITYENV_ / --env / --env-file`
+    environment variables as they are injected in the container, to match OCI
+    behavior. *Applies to all containers*.
+  - Prevents shell evaluation of the values of `CMD / ENTRYPOINT` and command
+    line arguments for containers run or built directly from an OCI/Docker
+    source. *Applies to newly built containers only, use `singularity inspect`
+    to check version that container was built with*.
 
 ### Bug Fixes
 
-- Support nvidia-container-cli v1.8.0 and above, via fix to capability set.
-- Do not truncate environment variables with commas.
 - Allow `newgidmap / newuidmap` that use capabilities instead of setuid root.
 - Corrected `key search` output for results from some servers, and keys
   with multiple names.
