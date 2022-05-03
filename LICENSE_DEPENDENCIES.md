@@ -467,11 +467,11 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/vbatts/go-mtree/blob/master/LICENSE>
 
-## github.com/vbatts/tar-split
+## github.com/vbatts/tar-split/archive/tar
 
 **License:** BSD-3-Clause
 
-**License URL:** <https://github.com/vbatts/tar-split/blob/master/LICENSE>
+**License URL:** <https://github.com/vbatts/tar-split/blob/master/archive/tar/LICENSE>
 
 ## golang.org/x/crypto
 
