@@ -7,6 +7,12 @@
   in the next minor release (3.10.x). Users utilizing plugins with
   SingularityCE 3.9.x should use version 1.17.x of the Go toolchain.
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Address 401 error pulling from private library:// projects.
+
 ## v3.9.9 \[2022-04-22\]
 
 ### Bug Fixes
