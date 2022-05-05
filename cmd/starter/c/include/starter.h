@@ -161,9 +161,6 @@ struct starter {
 
     /* bounding capability set will include caps needed by nvidia-container-cli */
     bool nvCCLICaps;
-
-    /* is a CLEANUP_HOST process require outside of namespaces for SIF FUSE cleanup */
-    bool cleanupHost;
 };
 
 /* engine configuration */

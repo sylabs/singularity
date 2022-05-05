@@ -791,6 +791,10 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		}
 	}
 
+	if SIFFUSE && !(UserNamespace || insideUserNs) {
+		sylog.Warningf("--sif-fuse is not supported without user namespace, ignoring.")
+	}
+
 	// setuid workflow set RLIMIT_STACK to its default value,
 	// get the original value to restore it before executing
 	// container process
@@ -835,6 +839,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			starter.WithStdout(stdout),
 			starter.WithStderr(stderr),
 			starter.LoadOverlayModule(loadOverlay),
+			starter.CleanupHost(engineConfig.GetImageFuse()),
 		)
 
 		if sylog.GetLevel() != 0 {
@@ -866,6 +871,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			cfg,
 			starter.UseSuid(useSuid),
 			starter.LoadOverlayModule(loadOverlay),
+			starter.CleanupHost(engineConfig.GetImageFuse()),
 		)
 		sylog.Fatalf("%s", err)
 	}

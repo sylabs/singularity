@@ -195,10 +195,6 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	if e.EngineConfig.GetNvCCLI() {
 		starterConfig.SetNvCCLICaps(true)
 	}
-	// If using a SIF FUSE mount, we need to cleanup in host namespaces.
-	if e.EngineConfig.GetImageFuse() {
-		starterConfig.SetCleanupHost(true)
-	}
 
 	return nil
 }
