@@ -1,5 +1,11 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Correctly launch CleanupHost process only when needed in `--sif-fuse` flow.
+
 ## 3.10.0-rc.1 \[2022-05-04\]
 
 This is the first release candidate for the upcoming SingularityCE 3.10 release.

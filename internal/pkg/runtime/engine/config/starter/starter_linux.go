@@ -200,17 +200,6 @@ func (c *Config) SetAllowSetgroups(allow bool) {
 	}
 }
 
-// SetCleanupHost sets the flag to tell starter container setup
-// to spawn a cleanup process for SIF FUSE mounts early, in the
-// original host namespaces.
-func (c *Config) SetCleanupHost(enabled bool) {
-	if enabled {
-		c.config.starter.cleanupHost = C.true
-	} else {
-		c.config.starter.cleanupHost = C.false
-	}
-}
-
 // GetJSONConfig returns pointer to the engine's JSON configuration.
 // A copy of the original bytes allocated on C heap is returned.
 func (c *Config) GetJSONConfig() []byte {

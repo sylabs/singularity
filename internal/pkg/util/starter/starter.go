@@ -74,6 +74,16 @@ func LoadOverlayModule(load bool) CommandOp {
 	}
 }
 
+// CleanupHost sets CLEANUP_HOST environment variable
+// which telsl starter to spawn the unprivileged host cleanup process.
+func CleanupHost(spawn bool) CommandOp {
+	return func(c *Command) {
+		if spawn {
+			c.env = append(c.env, "CLEANUP_HOST=1")
+		}
+	}
+}
+
 // Command a starter command to execute.
 type Command struct {
 	path   string
