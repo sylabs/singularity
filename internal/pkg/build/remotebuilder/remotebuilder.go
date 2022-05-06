@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -72,6 +73,74 @@ func New(imagePath, libraryURL string, d types.Definition, isDetached, force boo
 	}, nil
 }
 
+// normalizePath normalizes a user-supplied path to the format supported by the io.fs package.
+func normalizePath(path string) (string, error) {
+	path, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+
+	// Paths are slash-separated.
+	path = filepath.ToSlash(path)
+
+	// Special case: the root directory is named ".".
+	if path == "/" {
+		return ".", nil
+	}
+
+	// Paths must not start with a slash.
+	return strings.TrimPrefix(path, "/"), nil
+}
+
+// pathsFromDefinition determines the local paths that should be uploaded to the build service.
+func pathsFromDefinition(d types.Definition) ([]string, error) {
+	var fts []types.FileTransport
+
+	// There may be mutiple files sections. We only consider files that do not originate from a
+	// stage of the build.
+	for _, f := range d.BuildData.Files {
+		if strings.Split(f.Args, "#")[0] == "" {
+			fts = append(fts, f.Files...)
+		}
+	}
+
+	var paths []string
+
+	// Normalize paths.
+	for _, ft := range fts {
+		if ft.Src == "" {
+			continue
+		}
+
+		sylog.Infof("Preparing to upload %v to remote build service...", ft.Src)
+
+		path, err := normalizePath(ft.Src)
+		if err != nil {
+			return nil, err
+		}
+
+		paths = append(paths, path)
+	}
+
+	return paths, nil
+}
+
+// uploadBuildContext examines the definition for local file references. If no references are
+// found, a nil error is returned with an empty digest. Otherwise, an archive containing the local
+// files is uploaded to the builder, and its digest is returned.
+func (rb *RemoteBuilder) uploadBuildContext(ctx context.Context) (digest string, err error) {
+	paths, err := pathsFromDefinition(rb.Definition)
+	if err != nil {
+		return "", fmt.Errorf("failed to determine paths from definition: %w", err)
+	}
+
+	if len(paths) <= 0 {
+		return "", nil
+	}
+
+	return rb.BuildClient.UploadBuildContext(ctx, paths)
+}
+
 // Build is responsible for making the request via scs-build-client to the builder
 func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	var libraryRef string
@@ -85,10 +154,17 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 		return fmt.Errorf("invalid library reference: %s", rb.ImagePath)
 	}
 
+	// Upload build context, if applicable.
+	contextDigest, err := rb.uploadBuildContext(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to upload build context: %w", err)
+	}
+
 	bi, err := rb.BuildClient.Submit(ctx, bytes.NewReader(rb.Definition.Raw),
 		buildclient.OptBuildLibraryRef(libraryRef),
 		buildclient.OptBuildLibraryPullBaseURL(rb.LibraryURL),
 		buildclient.OptBuildArchitecture(rb.Arch),
+		buildclient.OptBuildContext(contextDigest),
 	)
 	if err != nil {
 		return errors.Wrap(err, "failed to post request to remote build service")
@@ -124,6 +200,13 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	}
 	if bi.ImageSize() <= 0 {
 		return errors.New("build image size <= 0")
+	}
+
+	// Now that the build is complete, delete the build context (if applicable.)
+	if contextDigest != "" {
+		if err := rb.BuildClient.DeleteBuildContext(ctx, contextDigest); err != nil {
+			sylog.Warningf("failed to delete build context: %v", err)
+		}
 	}
 
 	// If image destination is local file, pull image.
