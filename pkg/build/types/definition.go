@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"path/filepath"
 	"strings"
 )
 
@@ -64,10 +65,43 @@ type Files struct {
 	Files []FileTransport `json:"files"`
 }
 
+// Stage returns the build stage referenced by the files section f, or "" if no stage is
+// referenced.
+func (f Files) Stage() string {
+	// Trim comments from args.
+	cleanArgs := strings.SplitN(f.Args, "#", 2)[0]
+
+	// If "stage <name>", return "<name>".
+	if args := strings.Fields(cleanArgs); len(args) == 2 && args[0] != "stage" {
+		return args[1]
+	}
+
+	return ""
+}
+
 // FileTransport holds source and destination information of files to copy into the container.
 type FileTransport struct {
 	Src string `json:"source"`
 	Dst string `json:"destination"`
+}
+
+// SourcePath returns the source path in the format as specified by the io/fs package.
+func (ft FileTransport) SourcePath() (string, error) {
+	path, err := filepath.Abs(ft.Src)
+	if err != nil {
+		return "", err
+	}
+
+	// Paths are slash-separated.
+	path = filepath.ToSlash(path)
+
+	// Special case: the root directory is named ".".
+	if path == "/" {
+		return ".", nil
+	}
+
+	// Paths must not start with a slash.
+	return strings.TrimPrefix(path, "/"), nil
 }
 
 // Script describes any script section of a definition.
