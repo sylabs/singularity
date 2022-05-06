@@ -15,7 +15,7 @@ require (
 	github.com/containers/common v0.48.0
 	github.com/containers/image/v5 v5.21.1
 	github.com/cyphar/filepath-securejoin v0.2.3
-	github.com/docker/docker v20.10.14+incompatible
+	github.com/docker/docker v20.10.15+incompatible
 	github.com/docker/go-units v0.4.0
 	github.com/fatih/color v1.13.0
 	github.com/go-log/log v0.2.0
