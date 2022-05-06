@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -73,53 +72,30 @@ func New(imagePath, libraryURL string, d types.Definition, isDetached, force boo
 	}, nil
 }
 
-// normalizePath normalizes a user-supplied path to the format supported by the io.fs package.
-func normalizePath(path string) (string, error) {
-	path, err := filepath.Abs(path)
-	if err != nil {
-		return "", err
-	}
-
-	// Paths are slash-separated.
-	path = filepath.ToSlash(path)
-
-	// Special case: the root directory is named ".".
-	if path == "/" {
-		return ".", nil
-	}
-
-	// Paths must not start with a slash.
-	return strings.TrimPrefix(path, "/"), nil
-}
-
 // pathsFromDefinition determines the local paths that should be uploaded to the build service.
 func pathsFromDefinition(d types.Definition) ([]string, error) {
-	var fts []types.FileTransport
+	var paths []string
 
 	// There may be mutiple files sections. We only consider files that do not originate from a
 	// stage of the build.
 	for _, f := range d.BuildData.Files {
-		if strings.Split(f.Args, "#")[0] == "" {
-			fts = append(fts, f.Files...)
+		if f.Stage() == "" {
+			// Loop through list of files and append source path.
+			for _, ft := range f.Files {
+				if ft.Src == "" {
+					continue
+				}
+
+				sylog.Infof("Preparing to upload %v to remote build service...", ft.Src)
+
+				path, err := ft.SourcePath()
+				if err != nil {
+					return nil, err
+				}
+
+				paths = append(paths, path)
+			}
 		}
-	}
-
-	var paths []string
-
-	// Normalize paths.
-	for _, ft := range fts {
-		if ft.Src == "" {
-			continue
-		}
-
-		sylog.Infof("Preparing to upload %v to remote build service...", ft.Src)
-
-		path, err := normalizePath(ft.Src)
-		if err != nil {
-			return nil, err
-		}
-
-		paths = append(paths, path)
 	}
 
 	return paths, nil
