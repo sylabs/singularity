@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 - Correctly launch CleanupHost process only when needed in `--sif-fuse` flow.
+- Add specific error for unreadable image / overlay file.
 
 ## 3.10.0-rc.1 \[2022-05-04\]
 
