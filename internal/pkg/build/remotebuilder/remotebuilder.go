@@ -114,7 +114,11 @@ func (rb *RemoteBuilder) uploadBuildContext(ctx context.Context) (digest string,
 		return "", nil
 	}
 
-	return rb.BuildClient.UploadBuildContext(ctx, paths)
+	digest, err = rb.BuildClient.UploadBuildContext(ctx, paths)
+	if err != nil {
+		sylog.Infof("Build context upload failed. This build server may not support the `%%files` section for remote builds.")
+	}
+	return digest, err
 }
 
 // Build is responsible for making the request via scs-build-client to the builder
