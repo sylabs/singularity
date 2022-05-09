@@ -502,3 +502,11 @@ Are code from the conmon project, under the Apache License, Version 2.0.
    See the License for the specific language governing permissions and
    limitations under the License.
 ```
+
+## github.com/docker/cli
+
+The source files:
+
+* `internal/app/singularity/instance_linux.go`
+
+Contain code from the docker cli project, under the Apache License, Version 2.0.
