@@ -3,6 +3,9 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// Includes code from https://github.com/docker/cli
+// Released under the Apache License Version 2.0
+
 package singularity
 
 import (
@@ -10,10 +13,15 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
+	"strings"
 	"syscall"
 	"text/tabwriter"
 	"time"
 
+	units "github.com/docker/go-units"
+	libcgroups "github.com/opencontainers/runc/libcontainer/cgroups"
+	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
@@ -122,19 +130,127 @@ func WriteInstancePidFile(name, pidFile string) error {
 	return nil
 }
 
+// instanceListOrError is a private function to retrieve named instances or fail if there are no instances
+// We wrap the error from instance.List to provide a more specific error message
+func instanceListOrError(instanceUser, name string) ([]*instance.File, error) {
+	ii, err := instance.List(instanceUser, name, instance.SingSubDir)
+	if err != nil {
+		return ii, fmt.Errorf("could not retrieve instance list: %w", err)
+	}
+	if len(ii) == 0 {
+		return ii, fmt.Errorf("no instance found")
+	}
+	return ii, err
+}
+
+// calculate BlockIO counts up read/write totals
+func calculateBlockIO(stats *libcgroups.BlkioStats) (float64, float64) {
+	var read, write float64
+	for _, entry := range stats.IoServiceBytesRecursive {
+		switch strings.ToLower(entry.Op) {
+		case "read":
+			read += float64(entry.Value)
+		case "write":
+			write += float64(entry.Value)
+		}
+	}
+	return read, write
+}
+
+// calculateMemoryUsage returns the current usage, limit, and percentage
+func calculateMemoryUsage(stats *libcgroups.MemoryStats) (float64, float64, float64) {
+	// Note that there is also MaxUsage
+	memUsage := float64(stats.Usage.Usage)
+	memLimit := 0.0
+	memPercent := 0.0
+
+	// Calculate total memory of system
+	in := &syscall.Sysinfo_t{}
+	err := syscall.Sysinfo(in)
+	if err == nil {
+		memLimit = float64(in.Totalram) * float64(in.Unit)
+	}
+	if memLimit != 0 {
+		memPercent = memUsage / memLimit * 100.0
+	}
+	return memUsage, memLimit, memPercent
+}
+
+// InstanceStats uses underlying cgroups to get statistics for a named instance
+func InstanceStats(name, instanceUser string, formatJSON bool) error {
+	ii, err := instanceListOrError(instanceUser, name)
+	if err != nil {
+		return err
+	}
+	// Instance stats required 1 instance
+	if len(ii) != 1 {
+		return fmt.Errorf("query returned more than one instance (%d)", len(ii))
+	}
+
+	// Grab our instance to interact with!
+	i := ii[0]
+	if !formatJSON {
+		sylog.Infof("Stats for %s instance of %s (PID=%d)\n", i.Name, i.Image, i.Pid)
+	}
+
+	// Cut out early if we do not have cgroups
+	if !i.Cgroup {
+		url := "the Singularity instance user guide for instructions"
+		return fmt.Errorf("stats are only available if cgroups are enabled, see %s", url)
+	}
+
+	// Get a cgroupfs managed cgroup from the pid
+	manager, err := cgroups.GetManagerForPid(i.Pid)
+	if err != nil {
+		return fmt.Errorf("while getting cgroup manager for pid: %v", err)
+	}
+	stats, err := manager.GetStats()
+	if err != nil {
+		return fmt.Errorf("while getting stats for pid: %v", err)
+	}
+
+	// Do we want json?
+	if formatJSON {
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "\t")
+		err = enc.Encode(stats)
+		return err
+	}
+
+	// Otherwise print shortened table
+	tabWriter := tabwriter.NewWriter(os.Stdout, 0, 8, 4, ' ', 0)
+	defer tabWriter.Flush()
+
+	// Stats can be added from this set:
+	// https://github.com/opencontainers/runc/blob/main/libcontainer/cgroups/stats.go
+	_, err = fmt.Fprintln(tabWriter, "INSTANCE NAME\tCPU USAGE\tMEM USAGE / LIMIT\tMEM %\tBLOCK I/O\tPIDS")
+	if err != nil {
+		return fmt.Errorf("could not write stats header: %v", err)
+	}
+
+	// CpuUsage denotes the usage of a CPU, aggregate since container inception.
+	// TODO CPU time needs to be a percentage
+	totalCPUTime := strconv.FormatUint(stats.CpuStats.CpuUsage.TotalUsage, 10) + " ns"
+	memUsage, memLimit, memPercent := calculateMemoryUsage(&stats.MemoryStats)
+	blockRead, blockWrite := calculateBlockIO(&stats.BlkioStats)
+
+	// Generate a shortened stats list
+	_, err = fmt.Fprintf(tabWriter, "%s\t%s\t%s / %s\t%.2f%s\t%s / %s\t%d\n", i.Name, totalCPUTime, units.BytesSize(memUsage), units.BytesSize(memLimit), memPercent, "%", units.BytesSize(blockRead), units.BytesSize(blockWrite), stats.PidsStats.Current)
+	if err != nil {
+		return fmt.Errorf("could not write instance stats: %v", err)
+	}
+	return nil
+}
+
 // StopInstance fetches instance list, applying name and
 // user filters, and stops them by sending a signal sig. If an instance
 // is still running after a grace period defined by timeout is expired,
 // it will be forcibly killed.
 func StopInstance(name, user string, sig syscall.Signal, timeout time.Duration) error {
-	ii, err := instance.List(user, name, instance.SingSubDir)
+	ii, err := instanceListOrError(user, name)
 	if err != nil {
-		return fmt.Errorf("could not retrieve instance list: %v", err)
+		return err
 	}
-	if len(ii) == 0 {
-		return fmt.Errorf("no instance found")
-	}
-
 	stoppedPID := make(chan int, 1)
 	stopped := make([]int, 0)
 

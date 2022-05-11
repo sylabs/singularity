@@ -2352,6 +2352,30 @@ func (c actionTests) actionSIFFUSE(t *testing.T) {
 	}
 }
 
+// Verify that the FUSE mounts, and the CleanupHost() process are not seen when
+// --sif-fuse should not be in effect.
+func (c actionTests) actionNoSIFFUSE(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	profiles := []e2e.Profile{e2e.UserProfile, e2e.RootProfile, e2e.FakerootProfile, e2e.UserNamespaceProfile}
+
+	for _, p := range profiles {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(p.String()),
+			e2e.WithProfile(p),
+			e2e.WithCommand("exec"),
+			e2e.WithGlobalOptions("-d"),
+			e2e.WithArgs(c.env.ImagePath, "mount"),
+			e2e.ExpectExit(
+				0,
+				e2e.ExpectError(e2e.UnwantedContainMatch, "squashfuse"),
+				e2e.ExpectError(e2e.UnwantedContainMatch, "CleanupHost()"),
+			),
+		)
+	}
+}
+
 func countSquashfuseMounts(t *testing.T) int {
 	count := 0
 
@@ -2413,5 +2437,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"compat":                c.actionCompat,        // test --compat
 		"invalidRemote":         np(c.invalidRemote),   // GHSA-5mv9-q7fq-9394
 		"SIFFUSE":               np(c.actionSIFFUSE),   // test --sif-fuse
+		"NoSIFFUSE":             np(c.actionNoSIFFUSE), // test absence of squashfs and CleanupHost()
 	}
 }

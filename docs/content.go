@@ -100,6 +100,9 @@ Enterprise Performance Computing (EPC)`
 
   DEFFILE SECTIONS:
 
+  The following sections are presented in the order of processing, with the exception
+  that labels and environment can also be manipulated in %post.
+
       %pre
           echo "This is a scriptlet that will be executed on the host, as root before"
           echo "the container has been bootstrapped. This section is not commonly used."
@@ -109,9 +112,19 @@ Enterprise Performance Computing (EPC)`
           echo "the container has been bootstrapped. To install things into the container"
           echo "reference the file system location with $SINGULARITY_ROOTFS."
 
+      %files
+          /path/on/host/file.txt /path/on/container/file.txt
+          relative_file.txt /path/on/container/relative_file.txt
+
       %post
           echo "This scriptlet section will be executed from within the container after"
           echo "the bootstrap/base has been created and setup."
+
+      %environment
+          LUKE=goodguy
+          VADER=badguy
+          HAN=someguy
+          export HAN VADER LUKE
 
       %test
           echo "Define any test commands that should be executed after container has been"
@@ -130,16 +143,6 @@ Enterprise Performance Computing (EPC)`
       %labels
           HELLO MOTO
           KEY VALUE
-
-      %files
-          /path/on/host/file.txt /path/on/container/file.txt
-          relative_file.txt /path/on/container/relative_file.txt
-
-      %environment
-          LUKE=goodguy
-          VADER=badguy
-          HAN=someguy
-          export HAN VADER LUKE
 
       %help
           This is a text file to be displayed with the run-help command.
@@ -550,6 +553,20 @@ Enterprise Performance Computing (EPC)`
 
   $ singularity instance stop /tmp/my-sql.sif mysql
   Stopping /tmp/my-sql.sif mysql`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// instance stats
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	InstanceStatsUse   string = `stats [stats options...] <instance name>`
+	InstanceStatsShort string = `Get stats for a named instance`
+	InstanceStatsLong  string = `
+  The instance stats command allows you to get statistics for a named instance,
+  either printed to the terminal or in json. If you are root, you can optionally
+  ask for statistics for a container instance belonging to a specific user.`
+	InstanceStatsExample string = `
+  $ singularity instance stats mysql
+  $ singularity instance stats --json mysql
+  $ sudo singularity instance stats --user <username> user-mysql`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// instance stop

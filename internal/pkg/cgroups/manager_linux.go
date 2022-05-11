@@ -106,6 +106,15 @@ func (m *Manager) GetCgroupRelPath() (relPath string, err error) {
 	return filepath.Clean(pathParts[1]), nil
 }
 
+// GetStats wraps the Manager.GetStats from runc
+func (m *Manager) GetStats() (*lccgroups.Stats, error) {
+	stats, err := m.cgroup.GetStats()
+	if err != nil {
+		return &lccgroups.Stats{}, fmt.Errorf("could not get stats from cgroups manager: %x", err)
+	}
+	return stats, nil
+}
+
 // UpdateFromSpec updates the existing managed cgroup using configuration from
 // an OCI LinuxResources spec struct.
 func (m *Manager) UpdateFromSpec(resources *specs.LinuxResources) (err error) {
@@ -130,6 +139,14 @@ func (m *Manager) UpdateFromSpec(resources *specs.LinuxResources) (err error) {
 	lcConfig, err := lcspecconv.CreateCgroupConfig(opts, nil)
 	if err != nil {
 		return fmt.Errorf("could not create cgroup config: %w", err)
+	}
+
+	// runc/libcontainer/cgroups for v2 defaults to a deny-all policy, while
+	// singularity has always allowed access to devices by default. If no device
+	// rules are provided in the spec, then skip setting them so the deny-all is
+	// not applied.
+	if len(resources.Devices) == 0 {
+		lcConfig.SkipDevices = true
 	}
 
 	err = m.cgroup.Set(lcConfig.Resources)
@@ -280,6 +297,14 @@ func newManager(resources *specs.LinuxResources, group string, systemd bool) (ma
 	lcConfig, err := lcspecconv.CreateCgroupConfig(opts, nil)
 	if err != nil {
 		return nil, fmt.Errorf("could not create cgroup config: %w", err)
+	}
+
+	// runc/libcontainer/cgroups for v2 defaults to a deny-all policy, while
+	// singularity has always allowed access to devices by default. If no device
+	// rules are provided in the spec, then skip setting them so the deny-all is
+	// not applied.
+	if len(resources.Devices) == 0 {
+		lcConfig.SkipDevices = true
 	}
 
 	cgroup, err := lcmanager.New(lcConfig)

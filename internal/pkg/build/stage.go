@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/build/files"
@@ -146,18 +145,12 @@ func (s *stage) runTestScript(configFile, sessionResolv, sessionHosts string) er
 func (s *stage) copyFilesFrom(b *Build) error {
 	def := s.b.Recipe
 	for _, f := range def.BuildData.Files {
-		// Trim comments from args
-		cleanArgs := strings.Split(f.Args, "#")[0]
-		if cleanArgs == "" {
+		stageName := f.Stage()
+		if stageName == "" {
 			continue
 		}
 
-		args := strings.Fields(cleanArgs)
-		if len(args) != 2 {
-			continue
-		}
-
-		stageIndex, err := b.findStageIndex(args[1])
+		stageIndex, err := b.findStageIndex(stageName)
 		if err != nil {
 			return err
 		}
@@ -165,7 +158,7 @@ func (s *stage) copyFilesFrom(b *Build) error {
 		srcRootfsPath := b.stages[stageIndex].b.RootfsPath
 		dstRootfsPath := s.b.RootfsPath
 
-		sylog.Debugf("Copying files from stage: %s", args[1])
+		sylog.Debugf("Copying files from stage: %s", stageName)
 
 		// iterate through filetransfers
 		for _, transfer := range f.Files {
@@ -189,9 +182,7 @@ func (s *stage) copyFiles() error {
 	def := s.b.Recipe
 	filesSection := types.Files{}
 	for _, f := range def.BuildData.Files {
-		// Trim comments from args
-		cleanArgs := strings.Split(f.Args, "#")[0]
-		if cleanArgs == "" {
+		if f.Stage() == "" {
 			filesSection.Files = append(filesSection.Files, f.Files...)
 		}
 	}

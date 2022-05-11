@@ -41,6 +41,76 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
+// instanceStats tests an instance ability to output stats
+func (c *ctx) instanceStats(t *testing.T, profile e2e.Profile) {
+	e2e.EnsureImage(t, c.env)
+
+	// All tests require root
+	tests := []struct {
+		name           string
+		createArgs     []string
+		startErrorCode int
+		statsErrorCode int
+	}{
+		{
+			name:           "basic stats create",
+			createArgs:     []string{"--apply-cgroups", "testdata/cgroups/cpu_success.toml", c.env.ImagePath},
+			statsErrorCode: 0,
+			startErrorCode: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// stats only for privileged atm
+			if !profile.Privileged() {
+				t.Skip()
+			}
+
+			// We always expect stats output, not create
+			createExitFunc := []e2e.SingularityCmdResultOp{}
+			instanceName := randomName(t)
+
+			// Start the instance with cgroups for stats
+			createArgs := append(tt.createArgs, instanceName)
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest("start"),
+				e2e.WithProfile(profile),
+				e2e.WithCommand("instance start"),
+				e2e.WithArgs(createArgs...),
+				e2e.ExpectExit(tt.startErrorCode, createExitFunc...),
+			)
+
+			// Get stats for the instance
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest("stats"),
+				e2e.WithProfile(profile),
+				e2e.WithCommand("instance stats"),
+				e2e.WithArgs(instanceName),
+				e2e.ExpectExit(tt.statsErrorCode,
+					e2e.ExpectOutput(e2e.ContainMatch, instanceName),
+					e2e.ExpectOutput(e2e.ContainMatch, "INSTANCE NAME"),
+					e2e.ExpectOutput(e2e.ContainMatch, "CPU USAGE"),
+					e2e.ExpectOutput(e2e.ContainMatch, "MEM USAGE / LIMIT"),
+					e2e.ExpectOutput(e2e.ContainMatch, "MEM %"),
+					e2e.ExpectOutput(e2e.ContainMatch, "BLOCK I/O"),
+					e2e.ExpectOutput(e2e.ContainMatch, "PIDS"),
+				),
+			)
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest("stop"),
+				e2e.WithProfile(profile),
+				e2e.WithCommand("instance stop"),
+				e2e.WithArgs(instanceName),
+				e2e.ExpectExit(0),
+			)
+		})
+	}
+}
+
 // moved from INSTANCE suite, as testing with systemd cgroup manager requires
 // e2e to be run without PID namespace
 func (c *ctx) instanceApply(t *testing.T, profile e2e.Profile) {
@@ -164,6 +234,10 @@ func (c *ctx) instanceApplyRoot(t *testing.T) {
 	c.instanceApply(t, e2e.RootProfile)
 }
 
+func (c *ctx) instanceStatsRoot(t *testing.T) {
+	c.instanceStats(t, e2e.RootProfile)
+}
+
 // TODO - when instance support for rootless cgroups is ready, this
 // should instead call instanceApply over the user profiles.
 func (c *ctx) instanceApplyRootless(t *testing.T) {
@@ -225,6 +299,14 @@ func (c *ctx) actionApply(t *testing.T, profile e2e.Profile) {
 			// It *does* work if you test it, directly calling the singularity CLI.
 			// Reason is believed to be: https://github.com/opencontainers/runc/issues/3026
 			rootless: false,
+		},
+		// Device access is allowed by default.
+		{
+			name:            "device allow default",
+			args:            []string{"--apply-cgroups", "testdata/cgroups/null.toml", c.env.ImagePath, "cat", "/dev/null"},
+			expectErrorCode: 0,
+			rootfull:        true,
+			rootless:        true,
 		},
 		// Device limits are properly applied only in rootful mode. Rootless will ignore them with a warning.
 		{
@@ -508,6 +590,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	np := testhelper.NoParallel
 
 	return testhelper.Tests{
+		"instance stats":                np(env.WithRootManagers(c.instanceStatsRoot)),
 		"instance root cgroups":         np(env.WithRootManagers(c.instanceApplyRoot)),
 		"instance rootless cgroups":     np(env.WithRootlessManagers(c.instanceApplyRootless)),
 		"action root cgroups":           np(env.WithRootManagers(c.actionApplyRoot)),

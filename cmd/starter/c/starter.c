@@ -1291,17 +1291,13 @@ __attribute__((constructor)) static void init(void) {
     /* retrieve engine configuration from environment variables */
     read_engine_config(&sconfig->engine);
 
-    /* cleanup environment variables */
-    cleanenv();
-
-    /* fix I/O streams to point to /dev/null if they are closed */
-    fix_streams();
-
-    /* set an invalid value for check */
-    sconfig->starter.workingDirectoryFd = -1;
-
     // Unpriv host cleanup in calling namespaces for SIF FUSE mount
-    if ( !sconfig->starter.cleanupHost ) {   
+    if ( getenv("CLEANUP_HOST") != NULL ) {
+        // FUSE SIF mount isn't supported in setuid flow at present.
+        // We should never have a CleanupHost process in setuid mode - enforce this.
+        if ( sconfig->starter.isSuid ) {
+           fatalf("CleanupHost process requested in setuid mode. Not permitted.\n");
+        }
         debugf("Create socketpair for cleanup communication channel\n");
             if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, cleanup_socket) < 0 ) {
                 fatalf("Failed to create communication socket: %s\n", strerror(errno));
@@ -1315,11 +1311,22 @@ __attribute__((constructor)) static void init(void) {
             verbosef("Spawn CleanupHost\n");
             goexecute = CLEANUP_HOST;
             return;
-        }else{
+        } else {
             // In master - Close child end of cleanup socket
             close(cleanup_socket[1]);
         }
+    } else {
+        debugf("CleanupHost not requested\n");
     }
+
+    /* cleanup environment variables */
+    cleanenv();
+
+    /* fix I/O streams to point to /dev/null if they are closed */
+    fix_streams();
+
+    /* set an invalid value for check */
+    sconfig->starter.workingDirectoryFd = -1;
 
     /* save opened file descriptors that won't be closed when stage 1 exits */
     master_fds = list_fd();
