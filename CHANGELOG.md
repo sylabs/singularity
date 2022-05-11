@@ -1,6 +1,8 @@
 # SingularityCE Changelog
 
-## Changes Since Last Release
+## 3.10.0-rc.2 \[2022-05-04\]
+
+This is the second release candidate for the upcoming SingularityCE 3.10 release.
 
 ### New features / functionalities
 
