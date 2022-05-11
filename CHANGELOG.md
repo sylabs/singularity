@@ -6,6 +6,7 @@
 
 - Correctly launch CleanupHost process only when needed in `--sif-fuse` flow.
 - Add specific error for unreadable image / overlay file.
+- Ensure cgroups device limits are default allow per past behavior.
 
 ## 3.10.0-rc.1 \[2022-05-04\]
 
