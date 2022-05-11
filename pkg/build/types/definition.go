@@ -27,6 +27,12 @@ type Definition struct {
 	AppOrder []string `json:"appOrder"`
 }
 
+// WriteRaw writes the contents of definition d to w.
+func (d *Definition) WriteRaw(w io.Writer) error {
+	populateRaw(d, w)
+	return nil
+}
+
 // ImageData contains any scripts, metadata, etc... that needs to be
 // present in some form in the final built image.
 type ImageData struct {
