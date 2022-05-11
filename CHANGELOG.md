@@ -2,11 +2,17 @@
 
 ## Changes Since Last Release
 
+### New features / functionalities
+
+- Add support for `%files` section in remote builds, when a compatible remote is
+  used.
+
 ### Bug Fixes
 
 - Correctly launch CleanupHost process only when needed in `--sif-fuse` flow.
 - Add specific error for unreadable image / overlay file.
 - Ensure cgroups device limits are default allow per past behavior.
+- Improve error message when remote build server does not support the `%files` section.
 
 ## 3.10.0-rc.1 \[2022-05-04\]
 
