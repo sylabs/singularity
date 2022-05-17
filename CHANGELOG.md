@@ -1,25 +1,10 @@
 # SingularityCE Changelog
 
-## Changes Since Last Release
-
-### New features / functionalities
-
-- Add support for `%files` section in remote builds, when a compatible remote is
-  used.
-
-### Bug Fixes
-
-- Correctly launch CleanupHost process only when needed in `--sif-fuse` flow.
-- Add specific error for unreadable image / overlay file.
-- Ensure cgroups device limits are default allow per past behavior.
-- Improve error message when remote build server does not support the `%files` section.
-
-## 3.10.0-rc.1 \[2022-05-04\]
-
-This is the first release candidate for the upcoming SingularityCE 3.10 release.
+## 3.10.0 \[2022-05-17\]
 
 ### Changed defaults / behaviours
 
+- `master` branch of GitHub repository has been renamed to `main`.
 - `oci mount` sets `Process.Terminal: true` when creating an OCI `config.json`,
   so that `oci run` provides expected interactive behavior by default.
 - Default hostname for `oci mount` containers is now `singularity` instead of
@@ -73,6 +58,8 @@ This is the first release candidate for the upcoming SingularityCE 3.10 release.
     line arguments for containers run or built directly from an OCI/Docker
     source. *Applies to newly built containers only, use `singularity inspect`
     to check version that container was built with*.
+- Add support for `%files` section in remote builds, when a compatible remote is
+  used.
 
 ### Bug Fixes
 
@@ -81,6 +68,10 @@ This is the first release candidate for the upcoming SingularityCE 3.10 release.
   with multiple names.
 - Pass through a literal `\n` in host environment variables to container.
 - Address 401 error pulling from private library:// projects.
+- Correctly launch CleanupHost process only when needed in `--sif-fuse` flow.
+- Add specific error for unreadable image / overlay file.
+- Ensure cgroups device limits are default allow per past behavior.
+- Improve error message when remote build server does not support the `%files` section.
 
 ## v3.9.9 \[2022-04-22\]
 
