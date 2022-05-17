@@ -1,6 +1,6 @@
 # SingularityCE
 
-[![CircleCI](https://circleci.com/gh/sylabs/singularity/tree/master.svg?style=svg)](https://circleci.com/gh/sylabs/singularity/tree/master)
+[![CircleCI](https://circleci.com/gh/sylabs/singularity/tree/main.svg?style=svg)](https://circleci.com/gh/sylabs/singularity/tree/main)
 
 ## Quick Links
 

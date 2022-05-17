@@ -71,7 +71,7 @@ else
 fi
 
 case "${TARGET_BRANCH}" in
-	master)
+	main)
 		if git --no-pager diff --name-only HEAD "${BASE_COMMIT}" |
 			grep -q -E -f .ci/e2e_triggers
 		then
