@@ -37,7 +37,7 @@ override_dh_auto_clean:
 
 override_dh_auto_configure:
 # Override the changelog file by adding an entry for our git-derived version number
-	dch -D unstable -v "$(srcver)-$(dist)" -M "See: https://github.com/sylabs/singularity/blob/master/CHANGELOG.md"
+	dch -D unstable -v "$(srcver)-$(dist)" -M "See: https://github.com/sylabs/singularity/blob/main/CHANGELOG.md"
 	dch -r "" -M
 
 	dh_auto_configure --builddirectory=_build

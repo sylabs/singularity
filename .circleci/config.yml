@@ -313,7 +313,7 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - main
                 - /release-.*/
 
       - build-deb:
@@ -323,5 +323,5 @@ workflows:
           filters:
             branches:
               only:
-                - master
+                - main
                 - /release-.*/
