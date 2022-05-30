@@ -86,7 +86,7 @@ case "${TARGET_BRANCH}" in
 		;;
 
 	*)
-		# The branch is not master or release, skip e2e
+		# The branch is not main or release, skip e2e
 		require_e2e=false
 		;;
 esac
