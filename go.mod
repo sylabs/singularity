@@ -38,7 +38,7 @@ require (
 	github.com/sylabs/json-resp v0.8.1
 	github.com/sylabs/scs-build-client v0.7.0
 	github.com/sylabs/scs-key-client v0.7.2
-	github.com/sylabs/scs-library-client v1.3.2
+	github.com/sylabs/scs-library-client v1.3.3
 	github.com/sylabs/sif/v2 v2.7.0
 	github.com/vbauerster/mpb/v7 v7.4.1
 	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150
@@ -140,7 +140,7 @@ require (
 	go.opencensus.io v0.23.0 // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
+	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20220411194840-2f41105eb62f // indirect
 	google.golang.org/genproto v0.0.0-20220407144326-9054f6ed7bac // indirect
