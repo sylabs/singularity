@@ -203,7 +203,7 @@ func TestGetAction(t *testing.T) {
 	traceEPERM = traceEPERM.SetReturnCode(int16(syscall.EPERM))
 	traceENOSYS := lseccomp.ActTrace
 	traceENOSYS = traceENOSYS.SetReturnCode(int16(syscall.ENOSYS))
-	kill := lseccomp.ActKill
+	kill := lseccomp.ActKillThread
 
 	tests := []struct {
 		name         string
