@@ -109,6 +109,16 @@ for arg in "$@" ; do
 			set -- "$@" -v
 			;;
 
+		-e2e_groups)
+		    e2e_groups="${1}"
+			skip=true
+			;;
+
+		-e2e_tests)
+			e2e_tests="${1}"
+			skip=true
+			;;
+
 		*)
 			set -- "$@" "${arg}"
 			;;
@@ -119,6 +129,22 @@ if ${use_gotestsum} ; then
 	if ${verbose} ; then
 		gotestrunner_format=standard-verbose
 	fi
+fi
+
+if ${use_gotestsum} ; then
+	if ${verbose} ; then
+		gotestrunner_format=standard-verbose
+	fi
+fi
+
+if  [ -n "${e2e_groups}" ] ; then
+	set -- "$@" "-e2e_groups"
+	set -- "$@" "${e2e_groups}"
+fi
+
+if  [ -n "${e2e_tests}" ] ; then
+	set -- "$@" "-e2e_tests"
+	set -- "$@" "${e2e_tests}"
 fi
 
 # capture exit code
