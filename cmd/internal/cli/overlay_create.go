@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	overlaySize int
-	overlayDirs []string
+	overlaySize   int
+	overlayDirs   []string
+	overlaySparse bool
 )
 
 // -s|--size
@@ -21,6 +22,17 @@ var overlaySizeFlag = cmdline.Flag{
 	Name:         "size",
 	ShortHand:    "s",
 	Usage:        "size of the EXT3 writable overlay in MiB",
+}
+
+// --sparse/-S
+var overlaySparseFlag = cmdline.Flag{
+	ID:           "overlaySparseFlag",
+	Value:        &overlaySparse,
+	DefaultValue: false,
+	Name:         "sparse",
+	ShortHand:    "S",
+	Usage:        "create a sparse overlay",
+	EnvKeys:      []string{"SPARSE"},
 }
 
 // --create-dir
@@ -36,7 +48,7 @@ var overlayCreateDirFlag = cmdline.Flag{
 var OverlayCreateCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := singularity.OverlayCreate(overlaySize, args[0], overlayDirs...); err != nil {
+		if err := singularity.OverlayCreate(overlaySize, args[0], overlaySparse, overlayDirs...); err != nil {
 			sylog.Fatalf(err.Error())
 		}
 		return nil

@@ -22,8 +22,9 @@ import (
 )
 
 const (
-	mkfsBinary = "mkfs.ext3"
-	ddBinary   = "dd"
+	mkfsBinary     = "mkfs.ext3"
+	ddBinary       = "dd"
+	truncateBinary = "truncate"
 )
 
 // isSigned returns true if the SIF in rw contains one or more signature objects.
@@ -70,7 +71,32 @@ func addOverlayToImage(imagePath, overlayPath string) error {
 	return f.AddObject(di)
 }
 
-func OverlayCreate(size int, imgPath string, overlayDirs ...string) error {
+// findConvertCommand finds dd unless overlaySparse is true
+func findConvertCommand(overlaySparse bool) (string, error) {
+	// We can support additional arguments, so return a list
+	command := ""
+
+	// Sparse overlay requires truncate -s
+	if overlaySparse {
+		truncate, err := exec.LookPath(truncateBinary)
+		if err != nil {
+			return command, err
+		}
+		command = truncate
+
+		// Regular (non sparse) requires dd
+	} else {
+		dd, err := bin.FindBin(ddBinary)
+		if err != nil {
+			return command, err
+		}
+		command = dd
+	}
+	return command, nil
+}
+
+// OverlayCreate creates the overlay with an optional size, image path, dirs, and sparse option.
+func OverlayCreate(size int, imgPath string, overlaySparse bool, overlayDirs ...string) error {
 	if size < 64 {
 		return fmt.Errorf("image size must be equal or greater than 64 MiB")
 	}
@@ -79,7 +105,9 @@ func OverlayCreate(size int, imgPath string, overlayDirs ...string) error {
 	if err != nil {
 		return err
 	}
-	dd, err := bin.FindBin(ddBinary)
+
+	// This can be dd or truncate (if supported and --sparse is true)
+	convertCommand, err := findConvertCommand(overlaySparse)
 	if err != nil {
 		return err
 	}
@@ -148,7 +176,13 @@ func OverlayCreate(size int, imgPath string, overlayDirs ...string) error {
 
 	errBuf := new(bytes.Buffer)
 
-	cmd = exec.Command(dd, "if=/dev/zero", "of="+tmpFile, "bs=1M", fmt.Sprintf("count=%d", size))
+	// truncate has a different interaction than dd
+	if strings.Contains(convertCommand, "truncate") {
+		cmd = exec.Command(convertCommand, fmt.Sprintf("--size=%dM", size), tmpFile)
+	} else {
+		cmd = exec.Command(convertCommand, "if=/dev/zero", "of="+tmpFile, "bs=1M", fmt.Sprintf("count=%d", size))
+	}
+
 	cmd.Stderr = errBuf
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("while zero'ing overlay image %s: %s\nCommand error: %s", tmpFile, err, errBuf)
