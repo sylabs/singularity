@@ -78,7 +78,7 @@ func findConvertCommand(overlaySparse bool) (string, error) {
 
 	// Sparse overlay requires truncate -s
 	if overlaySparse {
-		truncate, err := exec.LookPath(truncateBinary)
+		truncate, err := bin.FindBin(truncateBinary)
 		if err != nil {
 			return command, err
 		}
