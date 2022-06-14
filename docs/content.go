@@ -1077,7 +1077,10 @@ Enterprise Performance Computing (EPC)`
   $ singularity overlay create --size 1024 /tmp/image.sif
 
   To create a single EXT3 writable overlay image:
-  $ singularity overlay create --size 1024 /tmp/my_overlay.img`
+  $ singularity overlay create --size 1024 /tmp/my_overlay.img
+
+  To create a sparse overlay when creating a new ext3 file system image:
+  $ singularity overlay create --size 1024 --sparse /tmp/ext3_overlay.img`
 )
 
 // Documentation for sif/siftool command.

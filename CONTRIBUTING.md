@@ -37,15 +37,18 @@ all your interactions with the project members and users.
 1. Make sure your code passes linting, by running `make check` before submitting
    the PR. We use `golangci-lint` as our linter. You may need to address linting
    errors by:
-   - Running `gofumpt .` to format all `.go` files. We use
-     [gofumpt](https://github.com/mvdan/gofumpt) instead of `gofmt` as it adds
-     additional formatting rules which are helpful for clarity.
+   - Running `gofumpt .` to format all `.go` files. To do this in place you can
+     do `gofumpt -w .`. We use [gofumpt](https://github.com/mvdan/gofumpt)
+     instead of `gofmt` as it adds additional formatting rules which are helpful
+     for clarity.
    - Leaving a function comment on **every** new exported function and package
      that your PR has introduced. To learn about how to properly comment Go
      code, read
      [this post on golang.org](https://golang.org/doc/effective_go.html#commentary)
 1. Make sure you have locally tested using `make -C builddir test` and that all
    tests succeed before submitting the PR.
+1. If you accidentally changed code in a submodule, you can undo it like
+   `git submodule foreach --recursive git reset --hard` before committing.
 1. If possible, run `make -C builddir testall` locally, after setting the
    environment variables `E2E_DOCKER_USERNAME` and `E2E_DOCKER_PASSWORD`
    appropriately for an authorized Docker Hub account. This is required as

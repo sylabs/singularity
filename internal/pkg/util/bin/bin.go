@@ -23,7 +23,7 @@ import (
 func FindBin(name string) (path string, err error) {
 	switch name {
 	// Basic system executables that we assume are always on PATH
-	case "true", "mkfs.ext3", "cp", "rm", "dd":
+	case "true", "mkfs.ext3", "cp", "rm", "dd", "truncate":
 		return findOnPath(name)
 	// Bootstrap related executables that we assume are on PATH
 	case "mount", "mknod", "debootstrap", "pacstrap", "dnf", "yum", "rpm", "curl", "uname", "zypper", "SUSEConnect", "rpmkeys":
