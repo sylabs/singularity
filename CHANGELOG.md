@@ -11,6 +11,7 @@
 ### Bug Fixes
 
 - Fix test code that implied `%test -c <shell>` was supported - it is not.
+- Fix compilation on `mipsel`.
 
 ## 3.10.0 \[2022-05-17\]
 
