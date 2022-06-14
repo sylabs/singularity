@@ -1,5 +1,11 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Fix compilation on `mipsel`.
+
 ## 3.10.0 \[2022-05-17\]
 
 ### Changed defaults / behaviours
