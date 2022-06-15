@@ -2,6 +2,11 @@
 
 ## Changes Since Last Release
 
+### New features / functionalities
+
+- Support for a custom hashbang in the `%test` section of a Singularity recipe
+  (akin to the runscript and start sections). 
+
 ### Bug Fixes
 
 - Fix compilation on `mipsel`.
