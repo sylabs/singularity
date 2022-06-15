@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -373,7 +373,7 @@ func (b *Build) Full(ctx context.Context) error {
 
 	// build each stage one after the other
 	for i, stage := range b.stages {
-		if err := stage.runSectionScript("pre", stage.b.Recipe.BuildData.Pre); err != nil {
+		if err := stage.runHostScript("pre", stage.b.Recipe.BuildData.Pre); err != nil {
 			return err
 		}
 
@@ -426,7 +426,7 @@ func (b *Build) Full(ctx context.Context) error {
 			}
 		}
 
-		if err := stage.runSectionScript("setup", stage.b.Recipe.BuildData.Setup); err != nil {
+		if err := stage.runHostScript("setup", stage.b.Recipe.BuildData.Setup); err != nil {
 			return err
 		}
 

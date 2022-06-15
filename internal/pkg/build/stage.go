@@ -41,8 +41,8 @@ func (s *stage) Assemble(path string) error {
 	return s.a.Assemble(s.b, path)
 }
 
-// runSetupScript executes the stage's pre script on host.
-func (s *stage) runSectionScript(name string, script types.Script) error {
+// runHostScript executes the stage's pre or setup script on host.
+func (s *stage) runHostScript(name string, script types.Script) error {
 	if s.b.RunSection(name) && script.Script != "" {
 		if syscall.Getuid() != 0 {
 			return fmt.Errorf("attempted to build with scripts as non-root user or without --fakeroot")
