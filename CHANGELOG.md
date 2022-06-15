@@ -13,6 +13,13 @@
   should be run. E.g. `make -C builddir e2e-test E2E_TESTS=^semantic` will only
   run end to end tests with a name that begins with `semantic`.
 
+### New features / functionalities
+
+- A new `instance stats` command displays basic resource usage statistics for a
+  specified instance, running within a cgroup.
+- Add `--sparse` flag to `overlay create` command to allow generation of a
+  sparse ext3 overlay image.
+
 ### Bug Fixes
 
 - Fix compilation on `mipsel`.
