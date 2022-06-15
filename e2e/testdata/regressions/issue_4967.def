@@ -1,9 +1,5 @@
-bootstrap: docker
-from: alpine:3.10
+bootstrap: library
+from: alpine:3.11.5
 
-%post
-    apk add --update-cache bash
-
-%test -c /bin/bash
-    function foo { echo "function foo"; }
-    foo
+%post -c /bin/busybox sh
+    cat /proc/$$/cmdline | tr '\000' ' '
