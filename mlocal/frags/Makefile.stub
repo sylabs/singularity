@@ -68,19 +68,23 @@ short-integration-test:
 		./pkg/network
 	@echo "       PASS"
 
+
 .PHONY: e2e-test
+
+e2e-test: GROUPS_FLAG := $(if $(E2E_GROUPS),-e2e_groups $(E2E_GROUPS))
+e2e-test: TESTS_FLAG := $(if $(E2E_TESTS),-e2e_tests $(E2E_TESTS))
 e2e-test: EXTRA_FLAGS := $(if $(filter yes,$(strip $(JUNIT_OUTPUT))),-junit $(BUILDDIR_ABSPATH)/e2e-test.xml)
 e2e-test:
 	# Run the majority of e2e tests, which will use a separate pid and mount namespace
 	@echo " TEST sudo go test [e2e pid+mount ns]"
 	$(V)cd $(SOURCEDIR) && \
-		scripts/e2e-test -v $(GO_RACE) $(EXTRA_FLAGS)
+		scripts/e2e-test -v $(GO_RACE) $(EXTRA_FLAGS) $(GROUPS_FLAG) $(TESTS_FLAG)
 	@echo "       PASS"
 	# Run the remaining e2e tests, which need to be in the host pid namespace
 	@echo " TEST sudo go test [e2e mount ns only]"
 	$(V)cd $(SOURCEDIR) && \
 		SINGULARITY_E2E_NO_PID_NS=1 \
-		scripts/e2e-test -v $(GO_RACE) $(EXTRA_FLAGS)
+		scripts/e2e-test -v $(GO_RACE) $(EXTRA_FLAGS) $(GROUPS_FLAG) $(TESTS_FLAG)
 	@echo "       PASS"
 
 # test runs only those tests that do not need any docker auth setup etc.

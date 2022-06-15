@@ -2,10 +2,25 @@
 
 ## Changes Since Last Release
 
+### Development / Testing
+
+- The `e2e-test` makefile target now accepts an argument `E2E_GROUPS` to only
+  run specified groups of end to end tests. E.g. `make -C builddir e2e-test
+  E2E_GROUPS=VERSION,HELP` will run end to end tests in the `VERSION` and `HELP`
+  groups only.
+- The `e2e-test` makefile target now accepts an argument `E2E_TESTS` which is a
+  regular expression specifying the names of (top level) end to end tests that
+  should be run. E.g. `make -C builddir e2e-test E2E_TESTS=^semantic` will only
+  run end to end tests with a name that begins with `semantic`.
+
 ### New features / functionalities
 
 - Support for a custom hashbang in the `%test` section of a Singularity recipe
   (akin to the runscript and start sections). 
+- A new `instance stats` command displays basic resource usage statistics for a
+  specified instance, running within a cgroup.
+- Add `--sparse` flag to `overlay create` command to allow generation of a
+  sparse ext3 overlay image.
 
 ### Bug Fixes
 

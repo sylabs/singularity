@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set +x
+
 if test ! -e scripts/go-test ; then
 	echo 'E: Cannot find scripts/go-test. Abort.'
 	exit 1
