@@ -21,6 +21,7 @@
   specified instance, running within a cgroup.
 - Add `--sparse` flag to `overlay create` command to allow generation of a
   sparse ext3 overlay image.
+- Support for `DOCKER_HOST` parsing when using `docker-daemon://`
 
 ### Bug Fixes
 

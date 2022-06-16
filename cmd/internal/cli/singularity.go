@@ -50,6 +50,7 @@ var currentRemoteEndpoint *endpoint.Config
 var (
 	dockerAuthConfig ocitypes.DockerAuthConfig
 	dockerLogin      bool
+	dockerHost       string
 
 	encryptionPEMPath   string
 	promptForPassphrase bool
@@ -152,6 +153,16 @@ var dockerLoginFlag = cmdline.Flag{
 	Name:         "docker-login",
 	Usage:        "login to a Docker Repository interactively",
 	EnvKeys:      []string{"DOCKER_LOGIN"},
+}
+
+// --docker-host
+var dockerHostFlag = cmdline.Flag{
+	ID:           "dockerHostFlag",
+	Value:        &dockerHost,
+	DefaultValue: "",
+	Name:         "docker-host",
+	Usage:        "specify a custom Docker daemon host",
+	EnvKeys:      []string{"DOCKER_HOST"},
 }
 
 // --passphrase
