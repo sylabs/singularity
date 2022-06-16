@@ -118,7 +118,7 @@ compiling. E.g. to build the 3.10.0 release candidate checkout the
 `v3.10.0` tag:
 
 ```sh
-git checkout --recurse-submodules v3.10.0
+git checkout v3.10.0
 ```
 
 ## Compiling SingularityCE
