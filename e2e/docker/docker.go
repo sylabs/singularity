@@ -136,6 +136,13 @@ func (c ctx) testDockerHost(t *testing.T) {
 	dockerfile := filepath.Join(tmpPath, "Dockerfile")
 	tmpImage := filepath.Join(tmpPath, "scratch-tmp.sif")
 
+	// Write to file
+	dockerfileContent := []byte("FROM scratch\n")
+	err = os.WriteFile(dockerfile, dockerfileContent, 0o644)
+	if err != nil {
+		t.Fatalf("failed to create temporary Dockerfile: %+v", err)
+	}
+
 	dockerUri := "docker-test-image:host"
 	pullUri := "docker-daemon://" + dockerUri
 
@@ -143,23 +150,26 @@ func (c ctx) testDockerHost(t *testing.T) {
 	// Use os/exec because easier to generate a command with a working directory
 	cmd := exec.Command("docker", "build", dockerUri, "-noappend", "-all-root")
 	cmd.Dir = tmpPath
-	_, err := cmd.Output()
+	_, err = cmd.Output()
 	if err != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", err)
 	}
 
 	tests := []struct {
+		name       string
 		envarName  string
-		envarValue []string
+		envarValue string
 		exit       int
 	}{
 		// Unset docker host should use default and succeed
 		{
+			name:       "singularityDockerHostEmpty",
 			envarName:  "SINGULARITY_DOCKER_HOST",
 			envarValue: "",
 			exit:       0,
 		},
 		{
+			name:       "dockerHostEmpty",
 			envarName:  "DOCKER_HOST",
 			envarValue: "",
 			exit:       0,
@@ -167,11 +177,13 @@ func (c ctx) testDockerHost(t *testing.T) {
 
 		// bad Docker host should fail
 		{
+			name:       "singularityDockerHostInvalid",
 			envarName:  "SINGULARITY_DOCKER_HOST",
 			envarValue: "tcp://192.168.59.103:oops",
 			exit:       255,
 		},
 		{
+			name:       "dockerHostInvalid",
 			envarName:  "DOCKER_HOST",
 			envarValue: "tcp://192.168.59.103:oops",
 			exit:       255,
@@ -180,11 +192,13 @@ func (c ctx) testDockerHost(t *testing.T) {
 		// Set to default should succeed
 		// The default host varies based on OS, so we use dockerclient default
 		{
+			name:       "singularityDockerHostValid",
 			envarName:  "SINGULARITY_DOCKER_HOST",
 			envarValue: dockerclient.DefaultDockerHost,
 			exit:       255,
 		},
 		{
+			name:       "dockerHostValid",
 			envarName:  "DOCKER_HOST",
 			envarValue: dockerclient.DefaultDockerHost,
 			exit:       255,
@@ -205,14 +219,14 @@ func (c ctx) testDockerHost(t *testing.T) {
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("pull"),
-			e2e.WithArgs(append(tmpImage, pullUri)...),
+			e2e.WithArgs(tmpImage, pullUri),
 			e2e.ExpectExit(tt.exit),
 		)
 	}
 
 	// Clean up docker image
-	cmd := exec.Command("docker", "rmi", dockerUri)
-	_, err := cmd.Output()
+	cmd = exec.Command("docker", "rmi", dockerUri)
+	_, err = cmd.Output()
 	if err != nil {
 		t.Fatalf("Unexpected error while cleaning up docker image.\n%s", err)
 	}
