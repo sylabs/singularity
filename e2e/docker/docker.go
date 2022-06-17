@@ -143,12 +143,12 @@ func (c ctx) testDockerHost(t *testing.T) {
 		t.Fatalf("failed to create temporary Dockerfile: %+v", err)
 	}
 
-	dockerUri := "docker-test-image:host"
-	pullUri := "docker-daemon://" + dockerUri
+	dockerURI := "docker-test-image:host"
+	pullURI := "docker-daemon://" + dockerURI
 
 	// Invoke docker build to build an empty scratch image in the docker daemon.
 	// Use os/exec because easier to generate a command with a working directory
-	cmd := exec.Command("docker", "build", dockerUri, "-noappend", "-all-root")
+	cmd := exec.Command("docker", "build", dockerURI, "-noappend", "-all-root")
 	cmd.Dir = tmpPath
 	_, err = cmd.Output()
 	if err != nil {
@@ -219,13 +219,13 @@ func (c ctx) testDockerHost(t *testing.T) {
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("pull"),
-			e2e.WithArgs(tmpImage, pullUri),
+			e2e.WithArgs(tmpImage, pullURI),
 			e2e.ExpectExit(tt.exit),
 		)
 	}
 
 	// Clean up docker image
-	cmd = exec.Command("docker", "rmi", dockerUri)
+	cmd = exec.Command("docker", "rmi", dockerURI)
 	_, err = cmd.Output()
 	if err != nil {
 		t.Fatalf("Unexpected error while cleaning up docker image.\n%s", err)
