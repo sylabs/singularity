@@ -8,10 +8,12 @@ package docker
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	dockerclient "github.com/docker/docker/client"
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
@@ -115,6 +117,104 @@ func (c ctx) testDockerPulls(t *testing.T) {
 			}),
 			e2e.ExpectExit(tt.exit),
 		)
+	}
+}
+
+// Testing DOCKER_ host support (only if docker available)
+func (c ctx) testDockerHost(t *testing.T) {
+	require.Command(t, "docker")
+
+	// Write a temporary "empty" Dockerfile (from scratch)
+	tmpPath, err := fs.MakeTmpDir(c.env.TestDir, "docker-", 0o755)
+	err = errors.Wrapf(err, "creating temporary directory in %q for docker host test", c.env.TestDir)
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %+v", err)
+	}
+	defer os.RemoveAll(tmpPath)
+
+	// Here is the Dockerfile, and a temporary image path
+	dockerfile := filepath.Join(tmpPath, "Dockerfile")
+	tmpImage := filepath.Join(tmpPath, "scratch-tmp.sif")
+
+	dockerUri := "docker-test-image:host"
+	pullUri := "docker-daemon://" + dockerUri
+
+	// Invoke docker build to build an empty scratch image in the docker daemon.
+	// Use os/exec because easier to generate a command with a working directory
+	cmd := exec.Command("docker", "build", dockerUri, "-noappend", "-all-root")
+	cmd.Dir = tmpPath
+	_, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("Unexpected error while running command.\n%s", err)
+	}
+
+	tests := []struct {
+		envarName  string
+		envarValue []string
+		exit       int
+	}{
+		// Unset docker host should use default and succeed
+		{
+			envarName:  "SINGULARITY_DOCKER_HOST",
+			envarValue: "",
+			exit:       0,
+		},
+		{
+			envarName:  "DOCKER_HOST",
+			envarValue: "",
+			exit:       0,
+		},
+
+		// bad Docker host should fail
+		{
+			envarName:  "SINGULARITY_DOCKER_HOST",
+			envarValue: "tcp://192.168.59.103:oops",
+			exit:       255,
+		},
+		{
+			envarName:  "DOCKER_HOST",
+			envarValue: "tcp://192.168.59.103:oops",
+			exit:       255,
+		},
+
+		// Set to default should succeed
+		// The default host varies based on OS, so we use dockerclient default
+		{
+			envarName:  "SINGULARITY_DOCKER_HOST",
+			envarValue: dockerclient.DefaultDockerHost,
+			exit:       255,
+		},
+		{
+			envarName:  "DOCKER_HOST",
+			envarValue: dockerclient.DefaultDockerHost,
+			exit:       255,
+		},
+	}
+
+	for _, tt := range tests {
+
+		// Export to environment
+		if tt.envarValue != "" {
+			err := os.Setenv(tt.envarName, tt.envarValue)
+			if err != nil {
+				t.Fatalf("Unexpected error while exporting envar.\n%s", err)
+			}
+		}
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("pull"),
+			e2e.WithArgs(append(tmpImage, pullUri)...),
+			e2e.ExpectExit(tt.exit),
+		)
+	}
+
+	// Clean up docker image
+	cmd := exec.Command("docker", "rmi", dockerUri)
+	_, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("Unexpected error while cleaning up docker image.\n%s", err)
 	}
 }
 

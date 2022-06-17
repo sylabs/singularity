@@ -125,44 +125,48 @@ var singVerboseFlag = cmdline.Flag{
 
 // --docker-username
 var dockerUsernameFlag = cmdline.Flag{
-	ID:           "dockerUsernameFlag",
-	Value:        &dockerAuthConfig.Username,
-	DefaultValue: "",
-	Name:         "docker-username",
-	Usage:        "specify a username for docker authentication",
-	Hidden:       true,
-	EnvKeys:      []string{"DOCKER_USERNAME"},
+	ID:            "dockerUsernameFlag",
+	Value:         &dockerAuthConfig.Username,
+	DefaultValue:  "",
+	Name:          "docker-username",
+	Usage:         "specify a username for docker authentication",
+	Hidden:        true,
+	EnvKeys:       []string{"DOCKER_USERNAME"},
+	WithoutPrefix: true,
 }
 
 // --docker-password
 var dockerPasswordFlag = cmdline.Flag{
-	ID:           "dockerPasswordFlag",
-	Value:        &dockerAuthConfig.Password,
-	DefaultValue: "",
-	Name:         "docker-password",
-	Usage:        "specify a password for docker authentication",
-	Hidden:       true,
-	EnvKeys:      []string{"DOCKER_PASSWORD"},
+	ID:            "dockerPasswordFlag",
+	Value:         &dockerAuthConfig.Password,
+	DefaultValue:  "",
+	Name:          "docker-password",
+	Usage:         "specify a password for docker authentication",
+	Hidden:        true,
+	EnvKeys:       []string{"DOCKER_PASSWORD"},
+	WithoutPrefix: true,
 }
 
 // --docker-login
 var dockerLoginFlag = cmdline.Flag{
-	ID:           "dockerLoginFlag",
-	Value:        &dockerLogin,
-	DefaultValue: false,
-	Name:         "docker-login",
-	Usage:        "login to a Docker Repository interactively",
-	EnvKeys:      []string{"DOCKER_LOGIN"},
+	ID:            "dockerLoginFlag",
+	Value:         &dockerLogin,
+	DefaultValue:  false,
+	Name:          "docker-login",
+	Usage:         "login to a Docker Repository interactively",
+	EnvKeys:       []string{"DOCKER_LOGIN"},
+	WithoutPrefix: true,
 }
 
 // --docker-host
 var dockerHostFlag = cmdline.Flag{
-	ID:           "dockerHostFlag",
-	Value:        &dockerHost,
-	DefaultValue: "",
-	Name:         "docker-host",
-	Usage:        "specify a custom Docker daemon host",
-	EnvKeys:      []string{"DOCKER_HOST"},
+	ID:            "dockerHostFlag",
+	Value:         &dockerHost,
+	DefaultValue:  "",
+	Name:          "docker-host",
+	Usage:         "specify a custom Docker daemon host",
+	EnvKeys:       []string{"DOCKER_HOST"},
+	WithoutPrefix: true,
 }
 
 // --passphrase
