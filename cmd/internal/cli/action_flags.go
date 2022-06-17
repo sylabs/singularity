@@ -36,6 +36,7 @@ var (
 	SingularityEnv     map[string]string
 	SingularityEnvFile string
 	NoMount            []string
+	Proot              string
 
 	IsBoot          bool
 	IsFakeroot      bool
@@ -788,6 +789,17 @@ var actionSIFFUSEFlag = cmdline.Flag{
 	EnvKeys:      []string{"SIF_FUSE"},
 }
 
+// --proot (hidden)
+var actionProotFlag = cmdline.Flag{
+	ID:           "actionProot",
+	Value:        &Proot,
+	DefaultValue: "",
+	Name:         "proot",
+	Usage:        "Bind proot from the host into /.singularity.d/libs",
+	EnvKeys:      []string{"PROOT"},
+	Hidden:       true,
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(ExecCmd)
@@ -880,5 +892,6 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionOomKillDisableFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionPidsLimitFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionSIFFUSEFlag, actionsCmd...)
+		cmdManager.RegisterFlagForCmd(&actionProotFlag, actionsCmd...)
 	})
 }

@@ -1472,6 +1472,67 @@ func (c imgBuildTests) buildLibraryHost(t *testing.T) {
 	)
 }
 
+// Limited tests to exercise non-root builds with proot and a %post and %test.
+// Does not support distro bootstraps. Build to SIF to ensure no issue,
+// (e.g. perms) when converting the temporary sandbox into SIF.
+func (c imgBuildTests) buildProot(t *testing.T) {
+	e2e.EnsureRegistry(t)
+	require.Command(t, "proot")
+
+	tt := []struct {
+		name      string
+		buildSpec string
+	}{
+		{
+			name:      "Alpine",
+			buildSpec: "testdata/proot_alpine.def",
+		},
+		{
+			name:      "CentOS",
+			buildSpec: "testdata/proot_centos.def",
+		},
+		{
+			name:      "Ubuntu",
+			buildSpec: "testdata/proot_ubuntu.def",
+		},
+	}
+
+	profiles := []e2e.Profile{e2e.UserProfile}
+	for _, profile := range profiles {
+		profile := profile
+
+		t.Run(profile.String(), func(t *testing.T) {
+			for _, tc := range tt {
+				dn, cleanup := c.tempDir(t, "build-proot")
+				defer cleanup()
+
+				imagePath := path.Join(dn, "image.sif")
+
+				// Pass --sandbox because sandboxes take less time to
+				// build by skipping the SIF creation step.
+				args := []string{"--force", imagePath, tc.buildSpec}
+
+				c.env.RunSingularity(
+					t,
+					e2e.AsSubtest(tc.name),
+					e2e.WithProfile(profile),
+					e2e.WithCommand("build"),
+					e2e.WithArgs(args...),
+					e2e.PostRun(func(t *testing.T) {
+						if t.Failed() {
+							return
+						}
+
+						defer os.RemoveAll(imagePath)
+						c.env.ImageVerify(t, imagePath, profile)
+					}),
+					e2e.ExpectExit(0),
+				)
+			}
+		})
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := imgBuildTests{
@@ -1492,6 +1553,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"build with bind mount":           c.buildBindMount,            // build image with bind mount
 		"test with writable tmpfs":        c.testWritableTmpfs,         // build image, using writable tmpfs in the test step
 		"library host":                    c.buildLibraryHost,          // build image with hostname in library URI
+		"proot":                           c.buildProot,                // build image as an unpriv user with proot
 		"issue 3848":                      c.issue3848,                 // https://github.com/hpcng/singularity/issues/3848
 		"issue 4203":                      c.issue4203,                 // https://github.com/sylabs/singularity/issues/4203
 		"issue 4407":                      c.issue4407,                 // https://github.com/sylabs/singularity/issues/4407

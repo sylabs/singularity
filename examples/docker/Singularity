@@ -7,3 +7,7 @@ From: busybox:latest   # This is a comment
 %post
     echo "Hello from inside the container"
     echo "Install additional software here"
+
+%test
+    echo "Hello from the test script"
+

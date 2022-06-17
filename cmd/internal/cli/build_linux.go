@@ -25,6 +25,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/internal/pkg/util/starter"
@@ -147,6 +148,15 @@ func runBuild(cmd *cobra.Command, args []string) {
 
 	dest := args[0]
 	spec := args[1]
+
+	if syscall.Getuid() != 0 && !buildArgs.fakeroot && fs.IsFile(spec) && !isImage(spec) {
+		prootPath, err := bin.FindBin("proot")
+		if err != nil {
+			sylog.Fatalf("--remote, --fakeroot, or the proot command are required to build this source as a non-root user")
+		}
+		os.Setenv("SINGULARITY_PROOT", prootPath)
+		sylog.Infof("Using proot to build unprivileged. Not all builds are supported. If build fails, use --remote or --fakeroot.")
+	}
 
 	// check if target collides with existing file
 	if err := checkBuildTarget(dest); err != nil {
@@ -304,10 +314,6 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
 	if imgCache == nil {
 		sylog.Fatalf("Failed to create an image cache handle")
-	}
-
-	if syscall.Getuid() != 0 && !buildArgs.fakeroot && fs.IsFile(spec) && !isImage(spec) {
-		sylog.Fatalf("You must be the root user, however you can use --remote or --fakeroot to build from a Singularity recipe file")
 	}
 
 	err := checkSections()

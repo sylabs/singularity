@@ -104,6 +104,12 @@ commands:
       - run:
           name: Install dependencies
           command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin runc libglib2.0-dev squashfuse
+      - run:
+          name: Install proot
+          command: |-
+            <<# parameters.sudo >>sudo <</ parameters.sudo >>curl -L -o /usr/local/bin/proot https://proot.gitlab.io/proot/bin/proot
+            <<# parameters.sudo >>sudo <</ parameters.sudo >>chmod +x /usr/local/bin/proot
+
   configure-singularity:
     steps:
       - run:
