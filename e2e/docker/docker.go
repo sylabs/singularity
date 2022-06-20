@@ -148,7 +148,7 @@ func (c ctx) testDockerHost(t *testing.T) {
 
 	// Invoke docker build to build an empty scratch image in the docker daemon.
 	// Use os/exec because easier to generate a command with a working directory
-	cmd := exec.Command("docker", "build", dockerURI, "-noappend", "-all-root")
+	cmd := exec.Command("docker", "build", "-t", dockerURI)
 	cmd.Dir = tmpPath
 	out, err := cmd.Output()
 	if err != nil {
