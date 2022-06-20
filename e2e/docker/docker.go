@@ -150,7 +150,7 @@ func (c ctx) testDockerHost(t *testing.T) {
 	// Use os/exec because easier to generate a command with a working directory
 	cmd := exec.Command("docker", "build", dockerURI, "-noappend", "-all-root")
 	cmd.Dir = tmpPath
-	out, err = cmd.Output()
+	out, err := cmd.Output()
 	if err != nil {
 		t.Fatalf("Unexpected error while running command.\n%s: %s", err, string(out))
 	}
