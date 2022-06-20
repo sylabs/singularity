@@ -195,33 +195,38 @@ func (c ctx) testDockerHost(t *testing.T) {
 			name:       "singularityDockerHostValid",
 			envarName:  "SINGULARITY_DOCKER_HOST",
 			envarValue: dockerclient.DefaultDockerHost,
-			exit:       255,
+			exit:       0,
 		},
 		{
 			name:       "dockerHostValid",
 			envarName:  "DOCKER_HOST",
 			envarValue: dockerclient.DefaultDockerHost,
-			exit:       255,
+			exit:       0,
 		},
 	}
 
 	for _, tt := range tests {
-
-		// Export to environment
+		// Export variable to environment if it's defined
 		if tt.envarValue != "" {
-			err := os.Setenv(tt.envarName, tt.envarValue)
-			if err != nil {
-				t.Fatalf("Unexpected error while exporting envar.\n%s", err)
-			}
+			c.env.RunSingularity(
+				t,
+				e2e.WithEnv(append(os.Environ(), tt.envarValue)),
+				e2e.AsSubtest(tt.name),
+				e2e.WithProfile(e2e.UserProfile),
+				e2e.WithCommand("pull"),
+				e2e.WithArgs(tmpImage, pullURI),
+				e2e.ExpectExit(tt.exit),
+			)
+		} else {
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest(tt.name),
+				e2e.WithProfile(e2e.UserProfile),
+				e2e.WithCommand("pull"),
+				e2e.WithArgs(tmpImage, pullURI),
+				e2e.ExpectExit(tt.exit),
+			)
 		}
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.UserProfile),
-			e2e.WithCommand("pull"),
-			e2e.WithArgs(tmpImage, pullURI),
-			e2e.ExpectExit(tt.exit),
-		)
 	}
 
 	// Clean up docker image
@@ -845,6 +850,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	return testhelper.Tests{
 		"AUFS":             c.testDockerAUFS,
 		"def file":         c.testDockerDefFile,
+		"docker host":      c.testDockerHost,
 		"permissions":      c.testDockerPermissions,
 		"pulls":            c.testDockerPulls,
 		"registry":         c.testDockerRegistry,

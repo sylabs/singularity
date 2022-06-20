@@ -149,13 +149,12 @@ var dockerPasswordFlag = cmdline.Flag{
 
 // --docker-login
 var dockerLoginFlag = cmdline.Flag{
-	ID:            "dockerLoginFlag",
-	Value:         &dockerLogin,
-	DefaultValue:  false,
-	Name:          "docker-login",
-	Usage:         "login to a Docker Repository interactively",
-	EnvKeys:       []string{"DOCKER_LOGIN"},
-	WithoutPrefix: true,
+	ID:           "dockerLoginFlag",
+	Value:        &dockerLogin,
+	DefaultValue: false,
+	Name:         "docker-login",
+	Usage:        "login to a Docker Repository interactively",
+	EnvKeys:      []string{"DOCKER_LOGIN"},
 }
 
 // --docker-host
