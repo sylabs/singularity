@@ -366,9 +366,6 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		}
 	}
 
-	// Lookup the docker-daemon host flag
-	dockerHost := cmd.Flags().Lookup("docker-host").Value.String()
-
 	buildFormat := "sif"
 	sandboxTarget := false
 	if buildArgs.sandbox {
