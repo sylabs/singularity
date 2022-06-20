@@ -134,13 +134,20 @@ func (c ctx) testDockerHost(t *testing.T) {
 
 	// Here is the Dockerfile, and a temporary image path
 	dockerfile := filepath.Join(tmpPath, "Dockerfile")
+	emptyfile := filepath.Join(tmpPath, "file")
 	tmpImage := filepath.Join(tmpPath, "scratch-tmp.sif")
 
-	// Write to file
-	dockerfileContent := []byte("FROM scratch\n")
+	// Write Dockerfile and empty file to file
+	dockerfileContent := []byte("FROM scratch\nCOPY file /mrbigglesworth")
 	err = os.WriteFile(dockerfile, dockerfileContent, 0o644)
 	if err != nil {
 		t.Fatalf("failed to create temporary Dockerfile: %+v", err)
+	}
+
+	fileContent := []byte("")
+	err = os.WriteFile(emptyfile, fileContent, 0o644)
+	if err != nil {
+		t.Fatalf("failed to create empty file: %+v", err)
 	}
 
 	dockerURI := "docker-test-image:host"
