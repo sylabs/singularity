@@ -22,7 +22,7 @@
 - Add `--sparse` flag to `overlay create` command to allow generation of a
   sparse ext3 overlay image.
 - Support for `DOCKER_HOST` parsing when using `docker-daemon://`
-- `DOCKER_USERNAME` and `DOCKER_PASSWORD` supported without the `SINGULARITY_` prefix.
+- `DOCKER_USERNAME` and `DOCKER_PASSWORD` supported without `SINGULARITY_` prefix.
 
 ### Bug Fixes
 
