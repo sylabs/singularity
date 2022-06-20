@@ -237,7 +237,11 @@ func setNoMountFlags(c *singularityConfig.EngineConfig) {
 			c.SetNoHostfs(true)
 		case "cwd":
 			c.SetNoCwd(true)
+		// All bind path singularity.conf entries
+		case "bind-paths":
+			skipBinds = append(skipBinds, "*")
 		default:
+			// Single bind path singularity.conf entry by abs path
 			if filepath.IsAbs(v) {
 				skipBinds = append(skipBinds, v)
 				continue

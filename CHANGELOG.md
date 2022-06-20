@@ -23,6 +23,8 @@
   sparse ext3 overlay image.
 - Support for `DOCKER_HOST` parsing when using `docker-daemon://`
 - `DOCKER_USERNAME` and `DOCKER_PASSWORD` supported without the `SINGULARITY_` prefix.
+- The `--no-mount` flag now accepts the value `bind-paths` to disable mounting of
+  all `bind path` entries in `singularity.conf.
 
 ### Bug Fixes
 
