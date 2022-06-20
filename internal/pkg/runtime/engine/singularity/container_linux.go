@@ -1527,7 +1527,8 @@ func (c *container) addBindsMount(system *mount.System) error {
 		localtimePath = "/etc/localtime"
 	)
 
-	noBinds := c.engine.EngineConfig.GetNoBinds()
+	skipBinds := c.engine.EngineConfig.GetSkipBinds()
+	skipAllBinds := slice.ContainsString(skipBinds, "*")
 
 	if c.engine.EngineConfig.GetContain() {
 		hosts := hostsPath
@@ -1548,7 +1549,7 @@ func (c *container) addBindsMount(system *mount.System) error {
 			hosts, _ = c.session.GetPath(hostsPath)
 		}
 
-		if !slice.ContainsString(noBinds, hostsPath) {
+		if !skipAllBinds && !slice.ContainsString(skipBinds, hostsPath) {
 			// #5465 If hosts/localtime mount fails, it should not be fatal so skip-on-error
 			if err := system.Points.AddBind(mount.BindsTag, hosts, hostsPath, flags, "skip-on-error"); err != nil {
 				return fmt.Errorf("unable to add %s to mount list: %s", hosts, err)
@@ -1557,7 +1558,7 @@ func (c *container) addBindsMount(system *mount.System) error {
 				return fmt.Errorf("unable to add %s for remount: %s", hostsPath, err)
 			}
 		}
-		if !slice.ContainsString(noBinds, localtimePath) {
+		if !skipAllBinds && !slice.ContainsString(skipBinds, localtimePath) {
 			if err := system.Points.AddBind(mount.BindsTag, localtimePath, localtimePath, flags, "skip-on-error"); err != nil {
 				return fmt.Errorf("unable to add %s to mount list: %s", localtimePath, err)
 			}
@@ -1580,7 +1581,7 @@ func (c *container) addBindsMount(system *mount.System) error {
 
 		sylog.Verbosef("Found 'bind path' = %s, %s", src, dst)
 
-		if slice.ContainsString(noBinds, dst) {
+		if skipAllBinds || slice.ContainsString(skipBinds, dst) {
 			sylog.Debugf("Skipping bind to %s at user request", dst)
 			continue
 		}
