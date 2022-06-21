@@ -21,6 +21,8 @@
   specified instance, running within a cgroup.
 - Add `--sparse` flag to `overlay create` command to allow generation of a
   sparse ext3 overlay image.
+- Support for `DOCKER_HOST` parsing when using `docker-daemon://`
+- `DOCKER_USERNAME` and `DOCKER_PASSWORD` supported without `SINGULARITY_` prefix.
 - The `--no-mount` flag now accepts the value `bind-paths` to disable mounting of
   all `bind path` entries in `singularity.conf.
 

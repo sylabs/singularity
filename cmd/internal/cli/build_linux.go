@@ -393,6 +393,7 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 				LibraryAuthToken:  authToken,
 				KeyServerOpts:     ko,
 				DockerAuthConfig:  authConf,
+				DockerDaemonHost:  dockerHost,
 				EncryptionKeyInfo: keyInfo,
 				FixPerms:          buildArgs.fixPerms,
 				SandboxTarget:     sandboxTarget,

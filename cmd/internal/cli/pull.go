@@ -141,6 +141,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&pullDisableCacheFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&pullDirFlag, PullCmd)
 
+		cmdManager.RegisterFlagForCmd(&dockerHostFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&dockerUsernameFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&dockerPasswordFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&dockerLoginFlag, PullCmd)

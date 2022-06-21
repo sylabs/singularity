@@ -27,6 +27,8 @@ type Flag struct {
 	Required     bool
 	EnvKeys      []string
 	EnvHandler   EnvHandler
+	// Export envar also without prefix
+	WithoutPrefix bool
 	// When Value is a []String:
 	// If true, will use pFlag StringArrayVar(P) type, where values are not split on comma.
 	// If false, will use pFlag StringSliceVar(P) type, where a single value is split on commas.
@@ -52,6 +54,11 @@ func (m *flagManager) setFlagOptions(flag *Flag, cmd *cobra.Command) {
 
 	if len(flag.EnvKeys) > 0 {
 		cmd.Flags().SetAnnotation(flag.Name, "envkey", flag.EnvKeys)
+
+		// Environment flags can also be exported without a prefix (e.g. DOCKER_*)
+		if flag.WithoutPrefix {
+			cmd.Flags().SetAnnotation(flag.Name, "withoutPrefix", []string{"true"})
+		}
 	}
 	if flag.Deprecated != "" {
 		cmd.Flags().MarkDeprecated(flag.Name, flag.Deprecated)
@@ -202,9 +209,22 @@ func (m *flagManager) updateCmdFlagFromEnv(cmd *cobra.Command, prefix string) er
 			return
 		}
 		for _, key := range envKeys {
+
+			// First priority goes to prefixed variable
 			val, set := os.LookupEnv(prefix + key)
 			if !set {
-				continue
+
+				// Determine if environment keys should be looked for without prefix
+				// This annotation just needs to be present, period
+				_, withoutPrefix := flag.Annotations["withoutPrefix"]
+				if !withoutPrefix {
+					continue
+				}
+				// Second try - looking for the same without prefix!
+				val, set = os.LookupEnv(key)
+				if !set {
+					continue
+				}
 			}
 			if mflag.EnvHandler != nil {
 				if err := mflag.EnvHandler(flag, val); err != nil {
