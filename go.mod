@@ -33,7 +33,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/seccomp/libseccomp-golang v0.9.2-0.20220502022130-f33da4d89646
 	github.com/shopspring/decimal v1.3.1
-	github.com/spf13/cobra v1.4.0
+	github.com/spf13/cobra v1.5.0
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.8.1
 	github.com/sylabs/scs-build-client v0.7.4
@@ -70,7 +70,7 @@ require (
 	github.com/containers/storage v1.40.0 // indirect
 	github.com/coreos/go-iptables v0.6.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.3.2 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/creack/pty v1.1.17 // indirect
 	github.com/d2g/dhcp4 v0.0.0-20170904100407-a1d1b6c41b1c // indirect
 	github.com/d2g/dhcp4client v1.0.0 // indirect
