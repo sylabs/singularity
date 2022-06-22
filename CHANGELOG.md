@@ -25,6 +25,7 @@
 - `DOCKER_USERNAME` and `DOCKER_PASSWORD` supported without `SINGULARITY_` prefix.
 - The `--no-mount` flag now accepts the value `bind-paths` to disable mounting of
   all `bind path` entries in `singularity.conf.
+- ability to build directly from `Dockerfile`
 
 ### Bug Fixes
 

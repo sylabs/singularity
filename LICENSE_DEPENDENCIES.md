@@ -23,6 +23,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/containerd/containerd/blob/master/LICENSE>
 
+## github.com/containerd/typeurl
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/containerd/typeurl/blob/master/LICENSE>
+
 ## github.com/containernetworking/cni
 
 **License:** Apache-2.0
@@ -136,6 +142,12 @@ The dependencies and their licenses are as follows:
 **License:** Apache-2.0
 
 **License URL:** <https://github.com/matttproud/golang_protobuf_extensions/blob/master/pbutil/LICENSE>
+
+## github.com/moby/buildkit
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/moby/buildkit/blob/master/LICENSE>
 
 ## github.com/moby/locker
 
@@ -365,11 +377,11 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/cyphar/filepath-securejoin/blob/master/LICENSE>
 
-## github.com/gogo/protobuf/proto
+## github.com/gogo/protobuf
 
 **License:** BSD-3-Clause
 
-**License URL:** <https://github.com/gogo/protobuf/blob/master/proto/LICENSE>
+**License URL:** <https://github.com/gogo/protobuf/blob/master/LICENSE>
 
 ## github.com/golang/protobuf
 

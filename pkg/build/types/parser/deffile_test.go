@@ -25,19 +25,19 @@ func TestScanDefinitionFile(t *testing.T) {
 		defPath  string
 		sections string
 	}{
-		{"Arch", "testdata_good/arch/arch", "testdata_good/arch/arch_sections.json"},
-		{"Apps", "testdata_good/apps/apps", "testdata_good/apps/apps_sections.json"},
-		{"BusyBox", "testdata_good/busybox/busybox", "testdata_good/busybox/busybox_sections.json"},
-		{"Debootstrap", "testdata_good/debootstrap/debootstrap", "testdata_good/debootstrap/debootstrap_sections.json"},
-		{"Docker", "testdata_good/docker/docker", "testdata_good/docker/docker_sections.json"},
-		{"Fingerprint", "testdata_good/fingerprint/fingerprint", "testdata_good/fingerprint/fingerprint_sections.json"},
-		{"LocalImage", "testdata_good/localimage/localimage", "testdata_good/localimage/localimage_sections.json"},
-		{"Scratch", "testdata_good/scratch/scratch", "testdata_good/scratch/scratch_sections.json"},
+		{"Arch", "deffile_test/testdata_good/arch/arch", "deffile_test/testdata_good/arch/arch_sections.json"},
+		{"Apps", "deffile_test/testdata_good/apps/apps", "deffile_test/testdata_good/apps/apps_sections.json"},
+		{"BusyBox", "deffile_test/testdata_good/busybox/busybox", "deffile_test/testdata_good/busybox/busybox_sections.json"},
+		{"Debootstrap", "deffile_test/testdata_good/debootstrap/debootstrap", "deffile_test/testdata_good/debootstrap/debootstrap_sections.json"},
+		{"Docker", "deffile_test/testdata_good/docker/docker", "deffile_test/testdata_good/docker/docker_sections.json"},
+		{"Fingerprint", "deffile_test/testdata_good/fingerprint/fingerprint", "deffile_test/testdata_good/fingerprint/fingerprint_sections.json"},
+		{"LocalImage", "deffile_test/testdata_good/localimage/localimage", "deffile_test/testdata_good/localimage/localimage_sections.json"},
+		{"Scratch", "deffile_test/testdata_good/scratch/scratch", "deffile_test/testdata_good/scratch/scratch_sections.json"},
 		// TODO(mem): reenable this; disabled while shub is down
-		// {"Shub", "testdata_good/shub/shub", "testdata_good/shub/shub_sections.json"},
-		{"Yum", "testdata_good/yum/yum", "testdata_good/yum/yum_sections.json"},
-		{"Zypper", "testdata_good/zypper/zypper", "testdata_good/zypper/zypper_sections.json"},
-		{"Zypper_SLE", "testdata_good/zypper_sle/zypper", "testdata_good/zypper_sle/zypper_sections.json"},
+		// {"Shub", "deffile_test/testdata_good/shub/shub", "deffile_test/testdata_good/shub/shub_sections.json"},
+		{"Yum", "deffile_test/testdata_good/yum/yum", "deffile_test/testdata_good/yum/yum_sections.json"},
+		{"Zypper", "deffile_test/testdata_good/zypper/zypper", "deffile_test/testdata_good/zypper/zypper_sections.json"},
+		{"Zypper_SLE", "deffile_test/testdata_good/zypper_sle/zypper", "deffile_test/testdata_good/zypper_sle/zypper_sections.json"},
 	}
 
 	for _, tt := range tests {
@@ -168,28 +168,28 @@ func TestParseDefinitionFile(t *testing.T) {
 		defPath  string
 		jsonPath string
 	}{
-		{"Arch", "testdata_good/arch/arch", "testdata_good/arch/arch.json"},
-		{"Apps", "testdata_good/apps/apps", "testdata_good/apps/apps.json"},
-		{"BusyBox", "testdata_good/busybox/busybox", "testdata_good/busybox/busybox.json"},
-		{"Debootstrap", "testdata_good/debootstrap/debootstrap", "testdata_good/debootstrap/debootstrap.json"},
-		{"Docker", "testdata_good/docker/docker", "testdata_good/docker/docker.json"},
-		{"Fingerprint", "testdata_good/fingerprint/fingerprint", "testdata_good/fingerprint/fingerprint.json"},
-		{"LocalImage", "testdata_good/localimage/localimage", "testdata_good/localimage/localimage.json"},
-		{"Scratch", "testdata_good/scratch/scratch", "testdata_good/scratch/scratch.json"},
+		{"Arch", "deffile_test/testdata_good/arch/arch", "deffile_test/testdata_good/arch/arch.json"},
+		{"Apps", "deffile_test/testdata_good/apps/apps", "deffile_test/testdata_good/apps/apps.json"},
+		{"BusyBox", "deffile_test/testdata_good/busybox/busybox", "deffile_test/testdata_good/busybox/busybox.json"},
+		{"Debootstrap", "deffile_test/testdata_good/debootstrap/debootstrap", "deffile_test/testdata_good/debootstrap/debootstrap.json"},
+		{"Docker", "deffile_test/testdata_good/docker/docker", "deffile_test/testdata_good/docker/docker.json"},
+		{"Fingerprint", "deffile_test/testdata_good/fingerprint/fingerprint", "deffile_test/testdata_good/fingerprint/fingerprint.json"},
+		{"LocalImage", "deffile_test/testdata_good/localimage/localimage", "deffile_test/testdata_good/localimage/localimage.json"},
+		{"Scratch", "deffile_test/testdata_good/scratch/scratch", "deffile_test/testdata_good/scratch/scratch.json"},
 		// TODO(mem): reenable this; disabled while shub is down
-		// {"Shub", "testdata_good/shub/shub", "testdata_good/shub/shub.json"},
-		{"Yum", "testdata_good/yum/yum", "testdata_good/yum/yum.json"},
-		{"Zypper", "testdata_good/zypper/zypper", "testdata_good/zypper/zypper.json"},
-		{"Zypper_SLE", "testdata_good/zypper_sle/zypper", "testdata_good/zypper_sle/zypper.json"},
-		{"NoHeader", "testdata_good/noheader/noheader", "testdata_good/noheader/noheader.json"},
-		{"NoHeaderComments", "testdata_good/noheadercomments/noheadercomments", "testdata_good/noheadercomments/noheadercomments.json"},
-		{"NoHeaderWhiteSpace", "testdata_good/noheaderwhitespace/noheaderwhitespace", "testdata_good/noheaderwhitespace/noheaderwhitespace.json"},
-		{"MultipleScripts", "testdata_good/multiplescripts/multiplescripts", "testdata_good/multiplescripts/multiplescripts.json"},
-		{"SectionArgs", "testdata_good/sectionargs/sectionargs", "testdata_good/sectionargs/sectionargs.json"},
-		{"MultipleFiles", "testdata_good/multiplefiles/multiplefiles", "testdata_good/multiplefiles/multiplefiles.json"},
-		{"QuotedFiles", "testdata_good/quotedfiles/quotedfiles", "testdata_good/quotedfiles/quotedfiles.json"},
-		{"Shebang", "testdata_good/shebang/shebang", "testdata_good/shebang/shebang.json"},
-		{"ShebangTest", "testdata_good/shebang_test/shebang_test", "testdata_good/shebang_test/shebang_test.json"},
+		// {"Shub", "deffile_test/testdata_good/shub/shub", "deffile_test/testdata_good/shub/shub.json"},
+		{"Yum", "deffile_test/testdata_good/yum/yum", "deffile_test/testdata_good/yum/yum.json"},
+		{"Zypper", "deffile_test/testdata_good/zypper/zypper", "deffile_test/testdata_good/zypper/zypper.json"},
+		{"Zypper_SLE", "deffile_test/testdata_good/zypper_sle/zypper", "deffile_test/testdata_good/zypper_sle/zypper.json"},
+		{"NoHeader", "deffile_test/testdata_good/noheader/noheader", "deffile_test/testdata_good/noheader/noheader.json"},
+		{"NoHeaderComments", "deffile_test/testdata_good/noheadercomments/noheadercomments", "deffile_test/testdata_good/noheadercomments/noheadercomments.json"},
+		{"NoHeaderWhiteSpace", "deffile_test/testdata_good/noheaderwhitespace/noheaderwhitespace", "deffile_test/testdata_good/noheaderwhitespace/noheaderwhitespace.json"},
+		{"MultipleScripts", "deffile_test/testdata_good/multiplescripts/multiplescripts", "deffile_test/testdata_good/multiplescripts/multiplescripts.json"},
+		{"SectionArgs", "deffile_test/testdata_good/sectionargs/sectionargs", "deffile_test/testdata_good/sectionargs/sectionargs.json"},
+		{"MultipleFiles", "deffile_test/testdata_good/multiplefiles/multiplefiles", "deffile_test/testdata_good/multiplefiles/multiplefiles.json"},
+		{"QuotedFiles", "deffile_test/testdata_good/quotedfiles/quotedfiles", "deffile_test/testdata_good/quotedfiles/quotedfiles.json"},
+		{"Shebang", "deffile_test/testdata_good/shebang/shebang", "deffile_test/testdata_good/shebang/shebang.json"},
+		{"ShebangTest", "deffile_test/testdata_good/shebang_test/shebang_test", "deffile_test/testdata_good/shebang_test/shebang_test.json"},
 	}
 
 	for _, tt := range tests {
@@ -232,11 +232,11 @@ func TestParseDefinitionFileFailure(t *testing.T) {
 		name    string
 		defPath string
 	}{
-		{"BadSection", "testdata_bad/bad_section"},
-		{"JSONInput1", "testdata_bad/json_input_1"},
-		{"JSONInput2", "testdata_bad/json_input_2"},
-		{"Empty", "testdata_bad/empty"},
-		{"EmptyComments", "testdata_bad/emptycomments"},
+		{"BadSection", "deffile_test/testdata_bad/bad_section"},
+		{"JSONInput1", "deffile_test/testdata_bad/json_input_1"},
+		{"JSONInput2", "deffile_test/testdata_bad/json_input_2"},
+		{"Empty", "deffile_test/testdata_bad/empty"},
+		{"EmptyComments", "deffile_test/testdata_bad/emptycomments"},
 	}
 
 	for _, tt := range tests {
@@ -341,16 +341,16 @@ func TestIsValidDefinition(t *testing.T) {
 		defPath  string
 		sections string
 	}{
-		{"Arch", "testdata_good/arch/arch", "testdata_good/arch/arch_sections.json"},
-		{"BusyBox", "testdata_good/busybox/busybox", "testdata_good/busybox/busybox_sections.json"},
-		{"Debootstrap", "testdata_good/debootstrap/debootstrap", "testdata_good/debootstrap/debootstrap_sections.json"},
-		{"Docker", "testdata_good/docker/docker", "testdata_good/docker/docker_sections.json"},
-		{"LocalImage", "testdata_good/localimage/localimage", "testdata_good/localimage/localimage_sections.json"},
-		{"Scratch", "testdata_good/scratch/scratch", "testdata_good/scratch/scratch_sections.json"},
+		{"Arch", "deffile_test/testdata_good/arch/arch", "deffile_test/testdata_good/arch/arch_sections.json"},
+		{"BusyBox", "deffile_test/testdata_good/busybox/busybox", "deffile_test/testdata_good/busybox/busybox_sections.json"},
+		{"Debootstrap", "deffile_test/testdata_good/debootstrap/debootstrap", "deffile_test/testdata_good/debootstrap/debootstrap_sections.json"},
+		{"Docker", "deffile_test/testdata_good/docker/docker", "deffile_test/testdata_good/docker/docker_sections.json"},
+		{"LocalImage", "deffile_test/testdata_good/localimage/localimage", "deffile_test/testdata_good/localimage/localimage_sections.json"},
+		{"Scratch", "deffile_test/testdata_good/scratch/scratch", "deffile_test/testdata_good/scratch/scratch_sections.json"},
 		// TODO(mem): reenable this; disabled while shub is down
-		// {"Shub", "testdata_good/shub/shub", "testdata_good/shub/shub_sections.json"},
-		{"Yum", "testdata_good/yum/yum", "testdata_good/yum/yum_sections.json"},
-		{"Zypper", "testdata_good/zypper/zypper", "testdata_good/zypper/zypper_sections.json"},
+		// {"Shub", "deffile_test/testdata_good/shub/shub", "deffile_test/testdata_good/shub/shub_sections.json"},
+		{"Yum", "deffile_test/testdata_good/yum/yum", "deffile_test/testdata_good/yum/yum_sections.json"},
+		{"Zypper", "deffile_test/testdata_good/zypper/zypper", "deffile_test/testdata_good/zypper/zypper_sections.json"},
 	}
 
 	for _, tt := range validTests {
@@ -375,7 +375,7 @@ func TestIsValidDefinition(t *testing.T) {
 	//
 	// Test passing a valid directory in instead of a file
 	//
-	valid, err = IsValidDefinition("testdata_bad")
+	valid, err = IsValidDefinition("deffile_test/testdata_bad")
 	if valid == true && err != nil {
 		t.Fatal("Validation of a directory succeeded while expected to fail")
 	}
@@ -387,10 +387,10 @@ func TestIsValidDefinition(t *testing.T) {
 		name    string
 		defPath string
 	}{
-		{"BadSection", "testdata_bad/bad_section"},
-		{"JSONInput1", "testdata_bad/json_input_1"},
-		{"JSONInput2", "testdata_bad/json_input_2"},
-		{"Empty", "testdata_bad/empty"},
+		{"BadSection", "deffile_test/testdata_bad/bad_section"},
+		{"JSONInput1", "deffile_test/testdata_bad/json_input_1"},
+		{"JSONInput2", "deffile_test/testdata_bad/json_input_2"},
+		{"Empty", "deffile_test/testdata_bad/empty"},
 	}
 	for _, tt := range invalidTests {
 		t.Run(tt.name, test.WithoutPrivilege(func(t *testing.T) {
@@ -410,11 +410,11 @@ func TestParseAll(t *testing.T) {
 		defPath  string
 		jsonPath string
 	}{
-		{"Single", "testdata_multi/single/docker", "testdata_multi/single/docker.json"},
-		{"MultiStage", "testdata_multi/simple/simple", "testdata_multi/simple/simple.json"},
-		{"NoHeader", "testdata_multi/noheader/noheader", "testdata_multi/noheader/noheader.json"},
-		{"NoHeaderComments", "testdata_multi/noheadercomments/noheadercomments", "testdata_multi/noheadercomments/noheadercomments.json"},
-		{"NoHeaderWhiteSpace", "testdata_multi/noheaderwhitespace/noheaderwhitespace", "testdata_multi/noheaderwhitespace/noheaderwhitespace.json"},
+		{"Single", "deffile_test/testdata_multi/single/docker", "deffile_test/testdata_multi/single/docker.json"},
+		{"MultiStage", "deffile_test/testdata_multi/simple/simple", "deffile_test/testdata_multi/simple/simple.json"},
+		{"NoHeader", "deffile_test/testdata_multi/noheader/noheader", "deffile_test/testdata_multi/noheader/noheader.json"},
+		{"NoHeaderComments", "deffile_test/testdata_multi/noheadercomments/noheadercomments", "deffile_test/testdata_multi/noheadercomments/noheadercomments.json"},
+		{"NoHeaderWhiteSpace", "deffile_test/testdata_multi/noheaderwhitespace/noheaderwhitespace", "deffile_test/testdata_multi/noheaderwhitespace/noheaderwhitespace.json"},
 	}
 
 	for _, tt := range tests {
@@ -431,7 +431,7 @@ func TestParseAll(t *testing.T) {
 			}
 			defer jsonFile.Close()
 
-			defTest, err := All(defFile)
+			defTest, err := All(defFile, tt.defPath)
 			if err != nil {
 				t.Fatal("failed to parse definition file:", err)
 			}

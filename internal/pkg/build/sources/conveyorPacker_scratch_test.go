@@ -17,7 +17,7 @@ import (
 	"github.com/sylabs/singularity/pkg/build/types/parser"
 )
 
-const scratchDef = "../../../../pkg/build/types/parser/testdata_good/scratch/scratch"
+const scratchDef = "../../../../pkg/build/types/parser/deffile_test/testdata_good/scratch/scratch"
 
 func TestScratchConveyor(t *testing.T) {
 	if testing.Short() {

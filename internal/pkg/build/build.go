@@ -534,7 +534,8 @@ func MakeAllDefs(spec string) ([]types.Definition, error) {
 	}
 	defer defFile.Close()
 
-	d, err := parser.All(defFile)
+	// The Dockerfile parser needs to read the raw file
+	d, err := parser.All(defFile, spec)
 	if err != nil {
 		return nil, fmt.Errorf("while parsing definition: %s: %v", spec, err)
 	}
