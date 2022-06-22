@@ -42,7 +42,7 @@ func TestNewDefinitionFromJSON(t *testing.T) {
 		{JSON: `{"Key1": "Value1", "Key2": "Value2."}`, shouldPass: true},
 	}
 
-	const singularityJSON = "parser/testdata_good/docker/docker.json"
+	const singularityJSON = "parser/deffile_test/testdata_good/docker/docker.json"
 	// We do not have a valid example file that we can use to reach the corner cases, so we define a fake JSON
 	const validSingularityJSON = `
 {

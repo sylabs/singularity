@@ -132,6 +132,23 @@ func getSectionName(line string) string {
 	return lineSplit[0]
 }
 
+// parseFileLin is a shared function to get a src, dest from a single line
+func parseFileLine(line string) (string, string) {
+	var src, dst string
+	// Split at space, but not within double quotes
+	lineSubs := fileSplitter.FindAllString(line, -1)
+	if len(lineSubs) < 2 {
+		src = strings.TrimSpace(lineSubs[0])
+		dst = ""
+	} else {
+		src = strings.TrimSpace(lineSubs[0])
+		dst = strings.TrimSpace(lineSubs[1])
+	}
+	src = strings.Trim(src, "\"")
+	dst = strings.Trim(dst, "\"")
+	return src, dst
+}
+
 // parseTokenSection into appropriate components to be placed into a types.Script struct
 func parseTokenSection(tok string, sections map[string]*types.Script, files *[]types.Files, appOrder *[]string) error {
 	split := strings.SplitN(tok, "\n", 2)
@@ -156,18 +173,7 @@ func parseTokenSection(tok string, sections map[string]*types.Script, files *[]t
 			if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
 				continue
 			}
-			var src, dst string
-			// Split at space, but not within double quotes
-			lineSubs := fileSplitter.FindAllString(line, -1)
-			if len(lineSubs) < 2 {
-				src = strings.TrimSpace(lineSubs[0])
-				dst = ""
-			} else {
-				src = strings.TrimSpace(lineSubs[0])
-				dst = strings.TrimSpace(lineSubs[1])
-			}
-			src = strings.Trim(src, "\"")
-			dst = strings.Trim(dst, "\"")
+			src, dst := parseFileLine(line)
 			f.Files = append(f.Files, types.FileTransport{Src: src, Dst: dst})
 		}
 
@@ -448,9 +454,7 @@ func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
 // All receives a reader from a definition file
 // and parses it into a slice of Definition structs or returns error if
 // an error is encounter while parsing
-func All(r io.Reader) ([]types.Definition, error) {
-	var stages []types.Definition
-
+func All(r io.Reader, spec string) ([]types.Definition, error) {
 	raw, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("while attempting to read in definition: %v", err)
@@ -458,6 +462,25 @@ func All(r io.Reader) ([]types.Definition, error) {
 
 	// copy raw data for parsing
 	buf := raw
+
+	// Determine if Singularity recipe (or Docker)
+	dockerRgx := regexp.MustCompile(`(?mi)^FROM `)
+	dfrom := dockerRgx.FindAllIndex(buf, -1)
+
+	// If we found a FROM with space, assume Dockerfile
+	if len(dfrom) > 0 {
+		return ParseDockerfile(spec, raw)
+	}
+	return ParseSingularityDefinition(raw)
+}
+
+// ParseSingularityDefinition breaks a buffer into sections (stages) and returns them parsed
+func ParseSingularityDefinition(raw []byte) ([]types.Definition, error) {
+	var stages []types.Definition
+
+	// copy raw data for parsing
+	buf := raw
+
 	rgx := regexp.MustCompile(`(?mi)^bootstrap:`)
 	i := rgx.FindAllIndex(buf, -1)
 
@@ -474,6 +497,7 @@ func All(r io.Reader) ([]types.Definition, error) {
 	// handles case of no header
 	splitBuf = append([][]byte{buf[:]}, splitBuf...)
 
+	// Second attempt to quit if everything empty!
 	if len(splitBuf) == 0 {
 		return nil, errEmptyDefinition
 	}
@@ -483,6 +507,8 @@ func All(r io.Reader) ([]types.Definition, error) {
 			continue
 		}
 
+		// Both regular definition parser and Docker return
+		// equivalent sections to be further processed
 		d, err := ParseDefinitionFile(bytes.NewReader(stage))
 		if err != nil {
 			if err == errEmptyDefinition {
@@ -493,10 +519,8 @@ func All(r io.Reader) ([]types.Definition, error) {
 
 		stages = append(stages, d)
 	}
-
 	// set raw of last stage to be entire specification
 	stages[len(stages)-1].Raw = raw
-
 	return stages, nil
 }
 

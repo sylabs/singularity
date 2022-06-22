@@ -47,14 +47,15 @@ Enterprise Performance Computing (EPC)`
 
   BUILD SPEC:
 
-  The build spec target is a definition (def) file, local image, or URI that can 
-  be used to create a Singularity container. Several different local target 
-  formats exist:
+  The build spec target is a definition (def) file, local image, a Dockerfile
+  (with more limited support) or URI that can be used to create a Singularity
+  container. Several different local target formats exist:
 
-      def file  : This is a recipe for building a container (examples below)
-      directory:  A directory structure containing a (ch)root file system
-      image:      A local image on your machine (will convert to sif if
-                  it is legacy format)
+      def file   : This is a recipe for building a container (examples below)
+      Dockerfile : with support for ADD/COPY/FROM/RUN/ENTRYPOINT/CMD/LABEL/ENV
+      directory: : A directory structure containing a (ch)root file system
+      image:     : A local image on your machine (will convert to sif if
+                   it is legacy format)
 
   Targets can also be remote and defined by a URI of the following formats:
 
