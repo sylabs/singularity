@@ -271,8 +271,6 @@ func InstanceStats(name, instanceUser string, formatJSON bool, noStream bool) er
 			}
 		}
 	}
-
-	return nil
 }
 
 // StopInstance fetches instance list, applying name and
