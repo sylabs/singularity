@@ -9,17 +9,18 @@
 package singularity
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
-	"os/signal"
 	"strconv"
 	"strings"
 	"syscall"
 	"text/tabwriter"
 	"time"
 
+	"github.com/buger/goterm"
 	units "github.com/docker/go-units"
 	libcgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
@@ -178,7 +179,7 @@ func calculateMemoryUsage(stats *libcgroups.MemoryStats) (float64, float64, floa
 }
 
 // InstanceStats uses underlying cgroups to get statistics for a named instance
-func InstanceStats(name, instanceUser string, formatJSON bool, noStream bool) error {
+func InstanceStats(ctx context.Context, name, instanceUser string, formatJSON bool, noStream bool) error {
 	ii, err := instanceListOrError(instanceUser, name)
 	if err != nil {
 		return err
@@ -216,26 +217,19 @@ func InstanceStats(name, instanceUser string, formatJSON bool, noStream bool) er
 	tabWriter := tabwriter.NewWriter(os.Stdout, 0, 8, 4, ' ', 0)
 	defer tabWriter.Flush()
 
-	// Prepare writer for both stream / non-stream cases
-	// Stats can be added from this set
-	// https://github.com/opencontainers/runc/blob/main/libcontainer/cgroups/stats.go
-	_, err = fmt.Fprintln(tabWriter, "INSTANCE NAME\tCPU USAGE\tMEM USAGE / LIMIT\tMEM %\tBLOCK I/O\tPIDS")
-	tabWriter.Flush()
-	if err != nil {
-		return fmt.Errorf("could not write stats header: %v", err)
-	}
-
-	// Listen for Control + C to exit
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-
 	for {
 		select {
-		case <-c:
-			sylog.Infof("Detected Control + C, exiting.")
+		case <-ctx.Done():
 			return nil
 
 		case <-time.After(1 * time.Second):
+
+			// Clear the terminal and reprint header and stats each time
+			goterm.Clear()
+			goterm.MoveCursor(1, 1)
+			goterm.Flush()
+
+			// Retrieve new stats
 			stats, err := manager.GetStats()
 			if err != nil {
 				return fmt.Errorf("while getting stats for pid: %v", err)
@@ -247,6 +241,13 @@ func InstanceStats(name, instanceUser string, formatJSON bool, noStream bool) er
 				enc.SetIndent("", "\t")
 				err = enc.Encode(stats)
 				return err
+			}
+
+			// Stats can be added from this set
+			// https://github.com/opencontainers/runc/blob/main/libcontainer/cgroups/stats.go
+			_, err = fmt.Fprintln(tabWriter, "INSTANCE NAME\tCPU USAGE\tMEM USAGE / LIMIT\tMEM %\tBLOCK I/O\tPIDS")
+			if err != nil {
+				return fmt.Errorf("could not write stats header: %v", err)
 			}
 
 			// We don't want a stream, return after just one record

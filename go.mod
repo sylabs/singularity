@@ -60,6 +60,7 @@ require (
 	github.com/alexflint/go-filemutex v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
+	github.com/buger/goterm v1.0.4 // indirect
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect

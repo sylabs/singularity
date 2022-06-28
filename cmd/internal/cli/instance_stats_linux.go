@@ -79,7 +79,7 @@ var instanceStatsCmd = &cobra.Command{
 
 		// Instance name is the only arg
 		name := args[0]
-		return singularity.InstanceStats(name, instanceStatsUser, instanceStatsJSON, instanceStatsNoStream)
+		return singularity.InstanceStats(cmd.Context(), name, instanceStatsUser, instanceStatsJSON, instanceStatsNoStream)
 	},
 
 	Use:     docs.InstanceStatsUse,
