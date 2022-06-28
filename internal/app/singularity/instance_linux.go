@@ -224,10 +224,12 @@ func InstanceStats(ctx context.Context, name, instanceUser string, formatJSON bo
 
 		case <-time.After(1 * time.Second):
 
-			// Clear the terminal and reprint header and stats each time
-			goterm.Clear()
-			goterm.MoveCursor(1, 1)
-			goterm.Flush()
+			// Stream clears the terminal and reprint header and stats each time
+			if !noStream {
+				goterm.Clear()
+				goterm.MoveCursor(1, 1)
+				goterm.Flush()
+			}
 
 			// Retrieve new stats
 			stats, err := manager.GetStats()
@@ -250,11 +252,6 @@ func InstanceStats(ctx context.Context, name, instanceUser string, formatJSON bo
 				return fmt.Errorf("could not write stats header: %v", err)
 			}
 
-			// We don't want a stream, return after just one record
-			if noStream {
-				return nil
-			}
-
 			// CpuUsage denotes the usage of a CPU, aggregate since container inception.
 			// TODO CPU time needs to be a percentage
 			totalCPUTime := strconv.FormatUint(stats.CpuStats.CpuUsage.TotalUsage, 10) + " ns"
@@ -269,6 +266,11 @@ func InstanceStats(ctx context.Context, name, instanceUser string, formatJSON bo
 			tabWriter.Flush()
 			if err != nil {
 				return fmt.Errorf("could not write instance stats: %v", err)
+			}
+
+			// We don't want a stream, return after just one record
+			if noStream {
+				return nil
 			}
 		}
 	}
