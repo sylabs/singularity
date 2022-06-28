@@ -8,6 +8,7 @@ require (
 	github.com/adigunhammedolalekan/registry-auth v0.0.0-20200730122110-8cde180a3a60
 	github.com/apex/log v1.9.0
 	github.com/blang/semver/v4 v4.0.0
+	github.com/buger/goterm v1.0.4
 	github.com/buger/jsonparser v1.1.1
 	github.com/containerd/containerd v1.6.6
 	github.com/containernetworking/cni v1.1.1
@@ -60,7 +61,6 @@ require (
 	github.com/alexflint/go-filemutex v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
-	github.com/buger/goterm v1.0.4 // indirect
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
