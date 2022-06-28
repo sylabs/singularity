@@ -562,10 +562,13 @@ Enterprise Performance Computing (EPC)`
 	InstanceStatsLong  string = `
   The instance stats command allows you to get statistics for a named instance,
   either printed to the terminal or in json. If you are root, you can optionally
-  ask for statistics for a container instance belonging to a specific user.`
+  ask for statistics for a container instance belonging to a specific user. If
+  you add --no-stream, you will only see one timepoint. Asking for json implies
+  the same.`
 	InstanceStatsExample string = `
   $ singularity instance stats mysql
   $ singularity instance stats --json mysql
+  $ singularity instance stats --no-stream mysql
   $ sudo singularity instance stats --user <username> user-mysql`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

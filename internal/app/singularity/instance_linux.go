@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
 	"syscall"
@@ -177,7 +178,7 @@ func calculateMemoryUsage(stats *libcgroups.MemoryStats) (float64, float64, floa
 }
 
 // InstanceStats uses underlying cgroups to get statistics for a named instance
-func InstanceStats(name, instanceUser string, formatJSON bool) error {
+func InstanceStats(name, instanceUser string, formatJSON bool, noStream bool) error {
 	ii, err := instanceListOrError(instanceUser, name)
 	if err != nil {
 		return err
@@ -193,6 +194,12 @@ func InstanceStats(name, instanceUser string, formatJSON bool) error {
 		sylog.Infof("Stats for %s instance of %s (PID=%d)\n", i.Name, i.Image, i.Pid)
 	}
 
+	// If asking for json and not nostream, not possible
+	if formatJSON && !noStream {
+		sylog.Warningf("JSON output is only available for a single timepoint (--no-stream)")
+		noStream = true
+	}
+
 	// Cut out early if we do not have cgroups
 	if !i.Cgroup {
 		url := "the Singularity instance user guide for instructions"
@@ -204,41 +211,67 @@ func InstanceStats(name, instanceUser string, formatJSON bool) error {
 	if err != nil {
 		return fmt.Errorf("while getting cgroup manager for pid: %v", err)
 	}
-	stats, err := manager.GetStats()
-	if err != nil {
-		return fmt.Errorf("while getting stats for pid: %v", err)
-	}
-
-	// Do we want json?
-	if formatJSON {
-		enc := json.NewEncoder(os.Stdout)
-		enc.SetIndent("", "\t")
-		err = enc.Encode(stats)
-		return err
-	}
 
 	// Otherwise print shortened table
 	tabWriter := tabwriter.NewWriter(os.Stdout, 0, 8, 4, ' ', 0)
 	defer tabWriter.Flush()
 
-	// Stats can be added from this set:
+	// Prepare writer for both stream / non-stream cases
+	// Stats can be added from this set
 	// https://github.com/opencontainers/runc/blob/main/libcontainer/cgroups/stats.go
 	_, err = fmt.Fprintln(tabWriter, "INSTANCE NAME\tCPU USAGE\tMEM USAGE / LIMIT\tMEM %\tBLOCK I/O\tPIDS")
+	tabWriter.Flush()
 	if err != nil {
 		return fmt.Errorf("could not write stats header: %v", err)
 	}
 
-	// CpuUsage denotes the usage of a CPU, aggregate since container inception.
-	// TODO CPU time needs to be a percentage
-	totalCPUTime := strconv.FormatUint(stats.CpuStats.CpuUsage.TotalUsage, 10) + " ns"
-	memUsage, memLimit, memPercent := calculateMemoryUsage(&stats.MemoryStats)
-	blockRead, blockWrite := calculateBlockIO(&stats.BlkioStats)
+	// Listen for Control + C to exit
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
-	// Generate a shortened stats list
-	_, err = fmt.Fprintf(tabWriter, "%s\t%s\t%s / %s\t%.2f%s\t%s / %s\t%d\n", i.Name, totalCPUTime, units.BytesSize(memUsage), units.BytesSize(memLimit), memPercent, "%", units.BytesSize(blockRead), units.BytesSize(blockWrite), stats.PidsStats.Current)
-	if err != nil {
-		return fmt.Errorf("could not write instance stats: %v", err)
+	for {
+		select {
+		case <-c:
+			sylog.Infof("Detected Control + C, exiting.")
+			return nil
+
+		case <-time.After(1 * time.Second):
+			stats, err := manager.GetStats()
+			if err != nil {
+				return fmt.Errorf("while getting stats for pid: %v", err)
+			}
+
+			// Do we want json?
+			if formatJSON {
+				enc := json.NewEncoder(os.Stdout)
+				enc.SetIndent("", "\t")
+				err = enc.Encode(stats)
+				return err
+			}
+
+			// We don't want a stream, return after just one record
+			if noStream {
+				return nil
+			}
+
+			// CpuUsage denotes the usage of a CPU, aggregate since container inception.
+			// TODO CPU time needs to be a percentage
+			totalCPUTime := strconv.FormatUint(stats.CpuStats.CpuUsage.TotalUsage, 10) + " ns"
+			memUsage, memLimit, memPercent := calculateMemoryUsage(&stats.MemoryStats)
+			blockRead, blockWrite := calculateBlockIO(&stats.BlkioStats)
+
+			// Generate a shortened stats list
+			_, err = fmt.Fprintf(tabWriter, "%s\t%s\t%s / %s\t%.2f%s\t%s / %s\t%d\n", i.Name,
+				totalCPUTime, units.BytesSize(memUsage), units.BytesSize(memLimit),
+				memPercent, "%", units.BytesSize(blockRead), units.BytesSize(blockWrite),
+				stats.PidsStats.Current)
+			tabWriter.Flush()
+			if err != nil {
+				return fmt.Errorf("could not write instance stats: %v", err)
+			}
+		}
 	}
+
 	return nil
 }
 
