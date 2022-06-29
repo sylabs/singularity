@@ -209,7 +209,6 @@ func (m *flagManager) updateCmdFlagFromEnv(cmd *cobra.Command, prefix string) er
 			return
 		}
 		for _, key := range envKeys {
-
 			// First priority goes to prefixed variable
 			val, set := os.LookupEnv(prefix + key)
 			if !set {
