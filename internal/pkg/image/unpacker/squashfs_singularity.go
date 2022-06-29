@@ -191,7 +191,6 @@ func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, filte
 	// which will detect automatically depending of the configuration
 	// what workflow it could use
 	args := []string{
-		"-q",
 		"exec",
 		"--no-home",
 		"--no-nv",
@@ -282,6 +281,7 @@ func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, filte
 	cmd.Dir = "/"
 	cmd.Env = []string{
 		fmt.Sprintf("LD_LIBRARY_PATH=%s", strings.Join(libraryPath, string(os.PathListSeparator))),
+		fmt.Sprintf("SINGULARITY_DEBUG=%s", os.Getenv("SINGULARITY_DEBUG")),
 	}
 
 	return cmd, nil

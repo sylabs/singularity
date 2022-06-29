@@ -2,6 +2,12 @@
 
 ## Changes Since Last Release
 
+### New features / functionalities
+
+- Debug output can now be enabled by setting the `SINGULARITY_DEBUG` env var.
+- Debug output is now shown for nested `singularity` calls, in wrapped
+  `unsquashfs` image extraction, and build stages.
+
 ### Bug Fixes
 
 - Fix test code that implied `%test -c <shell>` was supported - it is not.

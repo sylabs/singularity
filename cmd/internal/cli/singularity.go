@@ -81,6 +81,7 @@ var singDebugFlag = cmdline.Flag{
 	Name:         "debug",
 	ShortHand:    "d",
 	Usage:        "print debugging information (highest verbosity)",
+	EnvKeys:      []string{"DEBUG"},
 }
 
 // --nocolor
@@ -242,6 +243,8 @@ func setSylogMessageLevel() {
 
 	if debug {
 		level = 5
+		// Propagate debug flag to nested `singularity` calls.
+		os.Setenv("SINGULARITY_DEBUG", "1")
 	} else if verbose {
 		level = 4
 	} else if quiet {
@@ -262,25 +265,26 @@ func setSylogMessageLevel() {
 
 // handleRemoteConf will make sure your 'remote.yaml' config file
 // has the correct permission.
-func handleRemoteConf(remoteConfFile string) {
+func handleRemoteConf(remoteConfFile string) error {
 	// Only check the permission if it exists.
 	if fs.IsFile(remoteConfFile) {
 		sylog.Debugf("Ensuring file permission of 0600 on %s", remoteConfFile)
 		if err := fs.EnsureFileWithPermission(remoteConfFile, 0o600); err != nil {
-			sylog.Fatalf("Unable to correct the permission on %s: %s", remoteConfFile, err)
+			return fmt.Errorf("unable to correct the permission on %s: %w", remoteConfFile, err)
 		}
 	}
+	return nil
 }
 
 // handleConfDir tries to create the user's configuration directory and handles
 // messages and/or errors.
-func handleConfDir(confDir string) {
+func handleConfDir(confDir string) error {
 	if err := fs.Mkdir(confDir, 0o700); err != nil {
 		if os.IsExist(err) {
 			sylog.Debugf("%s already exists. Not creating.", confDir)
 			fi, err := os.Stat(confDir)
 			if err != nil {
-				sylog.Fatalf("Failed to retrieve information for %s: %s", confDir, err)
+				return fmt.Errorf("failed to retrieve information for %s: %s", confDir, err)
 			}
 			if fi.Mode().Perm() != 0o700 {
 				sylog.Debugf("Enforce permission 0700 on %s", confDir)
@@ -296,29 +300,35 @@ func handleConfDir(confDir string) {
 	} else {
 		sylog.Debugf("Created %s", confDir)
 	}
+	return nil
 }
 
-func persistentPreRun(*cobra.Command, []string) {
+func persistentPreRun(*cobra.Command, []string) error {
 	setSylogMessageLevel()
 	sylog.Debugf("Singularity version: %s", buildcfg.PACKAGE_VERSION)
 
 	if os.Geteuid() != 0 && buildcfg.SINGULARITY_SUID_INSTALL == 1 {
 		if configurationFile != singConfigFileFlag.DefaultValue {
-			sylog.Fatalf("--config requires to be root or an unprivileged installation")
+			return fmt.Errorf("--config requires to be root or an unprivileged installation")
 		}
 	}
 
 	sylog.Debugf("Parsing configuration file %s", configurationFile)
 	config, err := singularityconf.Parse(configurationFile)
 	if err != nil {
-		sylog.Fatalf("Couldn't not parse configuration file %s: %s", configurationFile, err)
+		return fmt.Errorf("couldn't parse configuration file %s: %s", configurationFile, err)
 	}
 	singularityconf.SetCurrentConfig(config)
 
 	// Handle the config dir (~/.singularity),
 	// then check the remove conf file permission.
-	handleConfDir(syfs.ConfigDir())
-	handleRemoteConf(syfs.RemoteConf())
+	if err := handleConfDir(syfs.ConfigDir()); err != nil {
+		return fmt.Errorf("while handling config dir: %w", err)
+	}
+	if err := handleRemoteConf(syfs.RemoteConf()); err != nil {
+		return fmt.Errorf("while handling remote config: %w", err)
+	}
+	return nil
 }
 
 // Init initializes and registers all singularity commands.
@@ -341,8 +351,16 @@ func Init(loadPlugins bool) {
 
 	// set persistent pre run function here to avoid initialization loop error
 	singularityCmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		persistentPreRun(cmd, args)
-		return cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix)
+		if err := cmdManager.UpdateCmdFlagFromEnv(singularityCmd, envPrefix); err != nil {
+			sylog.Fatalf("While parsing global environment variables: %s", err)
+		}
+		if err := cmdManager.UpdateCmdFlagFromEnv(cmd, envPrefix); err != nil {
+			sylog.Fatalf("While parsing environment variables: %s", err)
+		}
+		if err := persistentPreRun(cmd, args); err != nil {
+			sylog.Fatalf("While initializing: %s", err)
+		}
+		return nil
 	}
 
 	cmdManager.RegisterFlagForCmd(&singDebugFlag, singularityCmd)
