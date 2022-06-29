@@ -23,6 +23,7 @@ func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterFlagForCmd(&instanceStatsUserFlag, instanceStatsCmd)
 		cmdManager.RegisterFlagForCmd(&instanceStatsJSONFlag, instanceStatsCmd)
+		cmdManager.RegisterFlagForCmd(&instanceStatsNoStreamFlag, instanceStatsCmd)
 	})
 }
 
@@ -52,6 +53,18 @@ var instanceStatsJSONFlag = cmdline.Flag{
 	Usage:        "output stats in json",
 }
 
+// --no-stream
+
+var instanceStatsNoStream bool
+
+var instanceStatsNoStreamFlag = cmdline.Flag{
+	ID:           "instanceStatsNoStreamFlag",
+	Value:        &instanceStatsNoStream,
+	DefaultValue: false,
+	Name:         "no-stream",
+	Usage:        "disable streaming (live update) of instance stats",
+}
+
 // singularity instance stats
 var instanceStatsCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
@@ -66,7 +79,7 @@ var instanceStatsCmd = &cobra.Command{
 
 		// Instance name is the only arg
 		name := args[0]
-		return singularity.InstanceStats(name, instanceStatsUser, instanceStatsJSON)
+		return singularity.InstanceStats(cmd.Context(), name, instanceStatsUser, instanceStatsJSON, instanceStatsNoStream)
 	},
 
 	Use:     docs.InstanceStatsUse,
