@@ -127,14 +127,15 @@ func handleImage(ctx context.Context, filename string, tryFUSE bool) (isFUSE boo
 	}
 
 	// Fall back to extraction to directory
-	if err := extractImage(img, imageDir); err == nil {
+	err = extractImage(img, imageDir)
+	if err == nil {
 		return false, tempDir, imageDir, nil
 	}
 
 	if err2 := os.RemoveAll(tempDir); err2 != nil {
 		sylog.Errorf("Couldn't remove temporary directory %s: %s", tempDir, err2)
 	}
-	return false, "", "", fmt.Errorf("while extracting image: %w", err)
+	return false, "", "", fmt.Errorf("while extracting image: %v", err)
 }
 
 // extractImage extracts img to directory dir within a temporary directory
