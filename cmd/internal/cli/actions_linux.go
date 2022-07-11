@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 	sifuser "github.com/sylabs/sif/v2/pkg/user"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/image/unpacker"
 	"github.com/sylabs/singularity/internal/pkg/instance"
 	"github.com/sylabs/singularity/internal/pkg/plugin"
@@ -353,6 +354,24 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 		generator.AddProcessEnv("SINGULARITY_NAME", filepath.Base(file.Image))
 		engineConfig.SetImage(image)
 		engineConfig.SetInstanceJoin(true)
+
+		// If we are running non-root, without a user ns, join the instance cgroup now, as we
+		// can't manipulate the ppid cgroup in the engine
+		// prepareInstanceJoinConfig().
+		//
+		// TODO - consider where /proc/sys/fs/cgroup is mounted in the engine
+		// flow, to move this further down.
+		if file.Cgroup && uid != 0 && !UserNamespace {
+			pid := os.Getpid()
+			sylog.Debugf("Adding process %d to instance cgroup", pid)
+			manager, err := cgroups.GetManagerForPid(file.Pid)
+			if err != nil {
+				sylog.Fatalf("couldn't create cgroup manager: %v", err)
+			}
+			if err := manager.AddProc(pid); err != nil {
+				sylog.Fatalf("couldn't add process to instance cgroup: %v", err)
+			}
+		}
 	} else {
 		abspath, err := filepath.Abs(image)
 		generator.AddProcessEnv("SINGULARITY_CONTAINER", abspath)
@@ -499,10 +518,6 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 
 	if ShellPath != "" {
 		generator.AddProcessEnv("SINGULARITY_SHELL", ShellPath)
-	}
-
-	if name != "" && uid != 0 && CgroupsTOMLFile != "" {
-		sylog.Fatalf("Instances do not currently support rootless cgroups")
 	}
 
 	if uid != 0 {

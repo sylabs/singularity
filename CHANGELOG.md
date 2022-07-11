@@ -28,6 +28,8 @@
 - Debug output can now be enabled by setting the `SINGULARITY_DEBUG` env var.
 - Debug output is now shown for nested `singularity` calls, in wrapped
   `unsquashfs` image extraction, and build stages.
+- Instances started by a non-root user can use `--apply-cgroups` to apply
+  resource limits. Requires cgroups v2, and delegation configured via systemd.
 
 ### Bug Fixes
 
