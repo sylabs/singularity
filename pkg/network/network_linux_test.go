@@ -541,7 +541,7 @@ func TestAddDelNetworks(t *testing.T) {
 		{
 			name:    "TestHTTPPortmap",
 			command: "nc",
-			args:    []string{"-l", "80"},
+			args:    []string{"-l", "0.0.0.0", "80"},
 			runFunc: testHTTPPortmap,
 		},
 		{
