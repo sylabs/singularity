@@ -6,12 +6,12 @@ orbs:
 parameters:
   go-version:
     type: string
-    default: '1.18.2'
+    default: '1.18.4'
 
 executors:
   node:
     docker:
-      - image: node:17-slim
+      - image: node:18-slim
   golang:
     parameters:
       variant:
