@@ -6,7 +6,6 @@
 package layout
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -34,11 +33,7 @@ func TestLayout(t *testing.T) {
 		}
 	}
 
-	dir, err := ioutil.TempDir("", "session")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	if err := session.AddDir("/etc"); err == nil {
 		t.Errorf("should have failed with uninitialized root path")

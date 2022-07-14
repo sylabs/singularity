@@ -20,10 +20,7 @@ func TestEnsureFileWithPermission(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	tmpDir, err := ioutil.TempDir("", "ensure_file_perm-")
-	if err != nil {
-		t.Errorf("Unable to make tmpdir %s", err)
-	}
+	tmpDir := t.TempDir()
 
 	//
 	// First test: Ensure a already-existing file is the
@@ -133,12 +130,6 @@ func TestEnsureFileWithPermission(t *testing.T) {
 	if currentMode := einfo.Mode(); currentMode != 0o544 {
 		t.Errorf("Unexpected file permission: expecting 544, got %o", currentMode)
 	}
-
-	// Cleanup.
-	err = os.RemoveAll(tmpDir)
-	if err != nil {
-		t.Errorf("Unable to remove tmpdir: %s", err)
-	}
 }
 
 func TestIsFile(t *testing.T) {
@@ -229,11 +220,7 @@ func TestMkdirAll(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	tmpdir, err := ioutil.TempDir("", "mkdir")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpdir)
+	tmpdir := t.TempDir()
 
 	if err := MkdirAll(filepath.Join(tmpdir, "test"), 0o777); err != nil {
 		t.Error(err)
@@ -257,13 +244,7 @@ func TestMkdir(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	tmpdir, err := ioutil.TempDir("", "mkdir")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpdir)
-
-	test := filepath.Join(tmpdir, "test")
+	test := filepath.Join(t.TempDir(), "test")
 	if err := Mkdir(test, 0o777); err != nil {
 		t.Error(err)
 	}
@@ -280,11 +261,7 @@ func TestEvalRelative(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	tmpdir, err := ioutil.TempDir("", "evalrelative")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpdir)
+	tmpdir := t.TempDir()
 
 	// test layout
 	// - /bin -> usr/bin
@@ -359,11 +336,7 @@ func TestTouch(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	tmpdir, err := ioutil.TempDir("", "evalrelative")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpdir)
+	tmpdir := t.TempDir()
 
 	if err := Touch(tmpdir); err == nil {
 		t.Errorf("touch can't take a directory")
@@ -491,14 +464,10 @@ func testCopyFileFunc(t *testing.T, fn copyFileFunc) {
 
 	testData := []byte("Hello, Singularity!")
 
-	tmpDir, err := ioutil.TempDir("", "copy-file")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.RemoveAll(tmpDir)
+	tmpDir := t.TempDir()
 
 	source := filepath.Join(tmpDir, "source")
-	err = ioutil.WriteFile(source, testData, 0o644)
+	err := ioutil.WriteFile(source, testData, 0o644)
 	if err != nil {
 		t.Fatalf("failed to create test source file: %v", err)
 	}
@@ -600,11 +569,7 @@ func TestIsWritable(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	// We make a temporary directory where all the different cases will be tested.
-	tempDir, err := ioutil.TempDir("", "")
-	if err != nil {
-		t.Fatalf("failed to create temporary directory: %s", err)
-	}
-	defer os.RemoveAll(tempDir)
+	tempDir := t.TempDir()
 
 	// All the directory that we are about to create will be deleted when the temporary
 	// directory will be removed.
