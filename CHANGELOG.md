@@ -1,6 +1,6 @@
 # SingularityCE Changelog
 
-## Changes Since Last Release
+## 3.10.1 \[2022-07-18\]
 
 ### New features / functionalities
 
@@ -137,7 +137,7 @@
   environment processing. Fixes regression in v3.9.2.
 - Remove subshell overhead when processing large environments on container
   startup.
-  
+
 ## v3.9.4 \[2022-01-19\]
 
 ### Bug fixes
