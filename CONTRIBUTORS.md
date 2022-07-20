@@ -41,6 +41,7 @@ The following have contributed code and/or documentation to this repository.
 - Divya Cote <divya.cote@gmail.com>
 - Eduardo Arango <eduardo@sylabs.io>, <arangogutierrez@gmail.com>
 - Egbert Eich <eich@suse.com>
+- Eng Zer Jun <engzerjun@gmail.com>
 - Eric Müller <mueller@kip.uni-heidelberg.de>
 - Felix Abecassis <fabecassis@nvidia.com>
 - Geoffroy Vallee <geoffroy@sylabs.io>, <geoffroy.vallee@gmail.com>
