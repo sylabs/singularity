@@ -1,5 +1,7 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2019-2022 Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,6 +16,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"testing"
@@ -185,11 +188,11 @@ func Run(t *testing.T) {
 
 	for _, cf := range configFiles {
 		if fi, err := os.Stat(cf); err != nil {
-			log.Fatalf("%s is not installed on this system: %v", cf, err)
+			t.Fatalf("%s is not installed on this system: %v", cf, err)
 		} else if !fi.Mode().IsRegular() {
-			log.Fatalf("%s is not a regular file", cf)
+			t.Fatalf("%s is not a regular file", cf)
 		} else if fi.Sys().(*syscall.Stat_t).Uid != 0 {
-			log.Fatalf("%s must be owned by root", cf)
+			t.Fatalf("%s must be owned by root", cf)
 		}
 	}
 
@@ -224,18 +227,22 @@ func Run(t *testing.T) {
 
 	// e2e tests that will run in a mount and PID namespace are below
 
-	// Because tests are parallelized, and PrepRegistry temporarily masks
-	// the Singularity instance directory we *must* now call it before we
-	// start running tests which could use instance and oci functionality.
-	// See: https://github.com/hpcng/singularity/issues/5744
-	testenv.TestRegistry = "localhost:5000"
+	// Provision local registry
+	testenv.TestRegistry = e2e.StartRegistry(t, testenv)
+
+	// Add local Docker/OCI image
+	insecureSource := false
+	insecureValue := os.Getenv("E2E_DOCKER_MIRROR_INSECURE")
+	if insecureValue != "" {
+		insecureSource, err = strconv.ParseBool(insecureValue)
+		if err != nil {
+			t.Fatalf("could not convert E2E_DOCKER_MIRROR_INSECURE=%s: %s", insecureValue, err)
+		}
+	}
+	e2e.CopyOCIImage(t, "busybox:latest", fmt.Sprintf("%s/my-busybox:latest", testenv.TestRegistry), insecureSource, true)
+
+	// Local ORAS image will be build on demand (EnsureORASImage)
 	testenv.OrasTestImage = fmt.Sprintf("oras://%s/oras_test_sif:latest", testenv.TestRegistry)
-	t.Run("PrepRegistry", func(t *testing.T) {
-		e2e.PrepRegistry(t, testenv)
-	})
-	// e2e.KillRegistry is called here to ensure that the registry
-	// is stopped after tests run.
-	defer e2e.KillRegistry(t, testenv)
 
 	suite := testhelper.NewSuite(t, testenv)
 

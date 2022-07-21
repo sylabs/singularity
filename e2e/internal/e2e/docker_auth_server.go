@@ -1,5 +1,7 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,6 +10,7 @@ package e2e
 
 import (
 	"fmt"
+	"net"
 	"net/http"
 	"strings"
 	"sync"
@@ -75,7 +78,7 @@ func (a *authnz) Authorize(req *registry.AuthorizationRequest) ([]string, error)
 	return []string{"pull", "push"}, nil
 }
 
-func startAuthServer(crt, key string) error {
+func startAuthServer(ln net.Listener, crt, key string) error {
 	authnz := new(authnz)
 
 	opt := &registry.Option{
@@ -93,7 +96,7 @@ func startAuthServer(crt, key string) error {
 	}
 
 	http.Handle("/auth", &dockerAuthHandler{srv: srv})
-	return http.ListenAndServe(":5001", nil)
+	return http.Serve(ln, nil)
 }
 
 func (d *dockerAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
