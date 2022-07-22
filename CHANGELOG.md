@@ -35,6 +35,8 @@
 
 - Fix compilation on `mipsel`.
 - Fix test code that implied `%test -c <shell>` was supported - it is not.
+- Ensure no empty `if` branch is present in generated OCI image runscripts. Would
+  prevent execution of container by other tools that are not using mvdan.cc/sh.
 
 ## 3.10.0 \[2022-05-17\]
 
