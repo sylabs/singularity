@@ -6,6 +6,12 @@
 
 - Added EL9 package builds to CI for GitHub releases.
 
+### Bug Fixes
+
+- Ensure no empty `if` branch is present in generated OCI image
+  runscripts. Would prevent execution of container by other tools that
+  are not using mvdan.cc/sh.
+
 ## 3.10.1 \[2022-07-18\]
 
 ### New features / functionalities
