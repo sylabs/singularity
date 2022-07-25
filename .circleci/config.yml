@@ -27,6 +27,9 @@ executors:
   almalinux8:
     docker:
       - image: almalinux:8
+  almalinux9:
+    docker:
+      - image: almalinux:9
   ubuntu1804:
     docker:
       - image: ubuntu:18.04
@@ -309,7 +312,7 @@ workflows:
       - build-rpm:
           matrix:
             parameters:
-              e: ["centos7", "almalinux8"]
+              e: ["centos7", "almalinux8", "almalinux9"]
           filters:
             branches:
               only:
