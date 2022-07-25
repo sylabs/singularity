@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -60,6 +60,7 @@ if [ -n "$SINGULARITY_NO_EVAL" ]; then
 	if [ -n "$OCI_CMD" ] && [ -z "$OCI_ENTRYPOINT" ]; then
 		if [ $# -eq 0 ]; then
 			{{.PrependCmd}}
+			:
 		fi
 		exec "$@"
 	fi
@@ -68,9 +69,11 @@ if [ -n "$SINGULARITY_NO_EVAL" ]; then
 	# override with user provided args
 	if [ $# -gt 0 ]; then
 		{{.PrependEntrypoint}}
+		:
 	else
 		{{.PrependCmd}}
 		{{.PrependEntrypoint}}
+		:
 	fi
 	exec "$@"
 fi
