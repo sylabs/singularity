@@ -1,7 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
-// Copyright (c) Contributors to the Apptainer project, established as
-//   Apptainer a Series of LF Projects LLC.
+// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -52,37 +50,29 @@ const ociRunscript = `
 # not evaluate resolved CMD / ENTRYPOINT / ARGS through the shell, and
 # does not modify expected quoting behavior of args.
 if [ -n "$SINGULARITY_NO_EVAL" ]; then
-    # ENTRYPOINT only - run entrypoint plus args
-    if [ -z "$OCI_CMD" ] && [ -n "$OCI_ENTRYPOINT" ]; then
-        {{ .PrependEntrypoint }}
-        exec "$@"
-    fi
+	# ENTRYPOINT only - run entrypoint plus args
+	if [ -z "$OCI_CMD" ] && [ -n "$OCI_ENTRYPOINT" ]; then
+		{{.PrependEntrypoint}}
+		exec "$@"
+	fi
 
-    # CMD only - run CMD or override with args
-    if [ -n "$OCI_CMD" ] && [ -z "$OCI_ENTRYPOINT" ]; then
-        {{- if .PrependCmd }}
-        if [ $# -eq 0 ]; then
-            {{ .PrependCmd }}
-        fi
-        {{- end }}
-        exec "$@"
-    fi
+	# CMD only - run CMD or override with args
+	if [ -n "$OCI_CMD" ] && [ -z "$OCI_ENTRYPOINT" ]; then
+		if [ $# -eq 0 ]; then
+			{{.PrependCmd}}
+		fi
+		exec "$@"
+	fi
 
-    # ENTRYPOINT and CMD - run ENTRYPOINT with CMD as default args
-    # override with user provided args
-    {{- if .PrependEntrypoint }}
-    if [ $# -gt 0 ]; then
-        {{ .PrependEntrypoint }}
+	# ENTRYPOINT and CMD - run ENTRYPOINT with CMD as default args
+	# override with user provided args
+	if [ $# -gt 0 ]; then
+		{{.PrependEntrypoint}}
 	else
-        {{ .PrependCmd }}
-        {{ .PrependEntrypoint }}
-    fi
-	{{- else if .PrependCmd }}
-    if [ $# -eq 0 ]; then
-        {{ .PrependCmd }}
-    fi
-    {{- end }}
-    exec "$@"
+		{{.PrependCmd}}
+		{{.PrependEntrypoint}}
+	fi
+	exec "$@"
 fi
 
 # Standard Singularity behavior evaluates CMD / ENTRYPOINT / ARGS
@@ -91,33 +81,33 @@ fi
 CMDLINE_ARGS=""
 # prepare command line arguments for evaluation
 for arg in "$@"; do
-        CMDLINE_ARGS="${CMDLINE_ARGS} \"$arg\""
+		CMDLINE_ARGS="${CMDLINE_ARGS} \"$arg\""
 done
 
 # ENTRYPOINT only - run entrypoint plus args
 if [ -z "$OCI_CMD" ] && [ -n "$OCI_ENTRYPOINT" ]; then
-    if [ $# -gt 0 ]; then
-        SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${CMDLINE_ARGS}"
-    else
-        SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT}"
-    fi
+	if [ $# -gt 0 ]; then
+		SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${CMDLINE_ARGS}"
+	else
+		SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT}"
+	fi
 fi
 
 # CMD only - run CMD or override with args
 if [ -n "$OCI_CMD" ] && [ -z "$OCI_ENTRYPOINT" ]; then
-    if [ $# -gt 0 ]; then
-        SINGULARITY_OCI_RUN="${CMDLINE_ARGS}"
-    else
-        SINGULARITY_OCI_RUN="${OCI_CMD}"
-    fi
+	if [ $# -gt 0 ]; then
+		SINGULARITY_OCI_RUN="${CMDLINE_ARGS}"
+	else
+		SINGULARITY_OCI_RUN="${OCI_CMD}"
+	fi
 fi
 
 # ENTRYPOINT and CMD - run ENTRYPOINT with CMD as default args
 # override with user provided args
 if [ $# -gt 0 ]; then
-    SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${CMDLINE_ARGS}"
+	SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${CMDLINE_ARGS}"
 else
-    SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${OCI_CMD}"
+	SINGULARITY_OCI_RUN="${OCI_ENTRYPOINT} ${OCI_CMD}"
 fi
 
 # Evaluate shell expressions first and set arguments accordingly,
