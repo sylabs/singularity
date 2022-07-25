@@ -1,5 +1,11 @@
 # SingularityCE Changelog
 
+## Changes since last release
+
+### New features / functionalities
+
+- Added EL9 package builds to CI for GitHub releases.
+
 ## 3.10.1 \[2022-07-18\]
 
 ### New features / functionalities
