@@ -1,6 +1,6 @@
 # SingularityCE Changelog
 
-## Changes since last release
+## 3.10.2 \[2022-07-25\]
 
 ### New features / functionalities
 
