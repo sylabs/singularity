@@ -30,6 +30,7 @@
   `unsquashfs` image extraction, and build stages.
 - Instances started by a non-root user can use `--apply-cgroups` to apply
   resource limits. Requires cgroups v2, and delegation configured via systemd.
+- Added EL9 package builds to CI for GitHub releases.
 
 ### Bug Fixes
 
