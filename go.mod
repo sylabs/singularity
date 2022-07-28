@@ -11,7 +11,7 @@ require (
 	github.com/buger/goterm v1.0.4
 	github.com/buger/jsonparser v1.1.1
 	github.com/containerd/containerd v1.6.6
-	github.com/containernetworking/cni v1.1.1
+	github.com/containernetworking/cni v1.1.2
 	github.com/containernetworking/plugins v1.1.1
 	github.com/containers/common v0.48.0
 	github.com/containers/image/v5 v5.21.1
