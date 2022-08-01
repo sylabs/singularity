@@ -12,7 +12,7 @@ require (
 	github.com/containerd/containerd v1.6.6
 	github.com/containernetworking/cni v1.1.2
 	github.com/containernetworking/plugins v1.1.1
-	github.com/containers/common v0.49.0
+	github.com/containers/common v0.49.1
 	github.com/containers/image/v5 v5.22.0
 	github.com/cyphar/filepath-securejoin v0.2.3
 	github.com/docker/docker v20.10.17+incompatible
