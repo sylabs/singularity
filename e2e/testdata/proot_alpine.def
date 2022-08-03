@@ -1,0 +1,16 @@
+bootstrap: library
+from: alpine:3.11.5
+
+%post
+  echo "Running %post as $(id -u)"
+  # We should appear to be root
+  test $(id -u) -eq 0
+  # We should be able to install some software
+  apk add wget
+
+%test
+  echo "Running %post as $(id -u)"
+  # We should not appear to be root
+  test $(id -u) -ne 0
+  # wget was installed
+  wget --version

@@ -33,6 +33,20 @@
 ### New features / functionalities
 
 - Added EL9 package builds to CI for GitHub releases.
+- Non-root users can now build from a definition file, on systems that do not
+  support `--fakeroot`. This requires the statically built `proot` command
+  (<https://proot-me.github.io/>) to be available on the user `PATH`. These builds:
+  - Do not support `arch` / `debootstrap` / `yum` / `zypper` bootstraps. Use
+    `localimage`, `library`, `oras`, or one of the docker/oci sources.
+  - Do not support `%pre` and `%setup` sections.
+  - Run the `%post` sections of a build in the container as an emulated root
+    user.
+  - Run the `%test` section of a build as the non-root user, like `singularity
+    test`.
+  - Are subject to any restrictions imposed in `singularity.conf`.
+  - Incur a performance penalty due to `proot`'s `ptrace` based interception of syscalls.
+  - May fail if the `%post` script requires privileged operations that `proot`
+    cannot emulate.
 
 ### Bug Fixes
 

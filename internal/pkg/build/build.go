@@ -452,6 +452,7 @@ func (b *Build) Full(ctx context.Context) error {
 		}
 
 		// write the build configuration used for %post and %test sections
+		// as a root or non-setuid user.
 		configFile := filepath.Join(stage.b.TmpDir, "singularity.conf")
 		if err := ioutil.WriteFile(configFile, configData, 0o644); err != nil {
 			return fmt.Errorf("while creating %s: %s", configFile, err)

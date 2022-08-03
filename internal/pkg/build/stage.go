@@ -45,7 +45,7 @@ func (s *stage) Assemble(path string) error {
 func (s *stage) runHostScript(name string, script types.Script) error {
 	if s.b.RunSection(name) && script.Script != "" {
 		if syscall.Getuid() != 0 {
-			return fmt.Errorf("attempted to build with scripts as non-root user or without --fakeroot")
+			return fmt.Errorf("%%pre and %%setup scripts are only supported in root user or --fakeroot builds")
 		}
 
 		sRootfs := "SINGULARITY_ROOTFS=" + s.b.RootfsPath
@@ -78,8 +78,21 @@ func (s *stage) runHostScript(name string, script types.Script) error {
 
 func (s *stage) runPostScript(configFile, sessionResolv, sessionHosts string) error {
 	if s.b.Recipe.BuildData.Post.Script != "" {
-		cmdArgs := []string{"-s", "-c", configFile, "exec", "--pwd", "/", "--writable"}
+		useBuildConfig := os.Geteuid() == 0 || buildcfg.SINGULARITY_SUID_INSTALL == 0
+
+		cmdArgs := []string{}
+		if useBuildConfig {
+			cmdArgs = append(cmdArgs, "-c", configFile)
+		}
+
+		cmdArgs = append(cmdArgs, "-s", "exec", "--pwd", "/", "--writable")
 		cmdArgs = append(cmdArgs, "--cleanenv", "--env", sEnvironment, "--env", sLabels)
+
+		// As non-root, non-fakeroot we must use the system config, subtracting any
+		// bind path, home, and devpts mounts.
+		if !useBuildConfig {
+			cmdArgs = append(cmdArgs, "--no-mount", "bind-paths,home,devpts")
+		}
 
 		if sessionResolv != "" {
 			cmdArgs = append(cmdArgs, "-B", sessionResolv+":/etc/resolv.conf")
@@ -100,15 +113,20 @@ func (s *stage) runPostScript(configFile, sessionResolv, sessionHosts string) er
 			return fmt.Errorf("while processing section %%post arguments: %s", err)
 		}
 
-		exe := filepath.Join(buildcfg.BINDIR, "singularity")
-
 		cmdArgs = append(cmdArgs, s.b.RootfsPath)
+
+		if os.Getenv("SINGULARITY_PROOT") != "" {
+			cmdArgs = append(cmdArgs, "/.singularity.d/libs/proot", "-0")
+		}
+
 		cmdArgs = append(cmdArgs, args...)
+
+		exe := filepath.Join(buildcfg.BINDIR, "singularity")
 		cmd := exec.Command(exe, cmdArgs...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Dir = "/"
-		cmd.Env = currentEnvNoSingularity([]string{"DEBUG", "NV", "NVCCLI", "ROCM", "BINDPATH", "MOUNT"})
+		cmd.Env = currentEnvNoSingularity([]string{"DEBUG", "NV", "NVCCLI", "ROCM", "BINDPATH", "MOUNT", "PROOT"})
 
 		sylog.Infof("Running post scriptlet")
 		return cmd.Run()
@@ -118,7 +136,20 @@ func (s *stage) runPostScript(configFile, sessionResolv, sessionHosts string) er
 
 func (s *stage) runTestScript(configFile, sessionResolv, sessionHosts string) error {
 	if !s.b.Opts.NoTest && s.b.Recipe.BuildData.Test.Script != "" {
-		cmdArgs := []string{"-s", "-c", configFile, "test", "--pwd", "/"}
+		useBuildConfig := os.Geteuid() == 0 || buildcfg.SINGULARITY_SUID_INSTALL == 0
+
+		cmdArgs := []string{}
+		if useBuildConfig {
+			cmdArgs = append(cmdArgs, "-c", configFile)
+		}
+
+		cmdArgs = append(cmdArgs, "-s", "test", "--pwd", "/")
+
+		// As non-root, non-fakeroot we must use the system config, subtracting any
+		// bind path, home, and devpts mounts.
+		if !useBuildConfig {
+			cmdArgs = append(cmdArgs, "--no-mount", "bind-paths,home,devpts")
+		}
 
 		if sessionResolv != "" {
 			cmdArgs = append(cmdArgs, "-B", sessionResolv+":/etc/resolv.conf")
@@ -127,14 +158,14 @@ func (s *stage) runTestScript(configFile, sessionResolv, sessionHosts string) er
 			cmdArgs = append(cmdArgs, "-B", sessionHosts+":/etc/hosts")
 		}
 
-		exe := filepath.Join(buildcfg.BINDIR, "singularity")
-
 		cmdArgs = append(cmdArgs, s.b.RootfsPath)
+
+		exe := filepath.Join(buildcfg.BINDIR, "singularity")
 		cmd := exec.Command(exe, cmdArgs...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Dir = "/"
-		cmd.Env = currentEnvNoSingularity([]string{"DEBUG", "NV", "NVCCLI", "ROCM", "BINDPATH", "MOUNT", "WRITABLE_TMPFS"})
+		cmd.Env = currentEnvNoSingularity([]string{"DEBUG", "NV", "NVCCLI", "ROCM", "BINDPATH", "MOUNT", "WRITABLE_TMPFS", "PROOT"})
 
 		sylog.Infof("Running testscript")
 		return cmd.Run()

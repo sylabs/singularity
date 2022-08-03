@@ -7,3 +7,7 @@ From: alpine:3.11.5
 %post
     echo "Hello from inside the container"
     echo "Install additional software here"
+
+%test
+    echo "Hello from the test script"
+
