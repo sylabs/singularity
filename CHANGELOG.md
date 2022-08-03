@@ -24,20 +24,34 @@
 - Support for `DOCKER_HOST` parsing when using `docker-daemon://`
 - `DOCKER_USERNAME` and `DOCKER_PASSWORD` supported without `SINGULARITY_` prefix.
 - The `--no-mount` flag now accepts the value `bind-paths` to disable mounting of
-  all `bind path` entries in `singularity.conf.
-- Debug output can now be enabled by setting the `SINGULARITY_DEBUG` env var.
-- Debug output is now shown for nested `singularity` calls, in wrapped
-  `unsquashfs` image extraction, and build stages.
+  all `bind path` entries in `singularity.conf`.
 - Instances started by a non-root user can use `--apply-cgroups` to apply
   resource limits. Requires cgroups v2, and delegation configured via systemd.
+
+## 3.10.2 \[2022-07-25\]
+
+### New features / functionalities
+
 - Added EL9 package builds to CI for GitHub releases.
 
 ### Bug Fixes
 
-- Fix compilation on `mipsel`.
+- Ensure no empty `if` branch is present in generated OCI image runscripts.
+  Would prevent execution of container by other tools that are not using
+  mvdan.cc/sh.
+
+## 3.10.1 \[2022-07-18\]
+
+### New features / functionalities
+
+- Debug output can now be enabled by setting the `SINGULARITY_DEBUG` env var.
+- Debug output is now shown for nested `singularity` calls, in wrapped
+  `unsquashfs` image extraction, and build stages.
+
+### Bug Fixes
+
 - Fix test code that implied `%test -c <shell>` was supported - it is not.
-- Ensure no empty `if` branch is present in generated OCI image runscripts. Would
-  prevent execution of container by other tools that are not using mvdan.cc/sh.
+- Fix compilation on `mipsel`.
 
 ## 3.10.0 \[2022-05-17\]
 
@@ -163,7 +177,7 @@
   environment processing. Fixes regression in v3.9.2.
 - Remove subshell overhead when processing large environments on container
   startup.
-  
+
 ## v3.9.4 \[2022-01-19\]
 
 ### Bug fixes
