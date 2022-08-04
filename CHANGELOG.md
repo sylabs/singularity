@@ -27,12 +27,6 @@
   all `bind path` entries in `singularity.conf`.
 - Instances started by a non-root user can use `--apply-cgroups` to apply
   resource limits. Requires cgroups v2, and delegation configured via systemd.
-
-## 3.10.2 \[2022-07-25\]
-
-### New features / functionalities
-
-- Added EL9 package builds to CI for GitHub releases.
 - Non-root users can now build from a definition file, on systems that do not
   support `--fakeroot`. This requires the statically built `proot` command
   (<https://proot-me.github.io/>) to be available on the user `PATH`. These builds:
@@ -47,6 +41,12 @@
   - Incur a performance penalty due to `proot`'s `ptrace` based interception of syscalls.
   - May fail if the `%post` script requires privileged operations that `proot`
     cannot emulate.
+
+## 3.10.2 \[2022-07-25\]
+
+### New features / functionalities
+
+- Added EL9 package builds to CI for GitHub releases.
 
 ### Bug Fixes
 
