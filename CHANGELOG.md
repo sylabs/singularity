@@ -42,6 +42,11 @@
   - May fail if the `%post` script requires privileged operations that `proot`
     cannot emulate.
 
+### Bug Fixes
+
+- Ensure bootstrap_history directory is populated with previous definition files,
+  present in source containers used in a build
+
 ## 3.10.2 \[2022-07-25\]
 
 ### New features / functionalities
