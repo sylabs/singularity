@@ -371,6 +371,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/ProtonMail/go-crypto/blob/master/LICENSE>
 
+## github.com/cloudflare/circl
+
+**License:** BSD-3-Clause
+
+**License URL:** <https://github.com/cloudflare/circl/blob/master/LICENSE>
+
 ## github.com/cyphar/filepath-securejoin
 
 **License:** BSD-3-Clause
