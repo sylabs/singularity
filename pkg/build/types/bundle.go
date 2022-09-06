@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -149,7 +149,6 @@ func cleanupDir(path string) {
 // newBundle creates a minimum bundle with root filesystem in parentPath.
 // Any temporary files created during build process will be in tempDir/bundle-temp-*
 // directory, that will be cleaned up after successful build.
-
 //
 // TODO: much of the logic in this func should likely be re-factored to func newBuild in the
 // internal/pkg/build package, since it is the sole caller and has conditional logic which depends

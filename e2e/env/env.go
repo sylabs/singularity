@@ -471,9 +471,8 @@ func (c ctx) singularityEnvFile(t *testing.T) {
 // shell script that injects them. With --no-eval it should match Docker, with
 // no evaluation:
 //
-//   WHO='$(id -u)' docker run -it --env WHO --rm alpine sh -c 'echo $WHO'
-//   $(id -u)
-//
+//	WHO='$(id -u)' docker run -it --env WHO --rm alpine sh -c 'echo $WHO'
+//	$(id -u)
 func (c ctx) singularityEnvEval(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
