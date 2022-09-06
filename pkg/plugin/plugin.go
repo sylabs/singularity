@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the URIs of this project regarding your
 // rights to use or distribute this software.
@@ -22,28 +22,28 @@ const PluginSymbol = "Plugin"
 //
 // An example of how this will look from the plugin main package:
 //
-//     package main
+//	package main
 //
-//     import (
-//             clicallback "github.com/sylabs/singularity/pkg/callback/cli"
-//	           pluginapi "github.com/sylabs/singularity/pkg/plugin"
-//     )
+//	import (
+//	    clicallback "github.com/sylabs/singularity/pkg/callback/cli"
+//	    pluginapi "github.com/sylabs/singularity/pkg/plugin"
+//	)
 //
-//     var Plugin = pluginapi.Plugin{
-//             Manifest: pluginapi.Manifest{
-//                     Name:        "PluginExample",
-//                     Author:      "Sylabs Team",
-//                     Version:     "v0.0.1",
-//                     Description: "This is an example plugin",
-//             },
-//             Callbacks: []pluginapi.Callback{
-//				       (clicallback.Command)(callbackRegisterCmd),
-//             },
-//     }
+//	var Plugin = pluginapi.Plugin{
+//	    Manifest: pluginapi.Manifest{
+//	        Name:        "PluginExample",
+//	        Author:      "Sylabs Team",
+//	        Version:     "v0.0.1",
+//	        Description: "This is an example plugin",
+//	    },
+//	    Callbacks: []pluginapi.Callback{
+//	        (clicallback.Command)(callbackRegisterCmd),
+//	    },
+//	}
 //
-//     func callbackRegisterCmd(manager *cmdline.CommandManager) {
-//             // Do command registration
-//     }
+//	func callbackRegisterCmd(manager *cmdline.CommandManager) {
+//	    // Do command registration
+//	}
 type Plugin struct {
 	// Manifest contains the plugin manifest holding
 	// basic information about the plugin.

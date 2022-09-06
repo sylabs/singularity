@@ -473,6 +473,7 @@ func ExpectExit(code int, resultOps ...SingularityCmdResultOp) SingularityCmdOp 
 // cmdPath specifies the path to the singularity binary and cmdOps
 // provides a list of operations to be executed before or after running
 // the command.
+//
 //nolint:maintidx
 func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 	t.Helper()

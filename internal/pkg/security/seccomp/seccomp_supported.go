@@ -82,7 +82,6 @@ func hasConditionSupport() bool {
 // like SCMP_ACT_ERRNO and SCMP_ACT_TRACE allow to specify the errno code to
 // return. When the action doesn't support an errno, the runtime MUST print and
 // error and fail. If not specified then its default value is EPERM
-//
 func getDefaultErrno(config *specs.LinuxSeccomp) (errnoRet *uint, err error) {
 	// If there is no attempt to explicitly set a defaultErrnoRet then a default
 	// or explicit ERRNO/TRACE action should return EPERM.
