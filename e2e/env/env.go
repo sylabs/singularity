@@ -9,7 +9,6 @@
 package singularityenv
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -418,7 +417,7 @@ func (c ctx) singularityEnvFile(t *testing.T) {
 			args = append(args, "--env", strings.Join(tt.envOpt, ","))
 		}
 		if tt.envFile != "" {
-			ioutil.WriteFile(p, []byte(tt.envFile), 0o644)
+			os.WriteFile(p, []byte(tt.envFile), 0o644)
 			args = append(args, "--env-file", p)
 		}
 		args = append(args, tt.image, "/bin/sh", "-c", "echo $"+tt.matchEnv)

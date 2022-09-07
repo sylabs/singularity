@@ -14,7 +14,6 @@ import (
 	"debug/elf"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -223,7 +222,7 @@ func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, filte
 		if err := os.MkdirAll(rootfsDir, 0o700); err != nil {
 			return nil, fmt.Errorf("while creating %s: %s", rootfsDir, err)
 		}
-		if err := ioutil.WriteFile(rootfsFile, []byte(""), 0o600); err != nil {
+		if err := os.WriteFile(rootfsFile, []byte(""), 0o600); err != nil {
 			return nil, fmt.Errorf("while creating %s: %s", rootfsFile, err)
 		}
 		// Simple read-only bind, dest in container same as source on host
@@ -239,7 +238,7 @@ func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, filte
 		if err := os.MkdirAll(rootfsDir, 0o700); err != nil {
 			return nil, fmt.Errorf("while creating %s: %s", rootfsDir, err)
 		}
-		if err := ioutil.WriteFile(rootfsFile, []byte(""), 0o600); err != nil {
+		if err := os.WriteFile(rootfsFile, []byte(""), 0o600); err != nil {
 			return nil, fmt.Errorf("while creating %s: %s", rootfsFile, err)
 		}
 		// Read only bind, dest in container may not match source on host due

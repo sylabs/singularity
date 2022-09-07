@@ -7,7 +7,6 @@ package bin
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
@@ -170,7 +169,7 @@ func TestFindFromConfigOrPath(t *testing.T) {
 			defer os.Remove(f.Name())
 
 			cfg := fmt.Sprintf("%s = %s\n", tc.configKey, tc.configVal)
-			ioutil.WriteFile(f.Name(), []byte(cfg), 0o644)
+			os.WriteFile(f.Name(), []byte(cfg), 0o644)
 
 			conf, err := singularityconf.Parse(f.Name())
 			if err != nil {
@@ -305,7 +304,7 @@ func TestFindFromConfigOnly(t *testing.T) {
 			defer os.Remove(f.Name())
 
 			cfg := fmt.Sprintf("%s = %s\n", tc.configKey, tc.configVal)
-			ioutil.WriteFile(f.Name(), []byte(cfg), 0o644)
+			os.WriteFile(f.Name(), []byte(cfg), 0o644)
 
 			conf, err := singularityconf.Parse(f.Name())
 			if err != nil {

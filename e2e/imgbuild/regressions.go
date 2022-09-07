@@ -6,7 +6,6 @@
 package imgbuild
 
 import (
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -203,7 +202,7 @@ func (c *imgBuildTests) issue5166(t *testing.T) {
 	sensibleDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "sensible-dir-", "")
 
 	secret := filepath.Join(sensibleDir, "secret")
-	if err := ioutil.WriteFile(secret, []byte("secret"), 0o644); err != nil {
+	if err := os.WriteFile(secret, []byte("secret"), 0o644); err != nil {
 		t.Fatalf("could not create %s: %s", secret, err)
 	}
 
