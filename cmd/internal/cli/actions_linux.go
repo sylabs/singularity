@@ -696,7 +696,7 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, name stri
 			"SINGULARITY_IMAGE="+engineConfig.GetImage(),
 		)
 
-		content, err := ioutil.ReadFile(SingularityEnvFile)
+		content, err := os.ReadFile(SingularityEnvFile)
 		if err != nil {
 			sylog.Fatalf("Could not read %q environment file: %s", SingularityEnvFile, err)
 		}

@@ -1515,7 +1515,7 @@ func (c actionTests) fuseMount(t *testing.T) {
 			if t.Failed() {
 				return
 			}
-			content, err := ioutil.ReadFile(rootPrivKey)
+			content, err := os.ReadFile(rootPrivKey)
 			if err != nil {
 				t.Errorf("could not read ssh private key: %s", err)
 				return

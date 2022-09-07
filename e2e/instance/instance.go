@@ -231,7 +231,7 @@ func (c *ctx) testGhostInstance(t *testing.T) {
 			t.Fatalf("instance %s failed to start correctly", instanceName)
 		}
 
-		d, err := ioutil.ReadFile(pidfile)
+		d, err := os.ReadFile(pidfile)
 		if err != nil {
 			t.Fatalf("failed to read pid file: %s", err)
 		}

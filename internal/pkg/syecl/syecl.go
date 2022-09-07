@@ -56,7 +56,7 @@ type Execgroup struct {
 // LoadConfig opens an ECL config file and unmarshals it into structures
 func LoadConfig(confPath string) (ecl EclConfig, err error) {
 	// read in the ECL config file
-	b, err := ioutil.ReadFile(confPath)
+	b, err := os.ReadFile(confPath)
 	if err != nil {
 		return
 	}

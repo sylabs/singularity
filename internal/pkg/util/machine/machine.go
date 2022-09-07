@@ -13,7 +13,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -239,7 +238,7 @@ func canEmulate(arch string) bool {
 	}
 
 	// look at /proc/sys/fs/binfmt_misc
-	content, _ := ioutil.ReadFile(filepath.Join(binfmtMisc, "status"))
+	content, _ := os.ReadFile(filepath.Join(binfmtMisc, "status"))
 	if string(content) != "enabled\n" {
 		return false
 	}
@@ -253,7 +252,7 @@ func canEmulate(arch string) bool {
 
 	for _, fi := range infos {
 		f := filepath.Join(binfmtMisc, fi.Name())
-		b, err := ioutil.ReadFile(f)
+		b, err := os.ReadFile(f)
 		if err != nil {
 			continue
 		}
