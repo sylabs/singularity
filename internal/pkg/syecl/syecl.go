@@ -14,7 +14,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -73,7 +72,7 @@ func PutConfig(ecl EclConfig, confPath string) (err error) {
 		return
 	}
 
-	return ioutil.WriteFile(confPath, data, 0o644)
+	return os.WriteFile(confPath, data, 0o644)
 }
 
 // ValidateConfig makes sure paths from configs are fully resolved and that

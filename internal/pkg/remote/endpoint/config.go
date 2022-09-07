@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,7 +9,6 @@ package endpoint
 import (
 	"errors"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -114,5 +113,5 @@ func updateCachedConfig(uri string, data []byte) {
 		return
 	}
 	config := filepath.Join(dir, uri+".json")
-	ioutil.WriteFile(config, data, 0o600)
+	os.WriteFile(config, data, 0o600)
 }

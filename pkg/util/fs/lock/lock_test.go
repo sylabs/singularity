@@ -6,7 +6,6 @@
 package lock
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -66,7 +65,7 @@ func TestByteRange(t *testing.T) {
 	f.Close()
 
 	// write some content in test file
-	if err := ioutil.WriteFile(testFile, []byte("testing\n"), 0o644); err != nil {
+	if err := os.WriteFile(testFile, []byte("testing\n"), 0o644); err != nil {
 		t.Fatalf("failed to write content in testfile %s: %s", testFile, err)
 	}
 

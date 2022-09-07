@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,6 @@
 package e2e
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -131,12 +130,12 @@ func SetupHomeDirectories(t *testing.T) {
 
 		// create .rpmmacros files for yum bootstrap builds
 		macrosFile := filepath.Join(unprivSessionHome, ".rpmmacros")
-		if err := ioutil.WriteFile(macrosFile, []byte(rpmMacrosContent), 0o444); err != nil {
+		if err := os.WriteFile(macrosFile, []byte(rpmMacrosContent), 0o444); err != nil {
 			err = errors.Wrapf(err, "writing macros file at %s", macrosFile)
 			t.Fatalf("could not write macros file: %+v", err)
 		}
 		macrosFile = filepath.Join(privSessionHome, ".rpmmacros")
-		if err := ioutil.WriteFile(macrosFile, []byte(rpmMacrosContent), 0o444); err != nil {
+		if err := os.WriteFile(macrosFile, []byte(rpmMacrosContent), 0o444); err != nil {
 			err = errors.Wrapf(err, "writing macros file at %s", macrosFile)
 			t.Fatalf("could not write macros file: %+v", err)
 		}

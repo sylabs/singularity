@@ -7,7 +7,6 @@ package fs
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -498,7 +497,7 @@ func testCopyFileFunc(t *testing.T, fn copyFileFunc) {
 	defer os.RemoveAll(tmpDir)
 
 	source := filepath.Join(tmpDir, "source")
-	err = ioutil.WriteFile(source, testData, 0o644)
+	err = os.WriteFile(source, testData, 0o644)
 	if err != nil {
 		t.Fatalf("failed to create test source file: %v", err)
 	}

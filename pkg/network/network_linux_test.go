@@ -11,7 +11,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -611,7 +610,7 @@ func TestMain(m *testing.M) {
 	for _, conf := range confFiles {
 		testNetworks = append(testNetworks, conf.name)
 		path := filepath.Join(defaultCNIConfPath, conf.file)
-		if err := ioutil.WriteFile(path, []byte(conf.content), 0o644); err != nil {
+		if err := os.WriteFile(path, []byte(conf.content), 0o644); err != nil {
 			os.RemoveAll(defaultCNIConfPath)
 			os.Exit(1)
 		}

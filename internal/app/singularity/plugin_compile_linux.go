@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -71,7 +70,7 @@ func checkGoVersion(goPath string) error {
 	defer os.RemoveAll(tmpDir)
 
 	path := filepath.Join(tmpDir, "rt_version.go")
-	if err := ioutil.WriteFile(path, []byte(goVersionFile), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte(goVersionFile), 0o600); err != nil {
 		return fmt.Errorf("while writing go file %s: %s", path, err)
 	}
 	defer os.Remove(path)

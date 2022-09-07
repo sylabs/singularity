@@ -7,7 +7,6 @@ package docker
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -95,7 +94,7 @@ func (c ctx) issue5172(t *testing.T) {
 	// add our test registry as insecure and test build/pull
 	b := new(bytes.Buffer)
 	b.WriteString("[registries.insecure]\nregistries = ['localhost']")
-	if err := ioutil.WriteFile(regFile, b.Bytes(), 0o644); err != nil {
+	if err := os.WriteFile(regFile, b.Bytes(), 0o644); err != nil {
 		t.Fatalf("can't create %s: %s", regFile, err)
 	}
 	defer os.RemoveAll(regDir)

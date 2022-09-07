@@ -6,7 +6,6 @@
 package archive
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -38,7 +37,7 @@ func testCopyWithTar(t *testing.T) {
 
 	// Source Files
 	srcFile := filepath.Join(srcRoot, "srcFile")
-	if err := ioutil.WriteFile(srcFile, []byte("test"), 0o644); err != nil {
+	if err := os.WriteFile(srcFile, []byte("test"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs

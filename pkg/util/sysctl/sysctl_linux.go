@@ -7,7 +7,6 @@ package sysctl
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -53,5 +52,5 @@ func Set(key string, value string) error {
 		return fmt.Errorf("can't retrieve key %s: %s", key, err)
 	}
 
-	return ioutil.WriteFile(path, []byte(value), 0o000)
+	return os.WriteFile(path, []byte(value), 0o000)
 }

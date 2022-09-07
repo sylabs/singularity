@@ -7,7 +7,6 @@ package cgroups
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -216,7 +215,7 @@ func SaveConfig(config Config, confPath string) (err error) {
 		return
 	}
 
-	return ioutil.WriteFile(confPath, data, 0o600)
+	return os.WriteFile(confPath, data, 0o600)
 }
 
 // LoadResources loads a cgroups config file into a LinuxResources struct
