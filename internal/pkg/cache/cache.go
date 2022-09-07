@@ -9,7 +9,6 @@ package cache
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -161,7 +160,7 @@ func (h *Handle) GetEntry(cacheType string, hash string) (e *Entry, err error) {
 func (h *Handle) CleanCache(cacheType string, dryRun bool, days int) (err error) {
 	dir := h.getCacheTypeDir(cacheType)
 
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if (err != nil && os.IsNotExist(err)) || len(files) == 0 {
 		sylog.Infof("No cached files to remove at %s", dir)
 		return nil
@@ -169,9 +168,15 @@ func (h *Handle) CleanCache(cacheType string, dryRun bool, days int) (err error)
 
 	errCount := 0
 	for _, f := range files {
-
 		if days >= 0 {
-			if time.Since(f.ModTime()) < time.Duration(days*24)*time.Hour {
+			fi, err := f.Info()
+			if err != nil {
+				sylog.Errorf("Could not get info for cache entry '%s': %v", f.Name(), err)
+				errCount = errCount + 1
+				continue
+			}
+
+			if time.Since(fi.ModTime()) < time.Duration(days*24)*time.Hour {
 				sylog.Debugf("Skipping %s: less that %d days old", f.Name(), days)
 				continue
 			}

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,7 +7,6 @@ package singularity
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,7 +27,7 @@ func listTypeCache(printList bool, name, cachePath string) (int, int64, error) {
 		return 0, 0, fmt.Errorf("unable to open cache %s at directory %s: %v", name, cachePath, err)
 	}
 
-	cacheEntries, err := ioutil.ReadDir(cachePath)
+	cacheEntries, err := os.ReadDir(cachePath)
 	if err != nil {
 		return 0, 0, fmt.Errorf("unable to open cache %s at directory %s: %v", name, cachePath, err)
 	}
@@ -36,15 +35,19 @@ func listTypeCache(printList bool, name, cachePath string) (int, int64, error) {
 	var totalSize int64
 
 	for _, entry := range cacheEntries {
+		fi, err := entry.Info()
+		if err != nil {
+			return 0, 0, fmt.Errorf("unable to get info for cache entry %s: %v", entry.Name(), err)
+		}
 
 		if printList {
 			fmt.Printf("%-24.22s %-22s %-16s %s\n",
 				entry.Name(),
-				entry.ModTime().Format("2006-01-02 15:04:05"),
-				fs.FindSize(entry.Size()),
+				fi.ModTime().Format("2006-01-02 15:04:05"),
+				fs.FindSize(fi.Size()),
 				name)
 		}
-		totalSize += entry.Size()
+		totalSize += fi.Size()
 	}
 
 	return len(cacheEntries), totalSize, nil

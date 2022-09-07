@@ -181,7 +181,7 @@ func insertDefinition(b *types.Bundle) error {
 		}
 
 		// look at number of files in bootstrap_history to give correct file name
-		files, err := ioutil.ReadDir(filepath.Join(b.RootfsPath, "/.singularity.d/bootstrap_history"))
+		files, err := os.ReadDir(filepath.Join(b.RootfsPath, "/.singularity.d/bootstrap_history"))
 		if err != nil {
 			return err
 		}
