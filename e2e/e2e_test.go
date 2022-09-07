@@ -8,7 +8,7 @@
 package e2e
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"os"
 	"testing"
@@ -35,7 +35,7 @@ func TestE2E(t *testing.T) {
 		log.SetOutput(logFile)
 		log.Println("List of commands called by E2E")
 	} else {
-		log.SetOutput(ioutil.Discard)
+		log.SetOutput(io.Discard)
 	}
 
 	RunE2ETests(t)
