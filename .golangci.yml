@@ -9,6 +9,8 @@ run:
     - selinux
     - singularity_engine
     - sylog
+  skip-files:
+    - "internal/pkg/util/user/cgo_lookup_unix.go"
 
 linters:
   disable-all: true
