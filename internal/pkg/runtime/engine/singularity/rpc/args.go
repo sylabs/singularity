@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,6 +7,7 @@ package rpc
 
 import (
 	"encoding/gob"
+	"io/fs"
 	"os"
 	"syscall"
 	"time"
@@ -97,7 +98,7 @@ type ReadDirArgs struct {
 
 // ReadDirReply defines the reply for readdir.
 type ReadDirReply struct {
-	Files []os.FileInfo
+	Files []fs.DirEntry
 }
 
 // ChownArgs defines the arguments to chown/lchown.
@@ -184,9 +185,35 @@ func (fi fileInfo) Sys() interface{} {
 	return fi.Sy
 }
 
+// DirEntry returns DirEntry interface to be passed as RPC argument.
+func DirEntry(en fs.DirEntry) (fs.DirEntry, error) {
+	fi, err := en.Info()
+	if err != nil {
+		return nil, err
+	}
+
+	return &dirEntry{
+		name: en.Name(),
+		mode: en.Type(),
+		info: FileInfo(fi),
+	}, nil
+}
+
+type dirEntry struct {
+	name string
+	mode fs.FileMode
+	info fs.FileInfo
+}
+
+func (en dirEntry) Name() string               { return en.name }
+func (en dirEntry) IsDir() bool                { return en.mode.IsDir() }
+func (en dirEntry) Type() fs.FileMode          { return en.mode }
+func (en dirEntry) Info() (fs.FileInfo, error) { return en.info, nil }
+
 func init() {
 	gob.Register(syscall.Errno(0))
 	gob.Register((*fileInfo)(nil))
+	gob.Register((*dirEntry)(nil))
 	gob.Register((*syscall.Stat_t)(nil))
 	gob.Register((*os.PathError)(nil))
 	gob.Register((*os.SyscallError)(nil))
