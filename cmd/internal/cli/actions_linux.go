@@ -250,6 +250,7 @@ func setNoMountFlags(c *singularityConfig.EngineConfig) {
 }
 
 // TODO: Let's stick this in another file so that that CLI is just CLI
+//
 //nolint:maintidx
 func execStarter(cobraCmd *cobra.Command, image string, args []string, name string) {
 	var err error

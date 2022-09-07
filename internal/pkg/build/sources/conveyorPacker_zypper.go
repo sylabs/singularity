@@ -50,6 +50,7 @@ func machine() (string, error) {
 }
 
 // Get downloads container information from the specified source
+//
 //nolint:maintidx
 func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err error) {
 	var suseconnectProduct, suseconnectModver string

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -291,12 +291,12 @@ func New(cfg Config) (h *Handle, err error) {
 // getCacheParentDir figures out where the parent directory of the cache is.
 //
 // Singularity makes the following assumptions:
-// - the default location for caches is specified by RootDefault
-// - a user can specify the environment variable specified by DirEnv to
-//   change the location
-// - a user can change the location of a cache at any time
-// - but in the context of a Singularity command, the cache location
-//   cannot change once the command starts executing
+//   - the default location for caches is specified by RootDefault
+//   - a user can specify the environment variable specified by DirEnv to
+//     change the location
+//   - a user can change the location of a cache at any time
+//   - but in the context of a Singularity command, the cache location
+//     cannot change once the command starts executing
 func getCacheParentDir() string {
 	// If the user defined the special environment variable, we use its value
 	// as base directory.

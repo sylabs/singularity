@@ -13,10 +13,6 @@
 // We need full gecos content so the only way to do so is to call C ourselves.
 // User and Group types are taken from this package rather then from os/user.
 
-// Do not lint this file in order to keep it as close as possible to the
-// original, even if the original has linter issues.
-
-//nolint
 package user
 
 import (

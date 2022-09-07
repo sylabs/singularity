@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -91,11 +91,12 @@ func GetName(uri string) string {
 // This can be tricky if there is no type but a file name contains a colon.
 //
 // Examples:
-//   docker://ubuntu -> docker, //ubuntu
-//   docker://ubuntu:18.04 -> docker, //ubuntu:18.04
-//   oci-archive:path/to/archive -> oci-archive, path/to/archive
-//   ubuntu -> "", ubuntu
-//   ubuntu:18.04.img -> "", ubuntu:18.04.img
+//
+//	docker://ubuntu -> docker, //ubuntu
+//	docker://ubuntu:18.04 -> docker, //ubuntu:18.04
+//	oci-archive:path/to/archive -> oci-archive, path/to/archive
+//	ubuntu -> "", ubuntu
+//	ubuntu:18.04.img -> "", ubuntu:18.04.img
 func Split(uri string) (transport string, ref string) {
 	uriSplit := strings.SplitN(uri, ":", 2)
 	if len(uriSplit) == 1 {
