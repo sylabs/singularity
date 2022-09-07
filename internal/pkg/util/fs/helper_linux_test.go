@@ -552,7 +552,7 @@ func testCopyFileFunc(t *testing.T, fn copyFileFunc) {
 			}
 
 			if tc.expectError == "" {
-				actual, err := ioutil.ReadFile(tc.to)
+				actual, err := os.ReadFile(tc.to)
 				if err != nil {
 					t.Fatalf("could not read copied file: %v", err)
 				}

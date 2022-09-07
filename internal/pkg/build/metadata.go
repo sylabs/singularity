@@ -215,7 +215,7 @@ func insertLabelsJSON(b *types.Bundle) (err error) {
 
 	// get labels added through SINGULARITY_LABELS environment variables
 	buildLabels := filepath.Join(b.RootfsPath, sLabelsPath)
-	content, err := ioutil.ReadFile(buildLabels)
+	content, err := os.ReadFile(buildLabels)
 	if err == nil {
 		if err := os.Remove(filepath.Join(b.RootfsPath, sLabelsPath)); err != nil {
 			return err

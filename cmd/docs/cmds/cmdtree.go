@@ -95,7 +95,7 @@ func checkCmd(sCmd string, e2eCmds string, resultFile *os.File, verbose bool) er
 }
 
 func loadData(singularityCmdsFile, e2eCmdsFile string) (string, string, error) {
-	e2eData, err := ioutil.ReadFile(e2eCmdsFile)
+	e2eData, err := os.ReadFile(e2eCmdsFile)
 	if err != nil {
 		return "", "", err
 	}
@@ -107,7 +107,7 @@ func loadData(singularityCmdsFile, e2eCmdsFile string) (string, string, error) {
 	e2eCmds = strings.ReplaceAll(e2eCmds, "singularity --debug", "singularity")
 	e2eCmds = strings.ReplaceAll(e2eCmds, "singularity -d", "singularity")
 
-	singularityData, err := ioutil.ReadFile(singularityCmdsFile)
+	singularityData, err := os.ReadFile(singularityCmdsFile)
 	if err != nil {
 		return "", "", err
 	}

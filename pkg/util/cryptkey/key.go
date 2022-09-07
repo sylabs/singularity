@@ -16,7 +16,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/sylabs/sif/v2/pkg/sif"
@@ -141,7 +140,7 @@ func PlaintextKey(k KeyInfo, image string) ([]byte, error) {
 }
 
 func LoadPEMPrivateKey(fn string) (*rsa.PrivateKey, error) {
-	b, err := ioutil.ReadFile(fn)
+	b, err := os.ReadFile(fn)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +154,7 @@ func LoadPEMPrivateKey(fn string) (*rsa.PrivateKey, error) {
 }
 
 func LoadPEMPublicKey(fn string) (*rsa.PublicKey, error) {
-	b, err := ioutil.ReadFile(fn)
+	b, err := os.ReadFile(fn)
 	if err != nil {
 		return nil, err
 	}

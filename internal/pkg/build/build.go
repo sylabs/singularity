@@ -264,7 +264,7 @@ func ensureGzipComp(tmpdir, mksquashfsPath string) (bool, error) {
 		return false, fmt.Errorf("while creating squashfs: %v", err)
 	}
 
-	content, err := ioutil.ReadFile(f.Name())
+	content, err := os.ReadFile(f.Name())
 	if err != nil {
 		return false, fmt.Errorf("while reading test squashfs: %v", err)
 	}
@@ -286,7 +286,7 @@ func ensureGzipComp(tmpdir, mksquashfsPath string) (bool, error) {
 		return false, fmt.Errorf("could not build squashfs with required gzip compression")
 	}
 
-	content, err = ioutil.ReadFile(f.Name())
+	content, err = os.ReadFile(f.Name())
 	if err != nil {
 		return false, fmt.Errorf("while reading test squashfs: %v", err)
 	}

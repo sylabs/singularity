@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -197,7 +196,7 @@ func CgroupsV2Delegated(t *testing.T, controller string) {
 
 	delegatePath := filepath.Join("/sys/fs/cgroup", cgPath, "cgroup.controllers")
 
-	data, err := ioutil.ReadFile(delegatePath)
+	data, err := os.ReadFile(delegatePath)
 	if err != nil {
 		t.Skipf("while reading delegation file: %s", err)
 	}

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,7 +8,6 @@ package namespaces
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -49,7 +48,7 @@ func IsInsideUserNamespace(pid int) (bool, bool) {
 		insideUserNs = true
 
 		// should not fail if open call passed
-		d, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/setgroups", pid))
+		d, err := os.ReadFile(fmt.Sprintf("/proc/%d/setgroups", pid))
 		if err != nil {
 			return insideUserNs, setgroupsAllowed
 		}
