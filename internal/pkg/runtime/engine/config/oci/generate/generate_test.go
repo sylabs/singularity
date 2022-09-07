@@ -7,7 +7,6 @@ package generate
 
 import (
 	"io"
-	"io/ioutil"
 	"reflect"
 	"sync"
 	"testing"
@@ -202,7 +201,7 @@ func TestSave(t *testing.T) {
 		defer r.Close()
 		defer wg.Done()
 
-		d, err := ioutil.ReadAll(r)
+		d, err := io.ReadAll(r)
 		if err != nil {
 			t.Errorf("while reading pipe: %s", err)
 			return

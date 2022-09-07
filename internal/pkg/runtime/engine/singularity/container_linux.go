@@ -8,7 +8,7 @@ package singularity
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -2210,7 +2210,7 @@ func (c *container) addResolvConfMount(system *mount.System) error {
 			if err != nil {
 				return err
 			}
-			content, err = ioutil.ReadAll(r)
+			content, err = io.ReadAll(r)
 			r.Close()
 			if err != nil {
 				return err

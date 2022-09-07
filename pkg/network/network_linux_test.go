@@ -486,7 +486,7 @@ func testHTTPPortmap(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdo
 	}
 	conn.Close()
 
-	received, err := ioutil.ReadAll(stdout)
+	received, err := io.ReadAll(stdout)
 	if err != nil {
 		return err
 	}
