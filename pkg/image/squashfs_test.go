@@ -7,7 +7,6 @@ package image
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
@@ -16,7 +15,7 @@ import (
 // createSquashfs creates a small but valid squashfs file that can be used
 // with an image.
 func createSquashfs(t *testing.T) string {
-	sqshFile, fileErr := ioutil.TempFile("", "")
+	sqshFile, fileErr := os.CreateTemp("", "")
 	if fileErr != nil {
 		t.Fatalf("impossible to create temporary file: %s\n", fileErr)
 	}

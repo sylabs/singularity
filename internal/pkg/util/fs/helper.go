@@ -8,7 +8,6 @@ package fs
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -294,7 +293,7 @@ func MakeTmpDir(basedir, pattern string, mode os.FileMode) (string, error) {
 // basedir exists, so it's the caller's responsibility to create
 // it before calling it.
 func MakeTmpFile(basedir, pattern string, mode os.FileMode) (*os.File, error) {
-	f, err := ioutil.TempFile(basedir, pattern)
+	f, err := os.CreateTemp(basedir, pattern)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temporary file: %s", err)
 	}

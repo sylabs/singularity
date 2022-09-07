@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,7 +9,6 @@ package remote
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -27,7 +26,7 @@ type ctx struct {
 // It Verifies that adding valid endpoints results in success and invalid
 // one's results in failure.
 func (c ctx) remoteAdd(t *testing.T) {
-	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
+	config, err := os.CreateTemp(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -81,7 +80,7 @@ func (c ctx) remoteAdd(t *testing.T) {
 // 2. Deletes the already added entries
 // 3. Verfies that removing an invalid entry results in a failure
 func (c ctx) remoteRemove(t *testing.T) {
-	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
+	config, err := os.CreateTemp(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -154,7 +153,7 @@ func (c ctx) remoteRemove(t *testing.T) {
 // 1. Tries to use non-existing remote entry
 // 2. Adds remote entries and tries to use those
 func (c ctx) remoteUse(t *testing.T) {
-	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
+	config, err := os.CreateTemp(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -228,7 +227,7 @@ func (c ctx) remoteUse(t *testing.T) {
 // 2. Verifies that remote status command succeeds on existing endpoints
 // 3. Verifies that remote status command fails on non-existing endpoints
 func (c ctx) remoteStatus(t *testing.T) {
-	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
+	config, err := os.CreateTemp(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -299,7 +298,7 @@ func (c ctx) remoteStatus(t *testing.T) {
 
 // remoteList tests the functionality of "singularity remote list" command
 func (c ctx) remoteList(t *testing.T) {
-	config, err := ioutil.TempFile(c.env.TestDir, "testConfig-")
+	config, err := os.CreateTemp(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)
 	}

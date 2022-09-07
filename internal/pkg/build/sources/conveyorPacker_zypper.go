@@ -171,7 +171,7 @@ func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err e
 			return fmt.Errorf("malformed Product setting")
 		}
 		if slepgpOk {
-			tmpfile, err := ioutil.TempFile("/tmp", "singularity-pgp")
+			tmpfile, err := os.CreateTemp("/tmp", "singularity-pgp")
 			if err != nil {
 				return fmt.Errorf("cannot create pgp-file: %v", err)
 			}

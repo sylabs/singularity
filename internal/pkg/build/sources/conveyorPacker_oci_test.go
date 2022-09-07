@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,7 +8,6 @@ package sources_test
 import (
 	"context"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -281,7 +280,7 @@ func TestOCIPacker(t *testing.T) {
 }
 
 func getTestTar(url string) (path string, err error) {
-	dl, err := ioutil.TempFile("", "oci-test")
+	dl, err := os.CreateTemp("", "oci-test")
 	if err != nil {
 		log.Fatal(err)
 	}

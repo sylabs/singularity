@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,7 +7,6 @@ package files
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -30,7 +29,7 @@ func TestGroup(t *testing.T) {
 		t.Errorf("should have passed with correct group file")
 	}
 	// with an empty file
-	f, err := ioutil.TempFile("", "empty-group-")
+	f, err := os.CreateTemp("", "empty-group-")
 	if err != nil {
 		t.Error(err)
 	}
@@ -59,7 +58,7 @@ func TestPasswd(t *testing.T) {
 		t.Errorf("should have passed with correct passwd file")
 	}
 	// with an empty file
-	f, err := ioutil.TempFile("", "empty-passwd-")
+	f, err := os.CreateTemp("", "empty-passwd-")
 	if err != nil {
 		t.Error(err)
 	}

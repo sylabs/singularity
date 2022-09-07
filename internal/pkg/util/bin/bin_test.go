@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -162,7 +162,7 @@ func TestFindFromConfigOrPath(t *testing.T) {
 				tc.expectPath = lookPath
 			}
 
-			f, err := ioutil.TempFile("", "test.conf")
+			f, err := os.CreateTemp("", "test.conf")
 			if err != nil {
 				t.Fatalf("cannot create temporary test configuration: %+v", err)
 			}
@@ -297,7 +297,7 @@ func TestFindFromConfigOnly(t *testing.T) {
 				t.Skip("skipping - no buildcfg path known")
 			}
 
-			f, err := ioutil.TempFile("", "test.conf")
+			f, err := os.CreateTemp("", "test.conf")
 			if err != nil {
 				t.Fatalf("cannot create temporary test configuration: %+v", err)
 			}

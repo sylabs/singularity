@@ -8,7 +8,6 @@ package singularityconf
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -26,7 +25,7 @@ func TestGenerate(t *testing.T) {
 }
 
 func TestParser(t *testing.T) {
-	f, err := ioutil.TempFile("", "singularity.conf-")
+	f, err := os.CreateTemp("", "singularity.conf-")
 	if err != nil {
 		t.Fatalf("failed to create temporary configuration file: %s", err)
 	}

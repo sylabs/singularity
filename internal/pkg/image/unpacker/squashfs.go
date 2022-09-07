@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,7 +9,6 @@ package unpacker
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -87,7 +86,7 @@ func (s *Squashfs) extract(files []string, reader io.Reader, dest string) (err e
 
 		// unsquashfs doesn't support to send file content over
 		// a stdin pipe since it use lseek for every read it does
-		tmp, err := ioutil.TempFile(tmpdir, "archive-")
+		tmp, err := os.CreateTemp(tmpdir, "archive-")
 		if err != nil {
 			return fmt.Errorf("failed to create staging file: %s", err)
 		}
@@ -197,7 +196,7 @@ func (s *Squashfs) ExtractFiles(files []string, reader io.Reader, dest string) e
 
 // TestUserXattr tries to set a user xattr on PATH to ensure they are supported on this fs
 func TestUserXattr(path string) (ok bool, err error) {
-	tmp, err := ioutil.TempFile(path, "uxattr-")
+	tmp, err := os.CreateTemp(path, "uxattr-")
 	defer os.Remove(tmp.Name())
 	tmp.Close()
 	err = unix.Setxattr(tmp.Name(), "user.singularity", []byte{}, 0)

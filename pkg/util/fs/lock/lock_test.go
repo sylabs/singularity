@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -56,7 +56,7 @@ func TestByteRange(t *testing.T) {
 	}
 
 	// create the temporary test file used for locking
-	f, err := ioutil.TempFile("", "byterange-")
+	f, err := os.CreateTemp("", "byterange-")
 	if err != nil {
 		t.Fatalf("failed to create temporary lock file: %s", err)
 	}

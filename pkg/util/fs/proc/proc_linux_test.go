@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,6 @@
 package proc
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"syscall"
@@ -136,7 +135,7 @@ func TestGetMountInfo(t *testing.T) {
 		t.Fatalf("unexpected success while parsing bad path")
 	}
 
-	tmpfile, err := ioutil.TempFile("", "mountinfo")
+	tmpfile, err := os.CreateTemp("", "mountinfo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -263,7 +262,7 @@ func TestGetMountPointMap(t *testing.T) {
 	if _, err := GetMountPointMap("/proc/self/fakemountinfo"); err == nil {
 		t.Errorf("should have failed with non existent path")
 	}
-	tmpfile, err := ioutil.TempFile("", "mountinfo")
+	tmpfile, err := os.CreateTemp("", "mountinfo")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -370,7 +369,7 @@ func TestReadIDMap(t *testing.T) {
 	}
 
 	for _, e := range []string{"a a a", "0 a a"} {
-		f, err := ioutil.TempFile("", "uid_map-")
+		f, err := os.CreateTemp("", "uid_map-")
 		if err != nil {
 			t.Fatalf("failed to create temporary file")
 		}
