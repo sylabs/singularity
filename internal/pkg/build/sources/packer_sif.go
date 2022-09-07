@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,7 +8,7 @@ package sources
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 
 	"github.com/sylabs/singularity/internal/pkg/image/unpacker"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -74,7 +74,7 @@ func unpackSIF(b *types.Bundle, img *image.Image) (err error) {
 	} else if err != nil {
 		return fmt.Errorf("could not get OCI config section reader: %v", err)
 	} else {
-		ociConfig, err := ioutil.ReadAll(ociReader)
+		ociConfig, err := io.ReadAll(ociReader)
 		if err != nil {
 			return fmt.Errorf("could not read OCI config: %v", err)
 		}

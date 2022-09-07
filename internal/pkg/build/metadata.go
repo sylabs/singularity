@@ -8,6 +8,7 @@ package build
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -294,7 +295,7 @@ func getExistingLabels(labels map[string]string, b *types.Bundle) error {
 		}
 		defer jsonFile.Close()
 
-		jsonBytes, err := ioutil.ReadAll(jsonFile)
+		jsonBytes, err := io.ReadAll(jsonFile)
 		if err != nil {
 			return err
 		}
