@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -60,7 +60,7 @@ func copyImage(t *testing.T) string {
 
 func checkPartition(reader io.Reader) error {
 	extracted := "/bin/busybox"
-	dir, err := ioutil.TempDir("", "extract-")
+	dir, err := os.MkdirTemp("", "extract-")
 	if err != nil {
 		return err
 	}

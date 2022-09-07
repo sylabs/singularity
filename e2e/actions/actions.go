@@ -632,7 +632,7 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 	require.Command(t, "mksquashfs")
 	require.Command(t, "dd")
 
-	testdir, err := ioutil.TempDir(c.env.TestDir, "persistent-overlay-")
+	testdir, err := os.MkdirTemp(c.env.TestDir, "persistent-overlay-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -657,13 +657,13 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 	sandboxImage := filepath.Join(testdir, "sandbox")
 
 	// create an overlay directory
-	dir, err := ioutil.TempDir(testdir, "overlay-dir-")
+	dir, err := os.MkdirTemp(testdir, "overlay-dir-")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// create root directory for squashfs image
-	squashDir, err := ioutil.TempDir(testdir, "root-squash-dir-")
+	squashDir, err := os.MkdirTemp(testdir, "root-squash-dir-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1700,7 +1700,7 @@ func (c actionTests) bindImage(t *testing.T) {
 	require.Command(t, "mksquashfs")
 	require.Command(t, "dd")
 
-	testdir, err := ioutil.TempDir(c.env.TestDir, "bind-image-")
+	testdir, err := os.MkdirTemp(c.env.TestDir, "bind-image-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1723,7 +1723,7 @@ func (c actionTests) bindImage(t *testing.T) {
 	ext3Img := filepath.Join(testdir, "ext3_fs.img")
 
 	// create root directory for squashfs image
-	squashDir, err := ioutil.TempDir(testdir, "root-squash-dir-")
+	squashDir, err := os.MkdirTemp(testdir, "root-squash-dir-")
 	if err != nil {
 		t.Fatal(err)
 	}

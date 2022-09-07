@@ -70,7 +70,7 @@ func TestSoLinks(t *testing.T) {
 	//   - soLinks(a.so) should give both of these symlinks
 	// a.so.2 -> b.so
 	//   - this should *not* get included, as it doesn't resolve back to a.so
-	tmpDir, err := ioutil.TempDir("", "test-solinks")
+	tmpDir, err := os.MkdirTemp("", "test-solinks")
 	if err != nil {
 		t.Fatalf("Could not create tempDir: %v", err)
 	}

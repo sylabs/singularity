@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,6 @@
 package cmdenvvars
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -21,7 +20,7 @@ type ctx struct {
 }
 
 func setupTemporaryDir(t *testing.T, testdir, label string) (string, func(*testing.T)) {
-	tmpdir, err := ioutil.TempDir(testdir, label+".")
+	tmpdir, err := os.MkdirTemp(testdir, label+".")
 	if err != nil {
 		t.Fatalf("failed to create '%s' directory for test %s: %s (%#[3]v)",
 			label, t.Name(), err)
@@ -65,7 +64,7 @@ func (c *ctx) setupTemporaryKeyringDir(t *testing.T) func(*testing.T) {
 // exercise the image cache. It returns the full path to the image.
 func (c ctx) pullTestImage(t *testing.T) string {
 	// create a temporary directory for the destination image
-	tmpdir, err := ioutil.TempDir(c.env.TestDir, "image-cache.")
+	tmpdir, err := os.MkdirTemp(c.env.TestDir, "image-cache.")
 	if err != nil {
 		t.Fatalf("failed to create temporary directory for test %s: %s (%#v)", t.Name(), err, err)
 	}

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -210,7 +210,7 @@ func TestOCIConveyorOCILayout(t *testing.T) {
 
 	// We need to extract the oci archive to a directory
 	// Don't want to implement untar routines here, so use system tar
-	dir, err := ioutil.TempDir("", "oci-test")
+	dir, err := os.MkdirTemp("", "oci-test")
 	if err != nil {
 		t.Fatalf("Could not create temporary directory: %v", err)
 	}

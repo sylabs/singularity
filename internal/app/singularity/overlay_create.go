@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.package singularity
@@ -8,7 +8,6 @@ package singularity
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -159,7 +158,7 @@ func OverlayCreate(size int, imgPath string, overlayDirs ...string) error {
 		return fmt.Errorf("while setting 0600 permission on %s: %s", tmpFile, err)
 	}
 
-	tmpDir, err := ioutil.TempDir("", "overlay-")
+	tmpDir, err := os.MkdirTemp("", "overlay-")
 	if err != nil {
 		return fmt.Errorf("while creating temporary overlay directory: %s", err)
 	}

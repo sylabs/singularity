@@ -101,7 +101,7 @@ func (c *ctx) testBasicOptions(t *testing.T) {
 	fileContents := []byte("world")
 
 	// Create a temporary directory to serve as a home directory.
-	dir, err := ioutil.TempDir(c.env.TestDir, "TestInstance")
+	dir, err := os.MkdirTemp(c.env.TestDir, "TestInstance")
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
@@ -158,7 +158,7 @@ func (c *ctx) testContain(t *testing.T) {
 	const fileName = "thegreattestfile"
 
 	// Create a temporary directory to serve as a contain directory.
-	dir, err := ioutil.TempDir("", "TestInstance")
+	dir, err := os.MkdirTemp("", "TestInstance")
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}

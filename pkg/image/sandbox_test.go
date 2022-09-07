@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -42,7 +42,7 @@ func runSandboxInitializerTest(t *testing.T, img *Image, path string) error {
 
 func TestSandboxInitializer(t *testing.T) {
 	// Valid case using a directory
-	path, err := ioutil.TempDir("", "")
+	path, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatalf("cannot create a temporary directory: %s\n", err)
 	}

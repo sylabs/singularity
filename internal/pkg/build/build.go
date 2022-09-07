@@ -114,7 +114,7 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 		if conf.Format == "sandbox" {
 			rootfsParent = filepath.Dir(conf.Dest)
 		}
-		parentPath, err := ioutil.TempDir(rootfsParent, "build-temp-")
+		parentPath, err := os.MkdirTemp(rootfsParent, "build-temp-")
 		if err != nil {
 			return nil, fmt.Errorf("failed to create build parent dir: %w", err)
 		}

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -20,7 +20,7 @@ func TestEnsureFileWithPermission(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	tmpDir, err := ioutil.TempDir("", "ensure_file_perm-")
+	tmpDir, err := os.MkdirTemp("", "ensure_file_perm-")
 	if err != nil {
 		t.Errorf("Unable to make tmpdir %s", err)
 	}
@@ -229,7 +229,7 @@ func TestMkdirAll(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	tmpdir, err := ioutil.TempDir("", "mkdir")
+	tmpdir, err := os.MkdirTemp("", "mkdir")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,7 +257,7 @@ func TestMkdir(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	tmpdir, err := ioutil.TempDir("", "mkdir")
+	tmpdir, err := os.MkdirTemp("", "mkdir")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -280,7 +280,7 @@ func TestEvalRelative(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	tmpdir, err := ioutil.TempDir("", "evalrelative")
+	tmpdir, err := os.MkdirTemp("", "evalrelative")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -359,7 +359,7 @@ func TestTouch(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	tmpdir, err := ioutil.TempDir("", "evalrelative")
+	tmpdir, err := os.MkdirTemp("", "evalrelative")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -491,7 +491,7 @@ func testCopyFileFunc(t *testing.T, fn copyFileFunc) {
 
 	testData := []byte("Hello, Singularity!")
 
-	tmpDir, err := ioutil.TempDir("", "copy-file")
+	tmpDir, err := os.MkdirTemp("", "copy-file")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -600,7 +600,7 @@ func TestIsWritable(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	// We make a temporary directory where all the different cases will be tested.
-	tempDir, err := ioutil.TempDir("", "")
+	tempDir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s", err)
 	}

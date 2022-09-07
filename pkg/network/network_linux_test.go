@@ -121,7 +121,7 @@ var testNetworks []string
 func TestGetAllNetworkConfigList(t *testing.T) {
 	test.EnsurePrivilege(t)
 
-	emptyDir, err := ioutil.TempDir("", "empty_conf_")
+	emptyDir, err := os.MkdirTemp("", "empty_conf_")
 	if err != nil {
 		t.Errorf("failed to creaty empty configuration directory: %s", err)
 	}
@@ -603,7 +603,7 @@ func TestMain(m *testing.M) {
 
 	test.EnsurePrivilege(nil)
 
-	defaultCNIConfPath, err = ioutil.TempDir("", "conf_test_")
+	defaultCNIConfPath, err = os.MkdirTemp("", "conf_test_")
 	if err != nil {
 		os.Exit(1)
 	}

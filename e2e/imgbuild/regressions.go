@@ -64,7 +64,7 @@ func (c *imgBuildTests) issue4407(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	sandboxDir := func() string {
-		name, err := ioutil.TempDir(c.env.TestDir, "sandbox.")
+		name, err := os.MkdirTemp(c.env.TestDir, "sandbox.")
 		if err != nil {
 			log.Fatalf("failed to create temporary directory for sandbox: %v", err)
 		}
