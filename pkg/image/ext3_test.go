@@ -7,7 +7,6 @@ package image
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
@@ -139,7 +138,7 @@ func TestInitializer(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	// Create a temporary image which is obviously an invalid ext3 image
-	f, err := ioutil.TempFile("", "image-")
+	f, err := os.CreateTemp("", "image-")
 	if err != nil {
 		t.Fatalf("cannot create temporary file: %s\n", err)
 	}

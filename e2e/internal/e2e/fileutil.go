@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,6 @@
 package e2e
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -18,7 +17,7 @@ import (
 // directory or in os.TempDir if dir is ""
 // returns the file name or an error
 func WriteTempFile(dir, pattern, content string) (string, error) {
-	tmpfile, err := ioutil.TempFile(dir, pattern)
+	tmpfile, err := os.CreateTemp(dir, pattern)
 	if err != nil {
 		return "", err
 	}

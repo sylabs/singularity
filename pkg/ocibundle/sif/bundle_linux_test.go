@@ -6,7 +6,6 @@
 package sifbundle
 
 import (
-	"io/ioutil"
 	"os"
 	"runtime"
 	"testing"
@@ -30,7 +29,7 @@ func TestFromSif(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	f, err := ioutil.TempFile("", "busybox")
+	f, err := os.CreateTemp("", "busybox")
 	if err != nil {
 		t.Fatal(err)
 	}

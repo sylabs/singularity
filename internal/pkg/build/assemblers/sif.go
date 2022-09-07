@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,7 +8,6 @@ package assemblers
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"runtime"
@@ -147,7 +146,7 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	s := packer.NewSquashfs()
 	s.MksquashfsPath = a.MksquashfsPath
 
-	f, err := ioutil.TempFile(b.TmpDir, "squashfs-")
+	f, err := os.CreateTemp(b.TmpDir, "squashfs-")
 	if err != nil {
 		return fmt.Errorf("while creating temporary file for squashfs: %v", err)
 	}

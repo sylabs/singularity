@@ -7,7 +7,6 @@ package image
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
@@ -22,7 +21,7 @@ func createSquashfs(t *testing.T) string {
 	}
 	defer os.RemoveAll(dir)
 
-	sqshFile, fileErr := ioutil.TempFile("", "")
+	sqshFile, fileErr := os.CreateTemp("", "")
 	if fileErr != nil {
 		t.Fatalf("impossible to create temporary file: %s\n", fileErr)
 	}

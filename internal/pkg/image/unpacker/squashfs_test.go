@@ -8,7 +8,6 @@ package unpacker
 
 import (
 	"bufio"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,7 +19,7 @@ func createArchive(t *testing.T) *os.File {
 	if err != nil {
 		t.SkipNow()
 	}
-	f, err := ioutil.TempFile("", "archive-")
+	f, err := os.CreateTemp("", "archive-")
 	if err != nil {
 		t.Fatal(err)
 	}

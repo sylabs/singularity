@@ -229,7 +229,7 @@ func ensureGzipComp(tmpdir, mksquashfsPath string) (bool, error) {
 	s := packer.NewSquashfs()
 	s.MksquashfsPath = mksquashfsPath
 
-	srcf, err := ioutil.TempFile(tmpdir, "squashfs-gzip-comp-test-src")
+	srcf, err := os.CreateTemp(tmpdir, "squashfs-gzip-comp-test-src")
 	if err != nil {
 		return false, fmt.Errorf("while creating temporary file for squashfs source: %v", err)
 	}
@@ -237,7 +237,7 @@ func ensureGzipComp(tmpdir, mksquashfsPath string) (bool, error) {
 	srcf.Write([]byte("Test File Content"))
 	srcf.Close()
 
-	f, err := ioutil.TempFile(tmpdir, "squashfs-gzip-comp-test-")
+	f, err := os.CreateTemp(tmpdir, "squashfs-gzip-comp-test-")
 	if err != nil {
 		return false, fmt.Errorf("while creating temporary file for squashfs: %v", err)
 	}

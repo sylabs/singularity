@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,7 +7,6 @@ package interactive
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
@@ -20,7 +19,7 @@ func generateQuestionInput(t *testing.T, input string) (*os.File, *os.File) {
 	testBytes := []byte(input)
 
 	// we create a temporary file that will act as Stdin
-	testFile, err := ioutil.TempFile("", "inputTest")
+	testFile, err := os.CreateTemp("", "inputTest")
 	if err != nil {
 		t.Fatalf("failed to create temporary file: %s", err)
 	}

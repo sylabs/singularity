@@ -392,7 +392,7 @@ func (c *imgBuildTests) issue3848(t *testing.T) {
 	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-3848-", "")
 	defer cleanup(t)
 
-	f, err := ioutil.TempFile(tmpDir, "test-def-")
+	f, err := os.CreateTemp(tmpDir, "test-def-")
 	if err != nil {
 		t.Fatalf("failed to open temp file: %v", err)
 	}
