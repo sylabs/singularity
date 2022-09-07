@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,7 +8,6 @@ package sources
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"syscall"
 
@@ -55,7 +54,7 @@ func unpackExt3(b *types.Bundle, img *image.Image) error {
 		return fmt.Errorf("while attaching image to loop device: %v", err)
 	}
 
-	tmpmnt, err := ioutil.TempDir(b.TmpDir, "mnt")
+	tmpmnt, err := os.MkdirTemp(b.TmpDir, "mnt")
 	if err != nil {
 		return fmt.Errorf("while making tmp mount point: %v", err)
 	}

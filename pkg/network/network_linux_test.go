@@ -599,7 +599,7 @@ func TestMain(m *testing.M) {
 
 	test.EnsurePrivilege(nil)
 
-	defaultCNIConfPath, err = ioutil.TempDir("", "conf_test_")
+	defaultCNIConfPath, err = os.MkdirTemp("", "conf_test_")
 	if err != nil {
 		os.Exit(1)
 	}

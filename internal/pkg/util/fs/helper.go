@@ -279,7 +279,7 @@ func Touch(path string) error {
 // basedir exists, so it's the caller's responsibility to create
 // it before calling it.
 func MakeTmpDir(basedir, pattern string, mode os.FileMode) (string, error) {
-	name, err := ioutil.TempDir(basedir, pattern)
+	name, err := os.MkdirTemp(basedir, pattern)
 	if err != nil {
 		return "", fmt.Errorf("failed to create temporary directory: %s", err)
 	}

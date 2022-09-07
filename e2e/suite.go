@@ -9,7 +9,6 @@ package e2e
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -124,7 +123,7 @@ func Run(t *testing.T) {
 	}
 
 	// Make temp dir for tests
-	name, err := ioutil.TempDir("", "stest.")
+	name, err := os.MkdirTemp("", "stest.")
 	if err != nil {
 		log.Fatalf("failed to create temporary directory: %v", err)
 	}

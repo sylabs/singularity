@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -64,7 +63,7 @@ func mkContainerDirs() (tempDir, imageDir string, err error) {
 	}
 
 	// create temporary dir
-	tempDir, err = ioutil.TempDir(tmpdir, "rootfs-")
+	tempDir, err = os.MkdirTemp(tmpdir, "rootfs-")
 	if err != nil {
 		return "", "", fmt.Errorf("could not create temporary directory: %s", err)
 	}

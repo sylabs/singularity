@@ -153,7 +153,7 @@ func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, filte
 
 	// create the sandbox temporary directory
 	tmpdir := filepath.Dir(dest)
-	rootfs, err := ioutil.TempDir(tmpdir, "tmp-rootfs-")
+	rootfs, err := os.MkdirTemp(tmpdir, "tmp-rootfs-")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chroot directory: %s", err)
 	}

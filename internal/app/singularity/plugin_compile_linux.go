@@ -64,7 +64,7 @@ func getSingularitySrcDir() (string, error) {
 func checkGoVersion(goPath string) error {
 	var out bytes.Buffer
 
-	tmpDir, err := ioutil.TempDir("", "plugin-")
+	tmpDir, err := os.MkdirTemp("", "plugin-")
 	if err != nil {
 		return errors.New("temporary directory creation failed")
 	}
