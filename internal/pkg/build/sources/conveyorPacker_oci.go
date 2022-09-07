@@ -278,7 +278,7 @@ func (cp *OCIConveyorPacker) Pack(ctx context.Context) (*sytypes.Bundle, error) 
 func (cp *OCIConveyorPacker) fetch(ctx context.Context) error {
 	// cp.srcRef contains the cache source reference
 	_, err := copy.Image(ctx, cp.policyCtx, cp.tmpfsRef, cp.srcRef, &copy.Options{
-		ReportWriter: ioutil.Discard,
+		ReportWriter: io.Discard,
 		SourceCtx:    cp.sysCtx,
 	})
 	return err
