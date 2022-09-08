@@ -152,7 +152,7 @@ rc=0
 
 "${test_runner}" \
 	-count=1 \
-	-timeout=30m \
+	-timeout=1h \
 	-tags "${GO_TAGS}" \
 	-cover \
 	${sudo_exec} \

@@ -230,7 +230,7 @@ jobs:
       - install-singularity
       - run:
           name: Run E2E tests
-          no_output_timeout: 35m
+          no_output_timeout: 1h
           command: |-
             export E2E_PARALLEL=8 && \
             export E2E_DOCKER_USERNAME=$CIRCLE_CI_DOCKER_USERNAME && \
