@@ -219,6 +219,7 @@ jobs:
 
   e2e-tests:
     executor: ubuntu-machine
+    resource_class: large
     steps:
       - checkout
       - check-changes
