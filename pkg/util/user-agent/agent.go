@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,6 +9,9 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var value string
@@ -29,13 +32,13 @@ func Value() string {
 func InitValue(name, version string) {
 	value = fmt.Sprintf("%v (%v %v) %v",
 		singularityVersion(name, version),
-		strings.Title(runtime.GOOS),
+		cases.Title(language.English).String(runtime.GOOS),
 		runtime.GOARCH,
 		goVersion())
 }
 
 func singularityVersion(name, version string) string {
-	product := strings.Title(name)
+	product := cases.Title(language.English).String(name)
 	ver := strings.Split(version, "-")[0]
 	return fmt.Sprintf("%v/%v", product, ver)
 }
