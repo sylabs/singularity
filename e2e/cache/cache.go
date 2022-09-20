@@ -34,7 +34,7 @@ func prepTest(t *testing.T, testEnv e2e.TestEnv, testName string, cacheParentDir
 		ensureNotCached(t, testName, imagePath, cacheParentDir)
 	}
 
-	testEnv.ImgCacheDir = cacheParentDir
+	testEnv.UnprivCacheDir = cacheParentDir
 	testEnv.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.UserProfile),
@@ -128,7 +128,7 @@ func (c cacheTests) testNoninteractiveCacheCmds(t *testing.T) {
 			prepTest(t, c.env, tt.name, cacheDir, imagePath)
 		}
 
-		c.env.ImgCacheDir = cacheDir
+		c.env.UnprivCacheDir = cacheDir
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
@@ -229,7 +229,7 @@ func (c cacheTests) testInteractiveCacheCmds(t *testing.T) {
 			t.Fatalf("Could not create image cache handle: %v", err)
 		}
 
-		c.env.ImgCacheDir = cacheDir
+		c.env.UnprivCacheDir = cacheDir
 		prepTest(t, c.env, tc.name, cacheDir, imagePath)
 
 		c.env.RunSingularity(
