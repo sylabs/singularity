@@ -303,7 +303,7 @@ func (c actionTests) issue4823(t *testing.T) {
 			expected = e2e.ExpectError(e2e.ContainMatch, "Using image from cache")
 		}
 
-		c.env.ImgCacheDir = cacheDir
+		c.env.UnprivCacheDir = cacheDir
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
