@@ -1,5 +1,5 @@
-Bootstrap: docker
-From: busybox:latest
+Bootstrap: library
+From: alpine:3.11.5
 
 %appinstall hdf5
 echo "installing hdf5..."
