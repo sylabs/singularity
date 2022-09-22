@@ -1,5 +1,5 @@
-bootstrap: docker
-from: alpine:3.16
+bootstrap: library
+from: alpine:3.15
 
 %post
     apk update
