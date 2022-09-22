@@ -31,10 +31,10 @@ const (
 
 func (c ctx) singularityEnv(t *testing.T) {
 	// Singularity defines a path by default. See singularityware/singularity/etc/init.
-	defaultImage := "docker://alpine:3.8"
+	defaultImage := "library://alpine:3.11.5"
 
 	// This image sets a custom path.
-	customImage := "docker://sylabsio/lolcow"
+	customImage := "library://lolcow"
 	customPath := "/usr/games:" + defaultPath
 
 	// Append or prepend this path.
@@ -138,43 +138,30 @@ func (c ctx) singularityEnvOption(t *testing.T) {
 	}{
 		{
 			name:     "DefaultPath",
-			image:    "docker://alpine:3.8",
+			image:    "library://alpine:3.11.5",
 			matchEnv: "PATH",
 			matchVal: defaultPath,
 		},
 		{
 			name:     "DefaultPathOverride",
-			image:    "docker://alpine:3.8",
+			image:    "library://alpine:3.11.5",
 			envOpt:   []string{"PATH=/"},
 			matchEnv: "PATH",
 			matchVal: "/",
 		},
 		{
 			name:     "AppendDefaultPath",
-			image:    "docker://alpine:3.8",
+			image:    "library://alpine:3.11.5",
 			envOpt:   []string{"APPEND_PATH=/foo"},
 			matchEnv: "PATH",
 			matchVal: defaultPath + ":/foo",
 		},
 		{
 			name:     "PrependDefaultPath",
-			image:    "docker://alpine:3.8",
+			image:    "library://alpine:3.11.5",
 			envOpt:   []string{"PREPEND_PATH=/foo"},
 			matchEnv: "PATH",
 			matchVal: "/foo:" + defaultPath,
-		},
-		{
-			name:     "DockerImage",
-			image:    "docker://sylabsio/lolcow",
-			matchEnv: "LC_ALL",
-			matchVal: "C",
-		},
-		{
-			name:     "DockerImageOverride",
-			image:    "docker://sylabsio/lolcow",
-			envOpt:   []string{"LC_ALL=foo"},
-			matchEnv: "LC_ALL",
-			matchVal: "foo",
 		},
 		{
 			name:     "DefaultPathTestImage",

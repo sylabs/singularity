@@ -1,5 +1,5 @@
-bootstrap: docker
-from: busybox
+bootstrap: library
+from: alpine:3.11.5
 
 %setup
     root=$SINGULARITY_ROOTFS
