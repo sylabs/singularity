@@ -410,8 +410,8 @@ func (c *imgBuildTests) issue3848(t *testing.T) {
 		File: tmpfile,
 	}
 
-	defTmpl := `Bootstrap: docker
-From: alpine:latest
+	defTmpl := `Bootstrap: library
+From: alpine:3.11.5
 
 %files
 	{{ .File }}
