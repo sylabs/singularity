@@ -337,8 +337,8 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 			name: "FileCopySimple",
 			dfd: []e2e.DefFileDetails{
 				{
-					Bootstrap: "docker",
-					From:      "alpine:latest",
+					Bootstrap: "library",
+					From:      "alpine:3.11.5",
 					Stage:     "one",
 					Files: []e2e.FilePair{
 						{
@@ -352,8 +352,8 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 					},
 				},
 				{
-					Bootstrap: "docker",
-					From:      "alpine:latest",
+					Bootstrap: "library",
+					From:      "alpine:3.11.5",
 					FilesFrom: []e2e.FileSection{
 						{
 							Stage: "one",
@@ -389,8 +389,8 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 			name: "FileCopyComplex",
 			dfd: []e2e.DefFileDetails{
 				{
-					Bootstrap: "docker",
-					From:      "alpine:latest",
+					Bootstrap: "library",
+					From:      "alpine:3.11.5",
 					Stage:     "one",
 					Files: []e2e.FilePair{
 						{
@@ -404,8 +404,8 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 					},
 				},
 				{
-					Bootstrap: "docker",
-					From:      "alpine:latest",
+					Bootstrap: "library",
+					From:      "alpine:3.11.5",
 					Stage:     "two",
 					Files: []e2e.FilePair{
 						{
@@ -419,8 +419,8 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 					},
 				},
 				{
-					Bootstrap: "docker",
-					From:      "alpine:latest",
+					Bootstrap: "library",
+					From:      "alpine:3.11.5",
 					Stage:     "three",
 					FilesFrom: []e2e.FileSection{
 						{
@@ -452,8 +452,8 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 					},
 				},
 				{
-					Bootstrap: "docker",
-					From:      "alpine:latest",
+					Bootstrap: "library",
+					From:      "alpine:3.11.5",
 					FilesFrom: []e2e.FileSection{
 						{
 							Stage: "three",
@@ -538,12 +538,12 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 
 	tt := map[string]e2e.DefFileDetails{
 		"Empty": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 		},
 		"Help": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			Help: []string{
 				"help info line 1",
 				"help info line 2",
@@ -551,8 +551,8 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 			},
 		},
 		"Files": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			Files: []e2e.FilePair{
 				{
 					Src: tmpfile,
@@ -565,8 +565,8 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 			},
 		},
 		"Test": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			Test: []string{
 				"echo testscript line 1",
 				"echo testscript line 2",
@@ -574,8 +574,8 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 			},
 		},
 		"Startscript": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			StartScript: []string{
 				"echo startscript line 1",
 				"echo startscript line 2",
@@ -583,8 +583,8 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 			},
 		},
 		"Runscript": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			RunScript: []string{
 				"echo runscript line 1",
 				"echo runscript line 2",
@@ -592,8 +592,8 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 			},
 		},
 		"Env": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			Env: []string{
 				"testvar1=one",
 				"testvar2=two",
@@ -601,8 +601,8 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 			},
 		},
 		"Labels": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			Labels: map[string]string{
 				"customLabel1": "one",
 				"customLabel2": "two",
@@ -610,29 +610,29 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 			},
 		},
 		"Pre": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			Pre: []string{
 				filepath.Join(c.env.TestDir, "PreFile1"),
 			},
 		},
 		"Setup": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			Setup: []string{
 				filepath.Join(c.env.TestDir, "SetupFile1"),
 			},
 		},
 		"Post": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			Post: []string{
 				"PostFile1",
 			},
 		},
 		"AppHelp": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			Apps: []e2e.AppDetail{
 				{
 					Name: "foo",
@@ -653,8 +653,8 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 			},
 		},
 		"AppEnv": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			Apps: []e2e.AppDetail{
 				{
 					Name: "foo",
@@ -675,8 +675,8 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 			},
 		},
 		"AppLabels": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			Apps: []e2e.AppDetail{
 				{
 					Name: "foo",
@@ -697,8 +697,8 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 			},
 		},
 		"AppFiles": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			Apps: []e2e.AppDetail{
 				{
 					Name: "foo",
@@ -729,8 +729,8 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 			},
 		},
 		"AppInstall": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			Apps: []e2e.AppDetail{
 				{
 					Name: "foo",
@@ -747,8 +747,8 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 			},
 		},
 		"AppRun": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			Apps: []e2e.AppDetail{
 				{
 					Name: "foo",
@@ -769,8 +769,8 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 			},
 		},
 		"AppTest": {
-			Bootstrap: "docker",
-			From:      "alpine:latest",
+			Bootstrap: "library",
+			From:      "alpine:3.11.5",
 			Apps: []e2e.AppDetail{
 				{
 					Name: "foo",
