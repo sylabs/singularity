@@ -1,16 +1,12 @@
-/*
-  Copyright (c) 2018, Sylabs, Inc. All rights reserved.
-
-  This software is licensed under a 3-clause BSD license.  Please
-  consult LICENSE.md file distributed with the sources of this project regarding
-  your rights to use or distribute this software.
-*/
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// This software is licensed under a 3-clause BSD license. Please consult the
+// LICENSE.md file distributed with the sources of this project regarding your
+// rights to use or distribute this software.
 
 package auth
 
 import (
 	"errors"
-	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -36,7 +32,7 @@ func ReadToken(tokenPath string) (token string, err error) {
 		return "", ErrTokenFileNotFound
 	}
 
-	buf, err := ioutil.ReadFile(tokenPath)
+	buf, err := os.ReadFile(tokenPath)
 	if err != nil {
 		return "", ErrCouldntReadFile
 	}

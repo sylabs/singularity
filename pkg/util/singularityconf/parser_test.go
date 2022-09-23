@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,14 +8,13 @@ package singularityconf
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
 )
 
 func TestGenerate(t *testing.T) {
-	discard := ioutil.Discard
+	discard := io.Discard
 
 	if err := Generate(discard, "/non-existent/template", nil); err == nil {
 		t.Fatalf("unexpected success with non-existent template")
@@ -26,7 +25,7 @@ func TestGenerate(t *testing.T) {
 }
 
 func TestParser(t *testing.T) {
-	f, err := ioutil.TempFile("", "singularity.conf-")
+	f, err := os.CreateTemp("", "singularity.conf-")
 	if err != nil {
 		t.Fatalf("failed to create temporary configuration file: %s", err)
 	}

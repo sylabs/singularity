@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,7 +7,6 @@ package image
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
@@ -16,13 +15,13 @@ import (
 // createSquashfs creates a small but valid squashfs file that can be used
 // with an image.
 func createSquashfs(t *testing.T) string {
-	dir, dirErr := ioutil.TempDir("", "squashfsHdrTesting-")
+	dir, dirErr := os.MkdirTemp("", "squashfsHdrTesting-")
 	if dirErr != nil {
 		t.Fatalf("impossible to create temporary directory: %s\n", dirErr)
 	}
 	defer os.RemoveAll(dir)
 
-	sqshFile, fileErr := ioutil.TempFile("", "")
+	sqshFile, fileErr := os.CreateTemp("", "")
 	if fileErr != nil {
 		t.Fatalf("impossible to create temporary file: %s\n", fileErr)
 	}
@@ -109,7 +108,7 @@ func TestSquashfsInitializer(t *testing.T) {
 	img.File.Close()
 
 	// Invalid image
-	invalidPath, err := ioutil.TempDir("", "")
+	invalidPath, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatalf("impossible to create temporary directory: %s\n", err)
 	}
@@ -167,7 +166,7 @@ func TestSquashfsCompression(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b, err := ioutil.ReadFile(tt.path)
+			b, err := os.ReadFile(tt.path)
 			if err != nil {
 				t.Errorf("Failed to read file: %v", err)
 			}

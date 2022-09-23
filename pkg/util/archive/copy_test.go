@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,6 @@
 package archive
 
 import (
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -30,7 +29,7 @@ func TestCopyWithTar(t *testing.T) {
 }
 
 func testCopyWithTar(t *testing.T) {
-	srcRoot, err := ioutil.TempDir("", "copywithtar-src-")
+	srcRoot, err := os.MkdirTemp("", "copywithtar-src-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +37,7 @@ func testCopyWithTar(t *testing.T) {
 
 	// Source Files
 	srcFile := filepath.Join(srcRoot, "srcFile")
-	if err := ioutil.WriteFile(srcFile, []byte("test"), 0o644); err != nil {
+	if err := os.WriteFile(srcFile, []byte("test"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs
@@ -52,7 +51,7 @@ func testCopyWithTar(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	dstRoot, err := ioutil.TempDir("", "copywithtar-dst-")
+	dstRoot, err := os.MkdirTemp("", "copywithtar-dst-")
 	if err != nil {
 		t.Fatal(err)
 	}

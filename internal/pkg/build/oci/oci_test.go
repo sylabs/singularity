@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,7 +10,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -95,7 +94,7 @@ func createIndexFile(t *testing.T, dir string, sum string) {
 	if jsonErr != nil {
 		t.Fatalf("cannot unmarshal JSON: %s\n", jsonErr)
 	}
-	err := ioutil.WriteFile(path, data, 0o664)
+	err := os.WriteFile(path, data, 0o664)
 	if err != nil {
 		t.Fatalf("cannot create index file: %s\n", err)
 	}
@@ -108,7 +107,7 @@ func createIndexFile(t *testing.T, dir string, sum string) {
 // and a SHA256 hash associated to the unique entry in the OCI cache.
 func createDummyOCICache(t *testing.T) (string, string) {
 	// Temporary directory that will serve as root of the OCI cache
-	dir, err := ioutil.TempDir("", "")
+	dir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatalf("cannot create temporary directory: %s\n", err)
 	}

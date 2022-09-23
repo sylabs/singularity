@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,6 @@
 package crypt
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -23,7 +22,7 @@ func TestEncrypt(t *testing.T) {
 
 	dev := &Device{}
 
-	emptyFile, err := ioutil.TempFile("", "")
+	emptyFile, err := os.CreateTemp("", "")
 	if err != nil {
 		t.Fatalf("failed to create temporary file: %s", err)
 	}
@@ -34,7 +33,7 @@ func TestEncrypt(t *testing.T) {
 	defer os.Remove(emptyFile.Name())
 
 	// Create a dummy squashfs file
-	dummyDir, err := ioutil.TempDir("", "dummy-fs-")
+	dummyDir, err := os.MkdirTemp("", "dummy-fs-")
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s", err)
 	}
@@ -56,7 +55,7 @@ func TestEncrypt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get path to squashfs binary: %s", err)
 	}
-	tempTargetFile, err := ioutil.TempFile("", "")
+	tempTargetFile, err := os.CreateTemp("", "")
 	if err != nil {
 		t.Fatalf("failed to create temporary file: %s", err)
 	}

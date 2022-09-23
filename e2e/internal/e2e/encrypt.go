@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,7 +7,7 @@ package e2e
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"os/exec"
 	"strings"
 	"testing"
@@ -45,14 +45,14 @@ func CheckCryptsetupVersion() error {
 // GeneratePemFiles creates a new PEM file for testing purposes.
 func GeneratePemFiles(t *testing.T, basedir string) (string, string) {
 	// Temporary file to save the PEM public file. The caller is in charge of cleanup
-	tempPemPubFile, err := ioutil.TempFile(basedir, "pem-pub-")
+	tempPemPubFile, err := os.CreateTemp(basedir, "pem-pub-")
 	if err != nil {
 		t.Fatalf("failed to create temporary file: %s", err)
 	}
 	tempPemPubFile.Close()
 
 	// Temporary file to save the PEM file. The caller is in charge of cleanup
-	tempPemPrivFile, err := ioutil.TempFile(basedir, "pem-priv-")
+	tempPemPrivFile, err := os.CreateTemp(basedir, "pem-priv-")
 	if err != nil {
 		t.Fatalf("failed to create temporary file: %s", err)
 	}

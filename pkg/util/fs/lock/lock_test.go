@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,6 @@
 package lock
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -56,7 +55,7 @@ func TestByteRange(t *testing.T) {
 	}
 
 	// create the temporary test file used for locking
-	f, err := ioutil.TempFile("", "byterange-")
+	f, err := os.CreateTemp("", "byterange-")
 	if err != nil {
 		t.Fatalf("failed to create temporary lock file: %s", err)
 	}
@@ -66,7 +65,7 @@ func TestByteRange(t *testing.T) {
 	f.Close()
 
 	// write some content in test file
-	if err := ioutil.WriteFile(testFile, []byte("testing\n"), 0o644); err != nil {
+	if err := os.WriteFile(testFile, []byte("testing\n"), 0o644); err != nil {
 		t.Fatalf("failed to write content in testfile %s: %s", testFile, err)
 	}
 

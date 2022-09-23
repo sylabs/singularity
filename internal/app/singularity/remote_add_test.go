@@ -6,7 +6,6 @@
 package singularity
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -24,7 +23,7 @@ const (
 )
 
 func createInvalidCfgFile(t *testing.T) string {
-	f, err := ioutil.TempFile("", "")
+	f, err := os.CreateTemp("", "")
 	if err != nil {
 		t.Fatalf("cannot create temporary configuration file for testing: %s\n", err)
 	}
@@ -53,7 +52,7 @@ func createInvalidCfgFile(t *testing.T) string {
 }
 
 func createValidCfgFile(t *testing.T) string {
-	f, err := ioutil.TempFile("", "")
+	f, err := os.CreateTemp("", "")
 	if err != nil {
 		t.Fatalf("cannot create temporary configuration file for testing: %s\n", err)
 	}

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,7 +7,6 @@ package sysctl
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -36,7 +35,7 @@ func Get(key string) (string, error) {
 		return "", fmt.Errorf("can't retrieve key %s: %s", key, err)
 	}
 
-	value, err := ioutil.ReadFile(path)
+	value, err := os.ReadFile(path)
 	if err != nil {
 		return "", fmt.Errorf("can't retrieve value for key %s: %s", key, err)
 	}
@@ -53,5 +52,5 @@ func Set(key string, value string) error {
 		return fmt.Errorf("can't retrieve key %s: %s", key, err)
 	}
 
-	return ioutil.WriteFile(path, []byte(value), 0o000)
+	return os.WriteFile(path, []byte(value), 0o000)
 }

@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,7 +8,6 @@ package unpacker
 
 import (
 	"bufio"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,7 +19,7 @@ func createArchive(t *testing.T) *os.File {
 	if err != nil {
 		t.SkipNow()
 	}
-	f, err := ioutil.TempFile("", "archive-")
+	f, err := os.CreateTemp("", "archive-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +56,7 @@ func testSquashfs(t *testing.T, tmpParent string) {
 		t.Skip("unsquashfs not found")
 	}
 
-	dir, err := ioutil.TempDir(tmpParent, "unpacker-")
+	dir, err := os.MkdirTemp(tmpParent, "unpacker-")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,7 +6,6 @@
 package cgroups
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -112,7 +111,7 @@ func testNewUpdateV2(t *testing.T, systemd bool) {
 
 	// Write a new config with [pids] limit = 512
 	content := []byte("[pids]\nlimit = 512")
-	tmpfile, err := ioutil.TempFile("", "cgroups")
+	tmpfile, err := os.CreateTemp("", "cgroups")
 	if err != nil {
 		t.Fatalf("While creating update file: %v", err)
 	}

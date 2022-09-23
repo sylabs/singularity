@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -45,7 +44,7 @@ type groupTest struct {
 
 // Copy the test image to a temporary location so we don't accidentally clobber the original
 func copyImage(t *testing.T) string {
-	f, err := ioutil.TempFile("", "image-")
+	f, err := os.CreateTemp("", "image-")
 	if err != nil {
 		t.Fatalf("cannot create temporary file: %s\n", err)
 	}
@@ -60,7 +59,7 @@ func copyImage(t *testing.T) string {
 
 func checkPartition(reader io.Reader) error {
 	extracted := "/bin/busybox"
-	dir, err := ioutil.TempDir("", "extract-")
+	dir, err := os.MkdirTemp("", "extract-")
 	if err != nil {
 		return err
 	}

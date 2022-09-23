@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,6 @@
 package sifbundle
 
 import (
-	"io/ioutil"
 	"os"
 	"runtime"
 	"testing"
@@ -26,11 +25,11 @@ const busyboxSIF = "../../../e2e/testdata/busybox_" + runtime.GOARCH + ".sif"
 func TestFromSif(t *testing.T) {
 	test.EnsurePrivilege(t)
 
-	bundlePath, err := ioutil.TempDir("", "bundle")
+	bundlePath, err := os.MkdirTemp("", "bundle")
 	if err != nil {
 		t.Fatal(err)
 	}
-	f, err := ioutil.TempFile("", "busybox")
+	f, err := os.CreateTemp("", "busybox")
 	if err != nil {
 		t.Fatal(err)
 	}

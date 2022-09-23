@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -225,7 +224,7 @@ func TestEnsureDirPrivate(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	tmpdir, err := ioutil.TempDir("", "test-ensure-dir-private")
+	tmpdir, err := os.MkdirTemp("", "test-ensure-dir-private")
 	if err != nil {
 		t.Fatalf("Cannot create temporary directory")
 	}
@@ -473,7 +472,7 @@ func TestGenKeyPair(t *testing.T) {
 	}
 
 	// Create a temporary directory to store the keyring
-	dir, err := ioutil.TempDir("", "")
+	dir, err := os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatalf("failed to create temporary directory")
 	}
@@ -774,7 +773,7 @@ func TestRemoveKey(t *testing.T) {
 }
 
 func TestGlobalKeyRing(t *testing.T) {
-	dir, err := ioutil.TempDir("", "global-keyring-")
+	dir, err := os.MkdirTemp("", "global-keyring-")
 	if err != nil {
 		t.Fatalf("could not create temporary global keyring: %s", err)
 	}

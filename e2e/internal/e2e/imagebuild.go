@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,8 +8,8 @@ package e2e
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"log"
+	"os"
 	"path"
 	"testing"
 	"text/template"
@@ -77,7 +77,7 @@ func PrepareDefFile(dfd DefFileDetails) (outputPath string) {
 		log.Fatalf("failed to parse template: %v", err)
 	}
 
-	f, err := ioutil.TempFile("", "TestTemplate-")
+	f, err := os.CreateTemp("", "TestTemplate-")
 	if err != nil {
 		log.Fatalf("failed to open temp file: %v", err)
 	}
@@ -105,7 +105,7 @@ func PrepareMultiStageDefFile(dfd []DefFileDetails) (outputPath string) {
 		}
 	}
 
-	f, err := ioutil.TempFile("", "TestTemplate-")
+	f, err := os.CreateTemp("", "TestTemplate-")
 	if err != nil {
 		log.Fatalf("failed to open temp file: %v", err)
 	}

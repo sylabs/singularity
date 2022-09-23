@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -95,7 +94,7 @@ func checkCmd(sCmd string, e2eCmds string, resultFile *os.File, verbose bool) er
 }
 
 func loadData(singularityCmdsFile, e2eCmdsFile string) (string, string, error) {
-	e2eData, err := ioutil.ReadFile(e2eCmdsFile)
+	e2eData, err := os.ReadFile(e2eCmdsFile)
 	if err != nil {
 		return "", "", err
 	}
@@ -107,7 +106,7 @@ func loadData(singularityCmdsFile, e2eCmdsFile string) (string, string, error) {
 	e2eCmds = strings.ReplaceAll(e2eCmds, "singularity --debug", "singularity")
 	e2eCmds = strings.ReplaceAll(e2eCmds, "singularity -d", "singularity")
 
-	singularityData, err := ioutil.ReadFile(singularityCmdsFile)
+	singularityData, err := os.ReadFile(singularityCmdsFile)
 	if err != nil {
 		return "", "", err
 	}
@@ -122,7 +121,7 @@ func analyseData(singularityCmds string, e2eCmds string, report string, verbose 
 		resultFile *os.File
 	)
 	if report == "" {
-		resultFile, err = ioutil.TempFile("", "singularity-cmd-coverage-")
+		resultFile, err = os.CreateTemp("", "singularity-cmd-coverage-")
 	} else {
 		resultFile, err = os.OpenFile(report, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
 	}
@@ -218,13 +217,13 @@ func buildTree(root *cobra.Command, outputFile *os.File) singularityCmd {
 }
 
 func createCmdsFiles() (string, string, error) {
-	jsonFile, err := ioutil.TempFile("", "singularityCmdsJSON-")
+	jsonFile, err := os.CreateTemp("", "singularityCmdsJSON-")
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create command JSON file: %s", err)
 	}
 	defer jsonFile.Close()
 
-	textFile, err := ioutil.TempFile("", "singularityCmds-")
+	textFile, err := os.CreateTemp("", "singularityCmds-")
 	if err != nil {
 		return "", "", fmt.Errorf("failed to create command text file: %s", err)
 	}

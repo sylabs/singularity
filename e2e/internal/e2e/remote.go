@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2021 Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2022 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,7 @@
 package e2e
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -20,11 +20,11 @@ func SetupSystemRemoteFile(t *testing.T, testDir string) {
 		dest := filepath.Join(buildcfg.SINGULARITY_CONFDIR, "remote.yaml")
 		source := filepath.Join(testDir, "remote.yaml")
 
-		data, err := ioutil.ReadFile(orig)
+		data, err := os.ReadFile(orig)
 		if err != nil {
 			t.Fatalf("while reading %s: %s", orig, err)
 		}
-		if err := ioutil.WriteFile(source, data, 0o644); err != nil {
+		if err := os.WriteFile(source, data, 0o644); err != nil {
 			t.Fatalf("while creating %s: %s", source, err)
 		}
 		if err := unix.Mount(source, dest, "", unix.MS_BIND, ""); err != nil {

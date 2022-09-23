@@ -6,7 +6,6 @@
 package files
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -44,7 +43,7 @@ func TestMakeParentDir(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// create tmpdir for each test
-			dir, err := ioutil.TempDir("", "parent-dir-test-")
+			dir, err := os.MkdirTemp("", "parent-dir-test-")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -86,7 +85,7 @@ func TestMakeParentDir(t *testing.T) {
 //nolint:maintidx
 func TestCopyFromHost(t *testing.T) {
 	// create tmpdir
-	dir, err := ioutil.TempDir("", "copy-test-src-")
+	dir, err := os.MkdirTemp("", "copy-test-src-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,12 +93,12 @@ func TestCopyFromHost(t *testing.T) {
 
 	// Source Files
 	srcFile := filepath.Join(dir, "srcFile")
-	if err := ioutil.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
+	if err := os.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	srcFileGlob := filepath.Join(dir, "srcFi?*")
 	srcSpaceFile := filepath.Join(dir, "src File")
-	if err := ioutil.WriteFile(srcSpaceFile, []byte(sourceFileContent), 0o644); err != nil {
+	if err := os.WriteFile(srcSpaceFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs
@@ -115,7 +114,7 @@ func TestCopyFromHost(t *testing.T) {
 	srcGlob := filepath.Join(dir, "src*")
 	// Nested File (to test multi level glob)
 	srcFileNested := filepath.Join(dir, "srcDir/srcFileNested")
-	if err := ioutil.WriteFile(srcFileNested, []byte(sourceFileContent), 0o644); err != nil {
+	if err := os.WriteFile(srcFileNested, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	srcFileNestedGlob := filepath.Join(dir, "srcDi?/srcFil?Nested")
@@ -335,7 +334,7 @@ func TestCopyFromHost(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create outer destination dir
-			dstRoot, err := ioutil.TempDir("", "copy-test-dst-")
+			dstRoot, err := os.MkdirTemp("", "copy-test-dst-")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -375,7 +374,7 @@ func TestCopyFromHost(t *testing.T) {
 // works. CopyFromHost should always resolve symlinks, even those nested inside a source dir.
 func TestCopyFromHostNested(t *testing.T) {
 	// create tmpdir
-	dir, err := ioutil.TempDir("", "copy-test-src-")
+	dir, err := os.MkdirTemp("", "copy-test-src-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -388,7 +387,7 @@ func TestCopyFromHostNested(t *testing.T) {
 	}
 	// Source Files
 	srcFile := filepath.Join(innerDir, "srcFile")
-	if err := ioutil.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
+	if err := os.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs
@@ -415,7 +414,7 @@ func TestCopyFromHostNested(t *testing.T) {
 	}
 
 	// Create outer destination dir
-	dstDir, err := ioutil.TempDir("", "copy-test-dst-")
+	dstDir, err := os.MkdirTemp("", "copy-test-dst-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -486,7 +485,7 @@ func TestCopyFromHostNested(t *testing.T) {
 //nolint:maintidx
 func TestCopyFromStage(t *testing.T) {
 	// create tmpdir
-	srcRoot, err := ioutil.TempDir("", "copy-test-src-")
+	srcRoot, err := os.MkdirTemp("", "copy-test-src-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -494,11 +493,11 @@ func TestCopyFromStage(t *testing.T) {
 
 	// Source Files
 	srcFile := filepath.Join(srcRoot, "srcFile")
-	if err := ioutil.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
+	if err := os.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	srcSpaceFile := filepath.Join(srcRoot, "src File")
-	if err := ioutil.WriteFile(srcSpaceFile, []byte(sourceFileContent), 0o644); err != nil {
+	if err := os.WriteFile(srcSpaceFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs
@@ -512,7 +511,7 @@ func TestCopyFromStage(t *testing.T) {
 	}
 	// Nested File (to test multi level glob)
 	srcFileNested := filepath.Join(srcRoot, "srcDir/srcFileNested")
-	if err := ioutil.WriteFile(srcFileNested, []byte(sourceFileContent), 0o644); err != nil {
+	if err := os.WriteFile(srcFileNested, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Symlinks
@@ -747,7 +746,7 @@ func TestCopyFromStage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create outer destination dir
-			dstRoot, err := ioutil.TempDir("", "copy-test-dst-")
+			dstRoot, err := os.MkdirTemp("", "copy-test-dst-")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -789,7 +788,7 @@ func TestCopyFromStage(t *testing.T) {
 // works. CopyFromStage should *not* resolve the symlinks that are nested in the dir.
 func TestCopyFromStageNested(t *testing.T) {
 	// create tmpdir
-	srcRoot, err := ioutil.TempDir("", "copy-test-src-")
+	srcRoot, err := os.MkdirTemp("", "copy-test-src-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -802,7 +801,7 @@ func TestCopyFromStageNested(t *testing.T) {
 	}
 	// Source Files
 	srcFile := filepath.Join(innerDir, "srcFile")
-	if err := ioutil.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
+	if err := os.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs
@@ -829,7 +828,7 @@ func TestCopyFromStageNested(t *testing.T) {
 	}
 
 	// Create outer destination dir
-	dstRoot, err := ioutil.TempDir("", "copy-test-dst-")
+	dstRoot, err := os.MkdirTemp("", "copy-test-dst-")
 	if err != nil {
 		t.Fatal(err)
 	}

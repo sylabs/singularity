@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -16,7 +16,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/sylabs/sif/v2/pkg/sif"
@@ -141,7 +140,7 @@ func PlaintextKey(k KeyInfo, image string) ([]byte, error) {
 }
 
 func LoadPEMPrivateKey(fn string) (*rsa.PrivateKey, error) {
-	b, err := ioutil.ReadFile(fn)
+	b, err := os.ReadFile(fn)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +154,7 @@ func LoadPEMPrivateKey(fn string) (*rsa.PrivateKey, error) {
 }
 
 func LoadPEMPublicKey(fn string) (*rsa.PublicKey, error) {
-	b, err := ioutil.ReadFile(fn)
+	b, err := os.ReadFile(fn)
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +168,7 @@ func LoadPEMPublicKey(fn string) (*rsa.PublicKey, error) {
 }
 
 func loadPEMMessage(r io.Reader) ([]byte, error) {
-	b, err := ioutil.ReadAll(r)
+	b, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}

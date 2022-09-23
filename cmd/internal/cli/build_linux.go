@@ -9,7 +9,6 @@ package cli
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	osExec "os/exec"
 	"runtime"
@@ -221,7 +220,7 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		}
 
 		// create temporary file to download sif
-		f, err := ioutil.TempFile(tmpDir, "remote-build-")
+		f, err := os.CreateTemp(tmpDir, "remote-build-")
 		if err != nil {
 			sylog.Fatalf("Could not create temporary directory: %s", err)
 		}

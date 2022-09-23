@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,6 @@
 package sources
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -16,7 +15,7 @@ import (
 )
 
 func testWithGoodDir(t *testing.T, f func(d string) error) {
-	d, err := ioutil.TempDir(os.TempDir(), "test")
+	d, err := os.MkdirTemp(os.TempDir(), "test")
 	if err != nil {
 		t.Fatalf("Failed to make temporary directory: %v", err)
 	}

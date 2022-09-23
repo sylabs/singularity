@@ -7,7 +7,6 @@ package instance
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -101,7 +100,7 @@ func (c *ctx) testBasicOptions(t *testing.T) {
 	fileContents := []byte("world")
 
 	// Create a temporary directory to serve as a home directory.
-	dir, err := ioutil.TempDir(c.env.TestDir, "TestInstance")
+	dir, err := os.MkdirTemp(c.env.TestDir, "TestInstance")
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
@@ -109,7 +108,7 @@ func (c *ctx) testBasicOptions(t *testing.T) {
 
 	// Create and populate a temporary file.
 	tempFile := filepath.Join(dir, fileName)
-	err = ioutil.WriteFile(tempFile, fileContents, 0o644)
+	err = os.WriteFile(tempFile, fileContents, 0o644)
 	err = errors.Wrapf(err, "creating temporary test file %s", tempFile)
 	if err != nil {
 		t.Fatalf("Failed to create file: %+v", err)
@@ -158,7 +157,7 @@ func (c *ctx) testContain(t *testing.T) {
 	const fileName = "thegreattestfile"
 
 	// Create a temporary directory to serve as a contain directory.
-	dir, err := ioutil.TempDir("", "TestInstance")
+	dir, err := os.MkdirTemp("", "TestInstance")
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
@@ -231,7 +230,7 @@ func (c *ctx) testGhostInstance(t *testing.T) {
 			t.Fatalf("instance %s failed to start correctly", instanceName)
 		}
 
-		d, err := ioutil.ReadFile(pidfile)
+		d, err := os.ReadFile(pidfile)
 		if err != nil {
 			t.Fatalf("failed to read pid file: %s", err)
 		}

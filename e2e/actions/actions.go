@@ -10,7 +10,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -632,7 +631,7 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 	require.Command(t, "mksquashfs")
 	require.Command(t, "dd")
 
-	testdir, err := ioutil.TempDir(c.env.TestDir, "persistent-overlay-")
+	testdir, err := os.MkdirTemp(c.env.TestDir, "persistent-overlay-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -657,13 +656,13 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 	sandboxImage := filepath.Join(testdir, "sandbox")
 
 	// create an overlay directory
-	dir, err := ioutil.TempDir(testdir, "overlay-dir-")
+	dir, err := os.MkdirTemp(testdir, "overlay-dir-")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// create root directory for squashfs image
-	squashDir, err := ioutil.TempDir(testdir, "root-squash-dir-")
+	squashDir, err := os.MkdirTemp(testdir, "root-squash-dir-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1515,12 +1514,12 @@ func (c actionTests) fuseMount(t *testing.T) {
 			if t.Failed() {
 				return
 			}
-			content, err := ioutil.ReadFile(rootPrivKey)
+			content, err := os.ReadFile(rootPrivKey)
 			if err != nil {
 				t.Errorf("could not read ssh private key: %s", err)
 				return
 			}
-			if err := ioutil.WriteFile(userPrivKey, content, 0o600); err != nil {
+			if err := os.WriteFile(userPrivKey, content, 0o600); err != nil {
 				t.Errorf("could not write ssh user private key: %s", err)
 				return
 			}
@@ -1700,7 +1699,7 @@ func (c actionTests) bindImage(t *testing.T) {
 	require.Command(t, "mksquashfs")
 	require.Command(t, "dd")
 
-	testdir, err := ioutil.TempDir(c.env.TestDir, "bind-image-")
+	testdir, err := os.MkdirTemp(c.env.TestDir, "bind-image-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1723,7 +1722,7 @@ func (c actionTests) bindImage(t *testing.T) {
 	ext3Img := filepath.Join(testdir, "ext3_fs.img")
 
 	// create root directory for squashfs image
-	squashDir, err := ioutil.TempDir(testdir, "root-squash-dir-")
+	squashDir, err := os.MkdirTemp(testdir, "root-squash-dir-")
 	if err != nil {
 		t.Fatal(err)
 	}

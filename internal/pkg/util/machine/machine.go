@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,7 +13,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -239,12 +238,12 @@ func canEmulate(arch string) bool {
 	}
 
 	// look at /proc/sys/fs/binfmt_misc
-	content, _ := ioutil.ReadFile(filepath.Join(binfmtMisc, "status"))
+	content, _ := os.ReadFile(filepath.Join(binfmtMisc, "status"))
 	if string(content) != "enabled\n" {
 		return false
 	}
 
-	infos, err := ioutil.ReadDir(binfmtMisc)
+	infos, err := os.ReadDir(binfmtMisc)
 	if err != nil {
 		return false
 	}
@@ -253,7 +252,7 @@ func canEmulate(arch string) bool {
 
 	for _, fi := range infos {
 		f := filepath.Join(binfmtMisc, fi.Name())
-		b, err := ioutil.ReadFile(f)
+		b, err := os.ReadFile(f)
 		if err != nil {
 			continue
 		}

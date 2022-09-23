@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,7 +7,6 @@ package bin
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
@@ -162,7 +161,7 @@ func TestFindFromConfigOrPath(t *testing.T) {
 				tc.expectPath = lookPath
 			}
 
-			f, err := ioutil.TempFile("", "test.conf")
+			f, err := os.CreateTemp("", "test.conf")
 			if err != nil {
 				t.Fatalf("cannot create temporary test configuration: %+v", err)
 			}
@@ -170,7 +169,7 @@ func TestFindFromConfigOrPath(t *testing.T) {
 			defer os.Remove(f.Name())
 
 			cfg := fmt.Sprintf("%s = %s\n", tc.configKey, tc.configVal)
-			ioutil.WriteFile(f.Name(), []byte(cfg), 0o644)
+			os.WriteFile(f.Name(), []byte(cfg), 0o644)
 
 			conf, err := singularityconf.Parse(f.Name())
 			if err != nil {
@@ -297,7 +296,7 @@ func TestFindFromConfigOnly(t *testing.T) {
 				t.Skip("skipping - no buildcfg path known")
 			}
 
-			f, err := ioutil.TempFile("", "test.conf")
+			f, err := os.CreateTemp("", "test.conf")
 			if err != nil {
 				t.Fatalf("cannot create temporary test configuration: %+v", err)
 			}
@@ -305,7 +304,7 @@ func TestFindFromConfigOnly(t *testing.T) {
 			defer os.Remove(f.Name())
 
 			cfg := fmt.Sprintf("%s = %s\n", tc.configKey, tc.configVal)
-			ioutil.WriteFile(f.Name(), []byte(cfg), 0o644)
+			os.WriteFile(f.Name(), []byte(cfg), 0o644)
 
 			conf, err := singularityconf.Parse(f.Name())
 			if err != nil {

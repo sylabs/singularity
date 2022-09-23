@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,7 +7,6 @@ package image
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"testing"
@@ -105,7 +104,7 @@ func TestCheckExt3Header(t *testing.T) {
 	b := make([]byte, bufferSize)
 
 	// Create a fake ext3 file
-	dir, err := ioutil.TempDir("", "headerTesting-")
+	dir, err := os.MkdirTemp("", "headerTesting-")
 	if err != nil {
 		t.Fatalf("impossible to create temporary directory: %s\n", err)
 	}
@@ -139,7 +138,7 @@ func TestInitializer(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	// Create a temporary image which is obviously an invalid ext3 image
-	f, err := ioutil.TempFile("", "image-")
+	f, err := os.CreateTemp("", "image-")
 	if err != nil {
 		t.Fatalf("cannot create temporary file: %s\n", err)
 	}
@@ -221,7 +220,7 @@ func TestInitializer(t *testing.T) {
 	}
 
 	// Error case when a directory is passed in to initializer()
-	path, err = ioutil.TempDir("", "")
+	path, err = os.MkdirTemp("", "")
 	if err != nil {
 		t.Fatalf("Cannot create a temporary directory: %s\n", err)
 	}

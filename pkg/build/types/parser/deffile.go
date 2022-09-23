@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"reflect"
@@ -418,7 +417,7 @@ func doHeader(h string, d *types.Definition) error {
 // and parse it into a Definition struct or return error if
 // the definition file has a bad section.
 func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
-	d.Raw, err = ioutil.ReadAll(r)
+	d.Raw, err = io.ReadAll(r)
 	if err != nil {
 		return d, fmt.Errorf("while attempting to read in definition: %v", err)
 	}
@@ -450,7 +449,7 @@ func ParseDefinitionFile(r io.Reader) (d types.Definition, err error) {
 func All(r io.Reader) ([]types.Definition, error) {
 	var stages []types.Definition
 
-	raw, err := ioutil.ReadAll(r)
+	raw, err := io.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("while attempting to read in definition: %v", err)
 	}
