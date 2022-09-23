@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -57,7 +57,7 @@ func ProgressBarCallback(ctx context.Context) ProgressCallback {
 	}
 
 	return func(totalSize int64, r io.Reader, w io.Writer) error {
-		p, bar := initProgressBar(totalSize)
+		p, bar := initProgressBar(totalSize) //nolint:contextcheck
 
 		// create proxy reader
 		bodyProgress := bar.ProxyReader(r)
