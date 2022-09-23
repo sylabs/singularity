@@ -11,7 +11,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -486,7 +485,7 @@ func testHTTPPortmap(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdo
 	}
 	conn.Close()
 
-	received, err := ioutil.ReadAll(stdout)
+	received, err := io.ReadAll(stdout)
 	if err != nil {
 		return err
 	}
@@ -599,7 +598,7 @@ func TestMain(m *testing.M) {
 
 	test.EnsurePrivilege(nil)
 
-	defaultCNIConfPath, err = ioutil.TempDir("", "conf_test_")
+	defaultCNIConfPath, err = os.MkdirTemp("", "conf_test_")
 	if err != nil {
 		os.Exit(1)
 	}
@@ -607,7 +606,7 @@ func TestMain(m *testing.M) {
 	for _, conf := range confFiles {
 		testNetworks = append(testNetworks, conf.name)
 		path := filepath.Join(defaultCNIConfPath, conf.file)
-		if err := ioutil.WriteFile(path, []byte(conf.content), 0o644); err != nil {
+		if err := os.WriteFile(path, []byte(conf.content), 0o644); err != nil {
 			os.RemoveAll(defaultCNIConfPath)
 			os.Exit(1)
 		}

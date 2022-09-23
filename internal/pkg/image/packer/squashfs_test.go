@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,6 @@
 package packer
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -40,7 +39,7 @@ func isExist(path string) bool {
 }
 
 func createSquashfs(t *testing.T, s *Squashfs) (string, error) {
-	image, err := ioutil.TempFile("", "packer-")
+	image, err := os.CreateTemp("", "packer-")
 	if err != nil {
 		t.Fatal(err)
 	}

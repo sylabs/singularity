@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,7 +7,7 @@ package layout
 
 import (
 	"fmt"
-	"io/ioutil"
+	iofs "io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -49,7 +49,7 @@ type VFS interface {
 	Lchown(string, int, int) error
 	Mkdir(string, os.FileMode) error
 	Readlink(string) (string, error)
-	ReadDir(string) ([]os.FileInfo, error)
+	ReadDir(string) ([]iofs.DirEntry, error)
 	Stat(string) (os.FileInfo, error)
 	Symlink(string, string) error
 	Umask(int) int
@@ -78,8 +78,8 @@ func (v *defaultVFS) Readlink(name string) (string, error) {
 	return os.Readlink(name)
 }
 
-func (v *defaultVFS) ReadDir(dir string) ([]os.FileInfo, error) {
-	return ioutil.ReadDir(dir)
+func (v *defaultVFS) ReadDir(dir string) ([]iofs.DirEntry, error) {
+	return os.ReadDir(dir)
 }
 
 func (v *defaultVFS) Stat(name string) (os.FileInfo, error) {

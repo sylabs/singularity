@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,7 +7,7 @@ package files
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
@@ -60,7 +60,7 @@ func Group(path string, uid int, gids []int) (content []byte, err error) {
 			groups = append(groups, int(pwInfo.GID))
 		}
 	}
-	content, err = ioutil.ReadAll(groupFile)
+	content, err = io.ReadAll(groupFile)
 	if err != nil {
 		return content, fmt.Errorf("failed to read group file content in container: %s", err)
 	}

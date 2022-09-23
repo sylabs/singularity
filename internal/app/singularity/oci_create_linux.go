@@ -13,7 +13,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -193,7 +192,7 @@ func readConmonPipeData(pipe *os.File, ociLog string) (int, error) {
 	case ss := <-ch:
 		if ss.err != nil {
 			if ociLog != "" {
-				ociLogData, err := ioutil.ReadFile(ociLog)
+				ociLogData, err := os.ReadFile(ociLog)
 				if err == nil {
 					var ociErr ociError
 					if err := json.Unmarshal(ociLogData, &ociErr); err == nil {
@@ -206,7 +205,7 @@ func readConmonPipeData(pipe *os.File, ociLog string) (int, error) {
 		sylog.Debugf("Received: %d", ss.si.Data)
 		if ss.si.Data < 0 {
 			if ociLog != "" {
-				ociLogData, err := ioutil.ReadFile(ociLog)
+				ociLogData, err := os.ReadFile(ociLog)
 				if err == nil {
 					var ociErr ociError
 					if err := json.Unmarshal(ociLogData, &ociErr); err == nil {

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -192,7 +192,7 @@ func (u *Underlay) duplicateDir(dir string, system *mount.System, existingPath s
 				return fmt.Errorf("can't add bind mount point: %s", err)
 			}
 			binds++
-		} else if file.Mode()&os.ModeSymlink != 0 {
+		} else if file.Type()&os.ModeSymlink != 0 {
 			tgt, err := u.session.VFS.Readlink(src)
 			if err != nil {
 				return fmt.Errorf("can't read symlink information for %s: %s", src, err)

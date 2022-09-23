@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,7 +10,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -202,7 +201,7 @@ func (cp *DebootstrapConveyorPacker) Get(ctx context.Context, b *types.Bundle) (
 			}
 			defer fh.Close()
 
-			log, err := ioutil.ReadAll(fh)
+			log, err := io.ReadAll(fh)
 			if err != nil {
 				sylog.Debugf("Cannot read %s: %#v", fn, err)
 				return

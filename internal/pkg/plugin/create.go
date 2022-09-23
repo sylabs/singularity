@@ -7,7 +7,6 @@ package plugin
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -66,13 +65,13 @@ func Create(path, name string) error {
 	// create main.go skeleton
 	filename := filepath.Join(dir, "main.go")
 	content := fmt.Sprintf(mainGo, name)
-	if err := ioutil.WriteFile(filename, []byte(content), 0o644); err != nil {
+	if err := os.WriteFile(filename, []byte(content), 0o644); err != nil {
 		return fmt.Errorf("while creating plugin %s: %s", filename, err)
 	}
 
 	// create .gitignore skeleton
 	filename = filepath.Join(dir, ".gitignore")
-	if err := ioutil.WriteFile(filename, []byte(gitIgnore), 0o644); err != nil {
+	if err := os.WriteFile(filename, []byte(gitIgnore), 0o644); err != nil {
 		return fmt.Errorf("while creating plugin %s: %s", filename, err)
 	}
 

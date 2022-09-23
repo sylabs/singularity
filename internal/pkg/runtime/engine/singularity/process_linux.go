@@ -13,7 +13,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -865,7 +864,7 @@ func runActionScript(engineConfig *singularityConfig.EngineConfig) ([]string, []
 // getDockerRunscript returns the content as a reader of
 // the default runscript set for docker images if any.
 func getDockerRunscript(path string) (io.Reader, error) {
-	r, err := ioutil.ReadFile(path)
+	r, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("while reading %s: %s", path, err)
 	}

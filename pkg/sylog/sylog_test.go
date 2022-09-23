@@ -11,7 +11,6 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
@@ -128,7 +127,7 @@ func TestWriter(t *testing.T) {
 		{
 			name:           "undefined level",
 			loggerLevel:    int(FatalLevel - 1),
-			expectedResult: ioutil.Discard,
+			expectedResult: io.Discard,
 		},
 		{
 			name:           "no logger",
@@ -147,8 +146,8 @@ func TestWriter(t *testing.T) {
 			SetLevel(tt.loggerLevel, true)
 			w := Writer()
 			if w != tt.expectedResult {
-				if w == ioutil.Discard {
-					fmt.Printf("%s returned ioutil.Discard\n", tt.name)
+				if w == io.Discard {
+					fmt.Printf("%s returned io.Discard\n", tt.name)
 				}
 				if w == os.Stderr {
 					fmt.Printf("%s returned os.Stderr\n", tt.name)

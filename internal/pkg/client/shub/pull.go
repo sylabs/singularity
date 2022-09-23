@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,7 +8,6 @@ package shub
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -181,7 +180,7 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom, tmpDir string, 
 	directTo := ""
 
 	if imgCache.IsDisabled() {
-		file, err := ioutil.TempFile(tmpDir, "sbuild-tmp-cache-")
+		file, err := os.CreateTemp(tmpDir, "sbuild-tmp-cache-")
 		if err != nil {
 			return "", fmt.Errorf("unable to create tmp file: %v", err)
 		}

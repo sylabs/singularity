@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,7 +8,6 @@ package cli
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -62,7 +61,7 @@ func Test_collectInput_flags(t *testing.T) {
 }
 
 func TestCollectInput(t *testing.T) {
-	tf, err := ioutil.TempFile("", "collect-test-")
+	tf, err := os.CreateTemp("", "collect-test-")
 	assert.NilError(t, err)
 	defer tf.Close()
 

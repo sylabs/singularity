@@ -8,7 +8,7 @@
 package sylog
 
 import (
-	"io/ioutil"
+	"io"
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test"
@@ -41,8 +41,8 @@ func TestWriter(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	w := Writer()
-	if w != ioutil.Discard {
-		t.Fatalf("Writer() did not return ioutil.Discard as expected")
+	if w != io.Discard {
+		t.Fatalf("Writer() did not return io.Discard as expected")
 	}
 }
 

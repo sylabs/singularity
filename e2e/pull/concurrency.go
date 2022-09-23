@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,6 @@
 package pull
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -94,7 +93,7 @@ func (c ctx) testConcurrentPulls(t *testing.T) {
 		tt := tt
 
 		t.Run(tt.name, func(t *testing.T) {
-			tmpdir, err := ioutil.TempDir(c.env.TestDir, "pull_test.")
+			tmpdir, err := os.MkdirTemp(c.env.TestDir, "pull_test.")
 			if err != nil {
 				t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
 			}
