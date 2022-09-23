@@ -60,6 +60,7 @@ with_conmon=1
 with_suid=1
 with_seccomp_check=1
 
+builddir=
 prefix=
 exec_prefix=
 bindir=
@@ -515,7 +516,7 @@ if [ "$builddir" = "" ]; then
 else
 	mkdir -p $builddir
 	if ! builddir=`(cd $builddir 2>/dev/null && pwd -P)`; then
-		echo "error: could not chdir to builddir"
+		echo "error: could not chdir to $builddir"
 		exit 2
 	fi
 fi
@@ -676,7 +677,7 @@ CFLAGS := $cflags
 
 GO := $hstgo
 
-CGO_CFLAGS := $CGO_CFLAGS
+CGO_CFLAGS := -I$builddir $CGO_CFLAGS
 CGO_LDFLAGS := $CGO_LDFLAGS
 CGO_CPPFLAGS := $CGO_CPPFLAGS
 CGO_CXXFLAGS := $CGO_CXXFLAGS
