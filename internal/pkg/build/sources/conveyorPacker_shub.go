@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -16,8 +16,7 @@ import (
 
 // ShubConveyorPacker only needs to hold the conveyor to have the needed data to pack.
 type ShubConveyorPacker struct {
-	recipe types.Definition
-	b      *types.Bundle
+	b *types.Bundle
 	LocalPacker
 }
 

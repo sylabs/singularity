@@ -16,7 +16,6 @@ import (
 
 type ctx struct {
 	env             e2e.TestEnv
-	imgCache        string
 	keyringDir      string
 	passphraseInput []e2e.SingularityConsoleOp
 }
