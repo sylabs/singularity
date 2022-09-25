@@ -18,7 +18,6 @@ linters:
   enable:
     - containedctx
     - contextcheck
-    - deadcode
     - decorder
     - dupl
     - gofumpt
@@ -32,6 +31,7 @@ linters:
     - nakedret
     - revive
     - staticcheck
+    - unused
 
 linters-settings:
   misspell:
