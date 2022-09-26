@@ -40,8 +40,8 @@ require (
 	github.com/sylabs/scs-key-client v0.7.2
 	github.com/sylabs/scs-library-client v1.3.3
 	github.com/sylabs/sif/v2 v2.8.0
-	github.com/vbauerster/mpb/v7 v7.5.3
-	golang.org/x/sys v0.0.0-20220909162455-aba9fc2a8ff2
+	github.com/vbauerster/mpb/v8 v8.1.0
+	golang.org/x/sys v0.0.0-20220919091848-fb04ddd9f9c8
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	golang.org/x/text v0.3.7
 	gopkg.in/yaml.v2 v2.4.0
@@ -135,6 +135,7 @@ require (
 	github.com/urfave/cli v1.22.5 // indirect
 	github.com/vbatts/go-mtree v0.5.0 // indirect
 	github.com/vbatts/tar-split v0.11.2 // indirect
+	github.com/vbauerster/mpb/v7 v7.5.3 // indirect
 	github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5 // indirect
 	github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
