@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package cli
+package launch
 
 import (
 	"context"
@@ -16,7 +16,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/spf13/cobra"
 	sifuser "github.com/sylabs/sif/v2/pkg/user"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
@@ -33,7 +32,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/shell/interpreter"
 	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
-	"github.com/sylabs/singularity/pkg/image"
 	imgutil "github.com/sylabs/singularity/pkg/image"
 	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
 	singularitycallback "github.com/sylabs/singularity/pkg/plugin/callback/runtime/engine/singularity"
@@ -49,69 +47,91 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// execStarter prepares an EngineConfig defining how a container should be executed, then calls the starter binary to execute it.
-// This includes interactive containers, instances, and joining an existing instance.
-//
-//nolint:maintidx
-func execStarter(cobraCmd *cobra.Command, image string, args []string, instanceName string) {
-	var err error
+func NewLauncher(opts ...Option) (*Launcher, error) {
+	lo := launchOptions{}
+	for _, opt := range opts {
+		if err := opt(&lo); err != nil {
+			return nil, fmt.Errorf("%w", err)
+		}
+	}
 
-	// Initialize a new configuration for the engine.
+	// Initialize empty default Singularity Engine and OCI configuration
 	engineConfig := singularityConfig.NewConfig()
 	engineConfig.File = singularityconf.GetCurrentConfig()
 	if engineConfig.File == nil {
-		sylog.Fatalf("Unable to get singularity configuration")
+		return nil, fmt.Errorf("unable to get singularity configuration")
 	}
 	ociConfig := &oci.Config{}
 	generator := generate.New(&ociConfig.Spec)
 	engineConfig.OciConfig = ociConfig
 
+	l := Launcher{
+		uid:          uint32(os.Getuid()),
+		gid:          uint32(os.Getgid()),
+		cfg:          lo,
+		engineConfig: engineConfig,
+		generator:    generator,
+	}
+
+	return &l, nil
+}
+
+// Exec prepares an EngineConfig defining how a container should be launched, then calls the starter binary to execute it.
+// This includes interactive containers, instances, and joining an existing instance.
+//
+//nolint:maintidx
+func (l *Launcher) Exec(ctx context.Context, image string, args []string, instanceName string) error {
+	var err error
+
 	// Set arguments to pass to contained process.
-	generator.SetProcessArgs(args)
+	l.generator.SetProcessArgs(args)
 
 	// NoEval means we will not shell evaluate args / env in action scripts and environment processing.
 	// This replicates OCI behavior and differes from historic Singularity behavior.
-	if NoEval {
-		engineConfig.SetNoEval(true)
-		generator.AddProcessEnv("SINGULARITY_NO_EVAL", "1")
+	if l.cfg.NoEval {
+		l.engineConfig.SetNoEval(true)
+		l.generator.AddProcessEnv("SINGULARITY_NO_EVAL", "1")
 	}
 
 	// Set container Umask w.r.t. our own, before any umask manipulation happens.
-	setUmask(engineConfig)
+	l.setUmask()
 
 	// Get our effective uid and gid for container execution.
 	// If root user requests a target uid, gid via --security options, handle them now.
-	uid, gid, err := setTargetIDs(engineConfig)
+	l.uid, l.gid, err = l.setTargetIDs()
 	if err != nil {
 		sylog.Fatalf("Could not configure target UID/GID: %s", err)
 	}
 
 	// Set image to run, or instance to join, and SINGULARITY_CONTAINER/SINGULARITY_NAME env vars.
-	if err := setImageOrInstance(image, instanceName, uid, engineConfig, generator); err != nil {
+	if err := l.setImageOrInstance(image, instanceName); err != nil {
 		sylog.Errorf("While setting image/instance: %s", err)
 	}
 
 	// Overlay or writable image requested?
-	engineConfig.SetOverlayImage(OverlayPath)
-	engineConfig.SetWritableImage(IsWritable)
+	l.engineConfig.SetOverlayImage(l.cfg.OverlayPaths)
+	l.engineConfig.SetWritableImage(l.cfg.Writable)
 	// --writable-tmpfs is for an ephemeral overlay, doesn't make sense if also asking to write to image itself.
-	if IsWritable && IsWritableTmpfs {
+	if l.cfg.Writable && l.cfg.WritableTmpfs {
 		sylog.Warningf("Disabling --writable-tmpfs flag, mutually exclusive with --writable")
-		engineConfig.SetWritableTmpfs(false)
+		l.engineConfig.SetWritableTmpfs(false)
 	} else {
-		engineConfig.SetWritableTmpfs(IsWritableTmpfs)
+		l.engineConfig.SetWritableTmpfs(l.cfg.WritableTmpfs)
 	}
 
 	// Check key is available for encrypted image, if applicable.
-	err = checkEncryptionKey(cobraCmd, engineConfig)
-	if err != nil {
-		sylog.Fatalf("While checking container encryption: %s", err)
+	// If we are joining an instance, then any encrypted image is already mounted.
+	if !l.engineConfig.GetInstanceJoin() {
+		err = l.checkEncryptionKey()
+		if err != nil {
+			sylog.Fatalf("While checking container encryption: %s", err)
+		}
 	}
 
 	// Will we use the suid starter? If not we need to force the user namespace.
-	useSuid, forceUserNs := useSuid(uid, engineConfig)
+	useSuid, forceUserNs := l.useSuid()
 	if forceUserNs {
-		UserNamespace = true
+		l.cfg.Namespaces.User = true
 	}
 
 	// In the setuid workflow, set RLIMIT_STACK to its default value, keeping the
@@ -121,29 +141,28 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, instanceN
 		if err != nil {
 			sylog.Warningf("can't retrieve stack size limit: %s", err)
 		}
-		generator.AddProcessRlimits("RLIMIT_STACK", hard, soft)
+		l.generator.AddProcessRlimits("RLIMIT_STACK", hard, soft)
 	}
 
 	// Handle requested binds, fuse mounts.
-	if err := setBinds(engineConfig, generator); err != nil {
+	if err := l.setBinds(); err != nil {
 		sylog.Fatalf("While setting bind mount configuration: %s", err)
 	}
-	if err := setFuseMounts(engineConfig); err != nil {
+	if err := l.setFuseMounts(); err != nil {
 		sylog.Fatalf("While setting FUSE mount configuration: %s", err)
 	}
 
 	// Set the home directory that should be effective in the container.
-	customHome := cobraCmd.Flag("home").Changed
-	if err := setHome(customHome, engineConfig); err != nil {
+	if err := l.setHome(); err != nil {
 		sylog.Fatalf("While setting home directory: %s", err)
 	}
 	// Allow user to disable the home mount via --no-home.
-	engineConfig.SetNoHome(NoHome)
+	l.engineConfig.SetNoHome(l.cfg.NoHome)
 	// Allow user to disable binds via --no-mount.
-	setNoMountFlags(engineConfig)
+	l.setNoMountFlags()
 
 	// GPU configuration may add library bind to /.singularity.d/libs.
-	if err := SetGPUConfig(engineConfig); err != nil {
+	if err := l.SetGPUConfig(); err != nil {
 		// We must fatal on error, as we are checking for correct ownership of nvidia-container-cli,
 		// which is important to maintain security.
 		sylog.Fatalf("While setting GPU configuration: %s", err)
@@ -151,39 +170,39 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, instanceN
 
 	// If proot is requested (we are running an unprivileged build, without userns) we must bind it
 	// into the container /.singularity.d/libs.
-	if Proot != "" && uid != 0 {
-		sylog.Debugf("Binding proot from %s", Proot)
-		engineConfig.AppendLibrariesPath(Proot)
+	if l.cfg.Proot != "" && l.uid != 0 {
+		sylog.Debugf("Binding proot from %s", l.cfg.Proot)
+		l.engineConfig.AppendLibrariesPath(l.cfg.Proot)
 	}
 
 	// Additional user requested library binds into /.singularity.d/libs.
-	engineConfig.AppendLibrariesPath(ContainLibsPath...)
+	l.engineConfig.AppendLibrariesPath(l.cfg.ContainLibs...)
 
 	// Additional directory overrides.
-	engineConfig.SetScratchDir(ScratchPath)
-	engineConfig.SetWorkdir(WorkdirPath)
+	l.engineConfig.SetScratchDir(l.cfg.ScratchDirs)
+	l.engineConfig.SetWorkdir(l.cfg.WorkDir)
 
 	// Container networking configuration.
-	engineConfig.SetNetwork(Network)
-	engineConfig.SetDNS(DNS)
-	engineConfig.SetNetworkArgs(NetworkArgs)
+	l.engineConfig.SetNetwork(l.cfg.Network)
+	l.engineConfig.SetDNS(l.cfg.DNS)
+	l.engineConfig.SetNetworkArgs(l.cfg.NetworkArgs)
 
 	// If user wants to set a hostname, it requires the UTS namespace.
-	if Hostname != "" {
-		UtsNamespace = true
-		engineConfig.SetHostname(Hostname)
+	if l.cfg.Hostname != "" {
+		l.cfg.Namespaces.UTS = true
+		l.engineConfig.SetHostname(l.cfg.Hostname)
 	}
 
 	// Set requested capabilities (effective for root, or if sysadmin has permitted to another user).
-	engineConfig.SetAddCaps(AddCaps)
-	engineConfig.SetDropCaps(DropCaps)
+	l.engineConfig.SetAddCaps(l.cfg.AddCaps)
+	l.engineConfig.SetDropCaps(l.cfg.DropCaps)
 
 	// Custom --config file (only effective in non-setuid or as root).
-	engineConfig.SetConfigurationFile(configurationFile)
+	l.engineConfig.SetConfigurationFile(l.cfg.ConfigFile)
 
 	// When running as root, the user can optionally allow setuid with container.
-	err = withPrivilege(AllowSUID, "--allow-setuid", func() error {
-		engineConfig.SetAllowSUID(AllowSUID)
+	err = withPrivilege(l.cfg.AllowSUID, "--allow-setuid", func() error {
+		l.engineConfig.SetAllowSUID(l.cfg.AllowSUID)
 		return nil
 	})
 	if err != nil {
@@ -191,8 +210,8 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, instanceN
 	}
 
 	// When running as root, the user can optionally keep all privs in the container.
-	err = withPrivilege(KeepPrivs, "--keep-privs", func() error {
-		engineConfig.SetKeepPrivs(KeepPrivs)
+	err = withPrivilege(l.cfg.KeepPrivs, "--keep-privs", func() error {
+		l.engineConfig.SetKeepPrivs(l.cfg.KeepPrivs)
 		return nil
 	})
 	if err != nil {
@@ -200,134 +219,131 @@ func execStarter(cobraCmd *cobra.Command, image string, args []string, instanceN
 	}
 
 	// User can optionally force dropping all privs from root in the container.
-	engineConfig.SetNoPrivs(NoPrivs)
+	l.engineConfig.SetNoPrivs(l.cfg.NoPrivs)
 
 	// Set engine --security options (selinux, apparmor, seccomp functionality).
-	engineConfig.SetSecurity(Security)
+	l.engineConfig.SetSecurity(l.cfg.SecurityOpts)
 
 	// User can override shell used when entering container.
-	engineConfig.SetShell(ShellPath)
-	if ShellPath != "" {
-		generator.AddProcessEnv("SINGULARITY_SHELL", ShellPath)
+	l.engineConfig.SetShell(l.cfg.ShellPath)
+	if l.cfg.ShellPath != "" {
+		l.generator.AddProcessEnv("SINGULARITY_SHELL", l.cfg.ShellPath)
 	}
 
 	// Are we running with userns and subuid / subgid fakeroot functionality?
-	engineConfig.SetFakeroot(IsFakeroot)
-	if IsFakeroot {
-		UserNamespace = true
+	l.engineConfig.SetFakeroot(l.cfg.Fakeroot)
+	if l.cfg.Fakeroot {
+		l.cfg.Namespaces.User = true
 	}
 
 	// If we are not root, we need to pass in XDG / DBUS environment so we can communicate
 	// with systemd for any cgroups (v2) operations.
-	if uid != 0 {
+	if l.uid != 0 {
 		sylog.Debugf("Recording rootless XDG_RUNTIME_DIR / DBUS_SESSION_BUS_ADDRESS")
-		engineConfig.SetXdgRuntimeDir(os.Getenv("XDG_RUNTIME_DIR"))
-		engineConfig.SetDbusSessionBusAddress(os.Getenv("DBUS_SESSION_BUS_ADDRESS"))
+		l.engineConfig.SetXdgRuntimeDir(os.Getenv("XDG_RUNTIME_DIR"))
+		l.engineConfig.SetDbusSessionBusAddress(os.Getenv("DBUS_SESSION_BUS_ADDRESS"))
 	}
 
-	// Handle cgroups configuration (from limit flags, or provided conf file).
-	cgJSON, err := getCgroupsJSON()
-	if err != nil {
-		sylog.Fatalf("While parsing cgroups configuration: %s", err)
-	}
-	engineConfig.SetCgroupsJSON(cgJSON)
+	// Handle cgroups configuration (parsed from file or flags in CLI).
+	l.engineConfig.SetCgroupsJSON(l.cfg.CGroupsJSON)
 
 	// --boot flag requires privilege, so check for this.
-	err = withPrivilege(IsBoot, "--boot", func() error { return nil })
+	err = withPrivilege(l.cfg.Boot, "--boot", func() error { return nil })
 	if err != nil {
 		sylog.Fatalf("Could not configure --boot: %s", err)
 	}
 
 	// --containall or --boot infer --contain.
-	if IsContained || IsContainAll || IsBoot {
-		engineConfig.SetContain(true)
+	if l.cfg.Contain || l.cfg.ContainAll || l.cfg.Boot {
+		l.engineConfig.SetContain(true)
 		// --containall infers PID/IPC isolation and a clean environment.
-		if IsContainAll {
-			PidNamespace = true
-			IpcNamespace = true
-			IsCleanEnv = true
+		if l.cfg.ContainAll {
+			l.cfg.Namespaces.PID = true
+			l.cfg.Namespaces.IPC = true
+			l.cfg.CleanEnv = true
 		}
 	}
 
 	// Setup instance specific configuration if required.
 	if instanceName != "" {
-		PidNamespace = true
-		engineConfig.SetInstance(true)
-		engineConfig.SetBootInstance(IsBoot)
+		l.cfg.Namespaces.PID = true
+		l.engineConfig.SetInstance(true)
+		l.engineConfig.SetBootInstance(l.cfg.Boot)
 
-		if useSuid && !UserNamespace && hidepidProc() {
-			sylog.Fatalf("hidepid option set on /proc mount, require 'hidepid=0' to start instance with setuid workflow")
+		if useSuid && !l.cfg.Namespaces.User && hidepidProc() {
+			return fmt.Errorf("hidepid option set on /proc mount, require 'hidepid=0' to start instance with setuid workflow")
 		}
 
 		_, err := instance.Get(instanceName, instance.SingSubDir)
 		if err == nil {
-			sylog.Fatalf("instance %s already exists", instanceName)
+			return fmt.Errorf("instance %s already exists", instanceName)
 		}
 
-		if IsBoot {
-			UtsNamespace = true
-			NetNamespace = true
-			if Hostname == "" {
-				engineConfig.SetHostname(instanceName)
+		if l.cfg.Boot {
+			l.cfg.Namespaces.UTS = true
+			l.cfg.Namespaces.Net = true
+			if l.cfg.Hostname == "" {
+				l.engineConfig.SetHostname(instanceName)
 			}
-			if !KeepPrivs {
-				engineConfig.SetDropCaps("CAP_SYS_BOOT,CAP_SYS_RAWIO")
+			if !l.cfg.KeepPrivs {
+				l.engineConfig.SetDropCaps("CAP_SYS_BOOT,CAP_SYS_RAWIO")
 			}
-			generator.SetProcessArgs([]string{"/sbin/init"})
+			l.generator.SetProcessArgs([]string{"/sbin/init"})
 		}
 	}
 
 	// Set the required namespaces in the engine config.
-	setNamespaces(uid, gid, engineConfig, generator)
+	l.setNamespaces()
 	// Set the container environment.
-	if err := setEnv(args, engineConfig, generator); err != nil {
-		sylog.Fatalf("While setting environment: %s", err)
+	if err := l.setEnv(ctx, args); err != nil {
+		return fmt.Errorf("while setting environment: %s", err)
 	}
 	// Set the container process work directory.
-	setProcessCwd(engineConfig, generator)
+	l.setProcessCwd()
 
-	generator.AddProcessEnv("SINGULARITY_APPNAME", AppName)
+	l.generator.AddProcessEnv("SINGULARITY_APPNAME", l.cfg.AppName)
 
 	// Get image ready to run, if needed, via FUSE mount / extraction / image driver handling.
-	if err := prepareImage(image, cobraCmd, engineConfig, generator); err != nil {
-		sylog.Fatalf("While preparing image: %s", err)
+	if err := l.prepareImage(ctx, image); err != nil {
+		return fmt.Errorf("while preparing image: %s", err)
 	}
 
 	// Call the starter binary using our prepared config.
-	if engineConfig.GetInstance() {
-		err = starterInstance(instanceName, uid, useSuid, engineConfig)
+	if l.engineConfig.GetInstance() {
+		err = l.starterInstance(instanceName, useSuid)
 	} else {
-		err = starterInteractive(useSuid, engineConfig)
+		err = l.starterInteractive(useSuid)
 	}
 
 	// Execution is finished.
 	if err != nil {
-		sylog.Fatalf("While executing starter: %s", err)
+		return fmt.Errorf("while executing starter: %s", err)
 	}
+	return nil
 }
 
 // setUmask saves the current umask, to be set for the process run in the container,
 // unless the --no-umask option was specified.
 // https://github.com/hpcng/singularity/issues/5214
-func setUmask(engineConfig *singularityConfig.EngineConfig) {
+func (l *Launcher) setUmask() {
 	currMask := syscall.Umask(0o022)
-	if !NoUmask {
+	if !l.cfg.NoUmask {
 		sylog.Debugf("Saving umask %04o for propagation into container", currMask)
-		engineConfig.SetUmask(currMask)
-		engineConfig.SetRestoreUmask(true)
+		l.engineConfig.SetUmask(currMask)
+		l.engineConfig.SetRestoreUmask(true)
 	}
 }
 
 // setTargetIDs sets engine configuration for any requested target UID and GID (when run as root).
 // The effective uid and gid we will run under are returned as uid and gid.
-func setTargetIDs(engineConfig *singularityConfig.EngineConfig) (uid, gid uint32, err error) {
+func (l *Launcher) setTargetIDs() (uid, gid uint32, err error) {
 	// Start with our actual uid / gid as invoked
 	uid = uint32(os.Getuid())
 	gid = uint32(os.Getgid())
 
 	// Identify requested uid/gif (if any) from --security options
-	uidParam := security.GetParam(Security, "uid")
-	gidParam := security.GetParam(Security, "gid")
+	uidParam := security.GetParam(l.cfg.SecurityOpts, "uid")
+	gidParam := security.GetParam(l.cfg.SecurityOpts, "gid")
 
 	targetUID := 0
 	targetGID := make([]int, 0)
@@ -341,7 +357,7 @@ func setTargetIDs(engineConfig *singularityConfig.EngineConfig) (uid, gid uint32
 		targetUID = int(u)
 		uid = uint32(targetUID)
 
-		engineConfig.SetTargetUID(targetUID)
+		l.engineConfig.SetTargetUID(targetUID)
 		return nil
 	})
 	if err != nil {
@@ -362,7 +378,7 @@ func setTargetIDs(engineConfig *singularityConfig.EngineConfig) (uid, gid uint32
 			gid = uint32(targetGID[0])
 		}
 
-		engineConfig.SetTargetGID(targetGID)
+		l.engineConfig.SetTargetGID(targetGID)
 		return nil
 	})
 	if err != nil {
@@ -374,21 +390,21 @@ func setTargetIDs(engineConfig *singularityConfig.EngineConfig) (uid, gid uint32
 }
 
 // setImageOrInstance sets the image to start, or instance and it's image to be joined.
-func setImageOrInstance(image string, name string, uid uint32, engineConfig *singularityConfig.EngineConfig, generator *generate.Generator) error {
+func (l *Launcher) setImageOrInstance(image string, name string) error {
 	if strings.HasPrefix(image, "instance://") {
 		if name != "" {
-			return fmt.Errorf("Starting an instance from another is not allowed")
+			return fmt.Errorf("starting an instance from another is not allowed")
 		}
 		instanceName := instance.ExtractName(image)
 		file, err := instance.Get(instanceName, instance.SingSubDir)
 		if err != nil {
 			return err
 		}
-		UserNamespace = file.UserNs
-		generator.AddProcessEnv("SINGULARITY_CONTAINER", file.Image)
-		generator.AddProcessEnv("SINGULARITY_NAME", filepath.Base(file.Image))
-		engineConfig.SetImage(image)
-		engineConfig.SetInstanceJoin(true)
+		l.cfg.Namespaces.User = file.UserNs
+		l.generator.AddProcessEnv("SINGULARITY_CONTAINER", file.Image)
+		l.generator.AddProcessEnv("SINGULARITY_NAME", filepath.Base(file.Image))
+		l.engineConfig.SetImage(image)
+		l.engineConfig.SetInstanceJoin(true)
 
 		// If we are running non-root, without a user ns, join the instance cgroup now, as we
 		// can't manipulate the ppid cgroup in the engine
@@ -396,7 +412,7 @@ func setImageOrInstance(image string, name string, uid uint32, engineConfig *sin
 		//
 		// TODO - consider where /proc/sys/fs/cgroup is mounted in the engine
 		// flow, to move this further down.
-		if file.Cgroup && uid != 0 && !UserNamespace {
+		if file.Cgroup && l.uid != 0 && !l.cfg.Namespaces.User {
 			pid := os.Getpid()
 			sylog.Debugf("Adding process %d to instance cgroup", pid)
 			manager, err := cgroups.GetManagerForPid(file.Pid)
@@ -409,57 +425,54 @@ func setImageOrInstance(image string, name string, uid uint32, engineConfig *sin
 		}
 	} else {
 		abspath, err := filepath.Abs(image)
-		generator.AddProcessEnv("SINGULARITY_CONTAINER", abspath)
-		generator.AddProcessEnv("SINGULARITY_NAME", filepath.Base(abspath))
+		l.generator.AddProcessEnv("SINGULARITY_CONTAINER", abspath)
+		l.generator.AddProcessEnv("SINGULARITY_NAME", filepath.Base(abspath))
 		if err != nil {
-			return fmt.Errorf("Failed to determine image absolute path for %s: %w", image, err)
+			return fmt.Errorf("failed to determine image absolute path for %s: %w", image, err)
 		}
-		engineConfig.SetImage(abspath)
+		l.engineConfig.SetImage(abspath)
 	}
 	return nil
 }
 
 // checkEncryptionKey verifies key material is available if the image is encrypted.
 // Allows us to fail fast if required key material is not available / usable.
-func checkEncryptionKey(cobraCmd *cobra.Command, engineConfig *singularityConfig.EngineConfig) error {
-	if !engineConfig.GetInstanceJoin() {
-		sylog.Debugf("Checking for encrypted system partition")
-		img, err := imgutil.Init(engineConfig.GetImage(), false)
-		if err != nil {
-			return fmt.Errorf("could not open image %s: %w", engineConfig.GetImage(), err)
-		}
-
-		part, err := img.GetRootFsPartition()
-		if err != nil {
-			return fmt.Errorf("while getting root filesystem in %s: %w", engineConfig.GetImage(), err)
-		}
-
-		if part.Type == imgutil.ENCRYPTSQUASHFS {
-			sylog.Debugf("Encrypted container filesystem detected")
-
-			keyInfo, err := getEncryptionMaterial(cobraCmd)
-			if err != nil {
-				return fmt.Errorf("Cannot load key for decryption: %w", err)
-			}
-
-			plaintextKey, err := cryptkey.PlaintextKey(keyInfo, engineConfig.GetImage())
-			if err != nil {
-				sylog.Errorf("Please check you are providing the correct key for decryption")
-				return fmt.Errorf("Cannot decrypt %s: %w", engineConfig.GetImage(), err)
-			}
-
-			engineConfig.SetEncryptionKey(plaintextKey)
-		}
-		// don't defer this call as in all cases it won't be
-		// called before execing starter, so it would leak the
-		// image file descriptor to the container process
-		img.File.Close()
+func (l *Launcher) checkEncryptionKey() error {
+	sylog.Debugf("Checking for encrypted system partition")
+	img, err := imgutil.Init(l.engineConfig.GetImage(), false)
+	if err != nil {
+		return fmt.Errorf("could not open image %s: %w", l.engineConfig.GetImage(), err)
 	}
+
+	part, err := img.GetRootFsPartition()
+	if err != nil {
+		return fmt.Errorf("while getting root filesystem in %s: %w", l.engineConfig.GetImage(), err)
+	}
+
+	if part.Type == imgutil.ENCRYPTSQUASHFS {
+		sylog.Debugf("Encrypted container filesystem detected")
+
+		if l.cfg.KeyInfo == nil {
+			return fmt.Errorf("no key was provided, cannot access encrypted container")
+		}
+
+		plaintextKey, err := cryptkey.PlaintextKey(*l.cfg.KeyInfo, l.engineConfig.GetImage())
+		if err != nil {
+			sylog.Errorf("Please check you are providing the correct key for decryption")
+			return fmt.Errorf("cannot decrypt %s: %w", l.engineConfig.GetImage(), err)
+		}
+
+		l.engineConfig.SetEncryptionKey(plaintextKey)
+	}
+	// don't defer this call as in all cases it won't be
+	// called before execing starter, so it would leak the
+	// image file descriptor to the container process
+	img.File.Close()
 	return nil
 }
 
 // useSuid checks whether to use the setuid starter binary, and if we need to force the user namespace.
-func useSuid(uid uint32, engineConfig *singularityConfig.EngineConfig) (useSuid, forceUserNs bool) {
+func (l *Launcher) useSuid() (useSuid, forceUserNs bool) {
 	// privileged installation by default
 	useSuid = true
 	// Are we already in a user namespace?
@@ -468,9 +481,9 @@ func useSuid(uid uint32, engineConfig *singularityConfig.EngineConfig) (useSuid,
 	if buildcfg.SINGULARITY_SUID_INSTALL == 0 {
 		useSuid = false
 
-		if !UserNamespace && uid != 0 {
+		if !l.cfg.Namespaces.User && l.uid != 0 {
 			sylog.Verbosef("Unprivileged installation: using user namespace")
-			UserNamespace = true
+			l.cfg.Namespaces.User = true
 		}
 	}
 
@@ -479,23 +492,23 @@ func useSuid(uid uint32, engineConfig *singularityConfig.EngineConfig) (useSuid,
 	// - if already running inside a user namespace
 	// - if user namespace is requested
 	// - if running as user and 'allow setuid = no' is set in singularity.conf
-	if uid == 0 || insideUserNs || UserNamespace || !engineConfig.File.AllowSetuid {
+	if l.uid == 0 || insideUserNs || l.cfg.Namespaces.User || !l.engineConfig.File.AllowSetuid {
 		useSuid = false
 
 		// fallback to user namespace:
 		// - for non root user with setuid installation and 'allow setuid = no'
 		// - for root user without effective capability CAP_SYS_ADMIN
-		if uid != 0 && buildcfg.SINGULARITY_SUID_INSTALL == 1 && !engineConfig.File.AllowSetuid {
+		if l.uid != 0 && buildcfg.SINGULARITY_SUID_INSTALL == 1 && !l.engineConfig.File.AllowSetuid {
 			sylog.Verbosef("'allow setuid' set to 'no' by configuration, fallback to user namespace")
-			UserNamespace = true
-		} else if uid == 0 && !UserNamespace {
+			l.cfg.Namespaces.User = true
+		} else if l.uid == 0 && !l.cfg.Namespaces.User {
 			caps, err := capabilities.GetProcessEffective()
 			if err != nil {
 				sylog.Fatalf("Could not get process effective capabilities: %s", err)
 			}
 			if caps&uint64(1<<unix.CAP_SYS_ADMIN) == 0 {
 				sylog.Verbosef("Effective capability CAP_SYS_ADMIN is missing, fallback to user namespace")
-				UserNamespace = true
+				l.cfg.Namespaces.User = true
 			}
 		}
 	}
@@ -503,14 +516,14 @@ func useSuid(uid uint32, engineConfig *singularityConfig.EngineConfig) (useSuid,
 }
 
 // setBinds sets engine configuration for requested bind mounts.
-func setBinds(engineConfig *singularityConfig.EngineConfig, generator *generate.Generator) error {
+func (l *Launcher) setBinds() error {
 	// First get binds from -B/--bind and env var
-	binds, err := singularityConfig.ParseBindPath(strings.Join(BindPaths, ","))
+	binds, err := singularityConfig.ParseBindPath(strings.Join(l.cfg.BindPaths, ","))
 	if err != nil {
 		return fmt.Errorf("while parsing bind path: %w", err)
 	}
 	// Now add binds from one or more --mount and env var.
-	for _, m := range Mounts {
+	for _, m := range l.cfg.Mounts {
 		bps, err := singularityConfig.ParseMountString(m)
 		if err != nil {
 			return fmt.Errorf("while parsing mount %q: %w", m, err)
@@ -518,17 +531,17 @@ func setBinds(engineConfig *singularityConfig.EngineConfig, generator *generate.
 		binds = append(binds, bps...)
 	}
 
-	engineConfig.SetBindPath(binds)
-	generator.AddProcessEnv("SINGULARITY_BIND", strings.Join(BindPaths, ","))
+	l.engineConfig.SetBindPath(binds)
+	l.generator.AddProcessEnv("SINGULARITY_BIND", strings.Join(l.cfg.BindPaths, ","))
 	return nil
 }
 
 // setFuseMounts sets engine configuration for requested FUSE mounts.
-func setFuseMounts(engineConfig *singularityConfig.EngineConfig) error {
-	if len(FuseMount) > 0 {
+func (l *Launcher) setFuseMounts() error {
+	if len(l.cfg.FuseMount) > 0 {
 		/* If --fusemount is given, imply --pid */
-		PidNamespace = true
-		if err := engineConfig.SetFuseMount(FuseMount); err != nil {
+		l.cfg.Namespaces.PID = true
+		if err := l.engineConfig.SetFuseMount(l.cfg.FuseMount); err != nil {
 			return fmt.Errorf("while setting fuse mount: %w", err)
 		}
 	}
@@ -537,26 +550,26 @@ func setFuseMounts(engineConfig *singularityConfig.EngineConfig) error {
 
 // Set engine flags to disable mounts, to allow overriding them if they are set true
 // in the singularity.conf.
-func setNoMountFlags(c *singularityConfig.EngineConfig) {
+func (l *Launcher) setNoMountFlags() {
 	skipBinds := []string{}
-	for _, v := range NoMount {
+	for _, v := range l.cfg.NoMount {
 		switch v {
 		case "proc":
-			c.SetNoProc(true)
+			l.engineConfig.SetNoProc(true)
 		case "sys":
-			c.SetNoSys(true)
+			l.engineConfig.SetNoSys(true)
 		case "dev":
-			c.SetNoDev(true)
+			l.engineConfig.SetNoDev(true)
 		case "devpts":
-			c.SetNoDevPts(true)
+			l.engineConfig.SetNoDevPts(true)
 		case "home":
-			c.SetNoHome(true)
+			l.engineConfig.SetNoHome(true)
 		case "tmp":
-			c.SetNoTmp(true)
+			l.engineConfig.SetNoTmp(true)
 		case "hostfs":
-			c.SetNoHostfs(true)
+			l.engineConfig.SetNoHostfs(true)
 		case "cwd":
-			c.SetNoCwd(true)
+			l.engineConfig.SetNoCwd(true)
 		// All bind path singularity.conf entries
 		case "bind-paths":
 			skipBinds = append(skipBinds, "*")
@@ -569,100 +582,100 @@ func setNoMountFlags(c *singularityConfig.EngineConfig) {
 			sylog.Warningf("Ignoring unknown mount type '%s'", v)
 		}
 	}
-	c.SetSkipBinds(skipBinds)
+	l.engineConfig.SetSkipBinds(skipBinds)
 }
 
 // setHome sets the correct home directory configuration for our circumstance.
 // If it is not possible to mount a home directory then the mount will be disabled.
-func setHome(customHome bool, engineConfig *singularityConfig.EngineConfig) error {
-	engineConfig.SetCustomHome(customHome)
+func (l *Launcher) setHome() error {
+	l.engineConfig.SetCustomHome(l.cfg.CustomHome)
 	// If we have fakeroot & the home flag has not been used then we have the standard
 	// /root location for the root user $HOME in the container.
 	// This doesn't count as a SetCustomHome(true), as we are mounting from the real
 	// user's standard $HOME -> /root and we want to respect --contain not mounting
 	// the $HOME in this case.
 	// See https://github.com/sylabs/singularity/pull/5227
-	if !customHome && IsFakeroot {
-		HomePath = fmt.Sprintf("%s:/root", HomePath)
+	if !l.cfg.CustomHome && l.cfg.Fakeroot {
+		l.cfg.HomeDir = fmt.Sprintf("%s:/root", l.cfg.HomeDir)
 	}
 	// If we are running as sungularity as root, but requesting a target UID in the container,
 	// handle set the home directory appropriately.
-	targetUID := engineConfig.GetTargetUID()
-	if customHome && targetUID != 0 {
+	targetUID := l.engineConfig.GetTargetUID()
+	if l.cfg.CustomHome && targetUID != 0 {
 		if targetUID > 500 {
 			if pwd, err := user.GetPwUID(uint32(targetUID)); err == nil {
 				sylog.Debugf("Target UID requested, set home directory to %s", pwd.Dir)
-				HomePath = pwd.Dir
-				engineConfig.SetCustomHome(true)
+				l.cfg.HomeDir = pwd.Dir
+				l.engineConfig.SetCustomHome(true)
 			} else {
 				sylog.Verbosef("Home directory for UID %d not found, home won't be mounted", targetUID)
-				engineConfig.SetNoHome(true)
-				HomePath = "/"
+				l.engineConfig.SetNoHome(true)
+				l.cfg.HomeDir = "/"
 			}
 		} else {
 			sylog.Verbosef("System UID %d requested, home won't be mounted", targetUID)
-			engineConfig.SetNoHome(true)
-			HomePath = "/"
+			l.engineConfig.SetNoHome(true)
+			l.cfg.HomeDir = "/"
 		}
 	}
 
 	// Handle any user request to override the home directory source/dest
-	homeSlice := strings.Split(HomePath, ":")
+	homeSlice := strings.Split(l.cfg.HomeDir, ":")
 	if len(homeSlice) > 2 || len(homeSlice) == 0 {
 		return fmt.Errorf("home argument has incorrect number of elements: %v", len(homeSlice))
 	}
-	engineConfig.SetHomeSource(homeSlice[0])
+	l.engineConfig.SetHomeSource(homeSlice[0])
 	if len(homeSlice) == 1 {
-		engineConfig.SetHomeDest(homeSlice[0])
+		l.engineConfig.SetHomeDest(homeSlice[0])
 	} else {
-		engineConfig.SetHomeDest(homeSlice[1])
+		l.engineConfig.SetHomeDest(homeSlice[1])
 	}
 	return nil
 }
 
 // SetGPUConfig sets up EngineConfig entries for NV / ROCm usage, if requested.
-func SetGPUConfig(engineConfig *singularityConfig.EngineConfig) error {
-	if engineConfig.File.AlwaysUseNv && !NoNvidia {
-		Nvidia = true
+func (l *Launcher) SetGPUConfig() error {
+	if l.engineConfig.File.AlwaysUseNv && !l.cfg.NoNvidia {
+		l.cfg.Nvidia = true
 		sylog.Verbosef("'always use nv = yes' found in singularity.conf")
 	}
-	if engineConfig.File.AlwaysUseRocm && !NoRocm {
-		Rocm = true
+	if l.engineConfig.File.AlwaysUseRocm && !l.cfg.NoRocm {
+		l.cfg.Rocm = true
 		sylog.Verbosef("'always use rocm = yes' found in singularity.conf")
 	}
 
-	if Nvidia && Rocm {
+	if l.cfg.Nvidia && l.cfg.Rocm {
 		sylog.Warningf("--nv and --rocm cannot be used together. Only --nv will be applied.")
 	}
 
-	if Nvidia {
+	if l.cfg.Nvidia {
 		// If nvccli was not enabled by flag or config, drop down to legacy binds immediately
-		if !engineConfig.File.UseNvCCLI && !NvCCLI {
-			return setNVLegacyConfig(engineConfig)
+		if !l.engineConfig.File.UseNvCCLI && !l.cfg.NvCCLI {
+			return l.setNVLegacyConfig()
 		}
 
 		// TODO: In privileged fakeroot mode we don't have the correct namespace context to run nvidia-container-cli
 		// from  starter, so fall back to legacy NV handling until that workflow is refactored heavily.
-		fakeRootPriv := IsFakeroot && engineConfig.File.AllowSetuid && (buildcfg.SINGULARITY_SUID_INSTALL == 1)
+		fakeRootPriv := l.cfg.Fakeroot && l.engineConfig.File.AllowSetuid && (buildcfg.SINGULARITY_SUID_INSTALL == 1)
 		if !fakeRootPriv {
-			return setNvCCLIConfig(engineConfig)
+			return l.setNvCCLIConfig()
 		}
 		return fmt.Errorf("--fakeroot does not support --nvccli in set-uid installations")
 	}
 
-	if Rocm {
-		return setRocmConfig(engineConfig)
+	if l.cfg.Rocm {
+		return l.setRocmConfig()
 	}
 	return nil
 }
 
 // setNvCCLIConfig sets up EngineConfig entries for NVIDIA GPU configuration via nvidia-container-cli.
-func setNvCCLIConfig(engineConfig *singularityConfig.EngineConfig) (err error) {
+func (l *Launcher) setNvCCLIConfig() (err error) {
 	sylog.Debugf("Using nvidia-container-cli for GPU setup")
-	engineConfig.SetNvCCLI(true)
+	l.engineConfig.SetNvCCLI(true)
 
 	if os.Getenv("NVIDIA_VISIBLE_DEVICES") == "" {
-		if IsContained || IsContainAll {
+		if l.cfg.Contain || l.cfg.ContainAll {
 			// When we use --contain we don't mount the NV devices by default in the nvidia-container-cli flow,
 			// they must be mounted via specifying with`NVIDIA_VISIBLE_DEVICES`. This differs from the legacy
 			// flow which mounts all GPU devices, always... so warn the user.
@@ -682,23 +695,23 @@ func setNvCCLIConfig(engineConfig *singularityConfig.EngineConfig) (err error) {
 			nvCCLIEnv = append(nvCCLIEnv, e)
 		}
 	}
-	engineConfig.SetNvCCLIEnv(nvCCLIEnv)
+	l.engineConfig.SetNvCCLIEnv(nvCCLIEnv)
 
-	if UserNamespace && !IsWritable {
+	if l.cfg.Namespaces.User && !l.cfg.Writable {
 		return fmt.Errorf("nvidia-container-cli requires --writable with user namespace/fakeroot")
 	}
-	if !IsWritable && !IsWritableTmpfs {
+	if !l.cfg.Writable && !l.cfg.WritableTmpfs {
 		sylog.Infof("Setting --writable-tmpfs (required by nvidia-container-cli)")
-		IsWritableTmpfs = true
+		l.cfg.WritableTmpfs = true
 	}
 
 	return nil
 }
 
 // setNvLegacyConfig sets up EngineConfig entries for NVIDIA GPU configuration via direct binds of configured bins/libs.
-func setNVLegacyConfig(engineConfig *singularityConfig.EngineConfig) error {
+func (l *Launcher) setNVLegacyConfig() error {
 	sylog.Debugf("Using legacy binds for nv GPU setup")
-	engineConfig.SetNvLegacy(true)
+	l.engineConfig.SetNvLegacy(true)
 	gpuConfFile := filepath.Join(buildcfg.SINGULARITY_CONFDIR, "nvliblist.conf")
 	// bind persistenced socket if found
 	ipcs, err := gpu.NvidiaIpcsPath()
@@ -709,30 +722,30 @@ func setNVLegacyConfig(engineConfig *singularityConfig.EngineConfig) error {
 	if err != nil {
 		sylog.Warningf("While finding nv bind points: %v", err)
 	}
-	setGPUBinds(libs, bins, ipcs, "nv", engineConfig)
+	l.setGPUBinds(libs, bins, ipcs, "nv")
 	return nil
 }
 
 // setRocmConfig sets up EngineConfig entries for ROCm GPU configuration via direct binds of configured bins/libs.
-func setRocmConfig(engineConfig *singularityConfig.EngineConfig) error {
+func (l *Launcher) setRocmConfig() error {
 	sylog.Debugf("Using rocm GPU setup")
-	engineConfig.SetRocm(true)
+	l.engineConfig.SetRocm(true)
 	gpuConfFile := filepath.Join(buildcfg.SINGULARITY_CONFDIR, "rocmliblist.conf")
 	libs, bins, err := gpu.RocmPaths(gpuConfFile)
 	if err != nil {
 		sylog.Warningf("While finding ROCm bind points: %v", err)
 	}
-	setGPUBinds(libs, bins, []string{}, "nv", engineConfig)
+	l.setGPUBinds(libs, bins, []string{}, "nv")
 	return nil
 }
 
 // setGPUBinds sets EngineConfig entries to bind the provided list of libs, bins, ipc files.
-func setGPUBinds(libs, bins, ipcs []string, gpuPlatform string, engineConfig *singularityConfig.EngineConfig) {
+func (l *Launcher) setGPUBinds(libs, bins, ipcs []string, gpuPlatform string) {
 	files := make([]string, len(bins)+len(ipcs))
 	if len(files) == 0 {
 		sylog.Warningf("Could not find any %s files on this host!", gpuPlatform)
 	} else {
-		if IsWritable {
+		if l.cfg.Writable {
 			sylog.Warningf("%s files may not be bound with --writable", gpuPlatform)
 		}
 		for i, binary := range bins {
@@ -742,75 +755,75 @@ func setGPUBinds(libs, bins, ipcs []string, gpuPlatform string, engineConfig *si
 		for i, ipc := range ipcs {
 			files[i+len(bins)] = ipc
 		}
-		engineConfig.SetFilesPath(files)
+		l.engineConfig.SetFilesPath(files)
 	}
 	if len(libs) == 0 {
 		sylog.Warningf("Could not find any %s libraries on this host!", gpuPlatform)
 	} else {
-		engineConfig.SetLibrariesPath(libs)
+		l.engineConfig.SetLibrariesPath(libs)
 	}
 }
 
 // setNamespaces sets namespace configuration for the engine.
-func setNamespaces(uid uint32, gid uint32, engineConfig *singularityConfig.EngineConfig, generator *generate.Generator) {
+func (l *Launcher) setNamespaces() {
 	// unprivileged installation could not use fakeroot
 	// network because it requires a setuid installation
 	// so we fallback to none
-	if NetNamespace {
-		if IsFakeroot && Network != "none" {
-			engineConfig.SetNetwork("fakeroot")
+	if l.cfg.Namespaces.Net {
+		if l.cfg.Fakeroot && l.cfg.Network != "none" {
+			l.engineConfig.SetNetwork("fakeroot")
 
-			if buildcfg.SINGULARITY_SUID_INSTALL == 0 || !engineConfig.File.AllowSetuid {
+			if buildcfg.SINGULARITY_SUID_INSTALL == 0 || !l.engineConfig.File.AllowSetuid {
 				sylog.Warningf(
 					"fakeroot with unprivileged installation or 'allow setuid = no' " +
 						"could not use 'fakeroot' network, fallback to 'none' network",
 				)
-				engineConfig.SetNetwork("none")
+				l.engineConfig.SetNetwork("none")
 			}
 		}
-		generator.AddOrReplaceLinuxNamespace("network", "")
+		l.generator.AddOrReplaceLinuxNamespace("network", "")
 	}
-	if UtsNamespace {
-		generator.AddOrReplaceLinuxNamespace("uts", "")
+	if l.cfg.Namespaces.UTS {
+		l.generator.AddOrReplaceLinuxNamespace("uts", "")
 	}
-	if PidNamespace {
-		generator.AddOrReplaceLinuxNamespace("pid", "")
-		engineConfig.SetNoInit(NoInit)
+	if l.cfg.Namespaces.PID {
+		l.generator.AddOrReplaceLinuxNamespace("pid", "")
+		l.engineConfig.SetNoInit(l.cfg.NoInit)
 	}
-	if IpcNamespace {
-		generator.AddOrReplaceLinuxNamespace("ipc", "")
+	if l.cfg.Namespaces.IPC {
+		l.generator.AddOrReplaceLinuxNamespace("ipc", "")
 	}
-	if UserNamespace {
-		generator.AddOrReplaceLinuxNamespace("user", "")
-		if !IsFakeroot {
-			generator.AddLinuxUIDMapping(uid, uid, 1)
-			generator.AddLinuxGIDMapping(gid, gid, 1)
+	if l.cfg.Namespaces.User {
+		l.generator.AddOrReplaceLinuxNamespace("user", "")
+		if !l.cfg.Fakeroot {
+			l.generator.AddLinuxUIDMapping(l.uid, l.uid, 1)
+			l.generator.AddLinuxGIDMapping(l.gid, l.gid, 1)
 		}
 	}
 }
 
 // setEnv sets the environment for the container, from the host environment, glads, env-file.
-func setEnv(args []string, engineConfig *singularityConfig.EngineConfig, generator *generate.Generator) error {
-	if SingularityEnvFile != "" {
+func (l *Launcher) setEnv(ctx context.Context, args []string) error {
+	if l.cfg.EnvFile != "" {
 		currentEnv := append(
 			os.Environ(),
-			"SINGULARITY_IMAGE="+engineConfig.GetImage(),
+			"SINGULARITY_IMAGE="+l.engineConfig.GetImage(),
 		)
 
-		content, err := os.ReadFile(SingularityEnvFile)
+		content, err := os.ReadFile(l.cfg.EnvFile)
 		if err != nil {
-			return fmt.Errorf("Could not read %q environment file: %w", SingularityEnvFile, err)
+			return fmt.Errorf("could not read %q environment file: %w", l.cfg.EnvFile, err)
 		}
 
-		env, err := interpreter.EvaluateEnv(content, args, currentEnv)
+		env, err := interpreter.EvaluateEnv(ctx, content, args, currentEnv)
 		if err != nil {
-			return fmt.Errorf("While processing %s: %w", SingularityEnvFile, err)
+			return fmt.Errorf("while processing %s: %w", l.cfg.EnvFile, err)
 		}
 		// --env variables will take precedence over variables
 		// defined by the environment file
-		sylog.Debugf("Setting environment variables from file %s", SingularityEnvFile)
+		sylog.Debugf("Setting environment variables from file %s", l.cfg.EnvFile)
 
-		// Update SingularityEnv with those from file
+		// Update Env with those from file
 		for _, envar := range env {
 			e := strings.SplitN(envar, "=", 2)
 			if len(e) != 2 {
@@ -818,16 +831,16 @@ func setEnv(args []string, engineConfig *singularityConfig.EngineConfig, generat
 				continue
 			}
 			// Ensure we don't overwrite --env variables with environment file
-			if _, ok := SingularityEnv[e[0]]; ok {
-				sylog.Warningf("Ignore environment variable %s from %s: override from --env", e[0], SingularityEnvFile)
+			if _, ok := l.cfg.Env[e[0]]; ok {
+				sylog.Warningf("Ignore environment variable %s from %s: override from --env", e[0], l.cfg.EnvFile)
 			} else {
-				SingularityEnv[e[0]] = e[1]
+				l.cfg.Env[e[0]] = e[1]
 			}
 		}
 	}
 	// process --env and --env-file variables for injection
 	// into the environment by prefixing them with SINGULARITYENV_
-	for envName, envValue := range SingularityEnv {
+	for envName, envValue := range l.cfg.Env {
 		// We can allow envValue to be empty (explicit set to empty) but not name!
 		if envName == "" {
 			sylog.Warningf("Ignore environment variable %s=%s: variable name missing", envName, envValue)
@@ -838,22 +851,22 @@ func setEnv(args []string, engineConfig *singularityConfig.EngineConfig, generat
 	// Copy and cache environment
 	environment := os.Environ()
 	// Clean environment
-	singularityEnv := env.SetContainerEnv(generator, environment, IsCleanEnv, engineConfig.GetHomeDest())
-	engineConfig.SetSingularityEnv(singularityEnv)
+	singularityEnv := env.SetContainerEnv(l.generator, environment, l.cfg.CleanEnv, l.engineConfig.GetHomeDest())
+	l.engineConfig.SetSingularityEnv(singularityEnv)
 	return nil
 }
 
 // setProcessCwd sets the container process working directory
-func setProcessCwd(engineConfig *singularityConfig.EngineConfig, generator *generate.Generator) {
+func (l *Launcher) setProcessCwd() {
 	if pwd, err := os.Getwd(); err == nil {
-		engineConfig.SetCwd(pwd)
-		if PwdPath != "" {
-			generator.SetProcessCwd(PwdPath)
+		l.engineConfig.SetCwd(pwd)
+		if l.cfg.PwdPath != "" {
+			l.generator.SetProcessCwd(l.cfg.PwdPath)
 		} else {
-			if engineConfig.GetContain() {
-				generator.SetProcessCwd(engineConfig.GetHomeDest())
+			if l.engineConfig.GetContain() {
+				l.generator.SetProcessCwd(l.engineConfig.GetHomeDest())
 			} else {
-				generator.SetProcessCwd(pwd)
+				l.generator.SetProcessCwd(pwd)
 			}
 		}
 	} else {
@@ -864,20 +877,20 @@ func setProcessCwd(engineConfig *singularityConfig.EngineConfig, generator *gene
 // PrepareImage perfoms any image preparation required before execution.
 // This is currently limited to extraction or FUSE mount when using the user namespace,
 // and activating any image driver plugins that might handle the image mount.
-func prepareImage(image string, cobraCmd *cobra.Command, engineConfig *singularityConfig.EngineConfig, generator *generate.Generator) error {
+func (l *Launcher) prepareImage(c context.Context, image string) error {
 	insideUserNs, _ := namespaces.IsInsideUserNamespace(os.Getpid())
 
-	if SIFFUSE && !(UserNamespace || insideUserNs) {
+	if l.cfg.SIFFUSE && !(l.cfg.Namespaces.User || insideUserNs) {
 		sylog.Warningf("--sif-fuse is not supported without user namespace, ignoring.")
 	}
 
 	// convert image file to sandbox if we are using user
 	// namespace or if we are currently running inside a
 	// user namespace
-	if (UserNamespace || insideUserNs) && fs.IsFile(image) {
+	if (l.cfg.Namespaces.User || insideUserNs) && fs.IsFile(image) {
 		convert := true
 		// load image driver plugins
-		if engineConfig.File.ImageDriver != "" {
+		if l.engineConfig.File.ImageDriver != "" {
 
 			callbackType := (singularitycallback.RegisterImageDriver)(nil)
 			callbacks, err := plugin.LoadCallbacks(callbackType)
@@ -890,7 +903,7 @@ func prepareImage(image string, cobraCmd *cobra.Command, engineConfig *singulari
 					}
 				}
 			}
-			driver := imgutil.GetDriver(engineConfig.File.ImageDriver)
+			driver := imgutil.GetDriver(l.engineConfig.File.ImageDriver)
 			if driver != nil && driver.Features()&imgutil.ImageFeature != 0 {
 				// the image driver indicates support for image so let's
 				// proceed with the image driver without conversion
@@ -899,17 +912,21 @@ func prepareImage(image string, cobraCmd *cobra.Command, engineConfig *singulari
 		}
 
 		if convert {
-			tryFUSE := SIFFUSE || engineConfig.File.SIFFUSE
-			fuse, tempDir, imageDir, err := handleImage(cobraCmd.Context(), image, tryFUSE)
+			tryFUSE := l.cfg.SIFFUSE || l.engineConfig.File.SIFFUSE
+			if tryFUSE && l.cfg.Fakeroot {
+				return fmt.Errorf("fakeroot is not currently supported with FUSE SIF mounts")
+			}
+
+			fuse, tempDir, imageDir, err := handleImage(c, image, tryFUSE)
 			if err != nil {
 				return fmt.Errorf("while handling %s: %w", image, err)
 			}
-			engineConfig.SetImage(imageDir)
-			engineConfig.SetImageFuse(fuse)
-			engineConfig.SetDeleteTempDir(tempDir)
-			generator.AddProcessEnv("SINGULARITY_CONTAINER", imageDir)
+			l.engineConfig.SetImage(imageDir)
+			l.engineConfig.SetImageFuse(fuse)
+			l.engineConfig.SetDeleteTempDir(tempDir)
+			l.generator.AddProcessEnv("SINGULARITY_CONTAINER", imageDir)
 			// if '--disable-cache' flag, then remove original SIF after converting to sandbox
-			if disableCache {
+			if l.cfg.CacheDisabled {
 				sylog.Debugf("Removing tmp image: %s", image)
 				err := os.Remove(image)
 				if err != nil {
@@ -1045,11 +1062,8 @@ func squashfuseMount(ctx context.Context, img *imgutil.Image, imageDir string) (
 	if err != nil {
 		return fmt.Errorf("while getting root filesystem : %s", err)
 	}
-	if img.Type != image.SIF && part.Type != image.SQUASHFS {
+	if img.Type != imgutil.SIF && part.Type != imgutil.SQUASHFS {
 		return fmt.Errorf("only SIF images are supported")
-	}
-	if IsFakeroot {
-		return fmt.Errorf("fakeroot is not currently supported")
 	}
 	sylog.Infof("Mounting SIF with FUSE...")
 
@@ -1068,15 +1082,15 @@ func squashfuseMount(ctx context.Context, img *imgutil.Image, imageDir string) (
 }
 
 // starterInteractive executes the starter binary to run an image interactively, given the supplied engineConfig
-func starterInteractive(useSuid bool, engineConfig *singularityConfig.EngineConfig) error {
+func (l *Launcher) starterInteractive(useSuid bool) error {
 	loadOverlay := false
-	if !UserNamespace && buildcfg.SINGULARITY_SUID_INSTALL == 1 {
+	if !l.cfg.Namespaces.User && buildcfg.SINGULARITY_SUID_INSTALL == 1 {
 		loadOverlay = true
 	}
 
 	cfg := &config.Common{
 		EngineName:   singularityConfig.Name,
-		EngineConfig: engineConfig,
+		EngineConfig: l.engineConfig,
 	}
 
 	// Allow any plugins with callbacks to modify the assembled Config
@@ -1087,17 +1101,17 @@ func starterInteractive(useSuid bool, engineConfig *singularityConfig.EngineConf
 		cfg,
 		starter.UseSuid(useSuid),
 		starter.LoadOverlayModule(loadOverlay),
-		starter.CleanupHost(engineConfig.GetImageFuse()),
+		starter.CleanupHost(l.engineConfig.GetImageFuse()),
 	)
 	return err
 }
 
 // starterInstance executes the starter binary to run an instance given the supplied engineConfig
-func starterInstance(name string, uid uint32, useSuid bool, engineConfig *singularityConfig.EngineConfig) error {
+func (l *Launcher) starterInstance(name string, useSuid bool) error {
 	cfg := &config.Common{
 		EngineName:   singularityConfig.Name,
 		ContainerID:  name,
-		EngineConfig: engineConfig,
+		EngineConfig: l.engineConfig,
 	}
 
 	// Allow any plugins with callbacks to modify the assembled Config
@@ -1112,7 +1126,7 @@ func starterInstance(name string, uid uint32, useSuid bool, engineConfig *singul
 		return err
 	}
 
-	stdout, stderr, err := instance.SetLogFile(name, int(uid), instance.LogSubDir)
+	stdout, stderr, err := instance.SetLogFile(name, int(l.uid), instance.LogSubDir)
 	if err != nil {
 		return fmt.Errorf("failed to create instance log files: %w", err)
 	}
@@ -1123,7 +1137,7 @@ func starterInstance(name string, uid uint32, useSuid bool, engineConfig *singul
 	}
 
 	loadOverlay := false
-	if !UserNamespace && buildcfg.SINGULARITY_SUID_INSTALL == 1 {
+	if !l.cfg.Namespaces.User && buildcfg.SINGULARITY_SUID_INSTALL == 1 {
 		loadOverlay = true
 	}
 
@@ -1134,7 +1148,7 @@ func starterInstance(name string, uid uint32, useSuid bool, engineConfig *singul
 		starter.WithStdout(stdout),
 		starter.WithStderr(stderr),
 		starter.LoadOverlayModule(loadOverlay),
-		starter.CleanupHost(engineConfig.GetImageFuse()),
+		starter.CleanupHost(l.engineConfig.GetImageFuse()),
 	)
 
 	if sylog.GetLevel() != 0 {
@@ -1168,7 +1182,7 @@ func runPluginCallbacks(cfg *config.Common) error {
 	callbackType := (clicallback.SingularityEngineConfig)(nil)
 	callbacks, err := plugin.LoadCallbacks(callbackType)
 	if err != nil {
-		return fmt.Errorf("While loading plugins callbacks '%T': %w", callbackType, err)
+		return fmt.Errorf("while loading plugin callbacks '%T': %w", callbackType, err)
 	}
 	for _, c := range callbacks {
 		c.(clicallback.SingularityEngineConfig)(cfg)

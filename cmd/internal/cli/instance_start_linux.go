@@ -42,11 +42,13 @@ var instanceStartCmd = &cobra.Command{
 
 		a := append([]string{"/.singularity.d/actions/start"}, args[2:]...)
 		setVM(cmd)
-		if VM {
+		if vm {
 			execVM(cmd, image, a)
 			return
 		}
-		execStarter(cmd, image, a, name)
+		if err := launchContainer(cmd, image, a, name); err != nil {
+			sylog.Fatalf("%s", err)
+		}
 
 		if instanceStartPidFile != "" {
 			err := singularity.WriteInstancePidFile(name, instanceStartPidFile)

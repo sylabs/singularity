@@ -13,83 +13,83 @@ import (
 
 // actionflags.go contains flag variables for action-like commands to draw from
 var (
-	AppName            string
-	BindPaths          []string
-	Mounts             []string
-	HomePath           string
-	OverlayPath        []string
-	ScratchPath        []string
-	WorkdirPath        string
-	PwdPath            string
-	ShellPath          string
-	Hostname           string
-	Network            string
-	NetworkArgs        []string
-	DNS                string
-	Security           []string
-	CgroupsTOMLFile    string
-	VMRAM              string
-	VMCPU              string
-	VMIP               string
-	ContainLibsPath    []string
-	FuseMount          []string
-	SingularityEnv     map[string]string
-	SingularityEnvFile string
-	NoMount            []string
-	Proot              string
+	appName            string
+	bindPaths          []string
+	mounts             []string
+	homePath           string
+	overlayPath        []string
+	scratchPath        []string
+	workdirPath        string
+	pwdPath            string
+	shellPath          string
+	hostname           string
+	network            string
+	networkArgs        []string
+	dns                string
+	security           []string
+	cgroupsTOMLFile    string
+	vmRAM              string
+	vmCPU              string
+	vmIP               string
+	containLibsPath    []string
+	fuseMount          []string
+	singularityEnv     map[string]string
+	singularityEnvFile string
+	noMount            []string
+	proot              string
 
-	IsBoot          bool
-	IsFakeroot      bool
-	IsCleanEnv      bool
-	IsCompat        bool
-	IsContained     bool
-	IsContainAll    bool
-	IsWritable      bool
-	IsWritableTmpfs bool
-	SIFFUSE         bool
-	Nvidia          bool
-	NvCCLI          bool
-	Rocm            bool
-	NoEval          bool
-	NoHome          bool
-	NoInit          bool
-	NoNvidia        bool
-	NoRocm          bool
-	NoUmask         bool
-	VM              bool
-	VMErr           bool
-	IsSyOS          bool
+	isBoot          bool
+	isFakeroot      bool
+	isCleanEnv      bool
+	isCompat        bool
+	isContained     bool
+	isContainAll    bool
+	isWritable      bool
+	isWritableTmpfs bool
+	sifFUSE         bool
+	nvidia          bool
+	nvCCLI          bool
+	rocm            bool
+	noEval          bool
+	noHome          bool
+	noInit          bool
+	noNvidia        bool
+	noRocm          bool
+	noUmask         bool
+	vm              bool
+	vmErr           bool
+	isSyOS          bool
 	disableCache    bool
 
-	NetNamespace  bool
-	UtsNamespace  bool
-	UserNamespace bool
-	PidNamespace  bool
-	IpcNamespace  bool
+	netNamespace  bool
+	utsNamespace  bool
+	userNamespace bool
+	pidNamespace  bool
+	ipcNamespace  bool
 
-	AllowSUID bool
-	KeepPrivs bool
-	NoPrivs   bool
-	AddCaps   string
-	DropCaps  string
+	allowSUID bool
+	keepPrivs bool
+	noPrivs   bool
+	addCaps   string
+	dropCaps  string
 
-	BlkioWeight       int
-	BlkioWeightDevice []string
-	CPUShares         int
-	CPUs              string // decimal
-	CPUSetCPUs        string
-	CPUSetMems        string
-	Memory            string // bytes
-	MemoryReservation string // bytes
-	MemorySwap        string // bytes
-	OomKillDisable    bool
-	PidsLimit         int
+	blkioWeight       int
+	blkioWeightDevice []string
+	cpuShares         int
+	cpus              string // decimal
+	cpuSetCPUs        string
+	cpuSetMems        string
+	memory            string // bytes
+	memoryReservation string // bytes
+	memorySwap        string // bytes
+	oomKillDisable    bool
+	pidsLimit         int
 )
 
 // --app
 var actionAppFlag = cmdline.Flag{
 	ID:           "actionAppFlag",
-	Value:        &AppName,
+	Value:        &appName,
 	DefaultValue: "",
 	Name:         "app",
 	Usage:        "set an application to run inside a container",
@@ -99,7 +99,7 @@ var actionAppFlag = cmdline.Flag{
 // -B|--bind
 var actionBindFlag = cmdline.Flag{
 	ID:           "actionBindFlag",
-	Value:        &BindPaths,
+	Value:        &bindPaths,
 	DefaultValue: []string{},
 	Name:         "bind",
 	ShortHand:    "B",
@@ -112,7 +112,7 @@ var actionBindFlag = cmdline.Flag{
 // --mount
 var actionMountFlag = cmdline.Flag{
 	ID:           "actionMountFlag",
-	Value:        &Mounts,
+	Value:        &mounts,
 	DefaultValue: []string{},
 	Name:         "mount",
 	Usage:        "a mount specification e.g. 'type=bind,source=/opt,destination=/hostopt'.",
@@ -125,7 +125,7 @@ var actionMountFlag = cmdline.Flag{
 // -H|--home
 var actionHomeFlag = cmdline.Flag{
 	ID:           "actionHomeFlag",
-	Value:        &HomePath,
+	Value:        &homePath,
 	DefaultValue: CurrentUser.HomeDir,
 	Name:         "home",
 	ShortHand:    "H",
@@ -137,7 +137,7 @@ var actionHomeFlag = cmdline.Flag{
 // -o|--overlay
 var actionOverlayFlag = cmdline.Flag{
 	ID:           "actionOverlayFlag",
-	Value:        &OverlayPath,
+	Value:        &overlayPath,
 	DefaultValue: []string{},
 	Name:         "overlay",
 	ShortHand:    "o",
@@ -149,7 +149,7 @@ var actionOverlayFlag = cmdline.Flag{
 // -S|--scratch
 var actionScratchFlag = cmdline.Flag{
 	ID:           "actionScratchFlag",
-	Value:        &ScratchPath,
+	Value:        &scratchPath,
 	DefaultValue: []string{},
 	Name:         "scratch",
 	ShortHand:    "S",
@@ -161,7 +161,7 @@ var actionScratchFlag = cmdline.Flag{
 // -W|--workdir
 var actionWorkdirFlag = cmdline.Flag{
 	ID:           "actionWorkdirFlag",
-	Value:        &WorkdirPath,
+	Value:        &workdirPath,
 	DefaultValue: "",
 	Name:         "workdir",
 	ShortHand:    "W",
@@ -183,7 +183,7 @@ var actionDisableCacheFlag = cmdline.Flag{
 // -s|--shell
 var actionShellFlag = cmdline.Flag{
 	ID:           "actionShellFlag",
-	Value:        &ShellPath,
+	Value:        &shellPath,
 	DefaultValue: "",
 	Name:         "shell",
 	ShortHand:    "s",
@@ -195,7 +195,7 @@ var actionShellFlag = cmdline.Flag{
 // --pwd
 var actionPwdFlag = cmdline.Flag{
 	ID:           "actionPwdFlag",
-	Value:        &PwdPath,
+	Value:        &pwdPath,
 	DefaultValue: "",
 	Name:         "pwd",
 	Usage:        "initial working directory for payload process inside the container",
@@ -206,7 +206,7 @@ var actionPwdFlag = cmdline.Flag{
 // --hostname
 var actionHostnameFlag = cmdline.Flag{
 	ID:           "actionHostnameFlag",
-	Value:        &Hostname,
+	Value:        &hostname,
 	DefaultValue: "",
 	Name:         "hostname",
 	Usage:        "set container hostname",
@@ -217,7 +217,7 @@ var actionHostnameFlag = cmdline.Flag{
 // --network
 var actionNetworkFlag = cmdline.Flag{
 	ID:           "actionNetworkFlag",
-	Value:        &Network,
+	Value:        &network,
 	DefaultValue: "bridge",
 	Name:         "network",
 	Usage:        "specify desired network type separated by commas, each network will bring up a dedicated interface inside container",
@@ -228,7 +228,7 @@ var actionNetworkFlag = cmdline.Flag{
 // --network-args
 var actionNetworkArgsFlag = cmdline.Flag{
 	ID:           "actionNetworkArgsFlag",
-	Value:        &NetworkArgs,
+	Value:        &networkArgs,
 	DefaultValue: []string{},
 	Name:         "network-args",
 	Usage:        "specify network arguments to pass to CNI plugins",
@@ -239,7 +239,7 @@ var actionNetworkArgsFlag = cmdline.Flag{
 // --dns
 var actionDNSFlag = cmdline.Flag{
 	ID:           "actionDnsFlag",
-	Value:        &DNS,
+	Value:        &dns,
 	DefaultValue: "",
 	Name:         "dns",
 	Usage:        "list of DNS server separated by commas to add in resolv.conf",
@@ -249,7 +249,7 @@ var actionDNSFlag = cmdline.Flag{
 // --security
 var actionSecurityFlag = cmdline.Flag{
 	ID:           "actionSecurityFlag",
-	Value:        &Security,
+	Value:        &security,
 	DefaultValue: []string{},
 	Name:         "security",
 	Usage:        "enable security features (SELinux, Apparmor, Seccomp)",
@@ -259,7 +259,7 @@ var actionSecurityFlag = cmdline.Flag{
 // --apply-cgroups
 var actionApplyCgroupsFlag = cmdline.Flag{
 	ID:           "actionApplyCgroupsFlag",
-	Value:        &CgroupsTOMLFile,
+	Value:        &cgroupsTOMLFile,
 	DefaultValue: "",
 	Name:         "apply-cgroups",
 	Usage:        "apply cgroups from file for container processes (root only)",
@@ -269,7 +269,7 @@ var actionApplyCgroupsFlag = cmdline.Flag{
 // --vm-ram
 var actionVMRAMFlag = cmdline.Flag{
 	ID:           "actionVMRAMFlag",
-	Value:        &VMRAM,
+	Value:        &vmRAM,
 	DefaultValue: "1024",
 	Name:         "vm-ram",
 	Usage:        "amount of RAM in MiB to allocate to Virtual Machine (implies --vm)",
@@ -280,7 +280,7 @@ var actionVMRAMFlag = cmdline.Flag{
 // --vm-cpu
 var actionVMCPUFlag = cmdline.Flag{
 	ID:           "actionVMCPUFlag",
-	Value:        &VMCPU,
+	Value:        &vmCPU,
 	DefaultValue: "1",
 	Name:         "vm-cpu",
 	Usage:        "number of CPU cores to allocate to Virtual Machine (implies --vm)",
@@ -291,7 +291,7 @@ var actionVMCPUFlag = cmdline.Flag{
 // --vm-ip
 var actionVMIPFlag = cmdline.Flag{
 	ID:           "actionVMIPFlag",
-	Value:        &VMIP,
+	Value:        &vmIP,
 	DefaultValue: "dhcp",
 	Name:         "vm-ip",
 	Usage:        "IP Address to assign for container usage. Defaults to DHCP within bridge network.",
@@ -302,7 +302,7 @@ var actionVMIPFlag = cmdline.Flag{
 // hidden flag to handle SINGULARITY_CONTAINLIBS environment variable
 var actionContainLibsFlag = cmdline.Flag{
 	ID:           "actionContainLibsFlag",
-	Value:        &ContainLibsPath,
+	Value:        &containLibsPath,
 	DefaultValue: []string{},
 	Name:         "containlibs",
 	Hidden:       true,
@@ -312,7 +312,7 @@ var actionContainLibsFlag = cmdline.Flag{
 // --fusemount
 var actionFuseMountFlag = cmdline.Flag{
 	ID:           "actionFuseMountFlag",
-	Value:        &FuseMount,
+	Value:        &fuseMount,
 	DefaultValue: []string{},
 	Name:         "fusemount",
 	Usage:        "A FUSE filesystem mount specification of the form '<type>:<fuse command> <mountpoint>' - where <type> is 'container' or 'host', specifying where the mount will be performed ('container-daemon' or 'host-daemon' will run the FUSE process detached). <fuse command> is the path to the FUSE executable, plus options for the mount. <mountpoint> is the location in the container to which the FUSE mount will be attached. E.g. 'container:sshfs 10.0.0.1:/ /sshfs'. Implies --pid.",
@@ -333,7 +333,7 @@ var actionTmpDirFlag = cmdline.Flag{
 // --boot
 var actionBootFlag = cmdline.Flag{
 	ID:           "actionBootFlag",
-	Value:        &IsBoot,
+	Value:        &isBoot,
 	DefaultValue: false,
 	Name:         "boot",
 	Usage:        "execute /sbin/init to boot container (root only)",
@@ -343,7 +343,7 @@ var actionBootFlag = cmdline.Flag{
 // -f|--fakeroot
 var actionFakerootFlag = cmdline.Flag{
 	ID:           "actionFakerootFlag",
-	Value:        &IsFakeroot,
+	Value:        &isFakeroot,
 	DefaultValue: false,
 	Name:         "fakeroot",
 	ShortHand:    "f",
@@ -354,7 +354,7 @@ var actionFakerootFlag = cmdline.Flag{
 // -e|--cleanenv
 var actionCleanEnvFlag = cmdline.Flag{
 	ID:           "actionCleanEnvFlag",
-	Value:        &IsCleanEnv,
+	Value:        &isCleanEnv,
 	DefaultValue: false,
 	Name:         "cleanenv",
 	ShortHand:    "e",
@@ -365,7 +365,7 @@ var actionCleanEnvFlag = cmdline.Flag{
 // --compat
 var actionCompatFlag = cmdline.Flag{
 	ID:           "actionCompatFlag",
-	Value:        &IsCompat,
+	Value:        &isCompat,
 	DefaultValue: false,
 	Name:         "compat",
 	Usage:        "apply settings for increased OCI/Docker compatibility. Infers --containall, --no-init, --no-umask, --no-eval, --writable-tmpfs.",
@@ -375,7 +375,7 @@ var actionCompatFlag = cmdline.Flag{
 // -c|--contain
 var actionContainFlag = cmdline.Flag{
 	ID:           "actionContainFlag",
-	Value:        &IsContained,
+	Value:        &isContained,
 	DefaultValue: false,
 	Name:         "contain",
 	ShortHand:    "c",
@@ -386,7 +386,7 @@ var actionContainFlag = cmdline.Flag{
 // -C|--containall
 var actionContainAllFlag = cmdline.Flag{
 	ID:           "actionContainAllFlag",
-	Value:        &IsContainAll,
+	Value:        &isContainAll,
 	DefaultValue: false,
 	Name:         "containall",
 	ShortHand:    "C",
@@ -397,7 +397,7 @@ var actionContainAllFlag = cmdline.Flag{
 // --nv
 var actionNvidiaFlag = cmdline.Flag{
 	ID:           "actionNvidiaFlag",
-	Value:        &Nvidia,
+	Value:        &nvidia,
 	DefaultValue: false,
 	Name:         "nv",
 	Usage:        "enable Nvidia support",
@@ -407,7 +407,7 @@ var actionNvidiaFlag = cmdline.Flag{
 // --nvccli
 var actionNvCCLIFlag = cmdline.Flag{
 	ID:           "actionNvCCLIFlag",
-	Value:        &NvCCLI,
+	Value:        &nvCCLI,
 	DefaultValue: false,
 	Name:         "nvccli",
 	Usage:        "use nvidia-container-cli for GPU setup (experimental)",
@@ -417,7 +417,7 @@ var actionNvCCLIFlag = cmdline.Flag{
 // --rocm flag to automatically bind
 var actionRocmFlag = cmdline.Flag{
 	ID:           "actionRocmFlag",
-	Value:        &Rocm,
+	Value:        &rocm,
 	DefaultValue: false,
 	Name:         "rocm",
 	Usage:        "enable experimental Rocm support",
@@ -427,7 +427,7 @@ var actionRocmFlag = cmdline.Flag{
 // -w|--writable
 var actionWritableFlag = cmdline.Flag{
 	ID:           "actionWritableFlag",
-	Value:        &IsWritable,
+	Value:        &isWritable,
 	DefaultValue: false,
 	Name:         "writable",
 	ShortHand:    "w",
@@ -438,7 +438,7 @@ var actionWritableFlag = cmdline.Flag{
 // --writable-tmpfs
 var actionWritableTmpfsFlag = cmdline.Flag{
 	ID:           "actionWritableTmpfsFlag",
-	Value:        &IsWritableTmpfs,
+	Value:        &isWritableTmpfs,
 	DefaultValue: false,
 	Name:         "writable-tmpfs",
 	Usage:        "makes the file system accessible as read-write with non persistent data (with overlay support only)",
@@ -448,7 +448,7 @@ var actionWritableTmpfsFlag = cmdline.Flag{
 // --no-home
 var actionNoHomeFlag = cmdline.Flag{
 	ID:           "actionNoHomeFlag",
-	Value:        &NoHome,
+	Value:        &noHome,
 	DefaultValue: false,
 	Name:         "no-home",
 	Usage:        "do NOT mount users home directory if /home is not the current working directory",
@@ -458,7 +458,7 @@ var actionNoHomeFlag = cmdline.Flag{
 // --no-mount
 var actionNoMountFlag = cmdline.Flag{
 	ID:           "actionNoMountFlag",
-	Value:        &NoMount,
+	Value:        &noMount,
 	DefaultValue: []string{},
 	Name:         "no-mount",
 	Usage:        "disable one or more 'mount xxx' options set in singularity.conf, specify absolute destination path to disable a bind path entry, or 'bind-paths' to disable all bind path entries.",
@@ -468,7 +468,7 @@ var actionNoMountFlag = cmdline.Flag{
 // --no-init
 var actionNoInitFlag = cmdline.Flag{
 	ID:           "actionNoInitFlag",
-	Value:        &NoInit,
+	Value:        &noInit,
 	DefaultValue: false,
 	Name:         "no-init",
 	Usage:        "do NOT start shim process with --pid",
@@ -478,7 +478,7 @@ var actionNoInitFlag = cmdline.Flag{
 // hidden flag to disable nvidia bindings when 'always use nv = yes'
 var actionNoNvidiaFlag = cmdline.Flag{
 	ID:           "actionNoNvidiaFlag",
-	Value:        &NoNvidia,
+	Value:        &noNvidia,
 	DefaultValue: false,
 	Name:         "no-nv",
 	Hidden:       true,
@@ -488,7 +488,7 @@ var actionNoNvidiaFlag = cmdline.Flag{
 // hidden flag to disable rocm bindings when 'always use rocm = yes'
 var actionNoRocmFlag = cmdline.Flag{
 	ID:           "actionNoRocmFlag",
-	Value:        &NoRocm,
+	Value:        &noRocm,
 	DefaultValue: false,
 	Name:         "no-rocm",
 	Hidden:       true,
@@ -498,7 +498,7 @@ var actionNoRocmFlag = cmdline.Flag{
 // --vm
 var actionVMFlag = cmdline.Flag{
 	ID:           "actionVMFlag",
-	Value:        &VM,
+	Value:        &vm,
 	DefaultValue: false,
 	Name:         "vm",
 	Usage:        "enable VM support",
@@ -508,7 +508,7 @@ var actionVMFlag = cmdline.Flag{
 // --vm-err
 var actionVMErrFlag = cmdline.Flag{
 	ID:           "actionVMErrFlag",
-	Value:        &VMErr,
+	Value:        &vmErr,
 	DefaultValue: false,
 	Name:         "vm-err",
 	Usage:        "enable attaching stderr from VM",
@@ -519,7 +519,7 @@ var actionVMErrFlag = cmdline.Flag{
 // TODO: Keep this in production?
 var actionSyOSFlag = cmdline.Flag{
 	ID:           "actionSyOSFlag",
-	Value:        &IsSyOS,
+	Value:        &isSyOS,
 	DefaultValue: false,
 	Name:         "syos",
 	Usage:        "execute SyOS shell",
@@ -529,7 +529,7 @@ var actionSyOSFlag = cmdline.Flag{
 // -p|--pid
 var actionPidNamespaceFlag = cmdline.Flag{
 	ID:           "actionPidNamespaceFlag",
-	Value:        &PidNamespace,
+	Value:        &pidNamespace,
 	DefaultValue: false,
 	Name:         "pid",
 	ShortHand:    "p",
@@ -540,7 +540,7 @@ var actionPidNamespaceFlag = cmdline.Flag{
 // -i|--ipc
 var actionIpcNamespaceFlag = cmdline.Flag{
 	ID:           "actionIpcNamespaceFlag",
-	Value:        &IpcNamespace,
+	Value:        &ipcNamespace,
 	DefaultValue: false,
 	Name:         "ipc",
 	ShortHand:    "i",
@@ -551,7 +551,7 @@ var actionIpcNamespaceFlag = cmdline.Flag{
 // -n|--net
 var actionNetNamespaceFlag = cmdline.Flag{
 	ID:           "actionNetNamespaceFlag",
-	Value:        &NetNamespace,
+	Value:        &netNamespace,
 	DefaultValue: false,
 	Name:         "net",
 	ShortHand:    "n",
@@ -562,7 +562,7 @@ var actionNetNamespaceFlag = cmdline.Flag{
 // --uts
 var actionUtsNamespaceFlag = cmdline.Flag{
 	ID:           "actionUtsNamespaceFlag",
-	Value:        &UtsNamespace,
+	Value:        &utsNamespace,
 	DefaultValue: false,
 	Name:         "uts",
 	Usage:        "run container in a new UTS namespace",
@@ -572,7 +572,7 @@ var actionUtsNamespaceFlag = cmdline.Flag{
 // -u|--userns
 var actionUserNamespaceFlag = cmdline.Flag{
 	ID:           "actionUserNamespaceFlag",
-	Value:        &UserNamespace,
+	Value:        &userNamespace,
 	DefaultValue: false,
 	Name:         "userns",
 	ShortHand:    "u",
@@ -583,7 +583,7 @@ var actionUserNamespaceFlag = cmdline.Flag{
 // --keep-privs
 var actionKeepPrivsFlag = cmdline.Flag{
 	ID:           "actionKeepPrivsFlag",
-	Value:        &KeepPrivs,
+	Value:        &keepPrivs,
 	DefaultValue: false,
 	Name:         "keep-privs",
 	Usage:        "let root user keep privileges in container (root only)",
@@ -593,7 +593,7 @@ var actionKeepPrivsFlag = cmdline.Flag{
 // --no-privs
 var actionNoPrivsFlag = cmdline.Flag{
 	ID:           "actionNoPrivsFlag",
-	Value:        &NoPrivs,
+	Value:        &noPrivs,
 	DefaultValue: false,
 	Name:         "no-privs",
 	Usage:        "drop all privileges from root user in container)",
@@ -603,7 +603,7 @@ var actionNoPrivsFlag = cmdline.Flag{
 // --add-caps
 var actionAddCapsFlag = cmdline.Flag{
 	ID:           "actionAddCapsFlag",
-	Value:        &AddCaps,
+	Value:        &addCaps,
 	DefaultValue: "",
 	Name:         "add-caps",
 	Usage:        "a comma separated capability list to add",
@@ -613,7 +613,7 @@ var actionAddCapsFlag = cmdline.Flag{
 // --drop-caps
 var actionDropCapsFlag = cmdline.Flag{
 	ID:           "actionDropCapsFlag",
-	Value:        &DropCaps,
+	Value:        &dropCaps,
 	DefaultValue: "",
 	Name:         "drop-caps",
 	Usage:        "a comma separated capability list to drop",
@@ -623,7 +623,7 @@ var actionDropCapsFlag = cmdline.Flag{
 // --allow-setuid
 var actionAllowSetuidFlag = cmdline.Flag{
 	ID:           "actionAllowSetuidFlag",
-	Value:        &AllowSUID,
+	Value:        &allowSUID,
 	DefaultValue: false,
 	Name:         "allow-setuid",
 	Usage:        "allow setuid binaries in container (root only)",
@@ -633,7 +633,7 @@ var actionAllowSetuidFlag = cmdline.Flag{
 // --env
 var actionEnvFlag = cmdline.Flag{
 	ID:           "actionEnvFlag",
-	Value:        &SingularityEnv,
+	Value:        &singularityEnv,
 	DefaultValue: map[string]string{},
 	Name:         "env",
 	Usage:        "pass environment variable to contained process",
@@ -642,7 +642,7 @@ var actionEnvFlag = cmdline.Flag{
 // --env-file
 var actionEnvFileFlag = cmdline.Flag{
 	ID:           "actionEnvFileFlag",
-	Value:        &SingularityEnvFile,
+	Value:        &singularityEnvFile,
 	DefaultValue: "",
 	Name:         "env-file",
 	Usage:        "pass environment variables from file to contained process",
@@ -652,7 +652,7 @@ var actionEnvFileFlag = cmdline.Flag{
 // --no-umask
 var actionNoUmaskFlag = cmdline.Flag{
 	ID:           "actionNoUmask",
-	Value:        &NoUmask,
+	Value:        &noUmask,
 	DefaultValue: false,
 	Name:         "no-umask",
 	Usage:        "do not propagate umask to the container, set default 0022 umask",
@@ -662,7 +662,7 @@ var actionNoUmaskFlag = cmdline.Flag{
 // --no-eval
 var actionNoEvalFlag = cmdline.Flag{
 	ID:           "actionNoEval",
-	Value:        &NoEval,
+	Value:        &noEval,
 	DefaultValue: false,
 	Name:         "no-eval",
 	Usage:        "do not shell evaluate env vars or OCI container CMD/ENTRYPOINT/ARGS",
@@ -672,7 +672,7 @@ var actionNoEvalFlag = cmdline.Flag{
 // --blkio-weight
 var actionBlkioWeightFlag = cmdline.Flag{
 	ID:           "actionBlkioWeight",
-	Value:        &BlkioWeight,
+	Value:        &blkioWeight,
 	DefaultValue: 0,
 	Name:         "blkio-weight",
 	Usage:        "Block IO relative weight in range 10-1000, 0 to disable",
@@ -682,7 +682,7 @@ var actionBlkioWeightFlag = cmdline.Flag{
 // --blkio-weight-device
 var actionBlkioWeightDeviceFlag = cmdline.Flag{
 	ID:           "actionBlkioWeightDevice",
-	Value:        &BlkioWeightDevice,
+	Value:        &blkioWeightDevice,
 	DefaultValue: []string{},
 	Name:         "blkio-weight-device",
 	Usage:        "Device specific block IO relative weight",
@@ -692,7 +692,7 @@ var actionBlkioWeightDeviceFlag = cmdline.Flag{
 // --cpu-shares
 var actionCPUSharesFlag = cmdline.Flag{
 	ID:           "actionCPUShares",
-	Value:        &CPUShares,
+	Value:        &cpuShares,
 	DefaultValue: -1,
 	Name:         "cpu-shares",
 	Usage:        "CPU shares for container",
@@ -702,7 +702,7 @@ var actionCPUSharesFlag = cmdline.Flag{
 // --cpus
 var actionCPUsFlag = cmdline.Flag{
 	ID:           "actionCPUs",
-	Value:        &CPUs,
+	Value:        &cpus,
 	DefaultValue: "",
 	Name:         "cpus",
 	Usage:        "Number of CPUs available to container",
@@ -712,7 +712,7 @@ var actionCPUsFlag = cmdline.Flag{
 // --cpuset-cpus
 var actionCPUsetCPUsFlag = cmdline.Flag{
 	ID:           "actionCPUsetCPUs",
-	Value:        &CPUSetCPUs,
+	Value:        &cpuSetCPUs,
 	DefaultValue: "",
 	Name:         "cpuset-cpus",
 	Usage:        "List of host CPUs available to container",
@@ -722,7 +722,7 @@ var actionCPUsetCPUsFlag = cmdline.Flag{
 // --cpuset-mems
 var actionCPUsetMemsFlag = cmdline.Flag{
 	ID:           "actionCPUsetMems",
-	Value:        &CPUSetMems,
+	Value:        &cpuSetMems,
 	DefaultValue: "",
 	Name:         "cpuset-mems",
 	Usage:        "List of host memory nodes available to container",
@@ -732,7 +732,7 @@ var actionCPUsetMemsFlag = cmdline.Flag{
 // --memory
 var actionMemoryFlag = cmdline.Flag{
 	ID:           "actionMemory",
-	Value:        &Memory,
+	Value:        &memory,
 	DefaultValue: "",
 	Name:         "memory",
 	Usage:        "Memory limit in bytes",
@@ -742,7 +742,7 @@ var actionMemoryFlag = cmdline.Flag{
 // --memory-reservation
 var actionMemoryReservationFlag = cmdline.Flag{
 	ID:           "actionMemoryReservation",
-	Value:        &MemoryReservation,
+	Value:        &memoryReservation,
 	DefaultValue: "",
 	Name:         "memory-reservation",
 	Usage:        "Memory soft limit in bytes",
@@ -752,7 +752,7 @@ var actionMemoryReservationFlag = cmdline.Flag{
 // --memory-swap
 var actionMemorySwapFlag = cmdline.Flag{
 	ID:           "actionMemorySwap",
-	Value:        &MemorySwap,
+	Value:        &memorySwap,
 	DefaultValue: "",
 	Name:         "memory-swap",
 	Usage:        "Swap limit, use -1 for unlimited swap",
@@ -762,7 +762,7 @@ var actionMemorySwapFlag = cmdline.Flag{
 // --oom-kill-disable
 var actionOomKillDisableFlag = cmdline.Flag{
 	ID:           "oomKillDisable",
-	Value:        &OomKillDisable,
+	Value:        &oomKillDisable,
 	DefaultValue: false,
 	Name:         "oom-kill-disable",
 	Usage:        "Disable OOM killer",
@@ -772,7 +772,7 @@ var actionOomKillDisableFlag = cmdline.Flag{
 // --pids-limit
 var actionPidsLimitFlag = cmdline.Flag{
 	ID:           "actionPidsLimit",
-	Value:        &PidsLimit,
+	Value:        &pidsLimit,
 	DefaultValue: 0,
 	Name:         "pids-limit",
 	Usage:        "Limit number of container PIDs, use -1 for unlimited",
@@ -782,7 +782,7 @@ var actionPidsLimitFlag = cmdline.Flag{
 // --sif-fuse
 var actionSIFFUSEFlag = cmdline.Flag{
 	ID:           "actionSIFFUSE",
-	Value:        &SIFFUSE,
+	Value:        &sifFUSE,
 	DefaultValue: false,
 	Name:         "sif-fuse",
 	Usage:        "attempt FUSE mount of SIF (unprivileged / user namespace only) (experimental)",
@@ -792,7 +792,7 @@ var actionSIFFUSEFlag = cmdline.Flag{
 // --proot (hidden)
 var actionProotFlag = cmdline.Flag{
 	ID:           "actionProot",
-	Value:        &Proot,
+	Value:        &proot,
 	DefaultValue: "",
 	Name:         "proot",
 	Usage:        "Bind proot from the host into /.singularity.d/libs",
