@@ -42,10 +42,20 @@
   - May fail if the `%post` script requires privileged operations that `proot`
     cannot emulate.
 
+## 3.10.3 \[2022-10-06\]
+
+### Security Related Fixes
+
+- [CVE-2022-39237](https://github.com/sylabs/sif/security/advisories/GHSA-m5m3-46gj-wch8):
+  The github.com/sylabs/sif/v2 dependency included in SingularityCE <=3.10.3
+  does not verify that the hash algorithm(s) used are cryptographically secure
+  when verifying digital signatures. This release updates to sif v2.8.1 which
+  corrects this issue. See the linked advisory for references and a workaround.
+
 ### Bug Fixes
 
 - Ensure bootstrap_history directory is populated with previous definition files,
-  present in source containers used in a build
+  present in source containers used in a build.
 
 ## 3.10.2 \[2022-07-25\]
 
