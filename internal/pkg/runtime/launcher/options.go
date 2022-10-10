@@ -3,28 +3,25 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// Package launcher is responsible for starting a container, with configuration
-// passed to it from the CLI layer.
-//
-// The package currently implements a single Launcher, with an Exec method that
-// constructs a runtime configuration and calls the Singularity runtime starter
-// binary to start the container.
-//
-// TODO - the launcher package will be extended to support launching containers
-// via the OCI runc/crun runtime, in addition to the current Singularity runtime
-// starter.
-package launch
+package launcher
 
 import (
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
-	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/util/cryptkey"
 )
 
-// launchOptions accumulates configuration from passed functional options. Note
-// that the launchOptions is modified heavily by logic during the Exec function
-// call.
-type launchOptions struct {
+// Namespaces holds flags for the optional (non-mount) namespaces that can be
+// requested for a container launch.
+type Namespaces struct {
+	User bool
+	UTS  bool
+	PID  bool
+	IPC  bool
+	Net  bool
+}
+
+// Options accumulates launch configuration from passed functional options. Note
+// that the Options is modified heavily by logic during the Exec function call.
+type Options struct {
 	// Writable marks the container image itself as writable.
 	Writable bool
 	// WriteableTmpfs applies an ephemeral writable overlay to the container.
@@ -141,29 +138,11 @@ type launchOptions struct {
 	CacheDisabled bool
 }
 
-type Launcher struct {
-	uid          uint32
-	gid          uint32
-	cfg          launchOptions
-	engineConfig *singularityConfig.EngineConfig
-	generator    *generate.Generator
-}
-
-// Namespaces holds flags for the optional (non-mount) namespaces that can be
-// requested for a container launch.
-type Namespaces struct {
-	User bool
-	UTS  bool
-	PID  bool
-	IPC  bool
-	Net  bool
-}
-
-type Option func(co *launchOptions) error
+type Option func(co *Options) error
 
 // OptWritable sets the container image to be writable.
 func OptWritable(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.Writable = b
 		return nil
 	}
@@ -171,7 +150,7 @@ func OptWritable(b bool) Option {
 
 // OptWritableTmpFs applies an ephemeral writable overlay to the container.
 func OptWritableTmpfs(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.WritableTmpfs = b
 		return nil
 	}
@@ -179,7 +158,7 @@ func OptWritableTmpfs(b bool) Option {
 
 // OptOverlayPaths sets overlay images and directories to apply to the container.
 func OptOverlayPaths(op []string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.OverlayPaths = op
 		return nil
 	}
@@ -187,7 +166,7 @@ func OptOverlayPaths(op []string) Option {
 
 // OptScratchDirs sets temporary host directories to create and bind into the container.
 func OptScratchDirs(sd []string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.ScratchDirs = sd
 		return nil
 	}
@@ -195,7 +174,7 @@ func OptScratchDirs(sd []string) Option {
 
 // OptWorkDir sets the parent path for scratch directories, and contained home/tmp on the host.
 func OptWorkDir(wd string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.WorkDir = wd
 		return nil
 	}
@@ -207,7 +186,7 @@ func OptWorkDir(wd string) Option {
 // custom is a marker that this is user supplied, and must not be overridden.
 // disable will disable the home mount entirely, ignoring other options.
 func OptHome(homeDir string, custom bool, disable bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.HomeDir = homeDir
 		lo.CustomHome = custom
 		lo.NoHome = disable
@@ -221,7 +200,7 @@ func OptHome(homeDir string, custom bool, disable bool) Option {
 // mounts lists bind mount specifications in Docker CSV processed format.
 // fuseMounts list FUSE mounts in <type>:<fuse command> <mountpoint> format.
 func OptMounts(binds []string, mounts []string, fuseMounts []string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.BindPaths = binds
 		lo.Mounts = mounts
 		lo.FuseMount = fuseMounts
@@ -231,7 +210,7 @@ func OptMounts(binds []string, mounts []string, fuseMounts []string) Option {
 
 // OptNoMount disables the specified bind mounts.
 func OptNoMount(nm []string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.NoMount = nm
 		return nil
 	}
@@ -241,7 +220,7 @@ func OptNoMount(nm []string) Option {
 //
 // nvccli sets whether to use the nvidia-container-runtime (true), or legacy bind mounts (false).
 func OptNvidia(nv bool, nvccli bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.Nvidia = nv || nvccli
 		lo.NvCCLI = nvccli
 		return nil
@@ -250,7 +229,7 @@ func OptNvidia(nv bool, nvccli bool) Option {
 
 // OptNoNvidia disables NVIDIA GPU support, even if enabled via singularity.conf.
 func OptNoNvidia(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.NoNvidia = b
 		return nil
 	}
@@ -258,7 +237,7 @@ func OptNoNvidia(b bool) Option {
 
 // OptRocm enable Rocm GPU support.
 func OptRocm(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.Rocm = b
 		return nil
 	}
@@ -266,7 +245,7 @@ func OptRocm(b bool) Option {
 
 // OptNoRocm disables Rocm GPU support, even if enabled via singularity.conf.
 func OptNoRocm(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.NoRocm = b
 		return nil
 	}
@@ -274,7 +253,7 @@ func OptNoRocm(b bool) Option {
 
 // OptContainLibs mounts specified libraries into the container .singularity.d/libs dir.
 func OptContainLibs(cl []string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.ContainLibs = cl
 		return nil
 	}
@@ -282,7 +261,7 @@ func OptContainLibs(cl []string) Option {
 
 // OptProot mounts specified proot executable into the container .singularity.d/libs dir.
 func OptProot(p string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.Proot = p
 		return nil
 	}
@@ -294,7 +273,7 @@ func OptProot(p string) Option {
 // env is a map of name=value env vars to set.
 // clean removes host variables from the container environment.
 func OptEnv(env map[string]string, envFile string, clean bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.Env = env
 		lo.EnvFile = envFile
 		lo.CleanEnv = clean
@@ -304,7 +283,7 @@ func OptEnv(env map[string]string, envFile string, clean bool) Option {
 
 // OptNoEval disables shell evaluation of args and env vars.
 func OptNoEval(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.NoEval = b
 		return nil
 	}
@@ -312,7 +291,7 @@ func OptNoEval(b bool) Option {
 
 // OptNamespaces enable the individual kernel-support namespaces for the container.
 func OptNamespaces(n Namespaces) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.Namespaces = n
 		return nil
 	}
@@ -323,7 +302,7 @@ func OptNamespaces(n Namespaces) Option {
 // network is the name of the CNI configuration to enable.
 // args are arguments to pass to the CNI plugin.
 func OptNetwork(network string, args []string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.Network = network
 		lo.NetworkArgs = args
 		return nil
@@ -332,7 +311,7 @@ func OptNetwork(network string, args []string) Option {
 
 // OptHostname sets a hostname for the container (infers/requires UTS namespace).
 func OptHostname(h string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.Hostname = h
 		return nil
 	}
@@ -340,7 +319,7 @@ func OptHostname(h string) Option {
 
 // OptDNS sets a DNS entry for the container resolv.conf.
 func OptDNS(d string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.DNS = d
 		return nil
 	}
@@ -348,7 +327,7 @@ func OptDNS(d string) Option {
 
 // OptCaps sets capabilities to add and drop.
 func OptCaps(add, drop string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.AddCaps = add
 		lo.DropCaps = drop
 		return nil
@@ -357,7 +336,7 @@ func OptCaps(add, drop string) Option {
 
 // OptAllowSUID permits setuid executables inside a container started by the root user.
 func OptAllowSUID(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.AllowSUID = b
 		return nil
 	}
@@ -365,7 +344,7 @@ func OptAllowSUID(b bool) Option {
 
 // OptKeepPrivs keeps all privileges inside a container started by the root user.
 func OptKeepPrivs(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.KeepPrivs = b
 		return nil
 	}
@@ -373,7 +352,7 @@ func OptKeepPrivs(b bool) Option {
 
 // OptNoPrivs drops all privileges inside a container.
 func OptNoPrivs(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.NoPrivs = b
 		return nil
 	}
@@ -381,7 +360,7 @@ func OptNoPrivs(b bool) Option {
 
 // OptSecurity supplies a list of security options (selinux, apparmor, seccomp) to apply.
 func OptSecurity(s []string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.SecurityOpts = s
 		return nil
 	}
@@ -389,7 +368,7 @@ func OptSecurity(s []string) Option {
 
 // OptNoUmask disables propagation of the host umask into the container, using a default 0022.
 func OptNoUmask(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.NoUmask = b
 		return nil
 	}
@@ -397,7 +376,7 @@ func OptNoUmask(b bool) Option {
 
 // OptCgroupsJSON sets a Cgroups resource limit configuration to apply to the container.
 func OptCgroupsJSON(cj string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.CGroupsJSON = cj
 		return nil
 	}
@@ -405,7 +384,7 @@ func OptCgroupsJSON(cj string) Option {
 
 // OptConfigFile specifies an alternate singularity.conf that will be used by unprivileged installations only.
 func OptConfigFile(c string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.ConfigFile = c
 		return nil
 	}
@@ -413,7 +392,7 @@ func OptConfigFile(c string) Option {
 
 // OptShellPath specifies a custom shell executable to be launched in the container.
 func OptShellPath(s string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.ShellPath = s
 		return nil
 	}
@@ -421,7 +400,7 @@ func OptShellPath(s string) Option {
 
 // OptPwdPath specifies the initial working directory in the container.
 func OptPwdPath(p string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.PwdPath = p
 		return nil
 	}
@@ -429,7 +408,7 @@ func OptPwdPath(p string) Option {
 
 // OptFakeroot enables the fake root mode, using user namespaces and subuid / subgid mapping.
 func OptFakeroot(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.Fakeroot = b
 		return nil
 	}
@@ -437,7 +416,7 @@ func OptFakeroot(b bool) Option {
 
 // OptBoot enables execution of /sbin/init on startup of an instance container.
 func OptBoot(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.Boot = b
 		return nil
 	}
@@ -445,7 +424,7 @@ func OptBoot(b bool) Option {
 
 // OptNoInit disables shim process when PID namespace is used.
 func OptNoInit(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.NoInit = b
 		return nil
 	}
@@ -453,7 +432,7 @@ func OptNoInit(b bool) Option {
 
 // OptContain starts the container with minimal /dev and empty home/tmp mounts.
 func OptContain(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.Contain = b
 		return nil
 	}
@@ -461,7 +440,7 @@ func OptContain(b bool) Option {
 
 // OptContainAll infers Contain, and adds PID, IPC namespaces, and CleanEnv.
 func OptContainAll(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.ContainAll = b
 		return nil
 	}
@@ -469,7 +448,7 @@ func OptContainAll(b bool) Option {
 
 // OptAppName sets a SCIF application name to run.
 func OptAppName(a string) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.AppName = a
 		return nil
 	}
@@ -477,7 +456,7 @@ func OptAppName(a string) Option {
 
 // OptKeyInfo sets encryption key material to use when accessing an encrypted container image.
 func OptKeyInfo(ki *cryptkey.KeyInfo) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.KeyInfo = ki
 		return nil
 	}
@@ -485,7 +464,7 @@ func OptKeyInfo(ki *cryptkey.KeyInfo) Option {
 
 // OptSIFFuse enables FUSE mounting of a SIF image, if possible.
 func OptSIFFuse(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.SIFFUSE = b
 		return nil
 	}
@@ -493,7 +472,7 @@ func OptSIFFuse(b bool) Option {
 
 // CacheDisabled indicates caching of images was disabled in the CLI.
 func OptCacheDisabled(b bool) Option {
-	return func(lo *launchOptions) error {
+	return func(lo *Options) error {
 		lo.CacheDisabled = b
 		return nil
 	}

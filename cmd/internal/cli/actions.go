@@ -21,7 +21,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/internal/pkg/client/shub"
-	"github.com/sylabs/singularity/internal/pkg/runtime/launch"
+	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
+	"github.com/sylabs/singularity/internal/pkg/runtime/launcher/native"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -267,7 +268,7 @@ var TestCmd = &cobra.Command{
 }
 
 func launchContainer(cmd *cobra.Command, image string, args []string, instanceName string) error {
-	ns := launch.Namespaces{
+	ns := launcher.Namespaces{
 		User: userNamespace,
 		UTS:  utsNamespace,
 		PID:  pidNamespace,
@@ -285,53 +286,56 @@ func launchContainer(cmd *cobra.Command, image string, args []string, instanceNa
 		return err
 	}
 
-	opts := []launch.Option{
-		launch.OptWritable(isWritable),
-		launch.OptWritableTmpfs(isWritableTmpfs),
-		launch.OptOverlayPaths(overlayPath),
-		launch.OptScratchDirs(scratchPath),
-		launch.OptWorkDir(workdirPath),
-		launch.OptHome(
+	opts := []launcher.Option{
+		launcher.OptWritable(isWritable),
+		launcher.OptWritableTmpfs(isWritableTmpfs),
+		launcher.OptOverlayPaths(overlayPath),
+		launcher.OptScratchDirs(scratchPath),
+		launcher.OptWorkDir(workdirPath),
+		launcher.OptHome(
 			homePath,
 			cmd.Flag(actionHomeFlag.Name).Changed,
 			noHome,
 		),
-		launch.OptMounts(bindPaths, mounts, fuseMount),
-		launch.OptNoMount(noMount),
-		launch.OptNvidia(nvidia, nvCCLI),
-		launch.OptNoNvidia(noNvidia),
-		launch.OptRocm(rocm),
-		launch.OptNoRocm(noRocm),
-		launch.OptContainLibs(containLibsPath),
-		launch.OptProot(proot),
-		launch.OptEnv(singularityEnv, singularityEnvFile, isCleanEnv),
-		launch.OptNoEval(noEval),
-		launch.OptNamespaces(ns),
-		launch.OptNetwork(network, networkArgs),
-		launch.OptHostname(hostname),
-		launch.OptDNS(dns),
-		launch.OptCaps(addCaps, dropCaps),
-		launch.OptAllowSUID(allowSUID),
-		launch.OptKeepPrivs(keepPrivs),
-		launch.OptNoPrivs(noPrivs),
-		launch.OptSecurity(security),
-		launch.OptNoUmask(noUmask),
-		launch.OptCgroupsJSON(cgJSON),
-		launch.OptConfigFile(configurationFile),
-		launch.OptShellPath(shellPath),
-		launch.OptPwdPath(pwdPath),
-		launch.OptFakeroot(isFakeroot),
-		launch.OptBoot(isBoot),
-		launch.OptNoInit(noInit),
-		launch.OptContain(isContained),
-		launch.OptContainAll(isContainAll),
-		launch.OptAppName(appName),
-		launch.OptKeyInfo(ki),
-		launch.OptSIFFuse(sifFUSE),
-		launch.OptCacheDisabled(disableCache),
+		launcher.OptMounts(bindPaths, mounts, fuseMount),
+		launcher.OptNoMount(noMount),
+		launcher.OptNvidia(nvidia, nvCCLI),
+		launcher.OptNoNvidia(noNvidia),
+		launcher.OptRocm(rocm),
+		launcher.OptNoRocm(noRocm),
+		launcher.OptContainLibs(containLibsPath),
+		launcher.OptProot(proot),
+		launcher.OptEnv(singularityEnv, singularityEnvFile, isCleanEnv),
+		launcher.OptNoEval(noEval),
+		launcher.OptNamespaces(ns),
+		launcher.OptNetwork(network, networkArgs),
+		launcher.OptHostname(hostname),
+		launcher.OptDNS(dns),
+		launcher.OptCaps(addCaps, dropCaps),
+		launcher.OptAllowSUID(allowSUID),
+		launcher.OptKeepPrivs(keepPrivs),
+		launcher.OptNoPrivs(noPrivs),
+		launcher.OptSecurity(security),
+		launcher.OptNoUmask(noUmask),
+		launcher.OptCgroupsJSON(cgJSON),
+		launcher.OptConfigFile(configurationFile),
+		launcher.OptShellPath(shellPath),
+		launcher.OptPwdPath(pwdPath),
+		launcher.OptFakeroot(isFakeroot),
+		launcher.OptBoot(isBoot),
+		launcher.OptNoInit(noInit),
+		launcher.OptContain(isContained),
+		launcher.OptContainAll(isContainAll),
+		launcher.OptAppName(appName),
+		launcher.OptKeyInfo(ki),
+		launcher.OptSIFFuse(sifFUSE),
+		launcher.OptCacheDisabled(disableCache),
 	}
 
-	l, err := launch.NewLauncher(opts...)
+	// Explicitly use the interface type here, as we will add alternative launchers later...
+	var l launcher.Launcher
+
+	l, err = native.NewLauncher(opts...)
 	if err != nil {
 		return fmt.Errorf("while configuring container: %s", err)
 	}
