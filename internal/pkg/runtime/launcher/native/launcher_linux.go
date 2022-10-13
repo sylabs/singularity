@@ -903,20 +903,19 @@ func (l *Launcher) prepareImage(c context.Context, image string) error {
 	if (l.cfg.Namespaces.User || insideUserNs) && fs.IsFile(image) {
 		convert := true
 		// load image driver plugins
-		if l.engineConfig.File.ImageDriver != "" {
-
-			callbackType := (singularitycallback.RegisterImageDriver)(nil)
+		if l.engineConfig.File.ImageDriver != "" { // nolint:staticcheck
+			callbackType := (singularitycallback.RegisterImageDriver)(nil) // nolint:staticcheck
 			callbacks, err := plugin.LoadCallbacks(callbackType)
 			if err != nil {
 				sylog.Debugf("Loading plugins callbacks '%T' failed: %s", callbackType, err)
 			} else {
 				for _, callback := range callbacks {
-					if err := callback.(singularitycallback.RegisterImageDriver)(true); err != nil {
+					if err := callback.(singularitycallback.RegisterImageDriver)(true); err != nil { // nolint:staticcheck
 						sylog.Debugf("While registering image driver: %s", err)
 					}
 				}
 			}
-			driver := imgutil.GetDriver(l.engineConfig.File.ImageDriver)
+			driver := imgutil.GetDriver(l.engineConfig.File.ImageDriver) // nolint:staticcheck
 			if driver != nil && driver.Features()&imgutil.ImageFeature != 0 {
 				// the image driver indicates support for image so let's
 				// proceed with the image driver without conversion

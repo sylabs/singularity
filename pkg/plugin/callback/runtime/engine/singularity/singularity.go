@@ -27,8 +27,11 @@ type MonitorContainer func(config *config.Common, pid int, signals chan os.Signa
 // - internal/pkg/runtime/engine/singularity/process_linux.go
 type PostStartProcess func(config *config.Common, pid int) error
 
-// RegisterImageDriver callback is called before the container
-// creation setup to register an image driver.
-// This callback is called in:
-// - internal/pkg/runtime/engine/singularity/container_linux.go
+// RegisterImageDriver callback is called before the container creation setup to
+// register an image driver. This callback is called in: -
+// internal/pkg/runtime/engine/singularity/container_linux.go
+//
+// Deprecated: Image driver plugins will not be supported from SingularityCE
+// 4.0. Handling of unprivilged overlays via plugin will be replaced with kernel
+// support.
 type RegisterImageDriver func(unprivileged bool) error

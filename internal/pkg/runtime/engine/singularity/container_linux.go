@@ -153,18 +153,18 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 	}
 
 	// load image driver plugins
-	callbackType := (singularitycallback.RegisterImageDriver)(nil)
+	callbackType := (singularitycallback.RegisterImageDriver)(nil) // nolint:staticcheck
 	callbacks, err := plugin.LoadCallbacks(callbackType)
 	if err != nil {
 		return fmt.Errorf("while loading plugins callbacks '%T': %s", callbackType, err)
 	}
 	for _, callback := range callbacks {
-		if err := callback.(singularitycallback.RegisterImageDriver)(c.userNS); err != nil {
+		if err := callback.(singularitycallback.RegisterImageDriver)(c.userNS); err != nil { // nolint:staticcheck
 			return fmt.Errorf("while registering image driver: %s", err)
 		}
 	}
 
-	driverName := c.engine.EngineConfig.File.ImageDriver
+	driverName := c.engine.EngineConfig.File.ImageDriver // nolint:staticcheck
 	imageDriver = image.GetDriver(driverName)
 	if driverName != "" && imageDriver == nil {
 		return fmt.Errorf("%q: no such image driver", driverName)
@@ -497,7 +497,7 @@ func (c *container) setupImageDriver(system *mount.System) error {
 
 			umountPoints = append(umountPoints, sp)
 
-			sylog.Debugf("Starting image driver %s", c.engine.EngineConfig.File.ImageDriver)
+			sylog.Debugf("Starting image driver %s", c.engine.EngineConfig.File.ImageDriver) // nolint:staticcheck
 			if err := imageDriver.Start(params); err != nil {
 				return fmt.Errorf("failed to start driver: %s", err)
 			}
@@ -511,7 +511,7 @@ func (c *container) setupImageDriver(system *mount.System) error {
 		if params.UsernsFd != -1 {
 			defer unix.Close(params.UsernsFd)
 		}
-		sylog.Debugf("Starting image driver %s", c.engine.EngineConfig.File.ImageDriver)
+		sylog.Debugf("Starting image driver %s", c.engine.EngineConfig.File.ImageDriver) // nolint:staticcheck
 		if err := imageDriver.Start(params); err != nil {
 			return fmt.Errorf("failed to start driver: %s", err)
 		}

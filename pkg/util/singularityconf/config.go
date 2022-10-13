@@ -69,12 +69,13 @@ type File struct {
 	MksquashfsMem           string   `directive:"mksquashfs mem"`
 	NvidiaContainerCliPath  string   `directive:"nvidia-container-cli path"`
 	UnsquashfsPath          string   `directive:"unsquashfs path"`
-	ImageDriver             string   `directive:"image driver"`
-	DownloadConcurrency     uint     `default:"3" directive:"download concurrency"`
-	DownloadPartSize        uint     `default:"5242880" directive:"download part size"`
-	DownloadBufferSize      uint     `default:"32768" directive:"download buffer size"`
-	SystemdCgroups          bool     `default:"yes" authorized:"yes,no" directive:"systemd cgroups"`
-	SIFFUSE                 bool     `default:"no" authorized:"yes,no" directive:"sif fuse"`
+	// Deprecated: ImageDriver is deprecated and will be removed in 4.0.
+	ImageDriver         string `directive:"image driver"`
+	DownloadConcurrency uint   `default:"3" directive:"download concurrency"`
+	DownloadPartSize    uint   `default:"5242880" directive:"download part size"`
+	DownloadBufferSize  uint   `default:"32768" directive:"download buffer size"`
+	SystemdCgroups      bool   `default:"yes" authorized:"yes,no" directive:"systemd cgroups"`
+	SIFFUSE             bool   `default:"no" authorized:"yes,no" directive:"sif fuse"`
 }
 
 const TemplateAsset = `# SINGULARITY.CONF
@@ -440,6 +441,9 @@ shared loop devices = {{ if eq .SharedLoopDevices true }}yes{{ else }}no{{ end }
 
 # IMAGE DRIVER: [STRING]
 # DEFAULT: Undefined
+#
+# DEPRECATED - Will be removed in 4.0.
+#
 # This option specifies the name of an image driver provided by a plugin that
 # will be used to handle image mounts. If the 'enable overlay' option is set
 # to 'driver' the driver name specified here will also be used to handle

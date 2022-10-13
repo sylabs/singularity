@@ -2,6 +2,13 @@
 
 ## Changes Since Last Release
 
+### Changed defaults / behaviours
+
+- Image driver plugins, implementing the RegisterImageDriver callback, are
+  deprecated and will be removed in 4.0. Support for the example plugin,
+  permitting Ubuntu unprivileged overlay functionality, will be replaced with a
+  non-plugin implementation.
+
 ### Development / Testing
 
 - The `e2e-test` makefile target now accepts an argument `E2E_GROUPS` to only

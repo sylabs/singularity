@@ -176,7 +176,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return err
 	}
 
-	if sendFd || e.EngineConfig.File.ImageDriver != "" {
+	if sendFd || e.EngineConfig.File.ImageDriver != "" { // nolint:staticcheck
 		fds, err := unix.Socketpair(unix.AF_UNIX, unix.SOCK_STREAM|unix.SOCK_CLOEXEC, 0)
 		if err != nil {
 			return fmt.Errorf("failed to create socketpair to pass file descriptor: %s", err)
@@ -1023,7 +1023,7 @@ func (e *EngineOperations) setSessionLayer(img *image.Image) error {
 
 	// overlay is handled by the image driver
 	if overlayDriver {
-		if e.EngineConfig.File.ImageDriver == "" {
+		if e.EngineConfig.File.ImageDriver == "" { // nolint:staticcheck
 			return fmt.Errorf("you need to specify an image driver with 'enable overlay = driver'")
 		}
 		if !writableImage || hasSIFOverlay {
