@@ -1,5 +1,11 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Ensure `make dist` doesn't include conmon binary or intermediate files.
+
 ## 3.10.3 \[2022-10-06\]
 
 ### Security Related Fixes
