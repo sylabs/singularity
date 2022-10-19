@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 - Ensure `make dist` doesn't include conmon binary or intermediate files.
+- Point at sycloud.io for SCS endpoints to work around sylabs.io domain issue.
 
 ## 3.10.3 \[2022-10-06\]
 
@@ -1215,7 +1216,7 @@ This point release addresses the following issues:
   the existing container ecosystem
 - Added support for new URIs (`build` & `run/exec/shell/start`):
   - `library://` - Supports the
-    [Sylabs.io Cloud Library](https://cloud.sylabs.io/library)
+    [Sylabs Cloud Library](https://cloud.sylabs.io/library)
   - `docker-daemon:` - Supports images managed by the locally running docker
     daemon
   - `docker-archive:` - Supports archived docker images
@@ -1250,7 +1251,7 @@ This point release addresses the following issues:
 - Added `singularity capability` command to allow fine grained control over the
   capabilities of running containers
 - Added `singularity push` command to push images to the
-  [Sylabs.io Cloud Library](https://cloud.sylabs.io/library)
+  [Sylabs Cloud Library](https://cloud.sylabs.io/library)
 
 ### Changed Commands
 
@@ -1309,14 +1310,14 @@ This point release addresses the following issues:
   supports `sandbox` image types\]
 - The `singularity build` command now supports the following flags for
   integration with the
-  [Sylabs.io Cloud Library](https://cloud.sylabs.io/library):
+  [Sylabs Cloud Library](https://cloud.sylabs.io/library):
   - `-r|--remote`: Build the image remotely on the Sylabs Remote Builder
     (currently unavailable)
   - `-d|--detached`: Detach from the `stdout` of the remote build \[requires
     `--remote`\]
   - `--builder <string>`: Specifies the URL of the remote builder to access
   - `--library <string>`: Specifies the URL of the
-    [Sylabs.io Cloud Library](https://cloud.sylabs.io/library) to push the built
+    [Sylabs Cloud Library](https://cloud.sylabs.io/library) to push the built
     image to when the build command destination is in the form
     `library://<reference>`
 - The `bootstrap` keyword in the definition file now supports the following

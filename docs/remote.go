@@ -20,7 +20,7 @@ const (
 
   A 'remote endpoint' is the Sylabs Cloud, a Singularity Enterprise installation,
   or a compatible group of services. The remote endpoint is a single address,
-  e.g. 'cloud.sylabs.io' through which linked library, builder and keystore
+  e.g. 'cloud.sycloud.io' through which linked library, builder and keystore
   sevices will be automatically discovered.
 
   To configure a remote endpoint you must 'remote add' it. You can 'remote login' if
@@ -52,7 +52,7 @@ const (
   be used for singularity remote services. Authentication with a newly created
   endpoint will occur automatically.`
 	RemoteAddExample string = `
-  $ singularity remote add SylabsCloud cloud.sylabs.io`
+  $ singularity remote add SylabsCloud cloud.sycloud.io`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote remove command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -96,7 +96,7 @@ const (
   an OCI/Docker registry or a keyserver.
 
   If no endpoint or registry is specified, the command will login to the currently
-  active remote endpoint. This is cloud.sylabs.io by default.`
+  active remote endpoint. This is cloud.sycloud.io by default.`
 	RemoteLoginExample string = `
   To log in to an endpoint:
   $ singularity remote login SylabsCloud
