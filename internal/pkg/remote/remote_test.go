@@ -64,7 +64,7 @@ func TestWriteToReadFrom(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -144,7 +144,7 @@ func TestSyncFrom(t *testing.T) {
 			usr: Config{
 				Remotes: map[string]*endpoint.Config{
 					"sylabs": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token",
 					},
 				},
@@ -152,7 +152,7 @@ func TestSyncFrom(t *testing.T) {
 			res: Config{
 				Remotes: map[string]*endpoint.Config{
 					"sylabs": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token",
 					},
 				},
@@ -162,7 +162,7 @@ func TestSyncFrom(t *testing.T) {
 			sys: Config{
 				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token", // should be ignored by SyncFrom
 					},
 				},
@@ -170,7 +170,7 @@ func TestSyncFrom(t *testing.T) {
 			usr: Config{
 				Remotes: map[string]*endpoint.Config{
 					"sylabs": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token",
 					},
 				},
@@ -178,11 +178,11 @@ func TestSyncFrom(t *testing.T) {
 			res: Config{
 				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
-						URI:    "cloud.sylabs.io",
+						URI:    "cloud.sycloud.io",
 						System: true,
 					},
 					"sylabs": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token",
 					},
 				},
@@ -192,7 +192,7 @@ func TestSyncFrom(t *testing.T) {
 			sys: Config{
 				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token", // should be ignored by SyncFrom
 					},
 				},
@@ -200,11 +200,11 @@ func TestSyncFrom(t *testing.T) {
 			usr: Config{
 				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
-						URI:    "cloud.sylabs.io",
+						URI:    "cloud.sycloud.io",
 						System: true,
 					},
 					"sylabs": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token",
 					},
 				},
@@ -212,11 +212,11 @@ func TestSyncFrom(t *testing.T) {
 			res: Config{
 				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
-						URI:    "cloud.sylabs.io",
+						URI:    "cloud.sycloud.io",
 						System: true,
 					},
 					"sylabs": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token",
 					},
 				},
@@ -226,7 +226,7 @@ func TestSyncFrom(t *testing.T) {
 			sys: Config{
 				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token", // should be ignored by SyncFrom
 					},
 				},
@@ -238,7 +238,7 @@ func TestSyncFrom(t *testing.T) {
 						System: true,
 					},
 					"sylabs": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token",
 					},
 				},
@@ -246,11 +246,11 @@ func TestSyncFrom(t *testing.T) {
 			res: Config{
 				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
-						URI:    "cloud.sylabs.io",
+						URI:    "cloud.sycloud.io",
 						System: true,
 					},
 					"sylabs": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token",
 					},
 				},
@@ -261,7 +261,7 @@ func TestSyncFrom(t *testing.T) {
 				DefaultRemote: "sylabs-global",
 				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token", // should be ignored by SyncFrom
 					},
 				},
@@ -273,7 +273,7 @@ func TestSyncFrom(t *testing.T) {
 						System: true,
 					},
 					"sylabs": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token",
 					},
 				},
@@ -282,11 +282,11 @@ func TestSyncFrom(t *testing.T) {
 				DefaultRemote: "sylabs-global",
 				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
-						URI:    "cloud.sylabs.io",
+						URI:    "cloud.sycloud.io",
 						System: true,
 					},
 					"sylabs": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token",
 					},
 				},
@@ -297,7 +297,7 @@ func TestSyncFrom(t *testing.T) {
 				DefaultRemote: "sylabs-global",
 				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token", // should be ignored by SyncFrom
 					},
 				},
@@ -310,7 +310,7 @@ func TestSyncFrom(t *testing.T) {
 						System: true,
 					},
 					"sylabs": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token",
 					},
 				},
@@ -319,11 +319,11 @@ func TestSyncFrom(t *testing.T) {
 				DefaultRemote: "sylabs",
 				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
-						URI:    "cloud.sylabs.io",
+						URI:    "cloud.sycloud.io",
 						System: true,
 					},
 					"sylabs": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token",
 					},
 				},
@@ -349,7 +349,7 @@ func TestSyncFrom(t *testing.T) {
 			sys: Config{
 				Remotes: map[string]*endpoint.Config{
 					"sylabs-global": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token",
 					},
 				},
@@ -357,11 +357,11 @@ func TestSyncFrom(t *testing.T) {
 			usr: Config{
 				Remotes: map[string]*endpoint.Config{
 					"sylabs": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: "fake-token",
 					},
 					"sylabs-global": {
-						URI: "cloud.sylabs.io",
+						URI: "cloud.sycloud.io",
 					},
 				},
 			},
@@ -397,14 +397,14 @@ func TestAddRemote(t *testing.T) {
 				DefaultRemote: "",
 				Remotes: map[string]*endpoint.Config{
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
 			},
 			id: "cloud",
 			ep: &endpoint.Config{
-				URI:   "cloud.sylabs.io",
+				URI:   "cloud.sycloud.io",
 				Token: testToken,
 			},
 		},
@@ -427,14 +427,14 @@ func TestAddRemote(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
 			},
 			id: "cloud",
 			ep: &endpoint.Config{
-				URI:   "cloud.sylabs.io",
+				URI:   "cloud.sycloud.io",
 				Token: testToken,
 			},
 		},
@@ -458,14 +458,14 @@ func TestAddRemote(t *testing.T) {
 			DefaultRemote: "",
 			Remotes: map[string]*endpoint.Config{
 				"cloud": {
-					URI:   "cloud.sylabs.io",
+					URI:   "cloud.sycloud.io",
 					Token: testToken,
 				},
 			},
 		},
 		id: "cloud",
 		ep: &endpoint.Config{
-			URI:   "cloud.sylabs.io",
+			URI:   "cloud.sycloud.io",
 			Token: testToken,
 		},
 	}
@@ -485,7 +485,7 @@ func TestRemoveRemote(t *testing.T) {
 				DefaultRemote: "",
 				Remotes: map[string]*endpoint.Config{
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -505,7 +505,7 @@ func TestRemoveRemote(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -531,7 +531,7 @@ func TestRemoveRemote(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -585,7 +585,7 @@ func TestRenameRemote(t *testing.T) {
 				DefaultRemote: "",
 				Remotes: map[string]*endpoint.Config{
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -594,7 +594,7 @@ func TestRenameRemote(t *testing.T) {
 				DefaultRemote: "",
 				Remotes: map[string]*endpoint.Config{
 					"newCloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -612,7 +612,7 @@ func TestRenameRemote(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -625,7 +625,7 @@ func TestRenameRemote(t *testing.T) {
 						Token: testToken,
 					},
 					"newCloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -678,7 +678,7 @@ func TestRenameRemote(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -708,14 +708,14 @@ func TestGetRemote(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
 			},
 			id: "cloud",
 			ep: &endpoint.Config{
-				URI:   "cloud.sylabs.io",
+				URI:   "cloud.sycloud.io",
 				Token: testToken,
 			},
 		},
@@ -742,7 +742,7 @@ func TestGetRemote(t *testing.T) {
 				DefaultRemote: "cloud",
 				Remotes: map[string]*endpoint.Config{
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -771,13 +771,13 @@ func TestGetDefaultRemote(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
 			},
 			ep: &endpoint.Config{
-				URI:   "cloud.sylabs.io",
+				URI:   "cloud.sycloud.io",
 				Token: testToken,
 			},
 		},
@@ -808,7 +808,7 @@ func TestGetDefaultRemote(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -820,7 +820,7 @@ func TestGetDefaultRemote(t *testing.T) {
 				DefaultRemote: "notaremote",
 				Remotes: map[string]*endpoint.Config{
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -848,7 +848,7 @@ func TestSetDefaultRemote(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -861,7 +861,7 @@ func TestSetDefaultRemote(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -889,7 +889,7 @@ func TestSetDefaultRemote(t *testing.T) {
 				DefaultRemote: "cloud",
 				Remotes: map[string]*endpoint.Config{
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -917,7 +917,7 @@ func TestSetDefaultRemote(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -932,7 +932,7 @@ func TestSetDefaultRemote(t *testing.T) {
 						Token:     testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -963,7 +963,7 @@ func TestSetDefaultRemote(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -990,7 +990,7 @@ func TestSetDefaultRemote(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:       "cloud.sylabs.io",
+						URI:       "cloud.sycloud.io",
 						Exclusive: true,
 						Token:     testToken,
 					},
@@ -1073,7 +1073,7 @@ func TestGetServiceURI(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},
@@ -1107,7 +1107,7 @@ func TestGetServiceURI(t *testing.T) {
 						Token: testToken,
 					},
 					"cloud": {
-						URI:   "cloud.sylabs.io",
+						URI:   "cloud.sycloud.io",
 						Token: testToken,
 					},
 				},

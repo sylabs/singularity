@@ -37,8 +37,8 @@ func (c ctx) remoteAdd(t *testing.T) {
 		remote string
 		uri    string
 	}{
-		{"AddCloud", "cloud", "cloud.sylabs.io"},
-		{"AddOtherCloud", "other", "cloud.sylabs.io"},
+		{"AddCloud", "cloud", "cloud.sycloud.io"},
+		{"AddOtherCloud", "other", "cloud.sycloud.io"},
 	}
 
 	for _, tt := range testPass {
@@ -58,7 +58,7 @@ func (c ctx) remoteAdd(t *testing.T) {
 		remote string
 		uri    string
 	}{
-		{"AddExistingRemote", "cloud", "cloud.sylabs.io"},
+		{"AddExistingRemote", "cloud", "cloud.sycloud.io"},
 		{"AddExistingRemoteInvalidURI", "other", "anythingcangohere"},
 	}
 
@@ -93,8 +93,8 @@ func (c ctx) remoteRemove(t *testing.T) {
 		remote string
 		uri    string
 	}{
-		{"addCloud", "cloud", "cloud.sylabs.io"},
-		{"addOther", "other", "cloud.sylabs.io"},
+		{"addCloud", "cloud", "cloud.sycloud.io"},
+		{"addOther", "other", "cloud.sycloud.io"},
 	}
 
 	for _, tt := range add {
@@ -185,8 +185,8 @@ func (c ctx) remoteUse(t *testing.T) {
 		remote string
 		uri    string
 	}{
-		{"addCloud", "cloud", "cloud.sylabs.io"},
-		{"addOther", "other", "cloud.sylabs.io"},
+		{"addCloud", "cloud", "cloud.sycloud.io"},
+		{"addOther", "other", "cloud.sycloud.io"},
 	}
 
 	for _, tt := range add {
@@ -240,7 +240,7 @@ func (c ctx) remoteStatus(t *testing.T) {
 		remote string
 		uri    string
 	}{
-		{"addCloud", "cloud", "cloud.sylabs.io"},
+		{"addCloud", "cloud", "cloud.sycloud.io"},
 		{"addInvalidRemote", "invalid", "notarealendpoint"},
 	}
 
@@ -329,8 +329,8 @@ func (c ctx) remoteList(t *testing.T) {
 		remote string
 		uri    string
 	}{
-		{"addCloud", "cloud", "cloud.sylabs.io"},
-		{"addRemote", "remote", "cloud.sylabs.io"},
+		{"addCloud", "cloud", "cloud.sycloud.io"},
+		{"addRemote", "remote", "cloud.sycloud.io"},
 	}
 
 	for _, tt := range add {
@@ -655,7 +655,7 @@ func (c ctx) remoteLoginRepeated(t *testing.T) {
 
 func (c ctx) remoteKeyserver(t *testing.T) {
 	var (
-		sylabsKeyserver = "https://keys.sylabs.io"
+		sylabsKeyserver = "https://keys.production.sycloud.io"
 		testKeyserver   = "http://localhost:11371"
 		addKeyserver    = "remote add-keyserver"
 		removeKeyserver = "remote remove-keyserver"
@@ -681,9 +681,9 @@ func (c ctx) remoteKeyserver(t *testing.T) {
 			command: addKeyserver,
 			args:    []string{"--insecure", testKeyserver},
 			listLines: []string{
-				"URI                     GLOBAL  INSECURE  ORDER",
+				"URI                                 GLOBAL  INSECURE  ORDER",
 				sylabsKeyserver + "  YES     NO        1*",
-				testKeyserver + "  YES     YES       2",
+				testKeyserver + "              YES     YES       2",
 			},
 			expectExit: 0,
 			profile:    e2e.RootProfile,
@@ -714,8 +714,8 @@ func (c ctx) remoteKeyserver(t *testing.T) {
 			command: addKeyserver,
 			args:    []string{"--order", "1", testKeyserver},
 			listLines: []string{
-				"URI                     GLOBAL  INSECURE  ORDER",
-				testKeyserver + "  YES     NO        1",
+				"URI                                 GLOBAL  INSECURE  ORDER",
+				testKeyserver + "              YES     NO        1",
 				sylabsKeyserver + "  YES     NO        2*",
 			},
 			expectExit: 0,
@@ -751,8 +751,8 @@ func (c ctx) remoteKeyserver(t *testing.T) {
 			command: addKeyserver,
 			args:    []string{sylabsKeyserver},
 			listLines: []string{
-				"URI                     GLOBAL  INSECURE  ORDER",
-				testKeyserver + "  YES     NO        1",
+				"URI                                 GLOBAL  INSECURE  ORDER",
+				testKeyserver + "              YES     NO        1",
 				sylabsKeyserver + "  YES     NO        2*",
 			},
 			expectExit: 0,
@@ -763,7 +763,7 @@ func (c ctx) remoteKeyserver(t *testing.T) {
 			command: removeKeyserver,
 			args:    []string{testKeyserver},
 			listLines: []string{
-				"URI                     GLOBAL  INSECURE  ORDER",
+				"URI                                 GLOBAL  INSECURE  ORDER",
 				sylabsKeyserver + "  YES     NO        1*",
 			},
 			expectExit: 0,
