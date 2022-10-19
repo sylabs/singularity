@@ -31,9 +31,9 @@ func TestBuild(t *testing.T) {
 		builderAddr   string
 	}{
 		{"BadBuilderURI", false, "ftp:?abc//foo.bar:abc"},
-		{"BadBuilderScheme", false, "ftp://build.sylabs.io"},
-		{"SuccessBuilderAddr", true, "http://build.sylabs.io"},
-		{"SuccessBuilderAddrSecure", true, "https://build.sylabs.io"},
+		{"BadBuilderScheme", false, "ftp://build.production.sycloud.io"},
+		{"SuccessBuilderAddr", true, "http://build.production.sycloud.io"},
+		{"SuccessBuilderAddrSecure", true, "https://build.production.sycloud.io"},
 	}
 
 	// Loop over test cases
