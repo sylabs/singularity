@@ -1,6 +1,6 @@
 Active: SylabsCloud
 Remotes:
   SylabsCloud:
-    URI: cloud.sylabs.io
+    URI: cloud.sycloud.io
     System: true
     Exclusive: false
