@@ -39,7 +39,7 @@ type LibraryPushSpec struct {
 	Description string
 	// AllowUnsigned must be set to true to allow push of an unsigned container image to succeed
 	AllowUnsigned bool
-	// FrontendURI is the URI for the frontend (ie. https://cloud.sycloud.io)
+	// FrontendURI is the URI for the frontend (ie. https://cloud.sylabs.io)
 	FrontendURI string
 }
 

@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	libraryURL = "https://library.production.sycloud.io/"
+	libraryURL = "https://library.sylabs.io/"
 	libraryURI = "library://alpine:latest"
 )
 

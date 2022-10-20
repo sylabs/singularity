@@ -179,13 +179,13 @@ var tests = []testStruct{
 	{
 		desc:             "bad library URI",
 		srcURI:           "library://busybox:1.31.1",
-		library:          "https://bad-library.production.sycloud.io",
+		library:          "https://bad-library.sylabs.io",
 		expectedExitCode: 255,
 	},
 	{
 		desc:             "default library URI",
 		srcURI:           "library://busybox:1.31.1",
-		library:          "https://library.production.sycloud.io",
+		library:          "https://library.sylabs.io",
 		force:            true,
 		expectedExitCode: 0,
 	},
@@ -193,20 +193,20 @@ var tests = []testStruct{
 	// pulling with library URI containing host name and library argument
 	{
 		desc:             "library URI containing host name and library argument",
-		srcURI:           "library://notlibrary.production.sycloud.io/library/default/busybox:1.31.1",
-		library:          "https://notlibrary.production.sycloud.io",
+		srcURI:           "library://notlibrary.sylabs.io/library/default/busybox:1.31.1",
+		library:          "https://notlibrary.sylabs.io",
 		expectedExitCode: 255,
 	},
 
 	// pulling with library URI containing host name
 	{
 		desc:             "library URI containing bad host name",
-		srcURI:           "library://notlibrary.production.sycloud.io/library/default/busybox:1.31.1",
+		srcURI:           "library://notlibrary.sylabs.io/library/default/busybox:1.31.1",
 		expectedExitCode: 255,
 	},
 	{
 		desc:             "library URI containing host name",
-		srcURI:           "library://library.production.sycloud.io/library/default/busybox:1.31.1",
+		srcURI:           "library://library.sylabs.io/library/default/busybox:1.31.1",
 		force:            true,
 		expectedExitCode: 0,
 	},
