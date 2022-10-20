@@ -58,7 +58,7 @@ Enterprise Performance Computing (EPC)`
 
   Targets can also be remote and defined by a URI of the following formats:
 
-      library://  an image library (default https://cloud.sycloud.io/library)
+      library://  an image library (default https://cloud.sylabs.io/library)
       docker://   a Docker/OCI registry (default Docker Hub)
       shub://     a Singularity registry (default Singularity Hub)
       oras://     an OCI registry that holds SIF files using ORAS`
@@ -465,7 +465,7 @@ Enterprise Performance Computing (EPC)`
                       command group.)
 
   library://*         A SIF container hosted on a Library
-                      (default https://cloud.sycloud.io/library)
+                      (default https://cloud.sylabs.io/library)
 
   docker://*          A Docker/OCI container hosted on Docker Hub or another
                       OCI registry.
@@ -615,7 +615,7 @@ Enterprise Performance Computing (EPC)`
       oras://registry/namespace/image:tag
 
   http, https: Pull an image using the http(s?) protocol
-      https://library.production.sycloud.io/v1/imagefile/library/default/alpine:latest`
+      https://library.sylabs.io/v1/imagefile/library/default/alpine:latest`
 	PullExample string = `
   From Sylabs cloud library
   $ singularity pull alpine.sif library://alpine:latest
@@ -662,7 +662,7 @@ Enterprise Performance Computing (EPC)`
 	SearchShort string = `Search a Container Library for images`
 	SearchLong  string = `
   Search a Container Library for container images matching the search query.
-  (default cloud.sycloud.io). You can specify an alternate architecture, and/or limit
+  (default cloud.sylabs.io). You can specify an alternate architecture, and/or limit
   the results to only signed images.`
 	SearchExample string = `
   $ singularity search lolcow
