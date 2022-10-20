@@ -24,10 +24,10 @@ const defaultTimeout = 10 * time.Second
 
 // Default Sylabs cloud service endpoints.
 const (
-	SCSDefaultCloudURI     = "cloud.sycloud.io"
-	SCSDefaultLibraryURI   = "https://library.production.sycloud.io"
-	SCSDefaultKeyserverURI = "https://keys.production.sycloud.io"
-	SCSDefaultBuilderURI   = "https://build.production.sycloud.io"
+	SCSDefaultCloudURI     = "cloud.sylabs.io"
+	SCSDefaultLibraryURI   = "https://library.sylabs.io"
+	SCSDefaultKeyserverURI = "https://keys.sylabs.io"
+	SCSDefaultBuilderURI   = "https://build.sylabs.io"
 )
 
 // SCS cloud services
