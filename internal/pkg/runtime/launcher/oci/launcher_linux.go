@@ -13,12 +13,13 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
 )
 
 var (
 	ErrUnsupportedOption = errors.New("not supported by OCI launcher")
-	ErrNotImplemented    = errors.New("not implemented")
+	ErrNotImplemented    = errors.New("not implemented by OCI launcher")
 )
 
 // Launcher will holds configuration for, and will launch a container using an
@@ -54,10 +55,10 @@ func checkOpts(lo launcher.Options) error {
 	if lo.WritableTmpfs {
 		badOpt = append(badOpt, "WritableTmpfs")
 	}
-	if lo.OverlayPaths != nil {
+	if len(lo.OverlayPaths) > 0 {
 		badOpt = append(badOpt, "OverlayPaths")
 	}
-	if lo.ScratchDirs != nil {
+	if len(lo.ScratchDirs) > 0 {
 		badOpt = append(badOpt, "ScratchDirs")
 	}
 	if lo.WorkDir != "" {
@@ -74,16 +75,16 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "NoHome")
 	}
 
-	if lo.BindPaths != nil {
+	if len(lo.BindPaths) > 0 {
 		badOpt = append(badOpt, "BindPaths")
 	}
-	if lo.FuseMount != nil {
+	if len(lo.FuseMount) > 0 {
 		badOpt = append(badOpt, "FuseMount")
 	}
-	if lo.Mounts != nil {
+	if len(lo.Mounts) > 0 {
 		badOpt = append(badOpt, "Mounts")
 	}
-	if lo.NoMount != nil {
+	if len(lo.NoMount) > 0 {
 		badOpt = append(badOpt, "NoMount")
 	}
 
@@ -103,14 +104,14 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "NoRocm")
 	}
 
-	if lo.ContainLibs != nil {
+	if len(lo.ContainLibs) > 0 {
 		badOpt = append(badOpt, "ContainLibs")
 	}
 	if lo.Proot != "" {
 		badOpt = append(badOpt, "Proot")
 	}
 
-	if lo.Env != nil {
+	if len(lo.Env) > 0 {
 		badOpt = append(badOpt, "Env")
 	}
 	if lo.EnvFile != "" {
@@ -139,10 +140,12 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "Namespaces.User")
 	}
 
-	if lo.Network != "" {
+	// Network always set in CLI layer even if network namespace not requested.
+	if lo.Namespaces.Net && lo.Network != "" {
 		badOpt = append(badOpt, "Network")
 	}
-	if lo.NetworkArgs != nil {
+
+	if len(lo.NetworkArgs) > 0 {
 		badOpt = append(badOpt, "NetworkArgs")
 	}
 	if lo.Hostname != "" {
@@ -167,7 +170,7 @@ func checkOpts(lo launcher.Options) error {
 	if lo.NoPrivs {
 		badOpt = append(badOpt, "NoPrivs")
 	}
-	if lo.SecurityOpts != nil {
+	if len(lo.SecurityOpts) > 0 {
 		badOpt = append(badOpt, "SecurityOpts")
 	}
 	if lo.NoUmask {
@@ -178,7 +181,8 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "CGroupsJSON")
 	}
 
-	if lo.ConfigFile != "" {
+	// ConfigFile always set by CLI. We should support only the default from build time.
+	if lo.ConfigFile != "" && lo.ConfigFile != buildcfg.SINGULARITY_CONF_FILE {
 		badOpt = append(badOpt, "ConfigFile")
 	}
 
