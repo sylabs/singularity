@@ -48,6 +48,7 @@
   - Incur a performance penalty due to `proot`'s `ptrace` based interception of syscalls.
   - May fail if the `%post` script requires privileged operations that `proot`
     cannot emulate.
+- Add new Linux capabilities: `CAP_PERFMON`, `CAP_BPF`, `CAP_CHECKPOINT_RESTORE`.
 
 ### Bug Fixes
 
