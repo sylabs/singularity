@@ -1038,8 +1038,7 @@ func (e *EngineOperations) setSessionLayer(img *image.Image) error {
 	// https://github.com/hpcng/singularity/issues/5315
 	userNS, _ := namespaces.IsInsideUserNamespace(os.Getpid())
 
-	// NEED FIX: on ubuntu until 4.15 kernel it was possible to mount overlay
-	// with the current workflow, since 4.18 we get an operation not permitted
+	// Check for explicit user namespace request
 	if !userNS {
 		for _, ns := range e.EngineConfig.OciConfig.Linux.Namespaces {
 			if ns.Type == specs.UserNamespace {
@@ -1049,7 +1048,21 @@ func (e *EngineOperations) setSessionLayer(img *image.Image) error {
 		}
 	}
 
-	if userNS {
+	// Check for kernel rootless overlay support if userNS in effect
+	rootlessOverlay := false
+	useOverlay := e.EngineConfig.File.EnableOverlay == "yes" || e.EngineConfig.File.EnableOverlay == "try"
+	if userNS && useOverlay {
+		err := overlay.CheckRootless()
+		if err == nil {
+			rootlessOverlay = true
+		}
+		if err != nil && err != overlay.ErrNoRootlessOverlay {
+			sylog.Warningf("While checking for rootless overlay support: %s", err)
+		}
+	}
+
+	// If rootless overlay is not supported for userns, we can only try underlay.
+	if userNS && !rootlessOverlay {
 		if !e.EngineConfig.File.EnableUnderlay {
 			sylog.Debugf("Not attempting to use underlay with user namespace: disabled by configuration ('enable underlay = no')")
 			return nil
@@ -1063,8 +1076,9 @@ func (e *EngineOperations) setSessionLayer(img *image.Image) error {
 		return nil
 	}
 
-	// starter was forced to load overlay module, now check if there
-	// is an overlay entry in /proc/filesystems
+	// Now check if there is an overlay entry in /proc/filesystems
+	// Setuid starter will force module load.
+	// Rootless overlay mount check will also force module load.
 	if has, _ := proc.HasFilesystem("overlay"); has {
 		sylog.Debugf("Overlay seems supported and allowed by kernel")
 		switch e.EngineConfig.File.EnableOverlay {

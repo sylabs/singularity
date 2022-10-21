@@ -8,6 +8,9 @@
   deprecated and will be removed in 4.0. Support for the example plugin,
   permitting Ubuntu unprivileged overlay functionality, will be replaced with a
   non-plugin implementation.
+- When the kernel supports unprivileged overlay mounts in a user
+  namespace, the container will be constructed using an overlay
+  instead of underlay layout.
 
 ### Development / Testing
 
@@ -49,6 +52,9 @@
   - May fail if the `%post` script requires privileged operations that `proot`
     cannot emulate.
 - Add new Linux capabilities: `CAP_PERFMON`, `CAP_BPF`, `CAP_CHECKPOINT_RESTORE`.
+- `--writable-tmpfs` is now available when running unprivileged, or
+  explicitly requesting a user namespace, on systems with a kernel
+  that supports unprivileged overlay mounts in a user namespace.
 
 ### Bug Fixes
 
