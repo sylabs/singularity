@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -389,7 +390,7 @@ func (c actionTests) issue5271(t *testing.T) {
 	)
 }
 
-// Check that we get a warning when using --writable-tmpfs with underlay.
+// Check that we get a warning when using --writable-tmpfs if unpriv overlay not supported.
 func (c actionTests) issue5307(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
@@ -397,11 +398,22 @@ func (c actionTests) issue5307(t *testing.T) {
 		t,
 		e2e.WithProfile(e2e.UserNamespaceProfile),
 		e2e.WithCommand("exec"),
-		e2e.WithArgs("--writable-tmpfs", c.env.ImagePath, "true"),
-		e2e.ExpectExit(
-			0,
-			e2e.ExpectError(e2e.ContainMatch, "Disabling --writable-tmpfs"),
-		),
+		e2e.WithArgs("--writable-tmpfs", c.env.ImagePath, "mount"),
+		e2e.ExpectExit(0, func(t *testing.T, r *e2e.SingularityCmdResult) {
+			out := string(r.Stdout)
+			err := string(r.Stderr)
+
+			if strings.Contains(out, "overlay") {
+				if strings.Contains(err, "Disabling --writable-tmpfs") {
+					t.Errorf("Overlay used. Unexpected \"--Disabling --writable-tmpfs\", found in output: %s", err)
+				}
+				return
+			}
+
+			if !strings.Contains(err, "Disabling --writable-tmpfs") {
+				t.Errorf("Overlay not used. Expected \"--Disabling --writable-tmpfs\", but not found in output: %s", err)
+			}
+		}),
 	)
 }
 
