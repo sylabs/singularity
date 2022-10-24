@@ -6,8 +6,15 @@
 package overlay
 
 import (
+	"errors"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/pkg/sylog"
 	"golang.org/x/sys/unix"
 )
 
@@ -120,4 +127,72 @@ func IsIncompatible(err error) bool {
 		return true
 	}
 	return false
+}
+
+var ErrNoRootlessOverlay = errors.New("rootless overlay not supported by kernel")
+
+// CheckRootless checks whether the kernel overlay driver supports unprivileged use in a user namespace.
+func CheckRootless() error {
+	mountBin, err := bin.FindBin("mount")
+	if err != nil {
+		return fmt.Errorf("while looking for mount command: %s", err)
+	}
+
+	tmpDir, err := os.MkdirTemp("", "check-overlay")
+	if err != nil {
+		return fmt.Errorf("while creating temporary directories: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	lowerDir := filepath.Join(tmpDir, "l")
+	if err := os.Mkdir(lowerDir, 0o777); err != nil {
+		return fmt.Errorf("while creating temporary directories: %w", err)
+	}
+	upperDir := filepath.Join(tmpDir, "u")
+	if err := os.Mkdir(upperDir, 0o777); err != nil {
+		return fmt.Errorf("while creating temporary directories: %w", err)
+	}
+	workDir := filepath.Join(tmpDir, "w")
+	if err := os.Mkdir(workDir, 0o777); err != nil {
+		return fmt.Errorf("while creating temporary directories: %w", err)
+	}
+	mountDir := filepath.Join(tmpDir, "m")
+	if err := os.Mkdir(mountDir, 0o777); err != nil {
+		return fmt.Errorf("while creating temporary directories: %w", err)
+	}
+
+	args := []string{
+		"-t", "overlay",
+		"-o", fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s,userxattr", lowerDir, upperDir, workDir),
+		"none",
+		mountDir,
+	}
+
+	cmd := exec.Command(mountBin, args...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{}
+	// Unshare user and mount namespace
+	cmd.SysProcAttr.Unshareflags = syscall.CLONE_NEWUSER | syscall.CLONE_NEWNS
+	// Map to user to root inside the user namespace
+	cmd.SysProcAttr.UidMappings = []syscall.SysProcIDMap{
+		{
+			ContainerID: 0,
+			HostID:      os.Getuid(),
+			Size:        1,
+		},
+	}
+	cmd.SysProcAttr.GidMappings = []syscall.SysProcIDMap{
+		{
+			ContainerID: 0,
+			HostID:      os.Getgid(),
+			Size:        1,
+		},
+	}
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		sylog.Debugf("Rootless overlay not supported on this system: %s\n%s", err, out)
+		return ErrNoRootlessOverlay
+	}
+
+	sylog.Debugf("Rootless overlay appears supported on this system.")
+	return nil
 }
