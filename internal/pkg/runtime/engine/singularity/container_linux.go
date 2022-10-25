@@ -1001,8 +1001,18 @@ func (c *container) addOverlayMount(system *mount.System) error {
 				}
 				ov.AddLowerDir(dst)
 			case image.SANDBOX:
+				// In setuid mode, only root user may mount a directory overlay, as the mount
+				// will take place privileged, and could be abused.
 				allowed := os.Geteuid() == 0
 
+				// In non-setuid mode (user namespace) then we can proceed, as the overlay mount
+				// will be attempted unprivileged. This will succeed if kernel supports it.
+				if c.userNS {
+					allowed = true
+				}
+
+				// If a (deprecated) image driver plugin is enabled, then proceed with the mount.
+				// The image driver will be responsible for handling priv / unpriv concerns.
 				if c.engine.EngineConfig.File.EnableOverlay == "driver" {
 					if imageDriver != nil && imageDriver.Features()&image.OverlayFeature != 0 {
 						allowed = true
@@ -1010,7 +1020,7 @@ func (c *container) addOverlayMount(system *mount.System) error {
 				}
 
 				if !allowed {
-					return fmt.Errorf("only root user can use sandbox as overlay")
+					return fmt.Errorf("only root user can use sandbox as overlay in setuid mode")
 				}
 
 				flags := uintptr(c.suidFlag | syscall.MS_NODEV)

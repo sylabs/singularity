@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -308,4 +309,37 @@ func MkfsExt3(t *testing.T) {
 	if !strings.Contains(buf.String(), "[-d ") {
 		t.Skipf("mkfs.ext3 is too old and doesn't support -d")
 	}
+}
+
+// Kernel checks that the kernel version is equal or greater than
+// the minimum specified.
+func Kernel(t *testing.T, reqMajor, reqMinor int) {
+	release, err := os.ReadFile("/proc/sys/kernel/osrelease")
+	if err != nil {
+		t.Skipf("couldn't read kernel version: %s", err)
+	}
+
+	version := strings.SplitN(string(release), ".", 3)
+	if len(version) != 3 {
+		t.Skipf("kernel version didn't have 3 components: %s", release)
+	}
+
+	major, err := strconv.Atoi(version[0])
+	if err != nil {
+		t.Skipf("couldn't parse kernel major version: %s", err)
+	}
+	minor, err := strconv.Atoi(version[1])
+	if err != nil {
+		t.Skipf("couldn't parse kernel minor version: %s", err)
+	}
+
+	if major > reqMajor {
+		return
+	}
+
+	if major == reqMajor && minor >= reqMinor {
+		return
+	}
+
+	t.Skipf("Kernel %d.%d found, but %d.%d required", major, minor, reqMajor, reqMinor)
 }
