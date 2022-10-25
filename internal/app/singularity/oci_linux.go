@@ -9,36 +9,10 @@
 package singularity
 
 import (
-	"fmt"
-	"io"
-	"os"
-	"path"
-	"path/filepath"
-	"time"
+	"context"
 
-	securejoin "github.com/cyphar/filepath-securejoin"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/internal/pkg/util/user"
-	"github.com/sylabs/singularity/pkg/syfs"
-	"github.com/sylabs/singularity/pkg/util/fs/lock"
-)
-
-const (
-	// Absolute path for the runc state
-	RuncStateDir = "/run/singularity-oci"
-	// Relative path inside ~/.singularity for conmon and singularity state
-	ociPath = "oci"
-	// State directory files
-	containerPidFile = "container.pid"
-	containerLogFile = "container.log"
-	runcLogFile      = "runc.log"
-	conmonPidFile    = "conmon.pid"
-	bundleLink       = "bundle"
-	// Files in the OCI bundle root
-	bundleLock   = ".singularity-oci.lock"
-	attachSocket = "attach"
-	// Timeouts
-	createTimeout = 30 * time.Second
+	"github.com/sylabs/singularity/internal/pkg/runtime/launcher/oci"
+	ocibundle "github.com/sylabs/singularity/pkg/ocibundle/sif"
 )
 
 // OciArgs contains CLI arguments
@@ -54,109 +28,70 @@ type OciArgs struct {
 	ForceKill    bool
 }
 
-// AttachStreams contains streams that will be attached to the container
-type AttachStreams struct {
-	// OutputStream will be attached to container's STDOUT
-	OutputStream io.Writer
-	// ErrorStream will be attached to container's STDERR
-	ErrorStream io.Writer
-	// InputStream will be attached to container's STDIN
-	InputStream io.Reader
-	// AttachOutput is whether to attach to STDOUT
-	// If false, stdout will not be attached
-	AttachOutput bool
-	// AttachError is whether to attach to STDERR
-	// If false, stdout will not be attached
-	AttachError bool
-	// AttachInput is whether to attach to STDIN
-	// If false, stdout will not be attached
-	AttachInput bool
+// OciRun runs a container (equivalent to create/start/delete)
+func OciRun(ctx context.Context, containerID string, args *OciArgs) error {
+	return oci.Run(ctx, containerID, args.BundlePath, args.PidFile)
 }
 
-/* Sync with stdpipe_t in conmon.c */
-const (
-	AttachPipeStdin  = 1
-	AttachPipeStdout = 2
-	AttachPipeStderr = 3
-)
-
-type ociError struct {
-	Level string `json:"level,omitempty"`
-	Time  string `json:"time,omitempty"`
-	Msg   string `json:"msg,omitempty"`
+// OciCreate creates a container from an OCI bundle
+func OciCreate(containerID string, args *OciArgs) error {
+	return oci.Create(containerID, args.BundlePath)
 }
 
-// stateDir returns the path to container state handled by conmon/singularity
-// (as opposed to runc's state in RuncStateDir)
-func stateDir(containerID string) (string, error) {
-	hostname, err := os.Hostname()
-	if err != nil {
-		return "", err
-	}
-
-	u, err := user.CurrentOriginal()
-	if err != nil {
-		return "", err
-	}
-
-	configDir, err := syfs.ConfigDirForUsername(u.Name)
-	if err != nil {
-		return "", err
-	}
-
-	rootPath := filepath.Join(configDir, ociPath)
-	containerPath := filepath.Join(hostname, containerID)
-	path, err := securejoin.SecureJoin(rootPath, containerPath)
-	if err != nil {
-		return "", err
-	}
-	return path, err
+// OciStart starts a previously create container
+func OciStart(containerID string) error {
+	return oci.Start(containerID)
 }
 
-// lockBundle creates a lock file in a bundle directory
-func lockBundle(bundlePath string) error {
-	bl := path.Join(bundlePath, bundleLock)
-	_, err := os.Stat(bl)
-	if err == nil {
-		return fmt.Errorf("bundle is locked by another process")
-	}
-	if !os.IsNotExist(err) {
-		return fmt.Errorf("while stat-ing lock file: %w", err)
-	}
-
-	fd, err := lock.Exclusive(bundlePath)
-	if err != nil {
-		return fmt.Errorf("while acquiring directory lock: %w", err)
-	}
-	defer lock.Release(fd)
-
-	err = fs.EnsureFileWithPermission(bl, 0o600)
-	if err != nil {
-		return fmt.Errorf("while creating lock file: %w", err)
-	}
-	return nil
+// OciDelete deletes container resources
+func OciDelete(ctx context.Context, containerID string) error {
+	return oci.Delete(ctx, containerID)
 }
 
-// releaseBundle removes a lock file in a bundle directory
-func releaseBundle(bundlePath string) error {
-	bl := path.Join(bundlePath, bundleLock)
-	_, err := os.Stat(bl)
-	if os.IsNotExist(err) {
-		return fmt.Errorf("bundle is not locked")
-	}
-	if err != nil {
-		return fmt.Errorf("while stat-ing lock file: %w", err)
-	}
+// OciExec executes a command in a container
+func OciExec(containerID string, cmdArgs []string) error {
+	return oci.Exec(containerID, cmdArgs)
+}
 
-	fd, err := lock.Exclusive(bundlePath)
-	if err != nil {
-		return fmt.Errorf("while acquiring directory lock: %w", err)
-	}
-	defer lock.Release(fd)
+// OciKill kills container process
+func OciKill(containerID string, killSignal string) error {
+	return oci.Kill(containerID, killSignal)
+}
 
-	err = os.Remove(bl)
+// OciPause pauses processes in a container
+func OciPause(containerID string) error {
+	return oci.Pause(containerID)
+}
+
+// OciResume pauses processes in a container
+func OciResume(containerID string) error {
+	return oci.Resume(containerID)
+}
+
+// OciState queries container state
+func OciState(containerID string, args *OciArgs) error {
+	return oci.State(containerID)
+}
+
+// OciUpdate updates container cgroups resources
+func OciUpdate(containerID string, args *OciArgs) error {
+	return oci.Update(containerID, args.FromFile)
+}
+
+// OciMount mount a SIF image to create an OCI bundle
+func OciMount(image string, bundle string) error {
+	d, err := ocibundle.FromSif(image, bundle, true)
 	if err != nil {
-		return fmt.Errorf("while removing lock file: %w", err)
+		return err
 	}
-	return nil
+	return d.Create(nil)
+}
+
+// OciUmount umount SIF and delete OCI bundle
+func OciUmount(bundle string) error {
+	d, err := ocibundle.FromSif("", bundle, true)
+	if err != nil {
+		return err
+	}
+	return d.Delete()
 }

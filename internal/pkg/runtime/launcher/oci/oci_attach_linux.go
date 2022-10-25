@@ -6,7 +6,7 @@
 // Includes code from https://github.com/containers/podman
 // Released under the Apache License Version 2.0
 
-package singularity
+package oci
 
 import (
 	"bufio"
@@ -26,9 +26,35 @@ import (
 
 var ErrDetach = errors.New("detached from container")
 
-// OciAttach attaches the console to a running container
-func OciAttach(ctx context.Context, containerID string) error {
-	streams := AttachStreams{
+// attachStreams contains streams that will be attached to the container
+type attachStreams struct {
+	// OutputStream will be attached to container's STDOUT
+	OutputStream io.Writer
+	// ErrorStream will be attached to container's STDERR
+	ErrorStream io.Writer
+	// InputStream will be attached to container's STDIN
+	InputStream io.Reader
+	// AttachOutput is whether to attach to STDOUT
+	// If false, stdout will not be attached
+	AttachOutput bool
+	// AttachError is whether to attach to STDERR
+	// If false, stdout will not be attached
+	AttachError bool
+	// AttachInput is whether to attach to STDIN
+	// If false, stdout will not be attached
+	AttachInput bool
+}
+
+/* Sync with stdpipe_t in conmon.c */
+const (
+	AttachPipeStdin  = 1
+	AttachPipeStdout = 2
+	AttachPipeStderr = 3
+)
+
+// Attach attaches the console to a running container
+func Attach(ctx context.Context, containerID string) error {
+	streams := attachStreams{
 		OutputStream: os.Stdout,
 		ErrorStream:  os.Stderr,
 		InputStream:  bufio.NewReader(os.Stdin),
@@ -74,7 +100,7 @@ func openUnixSocket(path string) (*net.UnixConn, error) {
 	return net.DialUnix("unixpacket", nil, &net.UnixAddr{Name: fmt.Sprintf("/proc/self/fd/%d", fd), Net: "unixpacket"})
 }
 
-func setupStdioChannels(streams AttachStreams, conn *net.UnixConn, detachKeys []byte) (chan error, chan error) {
+func setupStdioChannels(streams attachStreams, conn *net.UnixConn, detachKeys []byte) (chan error, chan error) {
 	receiveStdoutError := make(chan error)
 	go func() {
 		receiveStdoutError <- redirectResponseToOutputStreams(streams.OutputStream, streams.ErrorStream, streams.AttachOutput, streams.AttachError, conn)
@@ -84,7 +110,7 @@ func setupStdioChannels(streams AttachStreams, conn *net.UnixConn, detachKeys []
 	go func() {
 		var err error
 		if streams.AttachInput {
-			_, err = CopyDetachable(conn, streams.InputStream, detachKeys)
+			_, err = copyDetachable(conn, streams.InputStream, detachKeys)
 		}
 		stdinDone <- err
 	}()
@@ -137,7 +163,7 @@ func redirectResponseToOutputStreams(outputStream, errorStream io.Writer, writeO
 	return err
 }
 
-func readStdio(conn *net.UnixConn, streams AttachStreams, receiveStdoutError, stdinDone chan error) error {
+func readStdio(conn *net.UnixConn, streams attachStreams, receiveStdoutError, stdinDone chan error) error {
 	var err error
 	select {
 	case err = <-receiveStdoutError:
@@ -161,7 +187,7 @@ func readStdio(conn *net.UnixConn, streams AttachStreams, receiveStdoutError, st
 	return nil
 }
 
-func CopyDetachable(dst io.Writer, src io.Reader, keys []byte) (written int64, err error) {
+func copyDetachable(dst io.Writer, src io.Reader, keys []byte) (written int64, err error) {
 	buf := make([]byte, 32*1024)
 	for {
 		nr, er := src.Read(buf)
