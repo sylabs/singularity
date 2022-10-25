@@ -55,6 +55,10 @@
 - `--writable-tmpfs` is now available when running unprivileged, or
   explicitly requesting a user namespace, on systems with a kernel
   that supports unprivileged overlay mounts in a user namespace.
+- Persistent overlays (`--overlay`) from a directory are now available
+  when running unprivileged, or explicitly requesting a user
+  namespace, on systems with a kernel that supports unprivileged
+  overlay mounts in a user namespace.
 
 ### Bug Fixes
 
