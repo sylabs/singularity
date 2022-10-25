@@ -6,7 +6,7 @@
 // Includes code from https://github.com/containers/podman
 // Released under the Apache License Version 2.0
 
-package singularity
+package oci
 
 import (
 	"bufio"
@@ -27,8 +27,14 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// OciCreate creates a container from an OCI bundle
-func OciCreate(containerID string, args *OciArgs) error {
+type ociError struct {
+	Level string `json:"level,omitempty"`
+	Time  string `json:"time,omitempty"`
+	Msg   string `json:"msg,omitempty"`
+}
+
+// Create creates a container from an OCI bundle
+func Create(containerID, bundlePath string) error {
 	conmon, err := bin.FindBin("conmon")
 	if err != nil {
 		return err
@@ -38,7 +44,7 @@ func OciCreate(containerID string, args *OciArgs) error {
 		return err
 	}
 	// chdir to bundle and lock it, so another oci create cannot use the same bundle
-	absBundle, err := filepath.Abs(args.BundlePath)
+	absBundle, err := filepath.Abs(bundlePath)
 	if err != nil {
 		return fmt.Errorf("failed to determine bundle absolute path: %w", err)
 	}
@@ -91,7 +97,7 @@ func OciCreate(containerID string, args *OciArgs) error {
 		"--container-pidfile", path.Join(sd, containerPidFile),
 		"--log-path", path.Join(sd, containerLogFile),
 		"--runtime-arg", "--root",
-		"--runtime-arg", RuncStateDir,
+		"--runtime-arg", runcStateDir,
 		"--runtime-arg", "--log",
 		"--runtime-arg", path.Join(sd, runcLogFile),
 		"--full-attach",
@@ -141,7 +147,7 @@ func OciCreate(containerID string, args *OciArgs) error {
 	// We check for errors from runc (which conmon invokes) via the sync pipe
 	pid, err := readConmonPipeData(syncParent, path.Join(sd, runcLogFile))
 	if err != nil {
-		if err2 := OciDelete(context.TODO(), containerID); err2 != nil {
+		if err2 := Delete(context.TODO(), containerID); err2 != nil {
 			sylog.Errorf("Removing container %s from runtime after creation failed", containerID)
 		}
 		return err

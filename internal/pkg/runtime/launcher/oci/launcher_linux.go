@@ -4,7 +4,8 @@
 // rights to use or distribute this software.
 
 // Package oci implements a Launcher that will configure and launch a container
-// with an OCI runtime.
+// with an OCI runtime. It also provides implementations of OCI state
+// transitions that can be called directly, Create/Start/Kill etc.
 package oci
 
 import (
