@@ -21,21 +21,21 @@ import (
 
 // Delete deletes container resources
 func Delete(ctx context.Context, containerID string) error {
-	runc, err := bin.FindBin("runc")
+	runtimeBin, err := runtime()
 	if err != nil {
 		return err
 	}
-	runcArgs := []string{
-		"--root", runcStateDir,
+	runtimeArgs := []string{
+		"--root", runtimeStateDir(),
 		"delete",
 		containerID,
 	}
 
-	cmd := exec.Command(runc, runcArgs...)
+	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdout
-	sylog.Debugf("Calling runc with args %v", runcArgs)
+	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	err = cmd.Run()
 	if err != nil {
 		return fmt.Errorf("while calling runc delete: %w", err)
@@ -63,88 +63,88 @@ func Delete(ctx context.Context, containerID string) error {
 
 // Exec executes a command in a container
 func Exec(containerID string, cmdArgs []string) error {
-	runc, err := bin.FindBin("runc")
+	runtimeBin, err := runtime()
 	if err != nil {
 		return err
 	}
-	runcArgs := []string{
-		"--root", runcStateDir,
+	runtimeArgs := []string{
+		"--root", runtimeStateDir(),
 		"exec",
 		containerID,
 	}
-	runcArgs = append(runcArgs, cmdArgs...)
-	cmd := exec.Command(runc, runcArgs...)
+	runtimeArgs = append(runtimeArgs, cmdArgs...)
+	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdout
-	sylog.Debugf("Calling runc with args %v", runcArgs)
+	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }
 
 // Kill kills container process
 func Kill(containerID string, killSignal string) error {
-	runc, err := bin.FindBin("runc")
+	runtimeBin, err := runtime()
 	if err != nil {
 		return err
 	}
-	runcArgs := []string{
-		"--root", runcStateDir,
+	runtimeArgs := []string{
+		"--root", runtimeStateDir(),
 		"kill",
 		containerID,
 		killSignal,
 	}
 
-	cmd := exec.Command(runc, runcArgs...)
+	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdout
-	sylog.Debugf("Calling runc with args %v", runcArgs)
+	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }
 
 // Pause pauses processes in a container
 func Pause(containerID string) error {
-	runc, err := bin.FindBin("runc")
+	runtimeBin, err := runtime()
 	if err != nil {
 		return err
 	}
-	runcArgs := []string{
-		"--root", runcStateDir,
+	runtimeArgs := []string{
+		"--root", runtimeStateDir(),
 		"pause",
 		containerID,
 	}
 
-	cmd := exec.Command(runc, runcArgs...)
+	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdout
-	sylog.Debugf("Calling runc with args %v", runcArgs)
+	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }
 
 // Resume pauses processes in a container
 func Resume(containerID string) error {
-	runc, err := bin.FindBin("runc")
+	runtimeBin, err := runtime()
 	if err != nil {
 		return err
 	}
-	runcArgs := []string{
-		"--root", runcStateDir,
+	runtimeArgs := []string{
+		"--root", runtimeStateDir(),
 		"resume",
 		containerID,
 	}
 
-	cmd := exec.Command(runc, runcArgs...)
+	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdout
-	sylog.Debugf("Calling runc with args %v", runcArgs)
+	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }
 
 // Run runs a container (equivalent to create/start/delete)
 func Run(ctx context.Context, containerID, bundlePath, pidFile string) error {
-	runc, err := bin.FindBin("runc")
+	runtimeBin, err := runtime()
 	if err != nil {
 		return err
 	}
@@ -157,80 +157,80 @@ func Run(ctx context.Context, containerID, bundlePath, pidFile string) error {
 		return fmt.Errorf("failed to change directory to %s: %s", absBundle, err)
 	}
 
-	runcArgs := []string{
-		"--root", runcStateDir,
+	runtimeArgs := []string{
+		"--root", runtimeStateDir(),
 		"run",
 		"-b", absBundle,
 	}
 	if pidFile != "" {
-		runcArgs = append(runcArgs, "--pid-file="+pidFile)
+		runtimeArgs = append(runtimeArgs, "--pid-file="+pidFile)
 	}
-	runcArgs = append(runcArgs, containerID)
-	cmd := exec.Command(runc, runcArgs...)
+	runtimeArgs = append(runtimeArgs, containerID)
+	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdout
-	sylog.Debugf("Calling runc with args %v", runcArgs)
+	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }
 
 // Start starts a previously created container
 func Start(containerID string) error {
-	runc, err := bin.FindBin("runc")
+	runtimeBin, err := bin.FindBin("crun")
 	if err != nil {
 		return err
 	}
-	runcArgs := []string{
-		"--root", runcStateDir,
+	runtimeArgs := []string{
+		"--root", runtimeStateDir(),
 		"start",
 		containerID,
 	}
 
-	cmd := exec.Command(runc, runcArgs...)
+	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdout
-	sylog.Debugf("Calling runc with args %v", runcArgs)
+	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }
 
 // State queries container state
 func State(containerID string) error {
-	runc, err := bin.FindBin("runc")
+	runtimeBin, err := runtime()
 	if err != nil {
 		return err
 	}
-	runcArgs := []string{
-		"--root", runcStateDir,
+	runtimeArgs := []string{
+		"--root", runtimeStateDir(),
 		"state",
 		containerID,
 	}
 
-	cmd := exec.Command(runc, runcArgs...)
+	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdout
-	sylog.Debugf("Calling runc with args %v", runcArgs)
+	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }
 
 // Update updates container cgroups resources
 func Update(containerID, cgFile string) error {
-	runc, err := bin.FindBin("runc")
+	runtimeBin, err := runtime()
 	if err != nil {
 		return err
 	}
-	runcArgs := []string{
-		"--root", runcStateDir,
+	runtimeArgs := []string{
+		"--root", runtimeStateDir(),
 		"update",
 		"-r", cgFile,
 		containerID,
 	}
 
-	cmd := exec.Command(runc, runcArgs...)
+	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdout
-	sylog.Debugf("Calling runc with args %v", runcArgs)
+	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }

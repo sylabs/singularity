@@ -25,5 +25,5 @@ type Launcher interface {
 	// the container#s initial process. If instanceName is specified, the
 	// container must be launched as a background instance, otherwist it must
 	// run interactively, attached to the console.
-	Exec(ctx context.Context, image string, args []string, instanceName string) error
+	Exec(ctx context.Context, image string, cmd string, args []string, instanceName string) error
 }

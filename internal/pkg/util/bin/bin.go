@@ -36,7 +36,7 @@ func FindBin(name string) (path string, err error) {
 	case "newuidmap", "newgidmap":
 		return findOnPath(name)
 	// distro provided OCI runtime
-	case "runc":
+	case "crun", "runc":
 		return findOnPath(name)
 	// our, or distro provided conmon
 	case "conmon":

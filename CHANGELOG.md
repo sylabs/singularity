@@ -11,6 +11,9 @@
 - When the kernel supports unprivileged overlay mounts in a user
   namespace, the container will be constructed using an overlay
   instead of underlay layout.
+- `crun` will be used as the low-level OCI runtime, when available, rather than
+  `runc`. `runc` will not support all rootless OCI runtime functionality used by
+  Singularity.
 
 ### Development / Testing
 

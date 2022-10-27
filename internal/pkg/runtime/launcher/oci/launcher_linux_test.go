@@ -6,7 +6,6 @@
 package oci
 
 import (
-	"context"
 	"reflect"
 	"testing"
 
@@ -52,16 +51,5 @@ func TestNewLauncher(t *testing.T) {
 				t.Errorf("NewLauncher() = %v, want %v", got, tt.want)
 			}
 		})
-	}
-}
-
-func TestExec(t *testing.T) {
-	l, err := NewLauncher([]launcher.Option{}...)
-	if err != nil {
-		t.Errorf("Couldn't initialize launcher: %s", err)
-	}
-
-	if err := l.Exec(context.Background(), "", []string{}, ""); err != ErrNotImplemented {
-		t.Errorf("Expected %v, got %v", ErrNotImplemented, err)
 	}
 }

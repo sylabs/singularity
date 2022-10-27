@@ -107,7 +107,7 @@ commands:
           command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q update
       - run:
           name: Install dependencies
-          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin runc libglib2.0-dev squashfuse
+          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin crun libglib2.0-dev squashfuse
       - run:
           name: Install proot
           command: |-
