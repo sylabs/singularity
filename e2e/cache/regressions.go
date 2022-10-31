@@ -6,12 +6,13 @@
 package cache
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path"
 	"path/filepath"
 	"testing"
 
-	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
@@ -27,22 +28,27 @@ func (c cacheTests) issue5097(t *testing.T) {
 	defer imgStoreCleanup(t)
 	imagePath := filepath.Join(tempDir, imgName)
 
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, c.env.ImagePath)
+	}))
+	defer srv.Close()
+
 	// Pull through the cache - will give us a new style file in the cache
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("pull"),
-		e2e.WithArgs([]string{"--force", imagePath, imgURL}...),
+		e2e.WithArgs([]string{"--force", imagePath, srv.URL}...),
 		e2e.ExpectExit(0),
 	)
 
 	// Replace the cache entry with a directory, containing the image,
 	// like in older versions of singularity
-	hash, err := client.ImageHash(imagePath)
+	hash, err := netHash(srv.URL)
 	if err != nil {
 		t.Fatalf("Could not calculate hash of test image: %v", err)
 	}
-	cachePath := path.Join(imgCacheDir, "cache", "library", hash)
+	cachePath := path.Join(imgCacheDir, "cache", "net", hash)
 	err = os.Remove(cachePath)
 	if err != nil {
 		t.Fatalf("Could not remove cached image '%s': %v", cachePath, err)
@@ -62,7 +68,7 @@ func (c cacheTests) issue5097(t *testing.T) {
 		t,
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("pull"),
-		e2e.WithArgs([]string{"--force", imagePath, imgURL}...),
+		e2e.WithArgs([]string{"--force", imagePath, srv.URL}...),
 		e2e.ExpectExit(0),
 	)
 
@@ -71,7 +77,7 @@ func (c cacheTests) issue5097(t *testing.T) {
 	}
 }
 
-// issue5350 - need to handle the cache being inside a non-accssible directory
+// issue5350 - need to handle the cache being inside a non-accessible directory
 // e.g. home directory without perms to access
 func (c cacheTests) issue5350(t *testing.T) {
 	outerDir, cleanupOuter := e2e.MakeTempDir(t, c.env.TestDir, "issue5350-cache-", "")
