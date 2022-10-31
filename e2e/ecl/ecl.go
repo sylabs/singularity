@@ -8,6 +8,7 @@ package ecl
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -16,11 +17,15 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/syecl"
 )
 
-// KeyMap contains test keys.
-var KeyMap = map[string]string{
-	"key1": "0C5B8C9A5FFC44E2A0AC79851CD6FA281D476DD1",
-	"key2": "78F8AD36B0DCB84B707F23853D608DAE21C8CA10",
-}
+var (
+	// KeyMap contains test keys.
+	KeyMap = map[string]string{
+		"key1": "0C5B8C9A5FFC44E2A0AC79851CD6FA281D476DD1",
+		"key2": "78F8AD36B0DCB84B707F23853D608DAE21C8CA10",
+	}
+
+	busyboxSIF = "testdata/busybox_" + runtime.GOARCH + ".sif"
+)
 
 type ctx struct {
 	env e2e.TestEnv
@@ -88,7 +93,7 @@ func (c *ctx) eclConfig(t *testing.T) {
 			name:    "build signed image",
 			command: "build",
 			profile: e2e.UserProfile,
-			args:    []string{signed, "library://busybox"},
+			args:    []string{signed, busyboxSIF},
 			exit:    0,
 		},
 		{
