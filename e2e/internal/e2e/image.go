@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -76,4 +76,17 @@ func PullImage(t *testing.T, env TestEnv, imageURL string, arch string, path str
 		WithArgs("--force", "--allow-unsigned", "--arch", arch, path, imageURL),
 		ExpectExit(0),
 	)
+}
+
+// BusyboxImage will provide the path to a local busybox SIF image for the current architecture
+func BusyboxSIF(t *testing.T) string {
+	busyboxSIF := "testdata/busybox_" + runtime.GOARCH + ".sif"
+	_, err := os.Stat(busyboxSIF)
+	if os.IsNotExist(err) {
+		t.Fatalf("busybox image not found for %s", runtime.GOARCH)
+	}
+	if err != nil {
+		t.Error(err)
+	}
+	return busyboxSIF
 }

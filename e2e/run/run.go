@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -20,8 +19,6 @@ import (
 type ctx struct {
 	env e2e.TestEnv
 }
-
-var busyboxSIF = "testdata/busybox_" + runtime.GOARCH + ".sif"
 
 // testRun555Cache tests the specific case where the cache directory is
 // 0555 for access rights, and we try to run a singularity run command
@@ -69,7 +66,7 @@ func (c ctx) testRunPEMEncrypted(t *testing.T) {
 	defer cleanup(t)
 
 	imgPath := filepath.Join(tempDir, "encrypted_cmdline_pem-path.sif")
-	cmdArgs := []string{"--encrypt", "--pem-path", pemPubFile, imgPath, busyboxSIF}
+	cmdArgs := []string{"--encrypt", "--pem-path", pemPubFile, imgPath, e2e.BusyboxSIF(t)}
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.RootProfile),
@@ -119,7 +116,7 @@ func (c ctx) testRunPassphraseEncrypted(t *testing.T) {
 	defer cleanup(t)
 
 	imgPath := filepath.Join(tempDir, "encrypted_cmdline_passphrase.sif")
-	cmdArgs := []string{"--encrypt", imgPath, busyboxSIF}
+	cmdArgs := []string{"--encrypt", imgPath, e2e.BusyboxSIF(t)}
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.RootProfile),

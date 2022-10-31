@@ -11,7 +11,6 @@ package singularityenv
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"testing"
@@ -32,7 +31,7 @@ const (
 func (c ctx) singularityEnv(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 	// Singularity defines a path by default. See singularityware/singularity/etc/init.
-	defaultImage := "testdata/busybox_" + runtime.GOARCH + ".sif"
+	defaultImage := e2e.BusyboxSIF(t)
 	// This image sets a custom path.
 	// See e2e/testdata/Singularity
 	customImage := c.env.ImagePath
@@ -127,7 +126,7 @@ func (c ctx) singularityEnv(t *testing.T) {
 func (c ctx) singularityEnvOption(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 	// Singularity defines a path by default. See singularityware/singularity/etc/init.
-	defaultImage := "testdata/busybox_" + runtime.GOARCH + ".sif"
+	defaultImage := e2e.BusyboxSIF(t)
 	// This image sets a custom path.
 	// See e2e/testdata/Singularity
 	customImage := c.env.ImagePath
