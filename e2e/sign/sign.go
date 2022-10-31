@@ -77,7 +77,7 @@ func (c ctx) singularitySignIDOption(t *testing.T) {
 		},
 		{
 			name:       "sign non-exsistent ID",
-			args:       []string{"--sif-id", "5", imgPath},
+			args:       []string{"--sif-id", "9", imgPath},
 			expectOp:   e2e.ExpectError(e2e.ContainMatch, "integrity: object not found"),
 			expectExit: 255,
 		},
