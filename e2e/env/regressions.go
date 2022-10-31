@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"runtime"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -24,11 +25,12 @@ func (c ctx) issue5426(t *testing.T) {
 	defer cleanup(t)
 
 	// Build a current sandbox
+	busyboxSIF := "testdata/busybox_" + runtime.GOARCH + ".sif"
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("build"),
-		e2e.WithArgs("--force", "--sandbox", sandboxDir, "library://alpine:3.11.5"),
+		e2e.WithArgs("--force", "--sandbox", sandboxDir, busyboxSIF),
 		e2e.ExpectExit(0),
 	)
 
