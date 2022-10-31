@@ -29,12 +29,13 @@ const (
 )
 
 func (c ctx) singularityEnv(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
 	// Singularity defines a path by default. See singularityware/singularity/etc/init.
-	defaultImage := "library://alpine:3.11.5"
-
+	defaultImage := e2e.BusyboxSIF(t)
 	// This image sets a custom path.
-	customImage := "library://lolcow"
-	customPath := "/usr/games:" + defaultPath
+	// See e2e/testdata/Singularity
+	customImage := c.env.ImagePath
+	customPath := defaultPath + ":/go/bin:/usr/local/go/bin"
 
 	// Append or prepend this path.
 	partialPath := "/foo"
@@ -124,8 +125,12 @@ func (c ctx) singularityEnv(t *testing.T) {
 
 func (c ctx) singularityEnvOption(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
-
-	imageDefaultPath := defaultPath + ":/go/bin:/usr/local/go/bin"
+	// Singularity defines a path by default. See singularityware/singularity/etc/init.
+	defaultImage := e2e.BusyboxSIF(t)
+	// This image sets a custom path.
+	// See e2e/testdata/Singularity
+	customImage := c.env.ImagePath
+	customPath := defaultPath + ":/go/bin:/usr/local/go/bin"
 
 	tests := []struct {
 		name     string
@@ -137,102 +142,102 @@ func (c ctx) singularityEnvOption(t *testing.T) {
 	}{
 		{
 			name:     "DefaultPath",
-			image:    "library://alpine:3.11.5",
+			image:    defaultImage,
 			matchEnv: "PATH",
 			matchVal: defaultPath,
 		},
 		{
 			name:     "DefaultPathOverride",
-			image:    "library://alpine:3.11.5",
+			image:    defaultImage,
 			envOpt:   []string{"PATH=/"},
 			matchEnv: "PATH",
 			matchVal: "/",
 		},
 		{
 			name:     "AppendDefaultPath",
-			image:    "library://alpine:3.11.5",
+			image:    defaultImage,
 			envOpt:   []string{"APPEND_PATH=/foo"},
 			matchEnv: "PATH",
 			matchVal: defaultPath + ":/foo",
 		},
 		{
 			name:     "PrependDefaultPath",
-			image:    "library://alpine:3.11.5",
+			image:    defaultImage,
 			envOpt:   []string{"PREPEND_PATH=/foo"},
 			matchEnv: "PATH",
 			matchVal: "/foo:" + defaultPath,
 		},
 		{
-			name:     "DefaultPathTestImage",
-			image:    c.env.ImagePath,
+			name:     "DefaultPathImage",
+			image:    customImage,
 			matchEnv: "PATH",
-			matchVal: imageDefaultPath,
+			matchVal: customPath,
 		},
 		{
 			name:     "DefaultPathTestImageOverride",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			envOpt:   []string{"PATH=/"},
 			matchEnv: "PATH",
 			matchVal: "/",
 		},
 		{
 			name:     "AppendDefaultPathTestImage",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			envOpt:   []string{"APPEND_PATH=/foo"},
 			matchEnv: "PATH",
-			matchVal: imageDefaultPath + ":/foo",
+			matchVal: customPath + ":/foo",
 		},
 		{
 			name:     "AppendLiteralDefaultPathTestImage",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			envOpt:   []string{"PATH=$PATH:/foo"},
 			matchEnv: "PATH",
-			matchVal: imageDefaultPath + ":/foo",
+			matchVal: customPath + ":/foo",
 		},
 		{
 			name:     "PrependDefaultPathTestImage",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			envOpt:   []string{"PREPEND_PATH=/foo"},
 			matchEnv: "PATH",
-			matchVal: "/foo:" + imageDefaultPath,
+			matchVal: "/foo:" + customPath,
 		},
 		{
 			name:     "PrependLiteralDefaultPathTestImage",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			envOpt:   []string{"PATH=/foo:$PATH"},
 			matchEnv: "PATH",
-			matchVal: "/foo:" + imageDefaultPath,
+			matchVal: "/foo:" + customPath,
 		},
 		{
 			name:     "TestImageCgoEnabledDefault",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			matchEnv: "CGO_ENABLED",
 			matchVal: "0",
 		},
 		{
 			name:     "TestImageCgoEnabledOverride",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			envOpt:   []string{"CGO_ENABLED=1"},
 			matchEnv: "CGO_ENABLED",
 			matchVal: "1",
 		},
 		{
 			name:     "TestImageCgoEnabledOverride_KO",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			hostEnv:  []string{"CGO_ENABLED=1"},
 			matchEnv: "CGO_ENABLED",
 			matchVal: "0",
 		},
 		{
 			name:     "TestImageCgoEnabledOverrideFromEnv",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			hostEnv:  []string{"SINGULARITYENV_CGO_ENABLED=1"},
 			matchEnv: "CGO_ENABLED",
 			matchVal: "1",
 		},
 		{
 			name:     "TestImageCgoEnabledOverrideEnvOptionPrecedence",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			hostEnv:  []string{"SINGULARITYENV_CGO_ENABLED=1"},
 			envOpt:   []string{"CGO_ENABLED=2"},
 			matchEnv: "CGO_ENABLED",
@@ -240,14 +245,14 @@ func (c ctx) singularityEnvOption(t *testing.T) {
 		},
 		{
 			name:     "TestImageCgoEnabledOverrideEmpty",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			envOpt:   []string{"CGO_ENABLED="},
 			matchEnv: "CGO_ENABLED",
 			matchVal: "",
 		},
 		{
 			name:     "TestImageOverrideHost",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			hostEnv:  []string{"FOO=bar"},
 			envOpt:   []string{"FOO=foo"},
 			matchEnv: "FOO",
@@ -255,21 +260,21 @@ func (c ctx) singularityEnvOption(t *testing.T) {
 		},
 		{
 			name:     "TestMultiLine",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			hostEnv:  []string{"MULTI=Hello\nWorld"},
 			matchEnv: "MULTI",
 			matchVal: "Hello\nWorld",
 		},
 		{
 			name:     "TestEscapedNewline",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			hostEnv:  []string{"ESCAPED=Hello\\nWorld"},
 			matchEnv: "ESCAPED",
 			matchVal: "Hello\\nWorld",
 		},
 		{
 			name:  "TestInvalidKey",
-			image: c.env.ImagePath,
+			image: customImage,
 			// We try to set an invalid env var... and make sure
 			// we have no error output from the interpreter as it
 			// should be ignored, not passed into the container.
@@ -279,20 +284,20 @@ func (c ctx) singularityEnvOption(t *testing.T) {
 		},
 		{
 			name:     "TestDefaultLdLibraryPath",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			matchEnv: "LD_LIBRARY_PATH",
 			matchVal: singularityLibs,
 		},
 		{
 			name:     "TestCustomTrailingCommaPath",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			envOpt:   []string{"LD_LIBRARY_PATH=/foo,"},
 			matchEnv: "LD_LIBRARY_PATH",
 			matchVal: "/foo,:" + singularityLibs,
 		},
 		{
 			name:     "TestCustomLdLibraryPath",
-			image:    c.env.ImagePath,
+			image:    customImage,
 			envOpt:   []string{"LD_LIBRARY_PATH=/foo"},
 			matchEnv: "LD_LIBRARY_PATH",
 			matchVal: "/foo:" + singularityLibs,

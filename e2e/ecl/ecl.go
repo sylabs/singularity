@@ -88,7 +88,7 @@ func (c *ctx) eclConfig(t *testing.T) {
 			name:    "build signed image",
 			command: "build",
 			profile: e2e.UserProfile,
-			args:    []string{signed, "library://busybox"},
+			args:    []string{signed, e2e.BusyboxSIF(t)},
 			exit:    0,
 		},
 		{

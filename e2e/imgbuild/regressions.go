@@ -404,13 +404,15 @@ func (c *imgBuildTests) issue3848(t *testing.T) {
 	defer os.Remove(tmpfile) // clean up
 
 	d := struct {
+		From string
 		File string
 	}{
+		From: e2e.BusyboxSIF(t),
 		File: tmpfile,
 	}
 
-	defTmpl := `Bootstrap: library
-From: alpine:3.11.5
+	defTmpl := `Bootstrap: localimage
+From: {{ .From }}
 
 %files
 	{{ .File }}

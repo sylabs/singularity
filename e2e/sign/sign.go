@@ -12,6 +12,7 @@ import (
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 type ctx struct {
@@ -20,10 +21,7 @@ type ctx struct {
 	passphraseInput []e2e.SingularityConsoleOp
 }
 
-const (
-	imgURL  = "library://sylabs/tests/unsigned:1.0.0"
-	imgName = "testImage.sif"
-)
+const imgName = "testImage.sif"
 
 func (c ctx) singularitySignHelpOption(t *testing.T) {
 	c.env.KeyringDir = c.keyringDir
@@ -46,8 +44,11 @@ func (c *ctx) prepareImage(t *testing.T) (string, func(*testing.T)) {
 		t.Fatalf("failed to create temporary directory: %s", err)
 	}
 	imgPath := filepath.Join(tempDir, imgName)
-	// We should be able to pull an image and sign it on other archs
-	e2e.PullImage(t, c.env, imgURL, "amd64", imgPath)
+
+	err = fs.CopyFile(e2e.BusyboxSIF(t), imgPath, 0o755)
+	if err != nil {
+		t.Fatalf("failed to copy temporary image: %s", err)
+	}
 
 	return filepath.Join(tempDir, "testImage.sif"), func(t *testing.T) {
 		err := os.RemoveAll(tempDir)
@@ -76,7 +77,7 @@ func (c ctx) singularitySignIDOption(t *testing.T) {
 		},
 		{
 			name:       "sign non-exsistent ID",
-			args:       []string{"--sif-id", "5", imgPath},
+			args:       []string{"--sif-id", "9", imgPath},
 			expectOp:   e2e.ExpectError(e2e.ContainMatch, "integrity: object not found"),
 			expectExit: 255,
 		},

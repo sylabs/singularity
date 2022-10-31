@@ -45,6 +45,10 @@ executors:
   ubuntu-machine:
     machine:
       image: ubuntu-2004:202111-02
+  ubuntu-machine-large:
+    machine:
+      image: ubuntu-2004:202111-02
+    resource_class: large
 
 commands:
   update-submodules:
@@ -218,7 +222,7 @@ jobs:
           command: make -C ./builddir integration-test
 
   e2e-tests:
-    executor: ubuntu-machine
+    executor: ubuntu-machine-large
     steps:
       - checkout
       - check-changes

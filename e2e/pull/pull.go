@@ -11,6 +11,8 @@ package pull
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -525,6 +527,11 @@ func (c ctx) testPullDisableCacheCmd(t *testing.T) {
 // testPullUmask will run some pull tests with different umasks, and
 // ensure the output file has the correct permissions.
 func (c ctx) testPullUmask(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, c.env.ImagePath)
+	}))
+	defer srv.Close()
+
 	umask22Image := "0022-umask-pull"
 	umask77Image := "0077-umask-pull"
 	umask27Image := "0027-umask-pull"
@@ -599,7 +606,7 @@ func (c ctx) testPullUmask(t *testing.T) {
 		if tc.force {
 			cmdArgs = append(cmdArgs, "--force")
 		}
-		cmdArgs = append(cmdArgs, tc.imagePath, "library://alpine")
+		cmdArgs = append(cmdArgs, tc.imagePath, srv.URL)
 
 		c.env.RunSingularity(
 			t,
