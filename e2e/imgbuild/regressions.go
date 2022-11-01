@@ -101,7 +101,7 @@ func (c *imgBuildTests) issue4407(t *testing.T) {
 
 				defer os.RemoveAll(imagePath)
 
-				c.env.ImageVerify(t, imagePath, e2e.RootProfile)
+				c.env.ImageVerify(t, imagePath)
 			}),
 			e2e.ExpectExit(0),
 		)

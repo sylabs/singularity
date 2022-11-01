@@ -19,7 +19,7 @@ import (
 )
 
 // ImageVerify checks for an image integrity.
-func (env TestEnv) ImageVerify(t *testing.T, imagePath string, profile Profile) {
+func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 	tt := []struct {
 		name string
 		argv []string
@@ -71,7 +71,7 @@ func (env TestEnv) ImageVerify(t *testing.T, imagePath string, profile Profile) 
 		env.RunSingularity(
 			t,
 			AsSubtest(tc.name),
-			WithProfile(profile),
+			WithProfile(UserProfile),
 			WithCommand("exec"),
 			WithArgs(tc.argv...),
 			ExpectExit(tc.exit),

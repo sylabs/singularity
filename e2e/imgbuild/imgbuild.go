@@ -159,7 +159,7 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 						}
 
 						defer os.RemoveAll(imagePath)
-						c.env.ImageVerify(t, imagePath, profile)
+						c.env.ImageVerify(t, imagePath)
 					}),
 					e2e.ExpectExit(0),
 				)
@@ -222,7 +222,7 @@ func (c imgBuildTests) nonRootBuild(t *testing.T) {
 			}),
 
 			e2e.PostRun(func(t *testing.T) {
-				c.env.ImageVerify(t, imagePath, e2e.UserProfile)
+				c.env.ImageVerify(t, imagePath)
 			}),
 			e2e.ExpectExit(0),
 		)
@@ -259,7 +259,7 @@ func (c imgBuildTests) buildLocalImage(t *testing.T) {
 		e2e.WithCommand("build"),
 		e2e.WithArgs("--sandbox", sandboxImage, c.env.ImagePath),
 		e2e.PostRun(func(t *testing.T) {
-			c.env.ImageVerify(t, sandboxImage, e2e.UserProfile)
+			c.env.ImageVerify(t, sandboxImage)
 		}),
 		e2e.ExpectExit(0),
 	)
@@ -300,7 +300,7 @@ func (c imgBuildTests) buildLocalImage(t *testing.T) {
 							return
 						}
 						defer os.RemoveAll(imagePath)
-						c.env.ImageVerify(t, imagePath, profile)
+						c.env.ImageVerify(t, imagePath)
 					}),
 					e2e.ExpectExit(0),
 				)
@@ -1522,7 +1522,7 @@ func (c imgBuildTests) buildProot(t *testing.T) {
 						}
 
 						defer os.RemoveAll(imagePath)
-						c.env.ImageVerify(t, imagePath, profile)
+						c.env.ImageVerify(t, imagePath)
 					}),
 					e2e.ExpectExit(0),
 				)
