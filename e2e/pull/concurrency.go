@@ -7,10 +7,12 @@ package pull
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 func (c ctx) testConcurrencyConfig(t *testing.T) {
@@ -28,11 +30,23 @@ func (c ctx) testConcurrencyConfig(t *testing.T) {
 		{"InvalidDownloadBufferSize", "download buffer size", "-1", 255},
 	}
 
+	tmpdir, err := os.MkdirTemp(c.env.TestDir, "pull_test.")
+	if err != nil {
+		t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
+	}
+	defer os.RemoveAll(tmpdir)
+	tmpConfig := path.Join(tmpdir, "singularity.conf")
+	err = fs.EnsureFileWithPermission(tmpConfig, 0o600)
+	if err != nil {
+		t.Fatalf("while creating temporary config file: %s", err)
+	}
+
 	for _, tt := range tests {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name+"-set"),
 			e2e.WithProfile(e2e.RootProfile),
+			e2e.WithGlobalOptions("--config", tmpConfig),
 			e2e.WithCommand("config global"),
 			e2e.WithArgs("--set", tt.setting, tt.value),
 			e2e.ExpectExit(tt.expectedExitCode),
@@ -41,6 +55,7 @@ func (c ctx) testConcurrencyConfig(t *testing.T) {
 			t,
 			e2e.AsSubtest(tt.name+"-reset"),
 			e2e.WithProfile(e2e.RootProfile),
+			e2e.WithGlobalOptions("--config", tmpConfig),
 			e2e.WithCommand("config global"),
 			e2e.WithArgs("--reset", tt.setting),
 			e2e.ExpectExit(0),
@@ -98,11 +113,18 @@ func (c ctx) testConcurrentPulls(t *testing.T) {
 				t.Fatalf("Failed to create temporary directory for pull test: %+v", err)
 			}
 			defer os.RemoveAll(tmpdir)
+			// A new temporary config file for each test, no need to reset when we're done.
+			tmpConfig := path.Join(tmpdir, "singularity.conf")
+			err = fs.EnsureFileWithPermission(tmpConfig, 0o600)
+			if err != nil {
+				t.Fatalf("while creating temporary config file: %s", err)
+			}
 
 			// Set global configuration
 			if tt.settings != nil {
 				cfgCmdOps := []e2e.SingularityCmdOp{
 					e2e.WithProfile(e2e.RootProfile),
+					e2e.WithGlobalOptions("--config", tmpConfig),
 					e2e.WithCommand("config global"),
 					e2e.ExpectExit(0),
 				}
@@ -111,17 +133,6 @@ func (c ctx) testConcurrentPulls(t *testing.T) {
 					t.Logf("set %s %s", key, value)
 					cfgCmd := append(cfgCmdOps, e2e.WithArgs("--set", key, value))
 					c.env.RunSingularity(t, cfgCmd...)
-
-					t.Cleanup(func() {
-						t.Logf("reset %s", key)
-						c.env.RunSingularity(
-							t,
-							e2e.WithProfile(e2e.RootProfile),
-							e2e.WithCommand("config global"),
-							e2e.WithArgs("--reset", key),
-							e2e.ExpectExit(0),
-						)
-					})
 				}
 			}
 
