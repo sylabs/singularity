@@ -39,14 +39,14 @@ var instanceStartCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		image := args[0]
 		name := args[1]
-
-		a := append([]string{"/.singularity.d/actions/start"}, args[2:]...)
+		containerCmd := "/.singularity.d/actions/start"
+		containerArgs := args[2:]
 		setVM(cmd)
 		if vm {
-			execVM(cmd, image, a)
+			execVM(cmd, image, containerCmd, containerArgs)
 			return
 		}
-		if err := launchContainer(cmd, image, a, name); err != nil {
+		if err := launchContainer(cmd, image, containerCmd, containerArgs, name); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 

@@ -107,12 +107,17 @@ commands:
           command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q update
       - run:
           name: Install dependencies
-          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin runc libglib2.0-dev squashfuse
+          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin libglib2.0-dev squashfuse
       - run:
           name: Install proot
           command: |-
             <<# parameters.sudo >>sudo <</ parameters.sudo >>curl -L -o /usr/local/bin/proot https://proot.gitlab.io/proot/bin/proot
             <<# parameters.sudo >>sudo <</ parameters.sudo >>chmod +x /usr/local/bin/proot
+      - run:
+          name: Install crun
+          command: |-
+            <<# parameters.sudo >>sudo <</ parameters.sudo >>curl -L -o /usr/local/bin/crun https://github.com/containers/crun/releases/download/1.6/crun-1.6-linux-amd64
+            <<# parameters.sudo >>sudo <</ parameters.sudo >>chmod +x /usr/local/bin/crun
 
   configure-singularity:
     steps:

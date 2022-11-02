@@ -28,7 +28,7 @@ func getHypervisorArgs(sifImage, bzImage, initramfs, singAction, cliExtra string
 	return args
 }
 
-func execVM(cmd *cobra.Command, image string, args []string) {
+func execVM(cmd *cobra.Command, image string, containerCmd string, containerArgs []string) {
 	// SIF image we are running
 	sifImage := image
 
@@ -42,8 +42,8 @@ func execVM(cmd *cobra.Command, image string, args []string) {
 		isInternal = true
 	} else {
 		// Get our "action" (run, exec, shell) based on the action script being called
-		singAction = filepath.Base(args[0])
-		cliExtra = strings.Join(args[1:], " ")
+		singAction = filepath.Base(containerCmd)
+		cliExtra = strings.Join(containerArgs, " ")
 	}
 
 	if err := startVM(sifImage, singAction, cliExtra, isInternal); err != nil {

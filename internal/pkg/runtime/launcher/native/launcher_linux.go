@@ -93,8 +93,11 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 // This includes interactive containers, instances, and joining an existing instance.
 //
 //nolint:maintidx
-func (l *Launcher) Exec(ctx context.Context, image string, args []string, instanceName string) error {
+func (l *Launcher) Exec(ctx context.Context, image string, cmd string, args []string, instanceName string) error {
 	var err error
+
+	// Native runtime expects command to execute as arg[0]
+	args = append([]string{cmd}, args...)
 
 	// Set arguments to pass to contained process.
 	l.generator.SetProcessArgs(args)

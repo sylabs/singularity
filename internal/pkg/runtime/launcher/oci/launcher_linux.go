@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
 )
@@ -232,7 +233,23 @@ func checkOpts(lo launcher.Options) error {
 	return nil
 }
 
-// Exec is not yet implemented.
-func (l *Launcher) Exec(ctx context.Context, image string, args []string, instanceName string) error {
-	return ErrNotImplemented
+// Exec will interactively execute a container via the runc low-level runtime.
+func (l *Launcher) Exec(ctx context.Context, image string, cmd string, args []string, instanceName string) error {
+	if instanceName != "" {
+		return fmt.Errorf("%w: instanceName", ErrNotImplemented)
+	}
+
+	if cmd != "" {
+		return fmt.Errorf("%w: cmd %v", ErrNotImplemented, cmd)
+	}
+
+	if len(args) > 0 {
+		return fmt.Errorf("%w: args %v", ErrNotImplemented, args)
+	}
+
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return fmt.Errorf("while generating container id: %w", err)
+	}
+	return Run(ctx, id.String(), image, "")
 }

@@ -2408,24 +2408,6 @@ func countSquashfuseMounts(t *testing.T) int {
 	return count
 }
 
-func (c actionTests) ociRuntime(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
-
-	for _, p := range []e2e.Profile{e2e.OCIUserProfile, e2e.OCIRootProfile} {
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(p.String()),
-			e2e.WithProfile(p),
-			e2e.WithCommand("exec"),
-			e2e.WithArgs(c.env.ImagePath, "/bin/true"),
-			e2e.ExpectExit(
-				255,
-				e2e.ExpectError(e2e.ContainMatch, "not implemented"),
-			),
-		)
-	}
-}
-
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := actionTests{
@@ -2468,9 +2450,12 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"umask":                     c.actionUmask,             // test umask propagation
 		"no-mount":                  c.actionNoMount,           // test --no-mount
 		"compat":                    c.actionCompat,            // test --compat
-		"ociRuntime":                c.ociRuntime,              // test --oci (unimplemented)
 		"invalidRemote":             np(c.invalidRemote),       // GHSA-5mv9-q7fq-9394
 		"SIFFUSE":                   np(c.actionSIFFUSE),       // test --sif-fuse
 		"NoSIFFUSE":                 np(c.actionNoSIFFUSE),     // test absence of squashfs and CleanupHost()
+		//
+		// OCI Runtime Mode
+		//
+		"ociRun": c.actionOciRun, // singularity run --oci
 	}
 }
