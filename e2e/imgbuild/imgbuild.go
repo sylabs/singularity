@@ -1,4 +1,6 @@
 // Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -50,7 +52,7 @@ func (c imgBuildTests) tempDir(t *testing.T, namespace string) (string, func()) 
 }
 
 func (c imgBuildTests) buildFrom(t *testing.T) {
-	e2e.EnsureRegistry(t)
+	e2e.EnsureORASImage(t, c.env)
 
 	// use a trailing slash in tests for sandbox intentionally to make sure
 	// `singularity build -s /tmp/sand/ <URI>` works,
@@ -1474,7 +1476,6 @@ func (c imgBuildTests) buildLibraryHost(t *testing.T) {
 // Does not support distro bootstraps. Build to SIF to ensure no issue,
 // (e.g. perms) when converting the temporary sandbox into SIF.
 func (c imgBuildTests) buildProot(t *testing.T) {
-	e2e.EnsureRegistry(t)
 	require.Command(t, "proot")
 
 	tt := []struct {

@@ -443,8 +443,6 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 	defer cleanup(t)
 	imagePath := filepath.Join(imageDir, "container")
 
-	e2e.EnsureRegistry(t)
-
 	tests := []struct {
 		name string
 		exit int
@@ -455,7 +453,7 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 			exit: 0,
 			dfd: e2e.DefFileDetails{
 				Bootstrap: "docker",
-				From:      "localhost:5000/my-busybox",
+				From:      c.env.TestRegistry + "/my-busybox",
 			},
 		},
 		{
@@ -464,7 +462,7 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 			dfd: e2e.DefFileDetails{
 				Bootstrap: "docker",
 				From:      "my-busybox",
-				Registry:  "localhost:5000",
+				Registry:  c.env.TestRegistry,
 			},
 		},
 		{
@@ -473,7 +471,7 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 			dfd: e2e.DefFileDetails{
 				Bootstrap: "docker",
 				From:      "my-busybox",
-				Registry:  "localhost:5000",
+				Registry:  c.env.TestRegistry,
 				Namespace: "not-a-namespace",
 			},
 		},

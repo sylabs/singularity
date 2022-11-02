@@ -1,4 +1,6 @@
 // Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -461,7 +463,7 @@ func (c actionTests) STDPipe(t *testing.T) {
 
 // RunFromURI tests min fuctionality for singularity run/exec URI://
 func (c actionTests) RunFromURI(t *testing.T) {
-	e2e.EnsureRegistry(t)
+	e2e.EnsureORASImage(t, c.env)
 
 	runScript := "testdata/runscript.sh"
 	bind := fmt.Sprintf("%s:/.singularity.d/runscript", runScript)
