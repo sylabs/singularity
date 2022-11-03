@@ -6,6 +6,8 @@
 
 - Ensure `make dist` doesn't include conmon binary or intermediate files.
 - Do not hang on pull from http(s) source that doesn't provide a content-length.
+- Avoid hang on fakeroot cleanup under high load seen on some
+  distributions / kernels.
 
 ## 3.10.3 \[2022-10-06\]
 
