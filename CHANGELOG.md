@@ -5,6 +5,7 @@
 ### Bug Fixes
 
 - Ensure `make dist` doesn't include conmon binary or intermediate files.
+- Do not hang on pull from http(s) source that doesn't provide a content-length.
 
 ## 3.10.3 \[2022-10-06\]
 
