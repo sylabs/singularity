@@ -63,6 +63,8 @@
   namespace, on systems with a kernel that supports unprivileged
   overlay mounts in a user namespace.
 
+## 3.10.4 \[2022-11-10\]
+
 ### Bug Fixes
 
 - Ensure `make dist` doesn't include conmon binary or intermediate files.
