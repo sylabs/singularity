@@ -100,7 +100,10 @@ commands:
     steps:
       - run:
           name: Update package indexes
-          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q update
+          command: |-
+            # See https://discuss.circleci.com/t/heroku-gpg-issues-in-ubuntu-images/43834/1
+            <<# parameters.sudo >>sudo <</ parameters.sudo >>rm -rf /etc/apt/sources.list.d/heroku.list
+            <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q update
       - run:
           name: Install dependencies
           command: <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin runc libglib2.0-dev squashfuse
