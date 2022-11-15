@@ -6,73 +6,99 @@
 package actions
 
 import (
+	"io"
+	"log"
+	"net/http"
 	"os"
+	"os/exec"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
-func (c actionTests) ociBundle(t *testing.T) (string, func()) {
-	require.Seccomp(t)
-	require.Filesystem(t, "overlay")
+const (
+	dockerArchiveURI = "https://s3.amazonaws.com/singularity-ci-public/alpine-docker-save.tar"
+	ociArchiveURI    = "https://s3.amazonaws.com/singularity-ci-public/alpine-oci-archive.tar"
+)
 
-	bundleDir, err := os.MkdirTemp(c.env.TestDir, "bundle-")
+func getTestTar(url string) (path string, err error) {
+	dl, err := os.CreateTemp("", "oci-test")
 	if err != nil {
-		err = errors.Wrapf(err, "creating temporary bundle directory at %q", c.env.TestDir)
-		t.Fatalf("failed to create bundle directory: %+v", err)
+		log.Fatal(err)
 	}
-	c.env.RunSingularity(
-		t,
-		e2e.WithProfile(e2e.RootProfile),
-		e2e.WithCommand("oci mount"),
-		e2e.WithArgs(c.env.ImagePath, bundleDir),
-		e2e.ExpectExit(0),
-	)
+	defer dl.Close()
 
-	cleanup := func() {
-		c.env.RunSingularity(
-			t,
-			e2e.WithProfile(e2e.RootProfile),
-			e2e.WithCommand("oci umount"),
-			e2e.WithArgs(bundleDir),
-			e2e.ExpectExit(0),
-		)
-		os.RemoveAll(bundleDir)
+	r, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer r.Body.Close()
+
+	_, err = io.Copy(dl, r.Body)
+	if err != nil {
+		return "", err
 	}
 
-	return bundleDir, cleanup
+	return dl.Name(), nil
 }
 
 func (c actionTests) actionOciRun(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
-
-	bundle, cleanup := c.ociBundle(t)
-	defer cleanup()
+	// Prepare docker-archive source
+	dockerArchive, err := getTestTar(dockerArchiveURI)
+	if err != nil {
+		t.Fatalf("Could not download docker archive test file: %v", err)
+	}
+	defer os.Remove(dockerArchive)
+	// Prepare oci-archive source
+	ociArchive, err := getTestTar(ociArchiveURI)
+	if err != nil {
+		t.Fatalf("Could not download oci archive test file: %v", err)
+	}
+	defer os.Remove(ociArchive)
+	// Prepare oci source (oci directory layout)
+	ociLayout := t.TempDir()
+	cmd := exec.Command("tar", "-C", ociLayout, "-xf", ociArchive)
+	err = cmd.Run()
+	if err != nil {
+		t.Fatalf("Error extracting oci archive to layout: %v", err)
+	}
 
 	tests := []struct {
-		name string
-		argv []string
-		exit int
+		name     string
+		imageRef string
+		exit     int
 	}{
 		{
-			name: "NoCommand",
-			argv: []string{bundle},
-			exit: 0,
+			name:     "docker-archive",
+			imageRef: "docker-archive:" + dockerArchive,
+			exit:     0,
+		},
+		{
+			name:     "oci-archive",
+			imageRef: "oci-archive:" + ociArchive,
+			exit:     0,
+		},
+		{
+			name:     "oci",
+			imageRef: "oci:" + ociLayout,
+			exit:     0,
 		},
 	}
 
-	for _, tt := range tests {
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.OCIRootProfile),
-			e2e.WithCommand("run"),
-			// While we don't support args we are entering a /bin/sh interactively, so we need to exit.
-			e2e.ConsoleRun(e2e.ConsoleSendLine("exit")),
-			e2e.WithArgs(tt.argv...),
-			e2e.ExpectExit(tt.exit),
-		)
+	for _, profile := range []e2e.Profile{e2e.OCIRootProfile, e2e.OCIUserProfile} {
+		t.Run(profile.String(), func(t *testing.T) {
+			for _, tt := range tests {
+				c.env.RunSingularity(
+					t,
+					e2e.AsSubtest(tt.name),
+					e2e.WithProfile(e2e.OCIRootProfile),
+					e2e.WithCommand("run"),
+					// While we don't support args we are entering a /bin/sh interactively.
+					e2e.ConsoleRun(e2e.ConsoleSendLine("exit")),
+					e2e.WithArgs(tt.imageRef),
+					e2e.ExpectExit(tt.exit),
+				)
+			}
+		})
 	}
 }
