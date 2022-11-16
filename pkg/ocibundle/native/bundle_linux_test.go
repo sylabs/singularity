@@ -14,7 +14,6 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/containers/image/v5/types"
 	"github.com/opencontainers/runtime-tools/validate"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 )
@@ -121,7 +120,11 @@ func TestFromImageRef(t *testing.T) {
 				t.Skipf("docker not available")
 			}
 			bundleDir := t.TempDir()
-			b, err := FromImageRef(tt.imageRef, bundleDir, &types.SystemContext{}, setupCache(t))
+			b, err := New(
+				OptBundlePath(bundleDir),
+				OptImageRef(tt.imageRef),
+				OptImgCache(setupCache(t)),
+			)
 			if err != nil {
 				t.Fatalf("While initializing bundle: %s", err)
 			}

@@ -291,7 +291,12 @@ func (l *Launcher) Exec(ctx context.Context, image string, cmd string, args []st
 		}
 	}
 
-	b, err := native.FromImageRef(image, bundleDir, sysCtx, imgCache)
+	b, err := native.New(
+		native.OptBundlePath(bundleDir),
+		native.OptImageRef(image),
+		native.OptSysCtx(sysCtx),
+		native.OptImgCache(imgCache),
+	)
 	if err != nil {
 		return err
 	}
