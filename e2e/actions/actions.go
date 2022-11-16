@@ -2461,6 +2461,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		//
 		// OCI Runtime Mode
 		//
-		"ociRun": c.actionOciRun, // singularity run --oci
+		"ociRun":  c.actionOciRun,  // singularity run --oci
+		"ociExec": c.actionOciExec, // singularity exec --oci
 	}
 }
