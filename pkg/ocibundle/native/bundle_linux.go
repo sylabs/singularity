@@ -49,6 +49,10 @@ type Bundle struct {
 	// Note that we only use the 'blob' cache section. The 'oci-tmp' cache section holds
 	// OCI->SIF conversions, which are not used here.
 	imgCache *cache.Handle
+	// process is the command to execute, which may override the image's ENTRYPOINT / CMD.
+	process string
+	// args are the command arguments, which may override the image's CMD.
+	args []string
 	// Generic bundle properties
 	ocibundle.Bundle
 }
@@ -87,6 +91,15 @@ func OptSysCtx(sc *types.SystemContext) Option {
 func OptImgCache(ic *cache.Handle) Option {
 	return func(b *Bundle) error {
 		b.imgCache = ic
+		return nil
+	}
+}
+
+// OptProcessArgs sets the command and arguments to run in the container.
+func OptProcessArgs(process string, args []string) Option {
+	return func(b *Bundle) error {
+		b.process = process
+		b.args = args
 		return nil
 	}
 }
@@ -140,6 +153,20 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 		return err
 	}
 
+	b.setProcessArgs(g)
+	// TODO - Handle custom env and user
+	b.setProcessEnv(g)
+	b.setProcessUser(g)
+
+	return b.writeConfig(g)
+}
+
+// Path returns the bundle's path on disk.
+func (b *Bundle) Path() string {
+	return b.bundlePath
+}
+
+func (b *Bundle) setProcessUser(g *generate.Generator) {
 	// Set non-root uid/gid per Singularity defaults
 	uid := uint32(os.Getuid())
 	if uid != 0 {
@@ -147,20 +174,31 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 		g.Config.Process.User.UID = uid
 		g.Config.Process.User.GID = gid
 	}
-	// Set default ENV from image
-	g.Config.Process.Env = append(g.Config.Process.Env, b.imageSpec.Config.Env...)
-	// Set default exec from image CMD & Entrypoint
-	if b.imageSpec == nil {
-		return fmt.Errorf("imageSpec cannot be nil")
-	}
-	args := append(b.imageSpec.Config.Entrypoint, b.imageSpec.Config.Cmd...)
-	g.SetProcessArgs(args)
-	return b.writeConfig(g)
 }
 
-// Path returns the bundle's path on disk.
-func (b *Bundle) Path() string {
-	return b.bundlePath
+func (b *Bundle) setProcessEnv(g *generate.Generator) {
+	// Set default ENV values from image
+	g.Config.Process.Env = append(g.Config.Process.Env, b.imageSpec.Config.Env...)
+}
+
+func (b *Bundle) setProcessArgs(g *generate.Generator) {
+	var processArgs []string
+
+	if b.process != "" {
+		processArgs = []string{b.process}
+	} else {
+		processArgs = b.imageSpec.Config.Entrypoint
+	}
+
+	if len(b.args) > 0 {
+		processArgs = append(processArgs, b.args...)
+	} else {
+		if b.process == "" {
+			processArgs = append(processArgs, b.imageSpec.Config.Cmd...)
+		}
+	}
+
+	g.SetProcessArgs(processArgs)
 }
 
 func (b *Bundle) writeConfig(g *generate.Generator) error {

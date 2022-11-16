@@ -12,10 +12,13 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"reflect"
 	"testing"
 
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-tools/validate"
 	"github.com/sylabs/singularity/internal/pkg/cache"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 )
 
 const (
@@ -134,6 +137,130 @@ func TestFromImageRef(t *testing.T) {
 			}
 
 			validateBundle(t, bundleDir)
+		})
+	}
+}
+
+func TestSetProcessArgs(t *testing.T) {
+	tests := []struct {
+		name              string
+		imgEntrypoint     []string
+		imgCmd            []string
+		bundleProcess     string
+		bundleArgs        []string
+		expectProcessArgs []string
+	}{
+		{
+			name:              "imageEntrypointOnly",
+			imgEntrypoint:     []string{"ENTRYPOINT"},
+			imgCmd:            []string{},
+			bundleProcess:     "",
+			bundleArgs:        []string{},
+			expectProcessArgs: []string{"ENTRYPOINT"},
+		},
+		{
+			name:              "imageCmdOnly",
+			imgEntrypoint:     []string{},
+			imgCmd:            []string{"CMD"},
+			bundleProcess:     "",
+			bundleArgs:        []string{},
+			expectProcessArgs: []string{"CMD"},
+		},
+		{
+			name:              "imageEntrypointCMD",
+			imgEntrypoint:     []string{"ENTRYPOINT"},
+			imgCmd:            []string{"CMD"},
+			bundleProcess:     "",
+			bundleArgs:        []string{},
+			expectProcessArgs: []string{"ENTRYPOINT", "CMD"},
+		},
+		{
+			name:              "ProcessOnly",
+			imgEntrypoint:     []string{},
+			imgCmd:            []string{},
+			bundleProcess:     "PROCESS",
+			bundleArgs:        []string{},
+			expectProcessArgs: []string{"PROCESS"},
+		},
+		{
+			name:              "ArgsOnly",
+			imgEntrypoint:     []string{},
+			imgCmd:            []string{},
+			bundleProcess:     "",
+			bundleArgs:        []string{"ARGS"},
+			expectProcessArgs: []string{"ARGS"},
+		},
+		{
+			name:              "ProcessArgs",
+			imgEntrypoint:     []string{},
+			imgCmd:            []string{},
+			bundleProcess:     "PROCESS",
+			bundleArgs:        []string{"ARGS"},
+			expectProcessArgs: []string{"PROCESS", "ARGS"},
+		},
+		{
+			name:              "overrideEntrypointOnlyProcess",
+			imgEntrypoint:     []string{"ENTRYPOINT"},
+			imgCmd:            []string{},
+			bundleProcess:     "PROCESS",
+			bundleArgs:        []string{},
+			expectProcessArgs: []string{"PROCESS"},
+		},
+		{
+			name:              "overrideCmdOnlyArgs",
+			imgEntrypoint:     []string{},
+			imgCmd:            []string{"CMD"},
+			bundleProcess:     "",
+			bundleArgs:        []string{"ARGS"},
+			expectProcessArgs: []string{"ARGS"},
+		},
+		{
+			name:              "overrideBothProcess",
+			imgEntrypoint:     []string{"ENTRYPOINT"},
+			imgCmd:            []string{"CMD"},
+			bundleProcess:     "PROCESS",
+			bundleArgs:        []string{},
+			expectProcessArgs: []string{"PROCESS"},
+		},
+		{
+			name:              "overrideBothArgs",
+			imgEntrypoint:     []string{"ENTRYPOINT"},
+			imgCmd:            []string{"CMD"},
+			bundleProcess:     "",
+			bundleArgs:        []string{"ARGS"},
+			expectProcessArgs: []string{"ENTRYPOINT", "ARGS"},
+		},
+		{
+			name:              "overrideBothProcessArgs",
+			imgEntrypoint:     []string{"ENTRYPOINT"},
+			imgCmd:            []string{"CMD"},
+			bundleProcess:     "PROCESS",
+			bundleArgs:        []string{"ARGS"},
+			expectProcessArgs: []string{"PROCESS", "ARGS"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b := Bundle{
+				imageSpec: &v1.Image{
+					Config: v1.ImageConfig{
+						Entrypoint: tt.imgEntrypoint,
+						Cmd:        tt.imgCmd,
+					},
+				},
+				process: tt.bundleProcess,
+				args:    tt.bundleArgs,
+			}
+
+			g, err := oci.DefaultConfig()
+			if err != nil {
+				t.Fatal(err)
+			}
+			b.setProcessArgs(g)
+			if !reflect.DeepEqual(g.Config.Process.Args, tt.expectProcessArgs) {
+				t.Errorf("Expected: %v, Got: %v", tt.expectProcessArgs, g.Config.Process.Args)
+			}
 		})
 	}
 }

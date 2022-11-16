@@ -242,17 +242,9 @@ func checkOpts(lo launcher.Options) error {
 
 // Exec will interactively execute a container via the runc low-level runtime.
 // image is a reference to an OCI image, e.g. docker://ubuntu or oci:/tmp/mycontainer
-func (l *Launcher) Exec(ctx context.Context, image string, cmd string, args []string, instanceName string) error {
+func (l *Launcher) Exec(ctx context.Context, image string, process string, args []string, instanceName string) error {
 	if instanceName != "" {
 		return fmt.Errorf("%w: instanceName", ErrNotImplemented)
-	}
-
-	if cmd != "" {
-		return fmt.Errorf("%w: cmd %v", ErrNotImplemented, cmd)
-	}
-
-	if len(args) > 0 {
-		return fmt.Errorf("%w: args %v", ErrNotImplemented, args)
 	}
 
 	bundleDir, err := os.MkdirTemp("", "oci-bundle")
@@ -296,6 +288,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, cmd string, args []st
 		native.OptImageRef(image),
 		native.OptSysCtx(sysCtx),
 		native.OptImgCache(imgCache),
+		native.OptProcessArgs(process, args),
 	)
 	if err != nil {
 		return err

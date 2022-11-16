@@ -21,9 +21,9 @@ import "context"
 // It will execute a runtime, such as Singularity's native runtime (via the starter
 // binary), or an external OCI runtime (e.g. runc).
 type Launcher interface {
-	// Exec will execute the container image 'image', passing arguments 'args'
-	// the container#s initial process. If instanceName is specified, the
-	// container must be launched as a background instance, otherwist it must
-	// run interactively, attached to the console.
-	Exec(ctx context.Context, image string, cmd string, args []string, instanceName string) error
+	// Exec will execute the container image 'image', starting 'process', and
+	// passing arguments 'args'. If instanceName is specified, the container
+	// must be launched as a background instance, otherwist it must run
+	// interactively, attached to the console.
+	Exec(ctx context.Context, image string, process string, args []string, instanceName string) error
 }
