@@ -10,6 +10,7 @@ package e2e
 import (
 	"context"
 	"io"
+	"net/http"
 	"os"
 	"runtime"
 	"sync"
@@ -21,6 +22,8 @@ import (
 	"github.com/containers/image/v5/types"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
+
+const ociArchiveURI = "https://s3.amazonaws.com/singularity-ci-public/alpine-oci-archive.tar"
 
 var (
 	ensureMutex sync.Mutex
@@ -159,4 +162,52 @@ func EnsureORASImage(t *testing.T, env TestEnv) {
 			t.Fatalf("failed to push ORAS image to local registry")
 		}
 	})
+}
+
+func DownloadFile(url string, path string) error {
+	dl, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer dl.Close()
+
+	r, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer r.Body.Close()
+
+	_, err = io.Copy(dl, r.Body)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// EnsureImage checks if e2e OCI test image is available, and fetches
+// it otherwise.
+func EnsureOCIImage(t *testing.T, env TestEnv) {
+	ensureMutex.Lock()
+	defer ensureMutex.Unlock()
+
+	switch _, err := os.Stat(env.OCIImagePath); {
+	case err == nil:
+		// OK: file exists, return
+		return
+
+	case os.IsNotExist(err):
+		// OK: file does not exist, continue
+
+	default:
+		// FATAL: something else is wrong
+		t.Fatalf("Failed when checking image %q: %+v\n",
+			env.OCIImagePath,
+			err)
+	}
+
+	// Prepare oci-archive source
+	err := DownloadFile(ociArchiveURI, env.OCIImagePath)
+	if err != nil {
+		t.Fatalf("Could not download oci archive test file: %v", err)
+	}
 }

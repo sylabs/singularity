@@ -12,6 +12,7 @@ type TestEnv struct {
 	CmdPath        string // Path to the Singularity binary to use for the execution of a Singularity command
 	ImagePath      string // Path to the image that has to be used for the execution of a Singularity command
 	OrasTestImage  string
+	OCIImagePath   string
 	TestDir        string // Path to the directory from which a Singularity command needs to be executed
 	TestRegistry   string
 	KeyringDir     string // KeyringDir sets the directory where the keyring will be created for the execution of a command (instead of using SINGULARITY_SYPGPDIR which should be avoided when running e2e tests)

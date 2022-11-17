@@ -49,12 +49,156 @@ type Bundle struct {
 	// Note that we only use the 'blob' cache section. The 'oci-tmp' cache section holds
 	// OCI->SIF conversions, which are not used here.
 	imgCache *cache.Handle
+	// process is the command to execute, which may override the image's ENTRYPOINT / CMD.
+	process string
+	// args are the command arguments, which may override the image's CMD.
+	args []string
 	// Generic bundle properties
 	ocibundle.Bundle
 }
 
+type Option func(b *Bundle) error
+
+// OptBundlePath sets the path that the bundle will be created at.
+func OptBundlePath(bp string) Option {
+	return func(b *Bundle) error {
+		var err error
+		b.bundlePath, err = filepath.Abs(bp)
+		if err != nil {
+			return fmt.Errorf("failed to determine bundle path: %s", err)
+		}
+		return nil
+	}
+}
+
+// OptImageRef sets the image source reference, from which the bundle will be created.
+func OptImageRef(ref string) Option {
+	return func(b *Bundle) error {
+		b.imageRef = ref
+		return nil
+	}
+}
+
+// OptSysCtx sets the OCI client SystemContext holding auth information etc.
+func OptSysCtx(sc *types.SystemContext) Option {
+	return func(b *Bundle) error {
+		b.sysCtx = sc
+		return nil
+	}
+}
+
+// OptImgCache sets the Singularity image cache used to pull through OCI blobs.
+func OptImgCache(ic *cache.Handle) Option {
+	return func(b *Bundle) error {
+		b.imgCache = ic
+		return nil
+	}
+}
+
+// OptProcessArgs sets the command and arguments to run in the container.
+func OptProcessArgs(process string, args []string) Option {
+	return func(b *Bundle) error {
+		b.process = process
+		b.args = args
+		return nil
+	}
+}
+
+// New returns a bundle interface to create/delete an OCI bundle from an OCI image ref.
+func New(opts ...Option) (ocibundle.Bundle, error) {
+	b := Bundle{
+		imageRef: "",
+		sysCtx:   &types.SystemContext{},
+		imgCache: nil,
+	}
+
+	for _, opt := range opts {
+		if err := opt(&b); err != nil {
+			return nil, fmt.Errorf("while initializing bundle: %w", err)
+		}
+	}
+
+	return &b, nil
+}
+
+// Delete erases OCI bundle created an OCI image ref
+func (b *Bundle) Delete() error {
+	return tools.DeleteBundle(b.bundlePath)
+}
+
+// Create will created the on-disk structures for the OCI bundle, so that it is ready for execution.
+func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
+	// generate OCI bundle directory and config
+	g, err := tools.GenerateBundleConfig(b.bundlePath, ociConfig)
+	if err != nil {
+		return fmt.Errorf("failed to generate OCI bundle/config: %s", err)
+	}
+	// Due to our caching approach for OCI blobs, we need to pull blobs for the image
+	// out into a separate oci-layout directory.
+	tmpDir, err := os.MkdirTemp("", "oci-tmp")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(tmpDir)
+	// Fetch into temp oci layout (will pull through cache if enabled)
+	if err := b.fetchImage(ctx, tmpDir); err != nil {
+		return err
+	}
+	// Extract from temp oci layout into bundle rootfs
+	if err := b.extractImage(ctx, tmpDir); err != nil {
+		return err
+	}
+	// Remove the temp oci layout.
+	if err := os.RemoveAll(tmpDir); err != nil {
+		return err
+	}
+
+	b.setProcessArgs(g)
+	// TODO - Handle custom env and user
+	b.setProcessEnv(g)
+	b.setProcessUser(g)
+
+	return b.writeConfig(g)
+}
+
+// Path returns the bundle's path on disk.
 func (b *Bundle) Path() string {
 	return b.bundlePath
+}
+
+func (b *Bundle) setProcessUser(g *generate.Generator) {
+	// Set non-root uid/gid per Singularity defaults
+	uid := uint32(os.Getuid())
+	if uid != 0 {
+		gid := uint32(os.Getgid())
+		g.Config.Process.User.UID = uid
+		g.Config.Process.User.GID = gid
+	}
+}
+
+func (b *Bundle) setProcessEnv(g *generate.Generator) {
+	// Set default ENV values from image
+	g.Config.Process.Env = append(g.Config.Process.Env, b.imageSpec.Config.Env...)
+}
+
+func (b *Bundle) setProcessArgs(g *generate.Generator) {
+	var processArgs []string
+
+	if b.process != "" {
+		processArgs = []string{b.process}
+	} else {
+		processArgs = b.imageSpec.Config.Entrypoint
+	}
+
+	if len(b.args) > 0 {
+		processArgs = append(processArgs, b.args...)
+	} else {
+		if b.process == "" {
+			processArgs = append(processArgs, b.imageSpec.Config.Cmd...)
+		}
+	}
+
+	g.SetProcessArgs(processArgs)
 }
 
 func (b *Bundle) writeConfig(g *generate.Generator) error {
@@ -202,71 +346,4 @@ func (b *Bundle) extractImage(ctx context.Context, tmpDir string) error {
 	}
 
 	return nil
-}
-
-// Create will created the on-disk structures for the OCI bundle, so that it is ready for execution.
-func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
-	// generate OCI bundle directory and config
-	g, err := tools.GenerateBundleConfig(b.bundlePath, ociConfig)
-	if err != nil {
-		return fmt.Errorf("failed to generate OCI bundle/config: %s", err)
-	}
-	// Due to our caching approach for OCI blobs, we need to pull blobs for the image
-	// out into a separate oci-layout directory.
-	tmpDir, err := os.MkdirTemp("", "oci-tmp")
-	if err != nil {
-		return err
-	}
-	defer os.RemoveAll(tmpDir)
-	// Fetch into temp oci layout (will pull through cache if enabled)
-	if err := b.fetchImage(ctx, tmpDir); err != nil {
-		return err
-	}
-	// Extract from temp oci layout into bundle rootfs
-	if err := b.extractImage(ctx, tmpDir); err != nil {
-		return err
-	}
-	// Remove the temp oci layout.
-	if err := os.RemoveAll(tmpDir); err != nil {
-		return err
-	}
-
-	// Set non-root uid/gid per Singularity defaults
-	uid := uint32(os.Getuid())
-	if uid != 0 {
-		gid := uint32(os.Getgid())
-		g.Config.Process.User.UID = uid
-		g.Config.Process.User.GID = gid
-	}
-	// Set default ENV from image
-	g.Config.Process.Env = append(g.Config.Process.Env, b.imageSpec.Config.Env...)
-	// Set default exec from image CMD & Entrypoint
-	if b.imageSpec == nil {
-		return fmt.Errorf("imageSpec cannot be nil")
-	}
-	args := append(b.imageSpec.Config.Entrypoint, b.imageSpec.Config.Cmd...)
-	g.SetProcessArgs(args)
-	return b.writeConfig(g)
-}
-
-// Delete erases OCI bundle created an OCI image ref
-func (b *Bundle) Delete() error {
-	return tools.DeleteBundle(b.bundlePath)
-}
-
-// FromImageRef returns a bundle interface to create/delete an OCI bundle from an OCI image ref.
-func FromImageRef(imageRef, bundle string, sysCtx *types.SystemContext, imgCache *cache.Handle) (ocibundle.Bundle, error) {
-	var err error
-
-	b := &Bundle{
-		imageRef: imageRef,
-		sysCtx:   sysCtx,
-		imgCache: imgCache,
-	}
-	b.bundlePath, err = filepath.Abs(bundle)
-	if err != nil {
-		return nil, fmt.Errorf("failed to determine bundle path: %s", err)
-	}
-
-	return b, nil
 }
