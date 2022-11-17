@@ -79,12 +79,12 @@ func OciUpdate(containerID string, args *OciArgs) error {
 }
 
 // OciMount mount a SIF image to create an OCI bundle
-func OciMount(image string, bundle string) error {
+func OciMount(ctx context.Context, image string, bundle string) error {
 	d, err := ocibundle.FromSif(image, bundle, true)
 	if err != nil {
 		return err
 	}
-	return d.Create(nil)
+	return d.Create(ctx, nil)
 }
 
 // OciUmount umount SIF and delete OCI bundle

@@ -129,6 +129,14 @@ func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string)
 		sylog.Fatalf("failed to create a new image cache handle")
 	}
 
+	// The OCI runtime launcher will handle OCI image sources directly.
+	if ociRuntime {
+		if oci.IsSupported(t) != t {
+			sylog.Fatalf("OCI runtime only supports OCI image sources. %s is not supported.", t)
+		}
+		return
+	}
+
 	switch t {
 	case uri.Library:
 		image, err = handleLibrary(ctx, imgCache, args[0])
