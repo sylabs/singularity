@@ -142,3 +142,53 @@ func (c actionTests) actionOciExec(t *testing.T) {
 		)
 	}
 }
+
+// Shell interaction tests
+func (c actionTests) actionOciShell(t *testing.T) {
+	e2e.EnsureOCIImage(t, c.env)
+
+	tests := []struct {
+		name       string
+		argv       []string
+		consoleOps []e2e.SingularityConsoleOp
+		exit       int
+	}{
+		{
+			name: "ShellExit",
+			argv: []string{"oci-archive:" + c.env.OCIImagePath},
+			consoleOps: []e2e.SingularityConsoleOp{
+				// "cd /" to work around issue where a long
+				// working directory name causes the test
+				// to fail because the "Singularity" that
+				// we are looking for is chopped from the
+				// front.
+				// TODO(mem): This test was added back in 491a71716013654acb2276e4b37c2e015d2dfe09
+				e2e.ConsoleSendLine("cd /"),
+				e2e.ConsoleExpect("Singularity"),
+				e2e.ConsoleSendLine("exit"),
+			},
+			exit: 0,
+		},
+		{
+			name: "ShellBadCommand",
+			argv: []string{"oci-archive:" + c.env.OCIImagePath},
+			consoleOps: []e2e.SingularityConsoleOp{
+				e2e.ConsoleSendLine("_a_fake_command"),
+				e2e.ConsoleSendLine("exit"),
+			},
+			exit: 127,
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithCommand("shell"),
+			e2e.WithArgs(tt.argv...),
+			e2e.ConsoleRun(tt.consoleOps...),
+			e2e.ExpectExit(tt.exit),
+		)
+	}
+}
