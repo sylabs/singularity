@@ -223,10 +223,19 @@ var ShellCmd = &cobra.Command{
 		image := args[0]
 		containerCmd := "/.singularity.d/actions/shell"
 		containerArgs := []string{}
-		// OCI runtime does not use an action script
+		// OCI runtime does not use an action script, but must match behavior.
+		// See - internal/pkg/util/fs/files/action_scripts.go (case shell).
 		if ociRuntime {
-			// TODO - needs to have bash -> sh fallback logic implemented somewhere.
-			containerCmd = "/bin/sh"
+			// SINGULARITY_SHELL or --shell has priority
+			if shellPath != "" {
+				containerCmd = shellPath
+				// Clear the shellPath - not handled internally by the OCI runtime, as we exec directly without an action script.
+				shellPath = ""
+			} else {
+				// Otherwise try to exec /bin/bash --norc, falling back to /bin/sh
+				containerCmd = "/bin/sh"
+				containerArgs = []string{"-c", "test -x /bin/bash && PS1='Singularity> ' exec /bin/bash --norc || PS1='Singularity> ' exec /bin/sh"}
+			}
 		}
 		setVM(cmd)
 		if vm {

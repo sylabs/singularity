@@ -23,7 +23,7 @@ import "context"
 type Launcher interface {
 	// Exec will execute the container image 'image', starting 'process', and
 	// passing arguments 'args'. If instanceName is specified, the container
-	// must be launched as a background instance, otherwist it must run
+	// must be launched as a background instance, otherwise it must run
 	// interactively, attached to the console.
 	Exec(ctx context.Context, image string, process string, args []string, instanceName string) error
 }

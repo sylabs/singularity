@@ -45,13 +45,14 @@ BuildRequires: libseccomp-devel
 BuildRequires: glib2-devel
 BuildRequires: cryptsetup
 
+Requires: crun
 Requires: cryptsetup
 Requires: glib2
-Requires: runc
 %if "%{_target_vendor}" == "suse"
 Requires: squashfs
 Requires: libseccomp2
 %else
+Requires: shadow-utils
 Requires: squashfs-tools
 Requires: libseccomp
 %endif
