@@ -80,7 +80,7 @@ func (c actionTests) actionOciRun(t *testing.T) {
 				c.env.RunSingularity(
 					t,
 					e2e.AsSubtest(tt.name),
-					e2e.WithProfile(e2e.OCIRootProfile),
+					e2e.WithProfile(e2e.OCIUserProfile),
 					e2e.WithCommand("run"),
 					// While we don't support args we are entering a /bin/sh interactively.
 					e2e.ConsoleRun(e2e.ConsoleSendLine("exit")),
