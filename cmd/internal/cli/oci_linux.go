@@ -6,6 +6,10 @@
 package cli
 
 import (
+	"errors"
+	"os"
+	"os/exec"
+
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
@@ -150,6 +154,10 @@ var OciRunCmd = &cobra.Command{
 	PreRun:                CheckRoot,
 	Run: func(cmd *cobra.Command, args []string) {
 		if err := singularity.OciRun(cmd.Context(), args[0], &ociArgs); err != nil {
+			var exitErr *exec.ExitError
+			if errors.As(err, &exitErr) {
+				os.Exit(exitErr.ExitCode())
+			}
 			sylog.Fatalf("%s", err)
 		}
 	},

@@ -95,7 +95,11 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 
 	g.AddOrReplaceLinuxNamespace(specs.UserNamespace, "")
 	g.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
-	g.AddOrReplaceLinuxNamespace(specs.PIDNamespace, "")
+
+	// If we enter a PID NS in the --oci action -> oci run flow, then crun / runc will fail.
+	if !e.EngineConfig.NoPIDNS {
+		g.AddOrReplaceLinuxNamespace(specs.PIDNamespace, "")
+	}
 
 	uid := uint32(os.Getuid())
 	gid := uint32(os.Getgid())

@@ -18,6 +18,12 @@ import (
 // Currently this only supports the same uid / primary gid as on the host.
 // TODO - expand for fakeroot, and arbitrary mapped user.
 func (l *Launcher) getProcessUser() specs.User {
+	if l.cfg.Fakeroot {
+		return specs.User{
+			UID: 0,
+			GID: 0,
+		}
+	}
 	return specs.User{
 		UID: uint32(os.Getuid()),
 		GID: uint32(os.Getgid()),
@@ -27,6 +33,10 @@ func (l *Launcher) getProcessUser() specs.User {
 // getProcessCwd computes the Cwd that the container process should start in.
 // Currently this is the user's tmpfs home directory (see --containall).
 func (l *Launcher) getProcessCwd() (dir string, err error) {
+	if l.cfg.Fakeroot {
+		return "/root", nil
+	}
+
 	pw, err := user.CurrentOriginal()
 	if err != nil {
 		return "", err
@@ -34,35 +44,20 @@ func (l *Launcher) getProcessCwd() (dir string, err error) {
 	return pw.Dir, nil
 }
 
-// getIDMaps returns uid and gid mappings appropriate for a non-root user, if required.
-func (l *Launcher) getIDMaps() (uidMap, gidMap []specs.LinuxIDMapping, err error) {
+// getReverseUserMaps returns uid and gid mappings that re-map container uid to host
+// uid. This 'reverses' the host user to container root mapping in the initial
+// userns from which the OCI runtime is launched.
+//
+//	host 1001 -> fakeroot userns 0 -> container 1001
+func (l *Launcher) getReverseUserMaps() (uidMap, gidMap []specs.LinuxIDMapping, err error) {
 	uid := uint32(os.Getuid())
-	// Root user gets pass-through mapping
-	if uid == 0 {
-		uidMap = []specs.LinuxIDMapping{
-			{
-				ContainerID: 0,
-				HostID:      0,
-				Size:        65536,
-			},
-		}
-		gidMap = []specs.LinuxIDMapping{
-			{
-				ContainerID: 0,
-				HostID:      0,
-				Size:        65536,
-			},
-		}
-		return uidMap, gidMap, nil
-	}
-	// Set non-root uid/gid per Singularity defaults
 	gid := uint32(os.Getgid())
 	// Get user's configured subuid & subgid ranges
 	subuidRange, err := fakeroot.GetIDRange(fakeroot.SubUIDFile, uid)
 	if err != nil {
 		return nil, nil, err
 	}
-	// We must be able to map at least 0->65535 inside the container
+	// We must always be able to map at least 0->65535 inside the container, so we cover 'nobody'.
 	if subuidRange.Size < 65536 {
 		return nil, nil, fmt.Errorf("subuid range size (%d) must be at least 65536", subuidRange.Size)
 	}
@@ -70,26 +65,25 @@ func (l *Launcher) getIDMaps() (uidMap, gidMap []specs.LinuxIDMapping, err error
 	if err != nil {
 		return nil, nil, err
 	}
-	if subgidRange.Size <= gid {
+	if subgidRange.Size < 65536 {
 		return nil, nil, fmt.Errorf("subuid range size (%d) must be at least 65536", subgidRange.Size)
 	}
 
-	// Preserve own uid container->host, map everything else to subuid range.
-	if uid < 65536 {
+	if uid < subuidRange.Size {
 		uidMap = []specs.LinuxIDMapping{
 			{
 				ContainerID: 0,
-				HostID:      subuidRange.HostID,
+				HostID:      1,
 				Size:        uid,
 			},
 			{
 				ContainerID: uid,
-				HostID:      uid,
+				HostID:      0,
 				Size:        1,
 			},
 			{
 				ContainerID: uid + 1,
-				HostID:      subuidRange.HostID + uid,
+				HostID:      uid + 1,
 				Size:        subuidRange.Size - uid,
 			},
 		}
@@ -97,33 +91,32 @@ func (l *Launcher) getIDMaps() (uidMap, gidMap []specs.LinuxIDMapping, err error
 		uidMap = []specs.LinuxIDMapping{
 			{
 				ContainerID: 0,
-				HostID:      subuidRange.HostID,
-				Size:        65536,
+				HostID:      1,
+				Size:        subuidRange.Size,
 			},
 			{
 				ContainerID: uid,
-				HostID:      uid,
+				HostID:      0,
 				Size:        1,
 			},
 		}
 	}
 
-	// Preserve own gid container->host, map everything else to subgid range.
-	if gid < 65536 {
+	if gid < subgidRange.Size {
 		gidMap = []specs.LinuxIDMapping{
 			{
 				ContainerID: 0,
-				HostID:      subgidRange.HostID,
+				HostID:      1,
 				Size:        gid,
 			},
 			{
 				ContainerID: gid,
-				HostID:      gid,
+				HostID:      0,
 				Size:        1,
 			},
 			{
 				ContainerID: gid + 1,
-				HostID:      subgidRange.HostID + gid,
+				HostID:      gid + 1,
 				Size:        subgidRange.Size - gid,
 			},
 		}
@@ -131,12 +124,12 @@ func (l *Launcher) getIDMaps() (uidMap, gidMap []specs.LinuxIDMapping, err error
 		gidMap = []specs.LinuxIDMapping{
 			{
 				ContainerID: 0,
-				HostID:      subgidRange.HostID,
-				Size:        65536,
+				HostID:      1,
+				Size:        subgidRange.Size,
 			},
 			{
 				ContainerID: gid,
-				HostID:      gid,
+				HostID:      0,
 				Size:        1,
 			},
 		}

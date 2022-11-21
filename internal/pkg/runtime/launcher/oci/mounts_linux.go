@@ -10,6 +10,7 @@ package oci
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -33,17 +34,6 @@ func (l *Launcher) getMounts() ([]specs.Mount, error) {
 	return *mounts, nil
 }
 
-// addBindMount adds a bind mount from src on host, to dst in container.
-func (l *Launcher) addBindMount(mounts *[]specs.Mount, src, dst string) {
-	*mounts = append(*mounts,
-		specs.Mount{
-			Source:      src,
-			Destination: dst,
-			Type:        "none",
-			Options:     []string{"rbind", "nosuid", "nodev"},
-		})
-}
-
 // addTmpMounts adds tmpfs mounts for /tmp and /var/tmp in the container.
 func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) {
 	*mounts = append(*mounts,
@@ -63,9 +53,19 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) {
 
 // addDevMounts adds mounts to assemble a minimal /dev in the container.
 func addDevMounts(mounts *[]specs.Mount) error {
-	group, err := user.GetGrNam("tty")
-	if err != nil {
-		return fmt.Errorf("while identifying tty gid: %w", err)
+	ptsMount := specs.Mount{
+		Destination: "/dev/pts",
+		Type:        "devpts",
+		Source:      "devpts",
+		Options:     []string{"nosuid", "noexec", "newinstance", "ptmxmode=0666", "mode=0620"},
+	}
+
+	if os.Getuid() == 0 {
+		group, err := user.GetGrNam("tty")
+		if err != nil {
+			return fmt.Errorf("while identifying tty gid: %w", err)
+		}
+		ptsMount.Options = append(ptsMount.Options, fmt.Sprintf("gid=%d", group.GID))
 	}
 
 	*mounts = append(*mounts,
@@ -75,12 +75,7 @@ func addDevMounts(mounts *[]specs.Mount) error {
 			Source:      "tmpfs",
 			Options:     []string{"nosuid", "strictatime", "mode=755", "size=65536k"},
 		},
-		specs.Mount{
-			Destination: "/dev/pts",
-			Type:        "devpts",
-			Source:      "devpts",
-			Options:     []string{"nosuid", "noexec", "newinstance", "ptmxmode=0666", "mode=0620", "gid=" + strconv.Itoa(int(group.GID))},
-		},
+		ptsMount,
 		specs.Mount{
 			Destination: "/dev/shm",
 			Type:        "tmpfs",
@@ -100,33 +95,50 @@ func addDevMounts(mounts *[]specs.Mount) error {
 
 // addProcMount adds the /proc tree in the container.
 func (l *Launcher) addProcMount(mounts *[]specs.Mount) {
-	if l.cfg.Namespaces.PID {
-		*mounts = append(*mounts,
-			specs.Mount{
-				Source:      "proc",
-				Destination: "/proc",
-				Type:        "proc",
-			})
-	} else {
-		l.addBindMount(mounts, "/proc", "/proc")
-	}
+	*mounts = append(*mounts,
+		specs.Mount{
+			Source:      "proc",
+			Destination: "/proc",
+			Type:        "proc",
+		})
 }
 
 // addSysMount adds the /sys tree in the container.
 func (l *Launcher) addSysMount(mounts *[]specs.Mount) {
-	*mounts = append(*mounts,
-		specs.Mount{
-			Source:      "sysfs",
-			Destination: "/sys",
-			Type:        "sysfs",
-			Options:     []string{"nosuid", "noexec", "nodev", "ro"},
-		})
+	if os.Getuid() == 0 {
+		*mounts = append(*mounts,
+			specs.Mount{
+				Source:      "sysfs",
+				Destination: "/sys",
+				Type:        "sysfs",
+				Options:     []string{"nosuid", "noexec", "nodev", "ro"},
+			})
+	} else {
+		*mounts = append(*mounts,
+			specs.Mount{
+				Source:      "/sys",
+				Destination: "/sys",
+				Type:        "none",
+				Options:     []string{"rbind", "nosuid", "noexec", "nodev", "ro"},
+			})
+	}
 }
 
 // addHomeMount adds a user home directory as a tmpfs mount. We are currently
 // emulating `--compat` / `--containall`, so the user must specifically bind in
 // their home directory from the host for it to be available.
 func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
+	if l.cfg.Fakeroot {
+		*mounts = append(*mounts,
+			specs.Mount{
+				Destination: "/root",
+				Type:        "tmpfs",
+				Source:      "tmpfs",
+				Options:     []string{"nosuid", "relatime", "mode=755", "size=65536k"},
+			})
+		return nil
+	}
+
 	pw, err := user.CurrentOriginal()
 	if err != nil {
 		return err
