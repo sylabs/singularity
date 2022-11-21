@@ -284,6 +284,30 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		}
 	}
 
+	spec, err := MinimalSpec()
+	if err != nil {
+		return err
+	}
+
+	spec.Process.User = l.getProcessUser()
+	uidMap, gidMap, err := l.getIDMaps()
+	if err != nil {
+		return err
+	}
+	spec.Linux.UIDMappings = uidMap
+	spec.Linux.GIDMappings = gidMap
+	cwd, err := l.getProcessCwd()
+	if err != nil {
+		return err
+	}
+	spec.Process.Cwd = cwd
+
+	mounts, err := l.getMounts()
+	if err != nil {
+		return err
+	}
+	spec.Mounts = mounts
+
 	b, err := native.New(
 		native.OptBundlePath(bundleDir),
 		native.OptImageRef(image),
@@ -295,7 +319,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		return err
 	}
 
-	if err := b.Create(ctx, nil); err != nil {
+	if err := b.Create(ctx, spec); err != nil {
 		return err
 	}
 

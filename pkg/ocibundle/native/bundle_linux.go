@@ -29,7 +29,6 @@ import (
 	"github.com/opencontainers/umoci/pkg/idtools"
 	"github.com/sylabs/singularity/internal/pkg/build/oci"
 	"github.com/sylabs/singularity/internal/pkg/cache"
-	"github.com/sylabs/singularity/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
@@ -153,13 +152,10 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	if err := os.RemoveAll(tmpDir); err != nil {
 		return err
 	}
-
+	// ProcessArgs are set here, rather than in the launcher spec generation, as we need to
+	// consult the image Config to handle combining ENTRYPOINT/CMD with user
+	// provided args.
 	b.setProcessArgs(g)
-	// TODO - Handle custom env and user
-	b.setProcessEnv(g)
-	if err := b.setProcessUser(g); err != nil {
-		return err
-	}
 
 	return b.writeConfig(g)
 }
@@ -167,107 +163,6 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 // Path returns the bundle's path on disk.
 func (b *Bundle) Path() string {
 	return b.bundlePath
-}
-
-func (b *Bundle) setProcessUser(g *generate.Generator) error {
-	// Set non-root uid/gid per Singularity defaults
-	uid := uint32(os.Getuid())
-	if uid != 0 {
-		gid := uint32(os.Getgid())
-		g.Config.Process.User.UID = uid
-		g.Config.Process.User.GID = gid
-		// Get user's configured subuid & subgid ranges
-		subuidRange, err := fakeroot.GetIDRange(fakeroot.SubUIDFile, uid)
-		if err != nil {
-			return err
-		}
-		// We must be able to map at least 0->65535 inside the container
-		if subuidRange.Size < 65536 {
-			return fmt.Errorf("subuid range size (%d) must be at least 65536", subuidRange.Size)
-		}
-		subgidRange, err := fakeroot.GetIDRange(fakeroot.SubGIDFile, uid)
-		if err != nil {
-			return err
-		}
-		if subgidRange.Size <= gid {
-			return fmt.Errorf("subuid range size (%d) must be at least 65536", subgidRange.Size)
-		}
-
-		// Preserve own uid container->host, map everything else to subuid range.
-		if uid < 65536 {
-			g.Config.Linux.UIDMappings = []specs.LinuxIDMapping{
-				{
-					ContainerID: 0,
-					HostID:      subuidRange.HostID,
-					Size:        uid,
-				},
-				{
-					ContainerID: uid,
-					HostID:      uid,
-					Size:        1,
-				},
-				{
-					ContainerID: uid + 1,
-					HostID:      subuidRange.HostID + uid,
-					Size:        subuidRange.Size - uid,
-				},
-			}
-		} else {
-			g.Config.Linux.UIDMappings = []specs.LinuxIDMapping{
-				{
-					ContainerID: 0,
-					HostID:      subuidRange.HostID,
-					Size:        65536,
-				},
-				{
-					ContainerID: uid,
-					HostID:      uid,
-					Size:        1,
-				},
-			}
-		}
-
-		// Preserve own gid container->host, map everything else to subgid range.
-		if gid < 65536 {
-			g.Config.Linux.GIDMappings = []specs.LinuxIDMapping{
-				{
-					ContainerID: 0,
-					HostID:      subgidRange.HostID,
-					Size:        gid,
-				},
-				{
-					ContainerID: gid,
-					HostID:      gid,
-					Size:        1,
-				},
-				{
-					ContainerID: gid + 1,
-					HostID:      subgidRange.HostID + gid,
-					Size:        subgidRange.Size - gid,
-				},
-			}
-		} else {
-			g.Config.Linux.GIDMappings = []specs.LinuxIDMapping{
-				{
-					ContainerID: 0,
-					HostID:      subgidRange.HostID,
-					Size:        65536,
-				},
-				{
-					ContainerID: gid,
-					HostID:      gid,
-					Size:        1,
-				},
-			}
-		}
-		g.Config.Linux.Namespaces = append(g.Config.Linux.Namespaces, specs.LinuxNamespace{Type: "user"})
-	}
-	return nil
-}
-
-func (b *Bundle) setProcessEnv(g *generate.Generator) {
-	// Set default ENV values from image
-	g.Config.Process.Env = append(g.Config.Process.Env, b.imageSpec.Config.Env...)
 }
 
 func (b *Bundle) setProcessArgs(g *generate.Generator) {

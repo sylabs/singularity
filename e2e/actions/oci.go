@@ -128,18 +128,36 @@ func (c actionTests) actionOciExec(t *testing.T) {
 			argv: []string{imageRef, "/bin/false"},
 			exit: 1,
 		},
+		{
+			name: "TouchTmp",
+			argv: []string{imageRef, "/bin/touch", "/tmp/test"},
+			exit: 0,
+		},
+		{
+			name: "TouchVarTmp",
+			argv: []string{imageRef, "/bin/touch", "/var/tmp/test"},
+			exit: 0,
+		},
+		{
+			name: "TouchHome",
+			argv: []string{imageRef, "/bin/sh", "-c", "touch $HOME"},
+			exit: 0,
+		},
 	}
-
-	for _, tt := range tests {
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.UserProfile),
-			e2e.WithCommand("exec"),
-			e2e.WithDir("/tmp"),
-			e2e.WithArgs(tt.argv...),
-			e2e.ExpectExit(tt.exit),
-		)
+	for _, profile := range []e2e.Profile{e2e.OCIRootProfile, e2e.OCIUserProfile} {
+		t.Run(profile.String(), func(t *testing.T) {
+			for _, tt := range tests {
+				c.env.RunSingularity(
+					t,
+					e2e.AsSubtest(tt.name),
+					e2e.WithProfile(e2e.UserProfile),
+					e2e.WithCommand("exec"),
+					e2e.WithDir("/tmp"),
+					e2e.WithArgs(tt.argv...),
+					e2e.ExpectExit(tt.exit),
+				)
+			}
+		})
 	}
 }
 
