@@ -80,7 +80,7 @@ func (c actionTests) actionOciRun(t *testing.T) {
 				c.env.RunSingularity(
 					t,
 					e2e.AsSubtest(tt.name),
-					e2e.WithProfile(e2e.OCIUserProfile),
+					e2e.WithProfile(profile),
 					e2e.WithCommand("run"),
 					// While we don't support args we are entering a /bin/sh interactively.
 					e2e.ConsoleRun(e2e.ConsoleSendLine("exit")),
@@ -180,15 +180,19 @@ func (c actionTests) actionOciShell(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.OCIUserProfile),
-			e2e.WithCommand("shell"),
-			e2e.WithArgs(tt.argv...),
-			e2e.ConsoleRun(tt.consoleOps...),
-			e2e.ExpectExit(tt.exit),
-		)
+	for _, profile := range []e2e.Profile{e2e.OCIRootProfile, e2e.OCIUserProfile} {
+		t.Run(profile.String(), func(t *testing.T) {
+			for _, tt := range tests {
+				c.env.RunSingularity(
+					t,
+					e2e.AsSubtest(tt.name),
+					e2e.WithProfile(profile),
+					e2e.WithCommand("shell"),
+					e2e.WithArgs(tt.argv...),
+					e2e.ConsoleRun(tt.consoleOps...),
+					e2e.ExpectExit(tt.exit),
+				)
+			}
+		})
 	}
 }
