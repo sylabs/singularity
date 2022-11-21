@@ -23,7 +23,8 @@ sudo apt-get install -y \
     pkg-config \
     squashfs-tools \
     cryptsetup \
-    runc
+    crun \
+    uidmap
 ```
 
 On CentOS/RHEL:
@@ -37,11 +38,11 @@ sudo yum install -y \
     glib2-devel \
     squashfs-tools \
     cryptsetup \
-    runc
+    crun
 ```
 
-_Note - `runc` can be ommitted if you will not use the `singularity oci`
-commands._
+_Note - `crun` can be ommitted if you will not use the `singularity oci`
+commands, or the `--oci` execution mode._
 
 ## Install Go
 
