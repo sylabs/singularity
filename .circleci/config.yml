@@ -175,6 +175,17 @@ jobs:
           name: Check Module Tidiness
           command: git diff --exit-code -- go.mod go.sum
 
+  check-test-corpus:
+    executor: golang
+    steps:
+      - checkout
+      - run:
+          name: Generate Certificates
+          command: pushd test/certs/ && go run ./gen_certs.go && popd
+      - run:
+          name: Check Test Corpus Tidiness
+          command: git diff --exit-code --
+
   check-license-dependencies:
     executor: golang
     steps:
@@ -345,6 +356,7 @@ workflows:
     jobs:
       - lint-markdown
       - check-go-mod
+      - check-test-corpus
       - check-license-dependencies
       - build-source-alpine
       - lint-source
