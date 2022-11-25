@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/sif/v2/pkg/integrity"
 	"github.com/sylabs/sif/v2/pkg/sif"
@@ -27,6 +28,7 @@ var errNotSignedByRequired = errors.New("image not signed by required entities")
 type VerifyCallback func(*sif.FileImage, integrity.VerifyResult) bool
 
 type verifier struct {
+	sv        signature.Verifier
 	opts      []client.Option
 	groupIDs  []uint32
 	objectIDs []uint32
@@ -37,6 +39,14 @@ type verifier struct {
 
 // VerifyOpt are used to configure v.
 type VerifyOpt func(v *verifier) error
+
+// OptVerifyWithVerifier specifies sv be used to verify signatures.
+func OptVerifyWithVerifier(sv signature.Verifier) VerifyOpt {
+	return func(v *verifier) error {
+		v.sv = sv
+		return nil
+	}
+}
 
 // OptVerifyUseKeyServer specifies that the keyserver specified by opts be used as a source of key
 // material, in addition to the local public keyring.
@@ -106,31 +116,36 @@ func newVerifier(opts []VerifyOpt) (verifier, error) {
 func (v verifier) getOpts(ctx context.Context, f *sif.FileImage) ([]integrity.VerifierOpt, error) {
 	var iopts []integrity.VerifierOpt
 
-	// Add keyring.
-	var kr openpgp.KeyRing
-	if v.opts != nil {
-		hkr, err := sypgp.NewHybridKeyRing(ctx, v.opts...)
-		if err != nil {
-			return nil, err
-		}
-		kr = hkr
+	if v.sv != nil {
+		// Use explicitly provided key material.
+		iopts = append(iopts, integrity.OptVerifyWithVerifier(v.sv))
 	} else {
-		pkr, err := sypgp.PublicKeyRing()
+		// Use key material from keyring.
+		var kr openpgp.KeyRing
+		if v.opts != nil {
+			hkr, err := sypgp.NewHybridKeyRing(ctx, v.opts...)
+			if err != nil {
+				return nil, err
+			}
+			kr = hkr
+		} else {
+			pkr, err := sypgp.PublicKeyRing()
+			if err != nil {
+				return nil, err
+			}
+			kr = pkr
+		}
+
+		// wrap the global keyring around
+		global := sypgp.NewHandle(buildcfg.SINGULARITY_CONFDIR, sypgp.GlobalHandleOpt())
+		gkr, err := global.LoadPubKeyring()
 		if err != nil {
 			return nil, err
 		}
-		kr = pkr
-	}
+		kr = sypgp.NewMultiKeyRing(gkr, kr)
 
-	// wrap the global keyring around
-	global := sypgp.NewHandle(buildcfg.SINGULARITY_CONFDIR, sypgp.GlobalHandleOpt())
-	gkr, err := global.LoadPubKeyring()
-	if err != nil {
-		return nil, err
+		iopts = append(iopts, integrity.OptVerifyWithKeyRing(kr))
 	}
-	kr = sypgp.NewMultiKeyRing(gkr, kr)
-
-	iopts = append(iopts, integrity.OptVerifyWithKeyRing(kr))
 
 	// Add group IDs, if applicable.
 	for _, groupID := range v.groupIDs {

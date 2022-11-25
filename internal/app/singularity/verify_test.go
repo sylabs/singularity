@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -7,6 +7,7 @@ package singularity
 
 import (
 	"context"
+	"crypto"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -17,6 +18,8 @@ import (
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/ProtonMail/go-crypto/openpgp/armor"
+	"github.com/sigstore/sigstore/pkg/cryptoutils"
+	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/sif/v2/pkg/integrity"
 	"github.com/sylabs/sif/v2/pkg/sif"
@@ -26,6 +29,18 @@ const (
 	testFingerPrint    = "F34371D0ACD5D09EB9BD853A80600A5FA11BBD29"
 	invalidFingerPrint = "0000000000000000000000000000000000000000"
 )
+
+// getTestSignerVerifier returns a fixed test SignerVerifier.
+func getTestSignerVerifier(t *testing.T) signature.SignerVerifier {
+	path := filepath.Join("testdata", "keys", "private.pem")
+
+	sv, err := signature.LoadSignerVerifierFromPEMFile(path, crypto.SHA256, cryptoutils.SkipPassword)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	return sv
+}
 
 // getTestEntity returns a fixed test PGP entity.
 func getTestEntity(t *testing.T) *openpgp.Entity {
@@ -68,6 +83,7 @@ func (m mockHKP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func Test_newVerifier(t *testing.T) {
+	sv := getTestSignerVerifier(t)
 	opts := []client.Option{client.OptBearerToken("token")}
 
 	tests := []struct {
@@ -79,6 +95,11 @@ func Test_newVerifier(t *testing.T) {
 		{
 			name:         "Defaults",
 			wantVerifier: verifier{},
+		},
+		{
+			name:         "OptVerifyWithVerifier",
+			opts:         []VerifyOpt{OptVerifyWithVerifier(sv)},
+			wantVerifier: verifier{sv: sv},
 		},
 		{
 			name:         "OptVerifyUseKeyServerOpts",
@@ -248,6 +269,12 @@ func Test_verifier_getOpts(t *testing.T) {
 }
 
 func TestVerify(t *testing.T) {
+	sv := getTestSignerVerifier(t)
+	pub, err := sv.PublicKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// Start up a mock HKP server.
 	e := getTestEntity(t)
 	s := httptest.NewServer(mockHKP{e: e})
@@ -257,12 +284,13 @@ func TestVerify(t *testing.T) {
 	keyServerOpt := OptVerifyUseKeyServer(client.OptBaseURL(s.URL))
 
 	tests := []struct {
-		name         string
-		path         string
-		opts         []VerifyOpt
-		wantVerified [][]uint32
-		wantEntity   *openpgp.Entity
-		wantErr      error
+		name           string
+		path           string
+		opts           []VerifyOpt
+		wantVerified   [][]uint32
+		wantEntity     *openpgp.Entity
+		wantPublicKeys []crypto.PublicKey
+		wantErr        error
 	}{
 		{
 			name:    "SignatureNotFound",
@@ -271,8 +299,8 @@ func TestVerify(t *testing.T) {
 			wantErr: &integrity.SignatureNotFoundError{},
 		},
 		{
-			name:    "SignatureNotFoundNonLegacy",
-			path:    filepath.Join("testdata", "images", "one-group-signed.sif"),
+			name:    "SignatureNotFoundPGP",
+			path:    filepath.Join("testdata", "images", "one-group-signed-pgp.sif"),
 			opts:    []VerifyOpt{keyServerOpt, OptVerifyLegacy()},
 			wantErr: &integrity.SignatureNotFoundError{},
 		},
@@ -295,28 +323,49 @@ func TestVerify(t *testing.T) {
 			wantErr: &integrity.SignatureNotFoundError{},
 		},
 		{
-			name:         "Defaults",
-			path:         filepath.Join("testdata", "images", "one-group-signed.sif"),
+			name:           "DSSE",
+			path:           filepath.Join("testdata", "images", "one-group-signed-dsse.sif"),
+			opts:           []VerifyOpt{OptVerifyWithVerifier(sv), OptVerifyGroup(1)},
+			wantVerified:   [][]uint32{{1, 2}},
+			wantPublicKeys: []crypto.PublicKey{pub},
+		},
+		{
+			name:         "PGP",
+			path:         filepath.Join("testdata", "images", "one-group-signed-pgp.sif"),
 			opts:         []VerifyOpt{keyServerOpt},
 			wantVerified: [][]uint32{{1, 2}},
 			wantEntity:   e,
 		},
 		{
-			name:         "OptVerifyGroup",
-			path:         filepath.Join("testdata", "images", "one-group-signed.sif"),
+			name:           "OptVerifyGroupDSSE",
+			path:           filepath.Join("testdata", "images", "one-group-signed-dsse.sif"),
+			opts:           []VerifyOpt{OptVerifyWithVerifier(sv), OptVerifyGroup(1)},
+			wantVerified:   [][]uint32{{1, 2}},
+			wantPublicKeys: []crypto.PublicKey{pub},
+		},
+		{
+			name:         "OptVerifyGroupPGP",
+			path:         filepath.Join("testdata", "images", "one-group-signed-pgp.sif"),
 			opts:         []VerifyOpt{keyServerOpt, OptVerifyGroup(1)},
 			wantVerified: [][]uint32{{1, 2}},
 			wantEntity:   e,
 		},
 		{
-			name:         "OptVerifyObject",
-			path:         filepath.Join("testdata", "images", "one-group-signed.sif"),
+			name:           "OptVerifyObjectDSSE",
+			path:           filepath.Join("testdata", "images", "one-group-signed-dsse.sif"),
+			opts:           []VerifyOpt{OptVerifyWithVerifier(sv), OptVerifyObject(1)},
+			wantVerified:   [][]uint32{{1}},
+			wantPublicKeys: []crypto.PublicKey{pub},
+		},
+		{
+			name:         "OptVerifyObjectPGP",
+			path:         filepath.Join("testdata", "images", "one-group-signed-pgp.sif"),
 			opts:         []VerifyOpt{keyServerOpt, OptVerifyObject(1)},
 			wantVerified: [][]uint32{{1}},
 			wantEntity:   e,
 		},
 		{
-			name:         "LegacyDefaults",
+			name:         "Legacy",
 			path:         filepath.Join("testdata", "images", "one-group-signed-legacy.sif"),
 			opts:         []VerifyOpt{keyServerOpt, OptVerifyLegacy()},
 			wantVerified: [][]uint32{{2}},
@@ -367,8 +416,16 @@ func TestVerify(t *testing.T) {
 					}
 				}
 
-				if got, want := r.Entity().PrimaryKey, tt.wantEntity.PrimaryKey; !reflect.DeepEqual(got, want) {
-					t.Errorf("got entity public key %+v, want %+v", got, want)
+				if tt.wantEntity != nil {
+					if got, want := r.Entity().PrimaryKey, tt.wantEntity.PrimaryKey; !reflect.DeepEqual(got, want) {
+						t.Errorf("got entity public key %+v, want %+v", got, want)
+					}
+				}
+
+				if tt.wantPublicKeys != nil {
+					if got, want := r.Keys(), tt.wantPublicKeys; !reflect.DeepEqual(got, want) {
+						t.Errorf("got public keys %+v, want %+v", got, want)
+					}
 				}
 
 				if got, want := r.Error(), tt.wantErr; !errors.Is(got, want) {
@@ -415,7 +472,7 @@ func TestVerifyFingerPrint(t *testing.T) {
 		},
 		{
 			name:         "SignatureNotFoundNonLegacy",
-			path:         filepath.Join("testdata", "images", "one-group-signed.sif"),
+			path:         filepath.Join("testdata", "images", "one-group-signed-pgp.sif"),
 			fingerprints: []string{testFingerPrint},
 			opts:         []VerifyOpt{keyServerOpt, OptVerifyLegacy()},
 			wantErr:      &integrity.SignatureNotFoundError{},
@@ -443,7 +500,7 @@ func TestVerifyFingerPrint(t *testing.T) {
 		},
 		{
 			name:         "Defaults",
-			path:         filepath.Join("testdata", "images", "one-group-signed.sif"),
+			path:         filepath.Join("testdata", "images", "one-group-signed-pgp.sif"),
 			fingerprints: []string{testFingerPrint},
 			opts:         []VerifyOpt{keyServerOpt},
 			wantVerified: [][]uint32{{1, 2}},
@@ -451,7 +508,7 @@ func TestVerifyFingerPrint(t *testing.T) {
 		},
 		{
 			name:         "OptVerifyGroup",
-			path:         filepath.Join("testdata", "images", "one-group-signed.sif"),
+			path:         filepath.Join("testdata", "images", "one-group-signed-pgp.sif"),
 			fingerprints: []string{testFingerPrint},
 			opts:         []VerifyOpt{keyServerOpt, OptVerifyGroup(1)},
 			wantVerified: [][]uint32{{1, 2}},
@@ -459,7 +516,7 @@ func TestVerifyFingerPrint(t *testing.T) {
 		},
 		{
 			name:         "OptVerifyObject",
-			path:         filepath.Join("testdata", "images", "one-group-signed.sif"),
+			path:         filepath.Join("testdata", "images", "one-group-signed-pgp.sif"),
 			fingerprints: []string{testFingerPrint},
 			opts:         []VerifyOpt{keyServerOpt, OptVerifyObject(1)},
 			wantVerified: [][]uint32{{1}},
@@ -499,7 +556,7 @@ func TestVerifyFingerPrint(t *testing.T) {
 		},
 		{
 			name:         "SingleFingerprintWrong",
-			path:         filepath.Join("testdata", "images", "one-group-signed.sif"),
+			path:         filepath.Join("testdata", "images", "one-group-signed-pgp.sif"),
 			fingerprints: []string{invalidFingerPrint},
 			opts:         []VerifyOpt{keyServerOpt},
 			wantVerified: [][]uint32{{1, 2}},
@@ -508,7 +565,7 @@ func TestVerifyFingerPrint(t *testing.T) {
 		},
 		{
 			name:         "MultipleFingerprintOneWrong",
-			path:         filepath.Join("testdata", "images", "one-group-signed.sif"),
+			path:         filepath.Join("testdata", "images", "one-group-signed-pgp.sif"),
 			fingerprints: []string{testFingerPrint, invalidFingerPrint},
 			opts:         []VerifyOpt{keyServerOpt},
 			wantVerified: [][]uint32{{1, 2}},
