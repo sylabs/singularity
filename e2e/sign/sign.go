@@ -196,6 +196,26 @@ func (c ctx) singularitySignKeyidxOption(t *testing.T) {
 	)
 }
 
+func (c ctx) singularitySignKeyOption(t *testing.T) {
+	imgPath, cleanup := c.prepareImage(t)
+	defer cleanup(t)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("sign"),
+		e2e.WithArgs(
+			"--key",
+			filepath.Join("..", "test", "keys", "private.pem"),
+			imgPath,
+		),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied to "+imgPath),
+		),
+	)
+}
+
 func (c *ctx) generateKeypair(t *testing.T) {
 	keyGenInput := []e2e.SingularityConsoleOp{
 		e2e.ConsoleSendLine("e2e sign test key"),
@@ -247,6 +267,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			t.Run("singularitySignIDOption", c.singularitySignIDOption)
 			t.Run("singularitySignGroupIDOption", c.singularitySignGroupIDOption)
 			t.Run("singularitySignKeyidxOption", c.singularitySignKeyidxOption)
+			t.Run("singularitySignKeyOption", c.singularitySignKeyOption)
 		},
 	}
 }

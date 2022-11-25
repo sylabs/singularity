@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2017-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,9 +7,11 @@
 package cli
 
 import (
+	"crypto"
 	"fmt"
 	"os"
 
+	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
@@ -21,6 +23,7 @@ import (
 var (
 	sifGroupID   uint32 // -g groupid specification
 	sifDescID    uint32 // -i id specification
+	pubKeyPath   string // --key flag
 	localVerify  bool   // -l flag
 	jsonVerify   bool   // -j flag
 	verifyAll    bool
@@ -78,6 +81,15 @@ var verifySifDescIDFlag = cmdline.Flag{
 	Deprecated:   "use '--sif-id'",
 }
 
+// --key
+var verifyPublicKeyFlag = cmdline.Flag{
+	ID:           "publicKeyFlag",
+	Value:        &pubKeyPath,
+	DefaultValue: "",
+	Name:         "key",
+	Usage:        "path to the public key file",
+}
+
 // -l|--local
 var verifyLocalFlag = cmdline.Flag{
 	ID:           "verifyLocalFlag",
@@ -127,6 +139,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&verifyOldSifGroupIDFlag, VerifyCmd)
 		cmdManager.RegisterFlagForCmd(&verifySifDescSifIDFlag, VerifyCmd)
 		cmdManager.RegisterFlagForCmd(&verifySifDescIDFlag, VerifyCmd)
+		cmdManager.RegisterFlagForCmd(&verifyPublicKeyFlag, VerifyCmd)
 		cmdManager.RegisterFlagForCmd(&verifyLocalFlag, VerifyCmd)
 		cmdManager.RegisterFlagForCmd(&verifyJSONFlag, VerifyCmd)
 		cmdManager.RegisterFlagForCmd(&verifyAllFlag, VerifyCmd)
@@ -153,14 +166,25 @@ var VerifyCmd = &cobra.Command{
 func doVerifyCmd(cmd *cobra.Command, cpath string) {
 	var opts []singularity.VerifyOpt
 
-	// Set keyserver option, if applicable.
-	if !localVerify {
-		co, err := getKeyserverClientOpts(keyServerURI, endpoint.KeyserverVerifyOp)
+	switch {
+	case cmd.Flag(verifyPublicKeyFlag.Name).Changed:
+		v, err := signature.LoadVerifierFromPEMFile(pubKeyPath, crypto.SHA256)
 		if err != nil {
-			sylog.Fatalf("Error while getting keyserver client config: %v", err)
+			sylog.Fatalf("Failed to load key material: %v", err)
 		}
+		opts = append(opts, singularity.OptVerifyWithVerifier(v))
 
-		opts = append(opts, singularity.OptVerifyUseKeyServer(co...))
+	default:
+		// Set keyserver option, if applicable.
+		if localVerify {
+			opts = append(opts, singularity.OptVerifyWithPGP())
+		} else {
+			co, err := getKeyserverClientOpts(keyServerURI, endpoint.KeyserverVerifyOp)
+			if err != nil {
+				sylog.Fatalf("Error while getting keyserver client config: %v", err)
+			}
+			opts = append(opts, singularity.OptVerifyWithPGP(co...))
+		}
 	}
 
 	// Set group option, if applicable.
