@@ -14,8 +14,12 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
+	"github.com/sylabs/singularity/internal/pkg/util/starter"
+	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
@@ -25,8 +29,13 @@ func Delete(ctx context.Context, containerID string) error {
 	if err != nil {
 		return err
 	}
+	rsd, err := runtimeStateDir()
+	if err != nil {
+		return err
+	}
+
 	runtimeArgs := []string{
-		"--root", runtimeStateDir(),
+		"--root", rsd,
 		"delete",
 		containerID,
 	}
@@ -67,8 +76,13 @@ func Exec(containerID string, cmdArgs []string) error {
 	if err != nil {
 		return err
 	}
+	rsd, err := runtimeStateDir()
+	if err != nil {
+		return err
+	}
+
 	runtimeArgs := []string{
-		"--root", runtimeStateDir(),
+		"--root", rsd,
 		"exec",
 		containerID,
 	}
@@ -87,8 +101,13 @@ func Kill(containerID string, killSignal string) error {
 	if err != nil {
 		return err
 	}
+	rsd, err := runtimeStateDir()
+	if err != nil {
+		return err
+	}
+
 	runtimeArgs := []string{
-		"--root", runtimeStateDir(),
+		"--root", rsd,
 		"kill",
 		containerID,
 		killSignal,
@@ -108,8 +127,13 @@ func Pause(containerID string) error {
 	if err != nil {
 		return err
 	}
+	rsd, err := runtimeStateDir()
+	if err != nil {
+		return err
+	}
+
 	runtimeArgs := []string{
-		"--root", runtimeStateDir(),
+		"--root", rsd,
 		"pause",
 		containerID,
 	}
@@ -128,8 +152,13 @@ func Resume(containerID string) error {
 	if err != nil {
 		return err
 	}
+	rsd, err := runtimeStateDir()
+	if err != nil {
+		return err
+	}
+
 	runtimeArgs := []string{
-		"--root", runtimeStateDir(),
+		"--root", rsd,
 		"resume",
 		containerID,
 	}
@@ -157,8 +186,13 @@ func Run(ctx context.Context, containerID, bundlePath, pidFile string) error {
 		return fmt.Errorf("failed to change directory to %s: %s", absBundle, err)
 	}
 
+	rsd, err := runtimeStateDir()
+	if err != nil {
+		return err
+	}
+
 	runtimeArgs := []string{
-		"--root", runtimeStateDir(),
+		"--root", rsd,
 		"run",
 		"-b", absBundle,
 	}
@@ -174,14 +208,58 @@ func Run(ctx context.Context, containerID, bundlePath, pidFile string) error {
 	return cmd.Run()
 }
 
+// RunNS reexecs singularity in a user namespace, with supplied uid/gid mapping, calling oci run.
+func RunNS(ctx context.Context, containerID, bundlePath, pidFile string) error {
+	absBundle, err := filepath.Abs(bundlePath)
+	if err != nil {
+		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
+	}
+
+	if err := os.Chdir(absBundle); err != nil {
+		return fmt.Errorf("failed to change directory to %s: %s", absBundle, err)
+	}
+
+	args := []string{
+		filepath.Join(buildcfg.BINDIR, "singularity"),
+		"oci",
+		"run",
+		"-b", absBundle,
+		containerID,
+	}
+	if pidFile != "" {
+		args = append(args, "--pid-file="+pidFile)
+	}
+
+	sylog.Debugf("Calling fakeroot engine to execute %q", strings.Join(args, " "))
+
+	cfg := &config.Common{
+		EngineName:   fakerootConfig.Name,
+		ContainerID:  "fakeroot",
+		EngineConfig: &fakerootConfig.EngineConfig{Args: args, NoPIDNS: true},
+	}
+
+	return starter.Run(
+		"Singularity oci userns",
+		cfg,
+		starter.WithStdin(os.Stdin),
+		starter.WithStdout(os.Stdout),
+		starter.WithStderr(os.Stderr),
+	)
+}
+
 // Start starts a previously created container
 func Start(containerID string) error {
-	runtimeBin, err := bin.FindBin("crun")
+	runtimeBin, err := runtime()
 	if err != nil {
 		return err
 	}
+	rsd, err := runtimeStateDir()
+	if err != nil {
+		return err
+	}
+
 	runtimeArgs := []string{
-		"--root", runtimeStateDir(),
+		"--root", rsd,
 		"start",
 		containerID,
 	}
@@ -200,8 +278,13 @@ func State(containerID string) error {
 	if err != nil {
 		return err
 	}
+	rsd, err := runtimeStateDir()
+	if err != nil {
+		return err
+	}
+
 	runtimeArgs := []string{
-		"--root", runtimeStateDir(),
+		"--root", rsd,
 		"state",
 		containerID,
 	}
@@ -220,8 +303,13 @@ func Update(containerID, cgFile string) error {
 	if err != nil {
 		return err
 	}
+	rsd, err := runtimeStateDir()
+	if err != nil {
+		return err
+	}
+
 	runtimeArgs := []string{
-		"--root", runtimeStateDir(),
+		"--root", rsd,
 		"update",
 		"-r", cgFile,
 		containerID,

@@ -37,25 +37,17 @@ func MinimalSpec() (*specs.Spec, error) {
 	// Singularity's cap-add / cap-drop mechanism.
 	config.Process.Capabilities = &specs.LinuxCapabilities{
 		Bounding: []string{
-			"CAP_NET_BIND_SERVICE",
+			"CAP_CHOWN",
+			"CAP_DAC_OVERRIDE",
+			"CAP_FOWNER",
+			"CAP_FSETID",
 			"CAP_KILL",
-			"CAP_AUDIT_WRITE",
-		},
-		Permitted: []string{
 			"CAP_NET_BIND_SERVICE",
-			"CAP_KILL",
-			"CAP_AUDIT_WRITE",
-		},
-		Inheritable: []string{},
-		Effective: []string{
-			"CAP_NET_BIND_SERVICE",
-			"CAP_KILL",
-			"CAP_AUDIT_WRITE",
-		},
-		Ambient: []string{
-			"CAP_NET_BIND_SERVICE",
-			"CAP_KILL",
-			"CAP_AUDIT_WRITE",
+			"CAP_SETFCAP",
+			"CAP_SETGID",
+			"CAP_SETPCAP",
+			"CAP_SETUID",
+			"CAP_SYS_CHROOT",
 		},
 	}
 
@@ -64,19 +56,16 @@ func MinimalSpec() (*specs.Spec, error) {
 
 	config.Linux = &specs.Linux{
 		// Minimum namespaces matching native runtime with --compat / --containall.
-		// TODO: ßAdditional namespaces can be added by launcher.
+		// TODO: Additional namespaces to be added by launcher.
 		Namespaces: []specs.LinuxNamespace{
 			{
-				Type: "ipc",
+				Type: specs.IPCNamespace,
 			},
 			{
-				Type: "pid",
+				Type: specs.PIDNamespace,
 			},
 			{
-				Type: "mount",
-			},
-			{
-				Type: "user",
+				Type: specs.MountNamespace,
 			},
 		},
 	}

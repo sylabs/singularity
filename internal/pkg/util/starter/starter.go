@@ -126,7 +126,7 @@ func Run(name string, config *config.Common, ops ...CommandOp) error {
 	cmd.Stderr = c.stderr
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("while running %s: %s", c.path, err)
+		return fmt.Errorf("while running %s: %w", c.path, err)
 	}
 	return nil
 }
