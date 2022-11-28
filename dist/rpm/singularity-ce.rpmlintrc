@@ -1,0 +1,7 @@
+addFilter(r'setuid-binary /usr/libexec/singularity/bin/starter-suid')
+addFilter(r'non-standard-executable-perm /usr/libexec/singularity/bin/starter-suid')
+addFilter(r'zero-length /etc/singularity/capability.json')
+addFilter(r'zero-length /etc/singularity/global-pgp-public')
+addFilter(r'readelf-failed /usr/bin/singularity 'utf-8' codec can't decode byte 0xc2')
+addFilter(r'readelf-failed /usr/libexec/singularity/bin/starter 'utf-8' codec can't decode byte 0xc2')
+addFilter(r'readelf-failed /usr/libexec/singularity/bin/starter-suid 'utf-8' codec can't decode byte 0xc2')
