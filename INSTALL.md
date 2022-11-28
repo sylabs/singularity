@@ -10,7 +10,7 @@ For full instructions on installation, including building RPMs, please check the
 
 You must first install development tools and libraries to your host.
 
-On Debian-based systems, including Ubuntu:
+On Debian-based systems, including Ubuntu 20.04 and above:
 
 ```sh
 # Ensure repositories are up-to-date
@@ -24,6 +24,23 @@ sudo apt-get install -y \
     squashfs-tools \
     cryptsetup \
     crun \
+    uidmap
+```
+
+On Ubuntu 18.04:
+
+```sh
+# Ensure repositories are up-to-date
+sudo apt-get update
+# Install debian packages for dependencies
+sudo apt-get install -y \
+    build-essential \
+    libseccomp-dev \
+    libglib2.0-dev \
+    pkg-config \
+    squashfs-tools \
+    cryptsetup \
+    runc \
     uidmap
 ```
 
