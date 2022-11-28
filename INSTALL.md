@@ -27,7 +27,7 @@ sudo apt-get install -y \
     uidmap
 ```
 
-On CentOS/RHEL:
+On CentOS/RHEL 8 and above:
 
 ```sh
 # Install basic tools for compiling
@@ -41,7 +41,21 @@ sudo yum install -y \
     crun
 ```
 
-_Note - `crun` can be ommitted if you will not use the `singularity oci`
+On CentOS/RHEL 7:
+
+```sh
+# Install basic tools for compiling
+sudo yum groupinstall -y 'Development Tools'
+# Install RPM packages for dependencies
+sudo yum install -y \
+    libseccomp-devel \
+    glib2-devel \
+    squashfs-tools \
+    cryptsetup \
+    runc
+```
+
+_Note - `crun` / `runc` can be ommitted if you will not use the `singularity oci`
 commands, or the `--oci` execution mode._
 
 ## Install Go
