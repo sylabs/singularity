@@ -10,9 +10,16 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 func TestNewLauncher(t *testing.T) {
+	sc, err := singularityconf.GetConfig(nil)
+	if err != nil {
+		t.Fatalf("while initializing singularityconf: %s", err)
+	}
+	singularityconf.SetCurrentConfig(sc)
+
 	tests := []struct {
 		name    string
 		opts    []launcher.Option
@@ -21,7 +28,7 @@ func TestNewLauncher(t *testing.T) {
 	}{
 		{
 			name:    "default",
-			want:    &Launcher{},
+			want:    &Launcher{singularityConf: sc},
 			wantErr: false,
 		},
 		{
@@ -29,7 +36,7 @@ func TestNewLauncher(t *testing.T) {
 			opts: []launcher.Option{
 				launcher.OptHome("/home/test", false, false),
 			},
-			want: &Launcher{cfg: launcher.Options{HomeDir: "/home/test"}},
+			want: &Launcher{cfg: launcher.Options{HomeDir: "/home/test"}, singularityConf: sc},
 		},
 		{
 			name: "unsupportedOption",

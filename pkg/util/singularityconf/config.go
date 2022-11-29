@@ -47,7 +47,7 @@ type File struct {
 	AlwaysUseRocm           bool     `default:"no" authorized:"yes,no" directive:"always use rocm"`
 	SharedLoopDevices       bool     `default:"no" authorized:"yes,no" directive:"shared loop devices"`
 	MaxLoopDevices          uint     `default:"256" directive:"max loop devices"`
-	SessiondirMaxSize       uint     `default:"16" directive:"sessiondir max size"`
+	SessiondirMaxSize       uint     `default:"64" directive:"sessiondir max size"`
 	MountDev                string   `default:"yes" authorized:"yes,no,minimal" directive:"mount dev"`
 	EnableOverlay           string   `default:"try" authorized:"yes,no,try,driver" directive:"enable overlay"`
 	BindPath                []string `default:"/etc/localtime,/etc/hosts" directive:"bind path"`
@@ -228,10 +228,11 @@ enable underlay = {{ if eq .EnableUnderlay true }}yes{{ else }}no{{ end }}
 mount slave = {{ if eq .MountSlave true }}yes{{ else }}no{{ end }}
 
 # SESSIONDIR MAXSIZE: [STRING]
-# DEFAULT: 16
-# This specifies how large the default sessiondir should be (in MB) and it will
-# only affect users who use the "--contain" options and don't also specify a
-# location to do default read/writes to (e.g. "--workdir" or "--home").
+# DEFAULT: 64
+# This specifies how large the default tmpfs sessiondir should be (in MB).
+# The sessiondir is used to hold data written to isolated directories when
+# running with --contain, ephemeral changes when running with --writable-tmpfs.
+# In --oci mode, each tmpfs mount in the container can be up to this size.
 sessiondir max size = {{ .SessiondirMaxSize }}
 
 # LIMIT CONTAINER OWNERS: [STRING]
