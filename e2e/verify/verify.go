@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -305,6 +305,25 @@ func (c ctx) checkURLOption(t *testing.T) {
 	)
 }
 
+func (c ctx) singularityVerifyKeyOption(t *testing.T) {
+	imagePath := filepath.Join("..", "test", "images", "one-group-signed-dsse.sif")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("verify"),
+		e2e.WithArgs(
+			"--key",
+			filepath.Join("..", "test", "keys", "public.pem"),
+			imagePath,
+		),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ContainMatch, "Container verified: "+imagePath),
+		),
+	)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -326,6 +345,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			t.Run("singularityVerifyGroupIdOption", c.checkGroupidOption)
 			t.Run("singularityVerifyIDOption", c.checkIDOption)
 			t.Run("singularityVerifyURLOption", c.checkURLOption)
+			t.Run("singularityVerifyKeyOption", c.singularityVerifyKeyOption)
 		},
 	}
 }
