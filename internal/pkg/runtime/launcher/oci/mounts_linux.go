@@ -11,7 +11,6 @@ package oci
 import (
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
@@ -22,7 +21,7 @@ func (l *Launcher) getMounts() ([]specs.Mount, error) {
 	mounts := &[]specs.Mount{}
 	l.addProcMount(mounts)
 	l.addSysMount(mounts)
-	err := addDevMounts(mounts)
+	err := l.addDevMounts(mounts)
 	if err != nil {
 		return nil, fmt.Errorf("while configuring devpts mount: %w", err)
 	}
@@ -37,22 +36,33 @@ func (l *Launcher) getMounts() ([]specs.Mount, error) {
 // addTmpMounts adds tmpfs mounts for /tmp and /var/tmp in the container.
 func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) {
 	*mounts = append(*mounts,
+
 		specs.Mount{
 			Destination: "/tmp",
 			Type:        "tmpfs",
 			Source:      "tmpfs",
-			Options:     []string{"nosuid", "relatime", "mode=777", "size=65536k"},
+			Options: []string{
+				"nosuid",
+				"relatime",
+				"mode=777",
+				fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
+			},
 		},
 		specs.Mount{
-			Destination: "/tmp",
+			Destination: "/var/tmp",
 			Type:        "tmpfs",
 			Source:      "tmpfs",
-			Options:     []string{"nosuid", "relatime", "mode=777", "size=65536k"},
+			Options: []string{
+				"nosuid",
+				"relatime",
+				"mode=777",
+				fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
+			},
 		})
 }
 
 // addDevMounts adds mounts to assemble a minimal /dev in the container.
-func addDevMounts(mounts *[]specs.Mount) error {
+func (l *Launcher) addDevMounts(mounts *[]specs.Mount) error {
 	ptsMount := specs.Mount{
 		Destination: "/dev/pts",
 		Type:        "devpts",
@@ -73,14 +83,25 @@ func addDevMounts(mounts *[]specs.Mount) error {
 			Destination: "/dev",
 			Type:        "tmpfs",
 			Source:      "tmpfs",
-			Options:     []string{"nosuid", "strictatime", "mode=755", "size=65536k"},
+			Options: []string{
+				"nosuid",
+				"strictatime",
+				"mode=755",
+				fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
+			},
 		},
 		ptsMount,
 		specs.Mount{
 			Destination: "/dev/shm",
 			Type:        "tmpfs",
 			Source:      "shm",
-			Options:     []string{"nosuid", "noexec", "nodev", "mode=1777", "size=65536k"},
+			Options: []string{
+				"nosuid",
+				"noexec",
+				"nodev",
+				"mode=1777",
+				fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
+			},
 		},
 		specs.Mount{
 			Destination: "/dev/mqueue",
@@ -134,7 +155,12 @@ func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
 				Destination: "/root",
 				Type:        "tmpfs",
 				Source:      "tmpfs",
-				Options:     []string{"nosuid", "relatime", "mode=755", "size=65536k"},
+				Options: []string{
+					"nosuid",
+					"relatime",
+					"mode=755",
+					fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
+				},
 			})
 		return nil
 	}
@@ -148,7 +174,14 @@ func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
 			Destination: pw.Dir,
 			Type:        "tmpfs",
 			Source:      "tmpfs",
-			Options:     []string{"nosuid", "relatime", "mode=755", "size=65536k", "uid=" + strconv.Itoa(int(pw.UID)), "gid=" + strconv.Itoa(int(pw.GID))},
+			Options: []string{
+				"nosuid",
+				"relatime",
+				"mode=755",
+				fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
+				fmt.Sprintf("uid=%d", pw.UID),
+				fmt.Sprintf("gid=%d", pw.GID),
+			},
 		})
 	return nil
 }

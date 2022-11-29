@@ -14,6 +14,8 @@
 - `crun` will be used as the low-level OCI runtime, when available, rather than
   `runc`. `runc` will not support all rootless OCI runtime functionality used by
   Singularity.
+- `sessiondir maxsize` in `singularity.conf` now defaults to 64 MiB for new
+  installations. This is an increase from 16 MiB in prior versions.
 
 ### Development / Testing
 

@@ -24,6 +24,7 @@ import (
 	"github.com/sylabs/singularity/pkg/ocibundle/native"
 	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
@@ -35,7 +36,8 @@ var (
 // Launcher will holds configuration for, and will launch a container using an
 // OCI runtime.
 type Launcher struct {
-	cfg launcher.Options
+	cfg             launcher.Options
+	singularityConf *singularityconf.File
 }
 
 // NewLauncher returns a oci.Launcher with an initial configuration set by opts.
@@ -50,7 +52,13 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 	if err := checkOpts(lo); err != nil {
 		return nil, err
 	}
-	return &Launcher{lo}, nil
+
+	c := singularityconf.GetCurrentConfig()
+	if c == nil {
+		return nil, fmt.Errorf("singularity configuration is not initialized")
+	}
+
+	return &Launcher{cfg: lo, singularityConf: c}, nil
 }
 
 // checkOpts ensures that options set are supported by the oci.Launcher.
