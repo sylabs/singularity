@@ -324,6 +324,22 @@ func (c ctx) singularityVerifyKeyOption(t *testing.T) {
 	)
 }
 
+func (c ctx) singularityVerifyKeyEnv(t *testing.T) {
+	imagePath := filepath.Join("..", "test", "images", "one-group-signed-dsse.sif")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithEnv([]string{"SINGULARITY_VERIFY_KEY=" + filepath.Join("..", "test", "keys", "public.pem")}),
+		e2e.WithCommand("verify"),
+		e2e.WithArgs(imagePath),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ContainMatch, "Container verified: "+imagePath),
+		),
+	)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -346,6 +362,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			t.Run("singularityVerifyIDOption", c.checkIDOption)
 			t.Run("singularityVerifyURLOption", c.checkURLOption)
 			t.Run("singularityVerifyKeyOption", c.singularityVerifyKeyOption)
+			t.Run("singularityVerifyKeyEnv", c.singularityVerifyKeyEnv)
 		},
 	}
 }
