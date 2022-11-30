@@ -167,5 +167,5 @@ func doSignCmd(cmd *cobra.Command, cpath string) {
 	if err := singularity.Sign(cpath, opts...); err != nil {
 		sylog.Fatalf("Failed to sign container: %v", err)
 	}
-	sylog.Infof("Signature created and applied to %v\n", cpath)
+	sylog.Infof("Signature created and applied to image '%v'", cpath)
 }
