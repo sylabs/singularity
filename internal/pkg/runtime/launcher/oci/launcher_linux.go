@@ -232,6 +232,42 @@ func checkOpts(lo launcher.Options) error {
 	return nil
 }
 
+// createSpec produces an OCI runtime specification, suitable to launch a
+// container. This spec excludes ProcessArgs, as these have to be computed where
+// the image config is available, to account for the image's CMD / ENTRYPOINT.
+func (l *Launcher) createSpec() (*specs.Spec, error) {
+	spec := minimalSpec()
+
+	spec.Process.User = l.getProcessUser()
+
+	// If we are *not* requesting fakeroot, then we need to map the container
+	// uid back to host uid, through the initial fakeroot userns.
+	if !l.cfg.Fakeroot && os.Getuid() != 0 {
+		uidMap, gidMap, err := l.getReverseUserMaps()
+		if err != nil {
+			return nil, err
+		}
+		spec.Linux.UIDMappings = uidMap
+		spec.Linux.GIDMappings = gidMap
+	}
+
+	spec = addNamespaces(spec, l.cfg.Namespaces)
+
+	cwd, err := l.getProcessCwd()
+	if err != nil {
+		return nil, err
+	}
+	spec.Process.Cwd = cwd
+
+	mounts, err := l.getMounts()
+	if err != nil {
+		return nil, err
+	}
+	spec.Mounts = mounts
+
+	return &spec, nil
+}
+
 // Exec will interactively execute a container via the runc low-level runtime.
 // image is a reference to an OCI image, e.g. docker://ubuntu or oci:/tmp/mycontainer
 func (l *Launcher) Exec(ctx context.Context, image string, process string, args []string, instanceName string) error {
@@ -275,70 +311,10 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		}
 	}
 
-	spec, err := MinimalSpec()
+	spec, err := l.createSpec()
 	if err != nil {
-		return err
+		return fmt.Errorf("while creating OCI spec: %w", err)
 	}
-
-	spec.Process.User = l.getProcessUser()
-
-	// If we are *not* requesting fakeroot, then we need to map the container
-	// uid back to host uid, through the initial fakeroot userns.
-	if !l.cfg.Fakeroot && os.Getuid() != 0 {
-		uidMap, gidMap, err := l.getReverseUserMaps()
-		if err != nil {
-			return err
-		}
-		spec.Linux.UIDMappings = uidMap
-		spec.Linux.GIDMappings = gidMap
-	}
-
-	cwd, err := l.getProcessCwd()
-	if err != nil {
-		return err
-	}
-	spec.Process.Cwd = cwd
-
-	if l.cfg.Namespaces.IPC {
-		sylog.Infof("--oci runtime always uses an IPC namespace, ipc flag is redundant.")
-	}
-
-	// Currently supports only `--network none`, i.e. isolated loopback only.
-	// Launcher.checkopts enforces this.
-	if l.cfg.Namespaces.Net {
-		spec.Linux.Namespaces = append(
-			spec.Linux.Namespaces,
-			specs.LinuxNamespace{Type: specs.NetworkNamespace},
-		)
-	}
-
-	if l.cfg.Namespaces.PID {
-		sylog.Infof("--oci runtime always uses a PID namespace, pid flag is redundant.")
-	}
-
-	if l.cfg.Namespaces.User {
-		if os.Getuid() == 0 {
-			spec.Linux.Namespaces = append(
-				spec.Linux.Namespaces,
-				specs.LinuxNamespace{Type: specs.UserNamespace},
-			)
-		} else {
-			sylog.Infof("--oci runtime always uses a user namespace when run as a non-root userns, user flag is redundant.")
-		}
-	}
-
-	if l.cfg.Namespaces.UTS {
-		spec.Linux.Namespaces = append(
-			spec.Linux.Namespaces,
-			specs.LinuxNamespace{Type: specs.UTSNamespace},
-		)
-	}
-
-	mounts, err := l.getMounts()
-	if err != nil {
-		return err
-	}
-	spec.Mounts = mounts
 
 	b, err := native.New(
 		native.OptBundlePath(bundleDir),

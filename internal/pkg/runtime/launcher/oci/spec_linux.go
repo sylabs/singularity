@@ -6,13 +6,30 @@
 package oci
 
 import (
+	"os"
+
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
-// MinimalSpec returns an OCI runtime spec with a minimal OCI configuration that
+// defaultNamespaces matching native runtime with --compat / --containall.
+var defaultNamespaces = []specs.LinuxNamespace{
+	{
+		Type: specs.IPCNamespace,
+	},
+	{
+		Type: specs.PIDNamespace,
+	},
+	{
+		Type: specs.MountNamespace,
+	},
+}
+
+// minimalSpec returns an OCI runtime spec with a minimal OCI configuration that
 // is a starting point for compatibility with Singularity's native launcher in
 // `--compat` mode.
-func MinimalSpec() (*specs.Spec, error) {
+func minimalSpec() specs.Spec {
 	config := specs.Spec{
 		Version: specs.Version,
 	}
@@ -54,20 +71,47 @@ func MinimalSpec() (*specs.Spec, error) {
 	// All mounts are added by the launcher, as it must handle flags.
 	config.Mounts = []specs.Mount{}
 
-	config.Linux = &specs.Linux{
-		// Minimum namespaces matching native runtime with --compat / --containall.
-		// TODO: Additional namespaces to be added by launcher.
-		Namespaces: []specs.LinuxNamespace{
-			{
-				Type: specs.IPCNamespace,
-			},
-			{
-				Type: specs.PIDNamespace,
-			},
-			{
-				Type: specs.MountNamespace,
-			},
-		},
+	config.Linux = &specs.Linux{Namespaces: defaultNamespaces}
+	return config
+}
+
+// addNamespaces adds requested namespace, if appropriate, to an existing spec.
+// It is assumed that spec contains at least the defaultNamespaces.
+func addNamespaces(spec specs.Spec, ns launcher.Namespaces) specs.Spec {
+	if ns.IPC {
+		sylog.Infof("--oci runtime always uses an IPC namespace, ipc flag is redundant.")
 	}
-	return &config, nil
+
+	// Currently supports only `--network none`, i.e. isolated loopback only.
+	// Launcher.checkopts enforces this.
+	if ns.Net {
+		spec.Linux.Namespaces = append(
+			spec.Linux.Namespaces,
+			specs.LinuxNamespace{Type: specs.NetworkNamespace},
+		)
+	}
+
+	if ns.PID {
+		sylog.Infof("--oci runtime always uses a PID namespace, pid flag is redundant.")
+	}
+
+	if ns.User {
+		if os.Getuid() == 0 {
+			spec.Linux.Namespaces = append(
+				spec.Linux.Namespaces,
+				specs.LinuxNamespace{Type: specs.UserNamespace},
+			)
+		} else {
+			sylog.Infof("--oci runtime always uses a user namespace when run as a non-root userns, user flag is redundant.")
+		}
+	}
+
+	if ns.UTS {
+		spec.Linux.Namespaces = append(
+			spec.Linux.Namespaces,
+			specs.LinuxNamespace{Type: specs.UTSNamespace},
+		)
+	}
+
+	return spec
 }
