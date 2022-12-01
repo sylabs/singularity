@@ -18,6 +18,7 @@ import (
 
 	"github.com/containers/image/v5/types"
 	"github.com/google/uuid"
+	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
@@ -142,25 +143,10 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "NoEval")
 	}
 
-	if lo.Namespaces.IPC {
-		badOpt = append(badOpt, "Namespaces.IPC")
-	}
-	if lo.Namespaces.Net {
-		badOpt = append(badOpt, "Namespaces.Net")
-	}
-	if lo.Namespaces.PID {
-		badOpt = append(badOpt, "Namespaces.PID")
-	}
-	if lo.Namespaces.UTS {
-		badOpt = append(badOpt, "Namespaces.UTS")
-	}
-	if lo.Namespaces.User {
-		badOpt = append(badOpt, "Namespaces.User")
-	}
-
 	// Network always set in CLI layer even if network namespace not requested.
-	if lo.Namespaces.Net && lo.Network != "" {
-		badOpt = append(badOpt, "Network")
+	// We only support isolation at present
+	if lo.Namespaces.Net && lo.Network != "none" {
+		badOpt = append(badOpt, "Network (except none)")
 	}
 
 	if len(lo.NetworkArgs) > 0 {
@@ -312,6 +298,41 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		return err
 	}
 	spec.Process.Cwd = cwd
+
+	if l.cfg.Namespaces.IPC {
+		sylog.Infof("--oci runtime always uses an IPC namespace, ipc flag is redundant.")
+	}
+
+	// Currently supports only `--network none`, i.e. isolated loopback only.
+	// Launcher.checkopts enforces this.
+	if l.cfg.Namespaces.Net {
+		spec.Linux.Namespaces = append(
+			spec.Linux.Namespaces,
+			specs.LinuxNamespace{Type: specs.NetworkNamespace},
+		)
+	}
+
+	if l.cfg.Namespaces.PID {
+		sylog.Infof("--oci runtime always uses a PID namespace, pid flag is redundant.")
+	}
+
+	if l.cfg.Namespaces.User {
+		if os.Getuid() == 0 {
+			spec.Linux.Namespaces = append(
+				spec.Linux.Namespaces,
+				specs.LinuxNamespace{Type: specs.UserNamespace},
+			)
+		} else {
+			sylog.Infof("--oci runtime always uses a user namespace when run as a non-root userns, user flag is redundant.")
+		}
+	}
+
+	if l.cfg.Namespaces.UTS {
+		spec.Linux.Namespaces = append(
+			spec.Linux.Namespaces,
+			specs.LinuxNamespace{Type: specs.UTSNamespace},
+		)
+	}
 
 	mounts, err := l.getMounts()
 	if err != nil {
