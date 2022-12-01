@@ -10,10 +10,14 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
+	"github.com/sylabs/singularity/internal/pkg/test"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 func TestNewLauncher(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
 	sc, err := singularityconf.GetConfig(nil)
 	if err != nil {
 		t.Fatalf("while initializing singularityconf: %s", err)
