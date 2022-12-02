@@ -41,6 +41,7 @@ import (
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/bind"
 	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"github.com/sylabs/singularity/pkg/util/cryptkey"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
@@ -534,13 +535,13 @@ func (l *Launcher) useSuid() (useSuid, forceUserNs bool) {
 // setBinds sets engine configuration for requested bind mounts.
 func (l *Launcher) setBinds() error {
 	// First get binds from -B/--bind and env var
-	binds, err := singularityConfig.ParseBindPath(strings.Join(l.cfg.BindPaths, ","))
+	binds, err := bind.ParseBindPath(strings.Join(l.cfg.BindPaths, ","))
 	if err != nil {
 		return fmt.Errorf("while parsing bind path: %w", err)
 	}
 	// Now add binds from one or more --mount and env var.
 	for _, m := range l.cfg.Mounts {
-		bps, err := singularityConfig.ParseMountString(m)
+		bps, err := bind.ParseMountString(m)
 		if err != nil {
 			return fmt.Errorf("while parsing mount %q: %w", m, err)
 		}

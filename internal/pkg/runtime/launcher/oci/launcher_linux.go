@@ -96,15 +96,10 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "NoHome")
 	}
 
-	if len(lo.BindPaths) > 0 {
-		badOpt = append(badOpt, "BindPaths")
-	}
 	if len(lo.FuseMount) > 0 {
 		badOpt = append(badOpt, "FuseMount")
 	}
-	if len(lo.Mounts) > 0 {
-		badOpt = append(badOpt, "Mounts")
-	}
+
 	if len(lo.NoMount) > 0 {
 		badOpt = append(badOpt, "NoMount")
 	}

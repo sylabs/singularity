@@ -12,6 +12,7 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/pkg/util/bind"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
@@ -69,7 +70,7 @@ type JSONConfig struct {
 	LibrariesPath         []string          `json:"librariesPath,omitempty"`
 	FuseMount             []FuseMount       `json:"fuseMount,omitempty"`
 	ImageList             []image.Image     `json:"imageList,omitempty"`
-	BindPath              []BindPath        `json:"bindpath,omitempty"`
+	BindPath              []bind.Path       `json:"bindpath,omitempty"`
 	SingularityEnv        map[string]string `json:"singularityEnv,omitempty"`
 	UnixSocketPair        [2]int            `json:"unixSocketPair,omitempty"`
 	OpenFd                []int             `json:"openFd,omitempty"`
@@ -269,12 +270,12 @@ func (e *EngineConfig) GetCustomHome() bool {
 }
 
 // SetBindPath sets the paths to bind into container.
-func (e *EngineConfig) SetBindPath(bindpath []BindPath) {
+func (e *EngineConfig) SetBindPath(bindpath []bind.Path) {
 	e.JSON.BindPath = bindpath
 }
 
 // GetBindPath retrieves the bind paths.
-func (e *EngineConfig) GetBindPath() []BindPath {
+func (e *EngineConfig) GetBindPath() []bind.Path {
 	return e.JSON.BindPath
 }
 

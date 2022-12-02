@@ -11,9 +11,13 @@ package oci
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/bind"
 )
 
 // getMounts returns a mount list for the container's OCI runtime spec.
@@ -21,14 +25,15 @@ func (l *Launcher) getMounts() ([]specs.Mount, error) {
 	mounts := &[]specs.Mount{}
 	l.addProcMount(mounts)
 	l.addSysMount(mounts)
-	err := l.addDevMounts(mounts)
-	if err != nil {
+	if err := l.addDevMounts(mounts); err != nil {
 		return nil, fmt.Errorf("while configuring devpts mount: %w", err)
 	}
 	l.addTmpMounts(mounts)
-	err = l.addHomeMount(mounts)
-	if err != nil {
+	if err := l.addHomeMount(mounts); err != nil {
 		return nil, fmt.Errorf("while configuring home mount: %w", err)
+	}
+	if err := l.addBindMounts(mounts); err != nil {
+		return nil, fmt.Errorf("while configuring bind mount(s): %w", err)
 	}
 	return *mounts, nil
 }
@@ -182,6 +187,67 @@ func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
 				fmt.Sprintf("uid=%d", pw.UID),
 				fmt.Sprintf("gid=%d", pw.GID),
 			},
+		})
+	return nil
+}
+
+func (l *Launcher) addBindMounts(mounts *[]specs.Mount) error {
+	// First get binds from -B/--bind and env var
+	binds, err := bind.ParseBindPath(strings.Join(l.cfg.BindPaths, ","))
+	if err != nil {
+		return fmt.Errorf("while parsing bind path: %w", err)
+	}
+	// Now add binds from one or more --mount and env var.
+	for _, m := range l.cfg.Mounts {
+		bps, err := bind.ParseMountString(m)
+		if err != nil {
+			return fmt.Errorf("while parsing mount %q: %w", m, err)
+		}
+		binds = append(binds, bps...)
+	}
+
+	for _, b := range binds {
+		if !l.singularityConf.UserBindControl {
+			sylog.Warningf("Ignoring bind mount request: user bind control disabled by system administrator")
+			return nil
+		}
+		if err := addBindMount(mounts, b); err != nil {
+			return fmt.Errorf("while adding mount %q: %w", b.Source, err)
+		}
+	}
+	return nil
+}
+
+func addBindMount(mounts *[]specs.Mount, b bind.Path) error {
+	if b.ID() != "" || b.ImageSrc() != "" {
+		return fmt.Errorf("image binds are not yet supported by the OCI runtime")
+	}
+
+	opts := []string{"rbind", "nosuid", "nodev"}
+	if b.Readonly() {
+		opts = append(opts, "ro")
+	}
+
+	absSource, err := filepath.Abs(b.Source)
+	if err != nil {
+		return fmt.Errorf("cannot determine absolute path of %s: %w", b.Source, err)
+	}
+	if _, err := os.Stat(absSource); err != nil {
+		return fmt.Errorf("cannot stat bind source %s: %w", b.Source, err)
+	}
+
+	if !filepath.IsAbs(b.Destination) {
+		return fmt.Errorf("bind destination %s must be an absolute path", b.Destination)
+	}
+
+	sylog.Debugf("Adding bind of %s to %s, with options %v", absSource, b.Destination, opts)
+
+	*mounts = append(*mounts,
+		specs.Mount{
+			Source:      absSource,
+			Destination: b.Destination,
+			Type:        "none",
+			Options:     opts,
 		})
 	return nil
 }
