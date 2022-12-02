@@ -7,7 +7,6 @@ package cli
 
 import (
 	"crypto"
-	"fmt"
 
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
@@ -132,7 +131,7 @@ func doSignCmd(cmd *cobra.Command, cpath string) {
 	// Set key material.
 	switch {
 	case cmd.Flag(signPrivateKeyFlag.Name).Changed:
-		fmt.Printf("Signing image with key material from '%s'\n", priKeyPath)
+		sylog.Infof("Signing image with key material from '%v'", priKeyPath)
 
 		s, err := signature.LoadSignerFromPEMFile(priKeyPath, crypto.SHA256, cryptoutils.GetPasswordFromStdIn)
 		if err != nil {
@@ -141,7 +140,7 @@ func doSignCmd(cmd *cobra.Command, cpath string) {
 		opts = append(opts, singularity.OptSignWithSigner(s))
 
 	default:
-		fmt.Println("Signing image with PGP key material")
+		sylog.Infof("Signing image with PGP key material")
 
 		// Set entity selector option, and ensure the entity is decrypted.
 		var f sypgp.EntitySelector
@@ -166,7 +165,7 @@ func doSignCmd(cmd *cobra.Command, cpath string) {
 
 	// Sign the image.
 	if err := singularity.Sign(cpath, opts...); err != nil {
-		sylog.Fatalf("Failed to sign container: %s", err)
+		sylog.Fatalf("Failed to sign container: %v", err)
 	}
-	fmt.Printf("Signature created and applied to %s\n", cpath)
+	sylog.Infof("Signature created and applied to %v\n", cpath)
 }

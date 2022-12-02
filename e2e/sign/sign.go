@@ -59,16 +59,16 @@ func (c *ctx) sign(t *testing.T) {
 		{
 			name: "OK",
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ContainMatch, "Signing image with PGP key material"),
-				e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied"),
+				e2e.ExpectError(e2e.ContainMatch, "Signing image with PGP key material"),
+				e2e.ExpectError(e2e.ContainMatch, "Signature created and applied"),
 			},
 		},
 		{
 			name:  "ObjectIDFlag",
 			flags: []string{"--sif-id", "1"},
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ContainMatch, "Signing image with PGP key material"),
-				e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied"),
+				e2e.ExpectError(e2e.ContainMatch, "Signing image with PGP key material"),
+				e2e.ExpectError(e2e.ContainMatch, "Signature created and applied"),
 			},
 		},
 		{
@@ -76,7 +76,7 @@ func (c *ctx) sign(t *testing.T) {
 			flags:      []string{"--sif-id", "9"},
 			expectCode: 255,
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ContainMatch, "Signing image with PGP key material"),
+				e2e.ExpectError(e2e.ContainMatch, "Signing image with PGP key material"),
 				e2e.ExpectError(e2e.ContainMatch, "integrity: object not found"),
 			},
 		},
@@ -84,8 +84,8 @@ func (c *ctx) sign(t *testing.T) {
 			name:  "GroupIDFlag",
 			flags: []string{"--group-id", "1"},
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ContainMatch, "Signing image with PGP key material"),
-				e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied"),
+				e2e.ExpectError(e2e.ContainMatch, "Signing image with PGP key material"),
+				e2e.ExpectError(e2e.ContainMatch, "Signature created and applied"),
 			},
 		},
 		{
@@ -93,7 +93,7 @@ func (c *ctx) sign(t *testing.T) {
 			flags:      []string{"--group-id", "5"},
 			expectCode: 255,
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ContainMatch, "Signing image with PGP key material"),
+				e2e.ExpectError(e2e.ContainMatch, "Signing image with PGP key material"),
 				e2e.ExpectError(e2e.ContainMatch, "integrity: group not found"),
 			},
 		},
@@ -101,16 +101,16 @@ func (c *ctx) sign(t *testing.T) {
 			name:  "AllFlag",
 			flags: []string{"--all"},
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ContainMatch, "Signing image with PGP key material"),
-				e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied"),
+				e2e.ExpectError(e2e.ContainMatch, "Signing image with PGP key material"),
+				e2e.ExpectError(e2e.ContainMatch, "Signature created and applied"),
 			},
 		},
 		{
 			name:  "KeyIndexFlag",
 			flags: []string{"--keyidx", "0"},
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ContainMatch, "Signing image with PGP key material"),
-				e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied"),
+				e2e.ExpectError(e2e.ContainMatch, "Signing image with PGP key material"),
+				e2e.ExpectError(e2e.ContainMatch, "Signature created and applied"),
 			},
 		},
 		{
@@ -118,7 +118,7 @@ func (c *ctx) sign(t *testing.T) {
 			flags:      []string{"--keyidx", "1"},
 			expectCode: 255,
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ContainMatch, "Signing image with PGP key material"),
+				e2e.ExpectError(e2e.ContainMatch, "Signing image with PGP key material"),
 				e2e.ExpectError(e2e.ContainMatch, "Failed to sign container: index out of range"),
 			},
 		},
@@ -126,16 +126,16 @@ func (c *ctx) sign(t *testing.T) {
 			name:  "KeyFlag",
 			flags: []string{"--key", keyPath},
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ContainMatch, "Signing image with key material from '"+keyPath+"'"),
-				e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied"),
+				e2e.ExpectError(e2e.ContainMatch, "Signing image with key material from '"+keyPath+"'"),
+				e2e.ExpectError(e2e.ContainMatch, "Signature created and applied"),
 			},
 		},
 		{
 			name: "KeyEnvVar",
 			envs: []string{"SINGULARITY_SIGN_KEY=" + keyPath},
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ContainMatch, "Signing image with key material from '"+keyPath+"'"),
-				e2e.ExpectOutput(e2e.ContainMatch, "Signature created and applied"),
+				e2e.ExpectError(e2e.ContainMatch, "Signing image with key material from '"+keyPath+"'"),
+				e2e.ExpectError(e2e.ContainMatch, "Signature created and applied"),
 			},
 		},
 	}
