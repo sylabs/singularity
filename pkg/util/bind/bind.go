@@ -11,9 +11,9 @@ import (
 	"strings"
 )
 
-// BindOption represents a bind option with its associated
+// Option represents a bind option with its associated
 // value if any.
-type BindOption struct {
+type Option struct {
 	Value string `json:"value,omitempty"`
 }
 
@@ -31,17 +31,17 @@ var bindOptions = map[string]bool{
 	"id":        valueOption,
 }
 
-// BindPath stores a parsed bind path specification. Source and Destination
+// Path stores a parsed bind path specification. Source and Destination
 // paths are required.
-type BindPath struct {
-	Source      string                 `json:"source"`
-	Destination string                 `json:"destination"`
-	Options     map[string]*BindOption `json:"options"`
+type Path struct {
+	Source      string             `json:"source"`
+	Destination string             `json:"destination"`
+	Options     map[string]*Option `json:"options"`
 }
 
 // ImageSrc returns the value of the option image-src for a BindPath, or an
 // empty string if the option wasn't set.
-func (b *BindPath) ImageSrc() string {
+func (b *Path) ImageSrc() string {
 	if b.Options != nil && b.Options["image-src"] != nil {
 		src := b.Options["image-src"].Value
 		if src == "" {
@@ -54,7 +54,7 @@ func (b *BindPath) ImageSrc() string {
 
 // ID returns the value of the option id for a BindPath, or an empty string if
 // the option wasn't set.
-func (b *BindPath) ID() string {
+func (b *Path) ID() string {
 	if b.Options != nil && b.Options["id"] != nil {
 		return b.Options["id"].Value
 	}
@@ -62,7 +62,7 @@ func (b *BindPath) ID() string {
 }
 
 // Readonly returns true if the ro option was set for a BindPath.
-func (b *BindPath) Readonly() bool {
+func (b *Path) Readonly() bool {
 	return b.Options != nil && b.Options["ro"] != nil
 }
 
@@ -71,9 +71,9 @@ func (b *BindPath) Readonly() bool {
 // as a slice. Options may be simple flags, e.g. 'rw', or take a value, e.g.
 // 'id=2'. Multiple options are separated with commas. Note that multiple binds
 // are also separated with commas, so the logic must distinguish.
-func ParseBindPath(bindpaths string) ([]BindPath, error) {
+func ParseBindPath(bindpaths string) ([]Path, error) {
 	var bind string
-	var binds []BindPath
+	var binds []Path
 	var elem int
 
 	// there is a better regular expression to handle
@@ -156,8 +156,8 @@ func ParseBindPath(bindpaths string) ([]BindPath, error) {
 
 // newBindPath returns BindPath record based on the provided bind
 // string argument and ensures that the options are valid.
-func newBindPath(bind string) (BindPath, error) {
-	var bp BindPath
+func newBindPath(bind string) (Path, error) {
+	var bp Path
 
 	splitted := strings.SplitN(bind, ":", 3)
 
@@ -173,17 +173,17 @@ func newBindPath(bind string) (BindPath, error) {
 	}
 
 	if len(splitted) > 2 {
-		bp.Options = make(map[string]*BindOption)
+		bp.Options = make(map[string]*Option)
 
 		for _, value := range strings.Split(splitted[2], ",") {
 			valid := false
 			for optName, isFlag := range bindOptions {
 				if isFlag && optName == value {
-					bp.Options[optName] = &BindOption{}
+					bp.Options[optName] = &Option{}
 					valid = true
 					break
 				} else if strings.HasPrefix(value, optName+"=") {
-					bp.Options[optName] = &BindOption{Value: value[len(optName+"="):]}
+					bp.Options[optName] = &Option{Value: value[len(optName+"="):]}
 					valid = true
 					break
 				}

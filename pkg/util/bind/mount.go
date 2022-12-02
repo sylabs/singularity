@@ -29,17 +29,17 @@ import (
 //
 // We only support type=bind at present, so assume this if type is missing and
 // error for other types.
-func ParseMountString(mount string) (bindPaths []BindPath, err error) {
+func ParseMountString(mount string) (bindPaths []Path, err error) {
 	r := strings.NewReader(mount)
 	c := csv.NewReader(r)
 	records, err := c.ReadAll()
 	if err != nil {
-		return []BindPath{}, fmt.Errorf("error parsing mount: %v", err)
+		return []Path{}, fmt.Errorf("error parsing mount: %v", err)
 	}
 
 	for _, r := range records {
-		bp := BindPath{
-			Options: map[string]*BindOption{},
+		bp := Path{
+			Options: map[string]*Option{},
 		}
 
 		for _, f := range r {
@@ -54,41 +54,41 @@ func ParseMountString(mount string) (bindPaths []BindPath, err error) {
 			// TODO - Eventually support volume and tmpfs? Requires structural changes to engine mount functionality.
 			case "type":
 				if val != "bind" {
-					return []BindPath{}, fmt.Errorf("unsupported mount type %q, only 'bind' is supported", val)
+					return []Path{}, fmt.Errorf("unsupported mount type %q, only 'bind' is supported", val)
 				}
 			case "source", "src":
 				if val == "" {
-					return []BindPath{}, fmt.Errorf("mount source cannot be empty")
+					return []Path{}, fmt.Errorf("mount source cannot be empty")
 				}
 				bp.Source = val
 			case "destination", "dst", "target":
 				if val == "" {
-					return []BindPath{}, fmt.Errorf("mount destination cannot be empty")
+					return []Path{}, fmt.Errorf("mount destination cannot be empty")
 				}
 				bp.Destination = val
 			case "ro", "readonly":
-				bp.Options["ro"] = &BindOption{}
+				bp.Options["ro"] = &Option{}
 			// Singularity only - directory inside an image file source to mount from
 			case "image-src":
 				if val == "" {
-					return []BindPath{}, fmt.Errorf("img-src cannot be empty")
+					return []Path{}, fmt.Errorf("img-src cannot be empty")
 				}
-				bp.Options["image-src"] = &BindOption{Value: val}
+				bp.Options["image-src"] = &Option{Value: val}
 			// Singularity only - id of the descriptor in a SIF image source to mount from
 			case "id":
 				if val == "" {
-					return []BindPath{}, fmt.Errorf("id cannot be empty")
+					return []Path{}, fmt.Errorf("id cannot be empty")
 				}
-				bp.Options["id"] = &BindOption{Value: val}
+				bp.Options["id"] = &Option{Value: val}
 			case "bind-propagation":
-				return []BindPath{}, fmt.Errorf("bind-propagation not supported for individual mounts, check singularity.conf for global setting")
+				return []Path{}, fmt.Errorf("bind-propagation not supported for individual mounts, check singularity.conf for global setting")
 			default:
-				return []BindPath{}, fmt.Errorf("invalid key %q in mount specification", key)
+				return []Path{}, fmt.Errorf("invalid key %q in mount specification", key)
 			}
 		}
 
 		if bp.Source == "" || bp.Destination == "" {
-			return []BindPath{}, fmt.Errorf("mounts must specify a source and a destination")
+			return []Path{}, fmt.Errorf("mounts must specify a source and a destination")
 		}
 		bindPaths = append(bindPaths, bp)
 	}

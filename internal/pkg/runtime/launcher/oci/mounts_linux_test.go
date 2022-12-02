@@ -21,13 +21,13 @@ import (
 func Test_addBindMount(t *testing.T) {
 	tests := []struct {
 		name       string
-		b          bind.BindPath
+		b          bind.Path
 		wantMounts *[]specs.Mount
 		wantErr    bool
 	}{
 		{
 			name: "Valid",
-			b: bind.BindPath{
+			b: bind.Path{
 				Source:      "/tmp",
 				Destination: "/tmp",
 			},
@@ -42,10 +42,10 @@ func Test_addBindMount(t *testing.T) {
 		},
 		{
 			name: "ValidRO",
-			b: bind.BindPath{
+			b: bind.Path{
 				Source:      "/tmp",
 				Destination: "/tmp",
-				Options:     map[string]*bind.BindOption{"ro": {}},
+				Options:     map[string]*bind.Option{"ro": {}},
 			},
 			wantMounts: &[]specs.Mount{
 				{
@@ -58,7 +58,7 @@ func Test_addBindMount(t *testing.T) {
 		},
 		{
 			name: "BadSource",
-			b: bind.BindPath{
+			b: bind.Path{
 				Source:      "doesnotexist!",
 				Destination: "/mnt",
 			},
@@ -67,7 +67,7 @@ func Test_addBindMount(t *testing.T) {
 		},
 		{
 			name: "RelDest",
-			b: bind.BindPath{
+			b: bind.Path{
 				Source:      "/tmp",
 				Destination: "relative",
 			},
@@ -76,20 +76,20 @@ func Test_addBindMount(t *testing.T) {
 		},
 		{
 			name: "ImageID",
-			b: bind.BindPath{
+			b: bind.Path{
 				Source:      "/myimage.sif",
 				Destination: "/mnt",
-				Options:     map[string]*bind.BindOption{"id": {Value: "4"}},
+				Options:     map[string]*bind.Option{"id": {Value: "4"}},
 			},
 			wantMounts: &[]specs.Mount{},
 			wantErr:    true,
 		},
 		{
 			name: "ImageSrc",
-			b: bind.BindPath{
+			b: bind.Path{
 				Source:      "/myimage.sif",
 				Destination: "/mnt",
-				Options:     map[string]*bind.BindOption{"img-src": {Value: "/test"}},
+				Options:     map[string]*bind.Option{"img-src": {Value: "/test"}},
 			},
 			wantMounts: &[]specs.Mount{},
 			wantErr:    true,

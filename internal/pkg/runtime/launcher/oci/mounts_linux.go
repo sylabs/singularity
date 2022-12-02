@@ -218,7 +218,7 @@ func (l *Launcher) addBindMounts(mounts *[]specs.Mount) error {
 	return nil
 }
 
-func addBindMount(mounts *[]specs.Mount, b bind.BindPath) error {
+func addBindMount(mounts *[]specs.Mount, b bind.Path) error {
 	if b.ID() != "" || b.ImageSrc() != "" {
 		return fmt.Errorf("image binds are not yet supported by the OCI runtime")
 	}
