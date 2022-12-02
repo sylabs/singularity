@@ -15,9 +15,11 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 
 	"github.com/containers/image/v5/types"
 	"github.com/google/uuid"
+	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
@@ -26,6 +28,7 @@ import (
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	"golang.org/x/term"
 )
 
 var (
@@ -142,25 +145,10 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "NoEval")
 	}
 
-	if lo.Namespaces.IPC {
-		badOpt = append(badOpt, "Namespaces.IPC")
-	}
-	if lo.Namespaces.Net {
-		badOpt = append(badOpt, "Namespaces.Net")
-	}
-	if lo.Namespaces.PID {
-		badOpt = append(badOpt, "Namespaces.PID")
-	}
-	if lo.Namespaces.UTS {
-		badOpt = append(badOpt, "Namespaces.UTS")
-	}
-	if lo.Namespaces.User {
-		badOpt = append(badOpt, "Namespaces.User")
-	}
-
 	// Network always set in CLI layer even if network namespace not requested.
-	if lo.Namespaces.Net && lo.Network != "" {
-		badOpt = append(badOpt, "Network")
+	// We only support isolation at present
+	if lo.Namespaces.Net && lo.Network != "none" {
+		badOpt = append(badOpt, "Network (except none)")
 	}
 
 	if len(lo.NetworkArgs) > 0 {
@@ -246,6 +234,47 @@ func checkOpts(lo launcher.Options) error {
 	return nil
 }
 
+// createSpec produces an OCI runtime specification, suitable to launch a
+// container. This spec excludes ProcessArgs, as these have to be computed where
+// the image config is available, to account for the image's CMD / ENTRYPOINT.
+func (l *Launcher) createSpec() (*specs.Spec, error) {
+	spec := minimalSpec()
+
+	// Override the default Process.Terminal to false if our stdin is not a terminal.
+	if !term.IsTerminal(syscall.Stdin) {
+		spec.Process.Terminal = false
+	}
+
+	spec.Process.User = l.getProcessUser()
+
+	// If we are *not* requesting fakeroot, then we need to map the container
+	// uid back to host uid, through the initial fakeroot userns.
+	if !l.cfg.Fakeroot && os.Getuid() != 0 {
+		uidMap, gidMap, err := l.getReverseUserMaps()
+		if err != nil {
+			return nil, err
+		}
+		spec.Linux.UIDMappings = uidMap
+		spec.Linux.GIDMappings = gidMap
+	}
+
+	spec = addNamespaces(spec, l.cfg.Namespaces)
+
+	cwd, err := l.getProcessCwd()
+	if err != nil {
+		return nil, err
+	}
+	spec.Process.Cwd = cwd
+
+	mounts, err := l.getMounts()
+	if err != nil {
+		return nil, err
+	}
+	spec.Mounts = mounts
+
+	return &spec, nil
+}
+
 // Exec will interactively execute a container via the runc low-level runtime.
 // image is a reference to an OCI image, e.g. docker://ubuntu or oci:/tmp/mycontainer
 func (l *Launcher) Exec(ctx context.Context, image string, process string, args []string, instanceName string) error {
@@ -289,35 +318,10 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		}
 	}
 
-	spec, err := MinimalSpec()
+	spec, err := l.createSpec()
 	if err != nil {
-		return err
+		return fmt.Errorf("while creating OCI spec: %w", err)
 	}
-
-	spec.Process.User = l.getProcessUser()
-
-	// If we are *not* requesting fakeroot, then we need to map the container
-	// uid back to host uid, through the initial fakeroot userns.
-	if !l.cfg.Fakeroot && os.Getuid() != 0 {
-		uidMap, gidMap, err := l.getReverseUserMaps()
-		if err != nil {
-			return err
-		}
-		spec.Linux.UIDMappings = uidMap
-		spec.Linux.GIDMappings = gidMap
-	}
-
-	cwd, err := l.getProcessCwd()
-	if err != nil {
-		return err
-	}
-	spec.Process.Cwd = cwd
-
-	mounts, err := l.getMounts()
-	if err != nil {
-		return err
-	}
-	spec.Mounts = mounts
 
 	b, err := native.New(
 		native.OptBundlePath(bundleDir),

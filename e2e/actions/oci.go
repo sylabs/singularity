@@ -143,6 +143,11 @@ func (c actionTests) actionOciExec(t *testing.T) {
 			argv: []string{imageRef, "/bin/sh", "-c", "touch $HOME"},
 			exit: 0,
 		},
+		{
+			name: "UTSNamespace",
+			argv: []string{"--uts", imageRef, "true"},
+			exit: 0,
+		},
 	}
 	for _, profile := range e2e.OCIProfiles {
 		t.Run(profile.String(), func(t *testing.T) {
@@ -212,5 +217,65 @@ func (c actionTests) actionOciShell(t *testing.T) {
 				)
 			}
 		})
+	}
+}
+
+func (c actionTests) actionOciNetwork(t *testing.T) {
+	e2e.EnsureOCIImage(t, c.env)
+	imageRef := "oci-archive:" + c.env.OCIImagePath
+
+	tests := []struct {
+		name       string
+		profile    e2e.Profile
+		netType    string
+		expectExit int
+	}{
+		{
+			name:       "InvalidNetworkRoot",
+			profile:    e2e.OCIRootProfile,
+			netType:    "bridge",
+			expectExit: 255,
+		},
+		{
+			name:       "InvalidNetworkUser",
+			profile:    e2e.OCIUserProfile,
+			netType:    "bridge",
+			expectExit: 255,
+		},
+		{
+			name:       "InvalidNetworkFakeroot",
+			profile:    e2e.OCIFakerootProfile,
+			netType:    "bridge",
+			expectExit: 255,
+		},
+		{
+			name:       "NoneNetworkRoot",
+			profile:    e2e.OCIRootProfile,
+			netType:    "none",
+			expectExit: 0,
+		},
+		{
+			name:       "NoneNetworkUser",
+			profile:    e2e.OCIUserProfile,
+			netType:    "none",
+			expectExit: 0,
+		},
+		{
+			name:       "NoneNetworkFakeRoot",
+			profile:    e2e.OCIFakerootProfile,
+			netType:    "none",
+			expectExit: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(tt.profile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs("--net", "--network", tt.netType, imageRef, "id"),
+			e2e.ExpectExit(tt.expectExit),
+		)
 	}
 }
