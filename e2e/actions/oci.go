@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
 const (
@@ -277,5 +278,212 @@ func (c actionTests) actionOciNetwork(t *testing.T) {
 			e2e.WithArgs("--net", "--network", tt.netType, imageRef, "id"),
 			e2e.ExpectExit(tt.expectExit),
 		)
+	}
+}
+
+//nolint:maintidx
+func (c actionTests) actionOciBinds(t *testing.T) {
+	e2e.EnsureOCIImage(t, c.env)
+	imageRef := "oci-archive:" + c.env.OCIImagePath
+
+	workspace, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "bind-workspace-", "")
+	defer e2e.Privileged(cleanup)
+
+	contCanaryDir := "/canary"
+	hostCanaryDir := filepath.Join(workspace, "canary")
+
+	contCanaryFile := "/canary/file"
+	hostCanaryFile := filepath.Join(hostCanaryDir, "file")
+
+	canaryFileBind := hostCanaryFile + ":" + contCanaryFile
+	canaryFileMount := "type=bind,source=" + hostCanaryFile + ",destination=" + contCanaryFile
+	canaryDirBind := hostCanaryDir + ":" + contCanaryDir
+	canaryDirMount := "type=bind,source=" + hostCanaryDir + ",destination=" + contCanaryDir
+
+	createWorkspaceDirs := func(t *testing.T) {
+		e2e.Privileged(func(t *testing.T) {
+			if err := os.RemoveAll(hostCanaryDir); err != nil && !os.IsNotExist(err) {
+				t.Fatalf("failed to delete canary_dir: %s", err)
+			}
+		})(t)
+
+		if err := fs.Mkdir(hostCanaryDir, 0o777); err != nil {
+			t.Fatalf("failed to create canary_dir: %s", err)
+		}
+		if err := fs.Touch(hostCanaryFile); err != nil {
+			t.Fatalf("failed to create canary_file: %s", err)
+		}
+		if err := os.Chmod(hostCanaryFile, 0o777); err != nil {
+			t.Fatalf("failed to apply permissions on canary_file: %s", err)
+		}
+	}
+
+	checkHostFn := func(path string, fn func(string) bool) func(*testing.T) {
+		return func(t *testing.T) {
+			if t.Failed() {
+				return
+			}
+			if !fn(path) {
+				t.Errorf("%s not found on host", path)
+			}
+			if err := os.RemoveAll(path); err != nil {
+				t.Errorf("failed to delete %s: %s", path, err)
+			}
+		}
+	}
+	checkHostFile := func(path string) func(*testing.T) {
+		return checkHostFn(path, fs.IsFile)
+	}
+	checkHostDir := func(path string) func(*testing.T) {
+		return checkHostFn(path, fs.IsDir)
+	}
+
+	tests := []struct {
+		name    string
+		args    []string
+		postRun func(*testing.T)
+		exit    int
+	}{
+		{
+			name: "NonExistentSource",
+			args: []string{
+				"--bind", "/non/existent/source/path",
+				imageRef,
+				"true",
+			},
+			exit: 255,
+		},
+		{
+			name: "RelativeBindDestination",
+			args: []string{
+				"--bind", hostCanaryFile + ":relative",
+				imageRef,
+				"true",
+			},
+			exit: 255,
+		},
+		{
+			name: "SimpleFile",
+			args: []string{
+				"--bind", canaryFileBind,
+				imageRef,
+				"test", "-f", contCanaryFile,
+			},
+			exit: 0,
+		},
+		{
+			name: "SimpleDir",
+			args: []string{
+				"--bind", canaryDirBind,
+				imageRef,
+				"test", "-f", contCanaryFile,
+			},
+			exit: 0,
+		},
+		{
+			name: "HomeOverride",
+			args: []string{
+				"--bind", hostCanaryDir + ":/home",
+				imageRef,
+				"test", "-f", "/home/file",
+			},
+			exit: 0,
+		},
+		{
+			name: "TmpOverride",
+			args: []string{
+				"--bind", hostCanaryDir + ":/tmp",
+				imageRef,
+				"test", "-f", "/tmp/file",
+			},
+			exit: 0,
+		},
+		{
+			name: "VarTmpOverride",
+			args: []string{
+				"--bind", hostCanaryDir + ":/var/tmp",
+				imageRef,
+				"test", "-f", "/var/tmp/file",
+			},
+			exit: 0,
+		},
+		{
+			name: "NestedBindFile",
+			args: []string{
+				"--bind", canaryDirBind,
+				"--bind", hostCanaryFile + ":" + filepath.Join(contCanaryDir, "file2"),
+				imageRef,
+				"test", "-f", "/canary/file2",
+			},
+			postRun: checkHostFile(filepath.Join(hostCanaryDir, "file2")),
+			exit:    0,
+		},
+		{
+			name: "NestedBindDir",
+			args: []string{
+				"--bind", canaryDirBind,
+				"--bind", hostCanaryDir + ":" + filepath.Join(contCanaryDir, "dir2"),
+				imageRef,
+				"test", "-d", "/canary/dir2",
+			},
+			postRun: checkHostDir(filepath.Join(hostCanaryDir, "dir2")),
+			exit:    0,
+		},
+		{
+			name: "MultipleNestedBindDir",
+			args: []string{
+				"--bind", canaryDirBind,
+				"--bind", hostCanaryDir + ":" + filepath.Join(contCanaryDir, "dir2"),
+				"--bind", hostCanaryFile + ":" + filepath.Join(filepath.Join(contCanaryDir, "dir2"), "nested"),
+				imageRef,
+				"test", "-f", "/canary/dir2/nested",
+			},
+			postRun: checkHostFile(filepath.Join(hostCanaryDir, "nested")),
+			exit:    0,
+		},
+		// For the --mount variants we are really just verifying the CLI
+		// acceptance of one or more --mount flags. Translation from --mount
+		// strings to BindPath structs is checked in unit tests. The
+		// functionality of bind mounts of various kinds is already checked
+		// above, with --bind flags. No need to duplicate all of these.
+		{
+			name: "MountSingle",
+			args: []string{
+				"--mount", canaryFileMount,
+				imageRef,
+				"test", "-f", contCanaryFile,
+			},
+			exit: 0,
+		},
+		{
+			name: "MountNested",
+			args: []string{
+				"--mount", canaryDirMount,
+				"--mount", "source=" + hostCanaryFile + ",destination=" + filepath.Join(contCanaryDir, "file3"),
+				imageRef,
+				"test", "-f", "/canary/file3",
+			},
+			postRun: checkHostFile(filepath.Join(hostCanaryDir, "file3")),
+			exit:    0,
+		},
+	}
+
+	for _, profile := range e2e.OCIProfiles {
+		profile := profile
+		createWorkspaceDirs(t)
+
+		t.Run(profile.String(), func(t *testing.T) {
+			for _, tt := range tests {
+				c.env.RunSingularity(
+					t,
+					e2e.AsSubtest(tt.name),
+					e2e.WithProfile(profile),
+					e2e.WithCommand("exec"),
+					e2e.WithArgs(tt.args...),
+					e2e.PostRun(tt.postRun),
+					e2e.ExpectExit(tt.exit),
+				)
+			}
+		})
 	}
 }
