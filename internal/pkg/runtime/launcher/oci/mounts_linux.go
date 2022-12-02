@@ -236,6 +236,10 @@ func addBindMount(mounts *[]specs.Mount, b bind.BindPath) error {
 		return fmt.Errorf("cannot stat bind source %s: %w", b.Source, err)
 	}
 
+	if !filepath.IsAbs(b.Destination) {
+		return fmt.Errorf("bind destination %s must be an absolute path", b.Destination)
+	}
+
 	sylog.Debugf("Adding bind of %s to %s, with options %v", absSource, b.Destination, opts)
 
 	*mounts = append(*mounts,

@@ -66,6 +66,15 @@ func Test_addBindMount(t *testing.T) {
 			wantErr:    true,
 		},
 		{
+			name: "RelDest",
+			b: bind.BindPath{
+				Source:      "/tmp",
+				Destination: "relative",
+			},
+			wantMounts: &[]specs.Mount{},
+			wantErr:    true,
+		},
+		{
 			name: "ImageID",
 			b: bind.BindPath{
 				Source:      "/myimage.sif",
@@ -168,6 +177,15 @@ func TestLauncher_addBindMounts(t *testing.T) {
 			name: "InvalidBindSrc",
 			cfg: launcher.Options{
 				BindPaths: []string{"!doesnotexist"},
+			},
+			userbind:   true,
+			wantMounts: &[]specs.Mount{},
+			wantErr:    true,
+		},
+		{
+			name: "RelBindDst",
+			cfg: launcher.Options{
+				BindPaths: []string{"/tmp:relative"},
 			},
 			userbind:   true,
 			wantMounts: &[]specs.Mount{},
