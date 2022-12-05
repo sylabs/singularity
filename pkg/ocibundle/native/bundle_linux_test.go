@@ -19,6 +19,7 @@ import (
 	"github.com/opencontainers/runtime-tools/validate"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 )
 
 const (
@@ -260,6 +261,128 @@ func TestSetProcessArgs(t *testing.T) {
 			b.setProcessArgs(g)
 			if !reflect.DeepEqual(g.Config.Process.Args, tt.expectProcessArgs) {
 				t.Errorf("Expected: %v, Got: %v", tt.expectProcessArgs, g.Config.Process.Args)
+			}
+		})
+	}
+}
+
+func TestSetProcessEnv(t *testing.T) {
+	tests := []struct {
+		name      string
+		imageEnv  []string
+		bundleEnv map[string]string
+		wantEnv   []string
+	}{
+		{
+			name:      "Default",
+			imageEnv:  []string{},
+			bundleEnv: map[string]string{},
+			wantEnv:   []string{"LD_LIBRARY_PATH=/.singularity.d/libs"},
+		},
+		{
+			name:      "ImagePath",
+			imageEnv:  []string{"PATH=/foo"},
+			bundleEnv: map[string]string{},
+			wantEnv: []string{
+				"PATH=/foo",
+				"LD_LIBRARY_PATH=/.singularity.d/libs",
+			},
+		},
+		{
+			name:      "OverridePath",
+			imageEnv:  []string{"PATH=/foo"},
+			bundleEnv: map[string]string{"PATH": "/bar"},
+			wantEnv: []string{
+				"PATH=/bar",
+				"LD_LIBRARY_PATH=/.singularity.d/libs",
+			},
+		},
+		{
+			name:      "AppendPath",
+			imageEnv:  []string{"PATH=/foo"},
+			bundleEnv: map[string]string{"APPEND_PATH": "/bar"},
+			wantEnv: []string{
+				"PATH=/foo:/bar",
+				"LD_LIBRARY_PATH=/.singularity.d/libs",
+			},
+		},
+		{
+			name:      "PrependPath",
+			imageEnv:  []string{"PATH=/foo"},
+			bundleEnv: map[string]string{"PREPEND_PATH": "/bar"},
+			wantEnv: []string{
+				"PATH=/bar:/foo",
+				"LD_LIBRARY_PATH=/.singularity.d/libs",
+			},
+		},
+		{
+			name:      "ImageLdLibraryPath",
+			imageEnv:  []string{"LD_LIBRARY_PATH=/foo"},
+			bundleEnv: map[string]string{},
+			wantEnv: []string{
+				"LD_LIBRARY_PATH=/foo:/.singularity.d/libs",
+			},
+		},
+		{
+			name:      "BundleLdLibraryPath",
+			imageEnv:  []string{},
+			bundleEnv: map[string]string{"LD_LIBRARY_PATH": "/foo"},
+			wantEnv: []string{
+				"LD_LIBRARY_PATH=/foo:/.singularity.d/libs",
+			},
+		},
+		{
+			name:      "OverrideLdLibraryPath",
+			imageEnv:  []string{"LD_LIBRARY_PATH=/foo"},
+			bundleEnv: map[string]string{"LD_LIBRARY_PATH": "/bar"},
+			wantEnv: []string{
+				"LD_LIBRARY_PATH=/bar:/.singularity.d/libs",
+			},
+		},
+		{
+			name:      "ImageVar",
+			imageEnv:  []string{"FOO=bar"},
+			bundleEnv: map[string]string{},
+			wantEnv: []string{
+				"FOO=bar",
+				"LD_LIBRARY_PATH=/.singularity.d/libs",
+			},
+		},
+		{
+			name:      "ImageOverride",
+			imageEnv:  []string{"FOO=bar"},
+			bundleEnv: map[string]string{"FOO": "baz"},
+			wantEnv: []string{
+				"FOO=baz",
+				"LD_LIBRARY_PATH=/.singularity.d/libs",
+			},
+		},
+		{
+			name:      "ImageAdditional",
+			imageEnv:  []string{"FOO=bar"},
+			bundleEnv: map[string]string{"ABC": "123"},
+			wantEnv: []string{
+				"FOO=bar",
+				"ABC=123",
+				"LD_LIBRARY_PATH=/.singularity.d/libs",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			imgSpec := &v1.Image{
+				Config: v1.ImageConfig{Env: tt.imageEnv},
+			}
+
+			b := &Bundle{
+				imageSpec: imgSpec,
+				env:       tt.bundleEnv,
+			}
+			g := &generate.Generator{}
+			b.setProcessEnv(g)
+
+			if !reflect.DeepEqual(g.Config.Process.Env, tt.wantEnv) {
+				t.Errorf("want: %v, got: %v", tt.wantEnv, g.Config.Process.Env)
 			}
 		})
 	}
