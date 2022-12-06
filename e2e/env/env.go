@@ -643,6 +643,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		//
 		// --oci mode
 		//
-		"oci environment option": c.ociEnvOption,
+		"oci environment singularityenv": c.ociSingularityEnv,
+		"oci environment option":         c.ociEnvOption,
 	}
 }

@@ -12,6 +12,73 @@ import (
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 )
 
+func (c ctx) ociSingularityEnv(t *testing.T) {
+	e2e.EnsureOCIImage(t, c.env)
+	defaultImage := "oci-archive:" + c.env.OCIImagePath
+
+	// Append or prepend this path.
+	partialPath := "/foo"
+
+	// Overwrite the path with this one.
+	overwrittenPath := "/usr/bin:/bin"
+
+	// A path with a trailing comma
+	trailingCommaPath := "/usr/bin:/bin,"
+
+	tests := []struct {
+		name  string
+		image string
+		path  string
+		env   []string
+	}{
+		{
+			name:  "DefaultPath",
+			image: defaultImage,
+			path:  defaultPath,
+			env:   []string{},
+		},
+		{
+			name:  "AppendToDefaultPath",
+			image: defaultImage,
+			path:  defaultPath + ":" + partialPath,
+			env:   []string{"SINGULARITYENV_APPEND_PATH=/foo"},
+		},
+		{
+			name:  "PrependToDefaultPath",
+			image: defaultImage,
+			path:  partialPath + ":" + defaultPath,
+			env:   []string{"SINGULARITYENV_PREPEND_PATH=/foo"},
+		},
+		{
+			name:  "OverwriteDefaultPath",
+			image: defaultImage,
+			path:  overwrittenPath,
+			env:   []string{"SINGULARITYENV_PATH=" + overwrittenPath},
+		},
+		{
+			name:  "OverwriteTrailingCommaPath",
+			image: defaultImage,
+			path:  trailingCommaPath,
+			env:   []string{"SINGULARITYENV_PATH=" + trailingCommaPath},
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithEnv(tt.env),
+			e2e.WithArgs(tt.image, "/bin/sh", "-c", "echo $PATH"),
+			e2e.ExpectExit(
+				0,
+				e2e.ExpectOutput(e2e.ExactMatch, tt.path),
+			),
+		)
+	}
+}
+
 func (c ctx) ociEnvOption(t *testing.T) {
 	e2e.EnsureOCIImage(t, c.env)
 	defaultImage := "oci-archive:" + c.env.OCIImagePath
