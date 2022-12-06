@@ -46,7 +46,7 @@ require (
 	github.com/sylabs/sif/v2 v2.9.0
 	github.com/vbauerster/mpb/v8 v8.1.4
 	golang.org/x/sys v0.3.0
-	golang.org/x/term v0.2.0
+	golang.org/x/term v0.3.0
 	golang.org/x/text v0.5.0
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.4.0
