@@ -127,9 +127,6 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "Proot")
 	}
 
-	if lo.EnvFile != "" {
-		badOpt = append(badOpt, "EnvFile")
-	}
 	if lo.CleanEnv {
 		badOpt = append(badOpt, "CleanEnv")
 	}
@@ -319,11 +316,18 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	// Assemble the runtime & user-requested environment, which will be merged
 	// with the image ENV and set in the container at runtime.
 	rtEnv := defaultEnv(image, bundleDir)
-	// SINGULARITYENV_
+	// SINGULARITYENV_ has lowest priority
 	rtEnv = mergeMap(rtEnv, singularityEnvMap())
-	// --env flag
+	// --env-file can override SINGULARITYENV_
+	if l.cfg.EnvFile != "" {
+		e, err := envFileMap(ctx, l.cfg.EnvFile)
+		if err != nil {
+			return err
+		}
+		rtEnv = mergeMap(rtEnv, e)
+	}
+	// --env flag can override --env-file and SINGULARITYENV_
 	rtEnv = mergeMap(rtEnv, l.cfg.Env)
-	// TODO - --env-file
 
 	b, err := native.New(
 		native.OptBundlePath(bundleDir),

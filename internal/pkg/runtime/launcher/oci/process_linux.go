@@ -6,6 +6,7 @@
 package oci
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
+	"github.com/sylabs/singularity/internal/pkg/util/shell/interpreter"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
 
@@ -165,4 +167,40 @@ func singularityEnvMap() map[string]string {
 	}
 
 	return singularityEnv
+}
+
+// envFileMap returns a map of KEY=VAL env vars from an environment file
+func envFileMap(ctx context.Context, f string) (map[string]string, error) {
+	envMap := map[string]string{}
+
+	content, err := os.ReadFile(f)
+	if err != nil {
+		return envMap, fmt.Errorf("could not read environment file %q: %w", f, err)
+	}
+
+	// Use the embedded shell interpreter to evaluate the env file, with an empty starting environment.
+	// Shell takes care of comments, quoting etc. for us and keeps compatibility with native runtime.
+	env, err := interpreter.EvaluateEnv(ctx, content, []string{}, []string{})
+	if err != nil {
+		return envMap, fmt.Errorf("while processing %s: %w", f, err)
+	}
+
+	for _, envVar := range env {
+		parts := strings.SplitN(envVar, "=", 2)
+		if len(parts) < 2 {
+			continue
+		}
+		// Strip out the runtime env vars set by the shell interpreter
+		if parts[0] == "GID" ||
+			parts[0] == "HOME" ||
+			parts[0] == "IFS" ||
+			parts[0] == "OPTIND" ||
+			parts[0] == "PWD" ||
+			parts[0] == "UID" {
+			continue
+		}
+		envMap[parts[0]] = parts[1]
+	}
+
+	return envMap, nil
 }
