@@ -8,9 +8,11 @@ package oci
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/fakeroot"
+	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
 
@@ -141,7 +143,26 @@ func (l *Launcher) getReverseUserMaps() (uidMap, gidMap []specs.LinuxIDMapping, 
 // defaultEnv returns default environment variables set in the container.
 func defaultEnv(image, bundle string) map[string]string {
 	return map[string]string{
-		"SINGULARITY_CONTAINER": bundle,
-		"SINGULARITY_NAME":      image,
+		env.SingularityPrefix + "CONTAINER": bundle,
+		env.SingularityPrefix + "NAME":      image,
 	}
+}
+
+// singularityEnvMap returns a map of SINGULARITYENV_ prefixed env vars to their values.
+func singularityEnvMap() map[string]string {
+	singularityEnv := map[string]string{}
+
+	for _, envVar := range os.Environ() {
+		if !strings.HasPrefix(envVar, env.SingularityEnvPrefix) {
+			continue
+		}
+		parts := strings.SplitN(envVar, "=", 2)
+		if len(parts) < 2 {
+			continue
+		}
+		key := strings.TrimPrefix(parts[0], env.SingularityEnvPrefix)
+		singularityEnv[key] = parts[1]
+	}
+
+	return singularityEnv
 }
