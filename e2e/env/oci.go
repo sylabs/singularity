@@ -6,6 +6,8 @@
 package singularityenv
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -173,6 +175,108 @@ func (c ctx) ociEnvOption(t *testing.T) {
 			args = append(args, "--env", strings.Join(tt.envOpt, ","))
 		}
 		args = append(args, tt.image, "/bin/sh", "-c", "echo \"${"+tt.matchEnv+"}\"")
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithEnv(tt.hostEnv),
+			e2e.WithArgs(args...),
+			e2e.ExpectExit(
+				0,
+				e2e.ExpectOutput(e2e.ExactMatch, tt.matchVal),
+			),
+		)
+	}
+}
+
+func (c ctx) ociEnvFile(t *testing.T) {
+	e2e.EnsureOCIImage(t, c.env)
+	defaultImage := "oci-archive:" + c.env.OCIImagePath
+
+	dir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "envfile-", "")
+	defer cleanup(t)
+	p := filepath.Join(dir, "env.file")
+
+	tests := []struct {
+		name     string
+		image    string
+		envFile  string
+		envOpt   []string
+		hostEnv  []string
+		matchEnv string
+		matchVal string
+	}{
+		{
+			name:     "DefaultPathOverride",
+			image:    defaultImage,
+			envFile:  "PATH=/",
+			matchEnv: "PATH",
+			matchVal: "/",
+		},
+		{
+			name:     "DefaultPathOverrideEnvOptionPrecedence",
+			image:    defaultImage,
+			envOpt:   []string{"PATH=/etc"},
+			envFile:  "PATH=/",
+			matchEnv: "PATH",
+			matchVal: "/etc",
+		},
+		{
+			name:     "DefaultPathOverrideEnvOptionPrecedence",
+			image:    defaultImage,
+			envOpt:   []string{"PATH=/etc"},
+			envFile:  "PATH=/",
+			matchEnv: "PATH",
+			matchVal: "/etc",
+		},
+		{
+			name:     "AppendDefaultPath",
+			image:    defaultImage,
+			envFile:  "APPEND_PATH=/",
+			matchEnv: "PATH",
+			matchVal: defaultPath + ":/",
+		},
+		{
+			name:     "PrependDefaultPath",
+			image:    defaultImage,
+			envFile:  "PREPEND_PATH=/",
+			matchEnv: "PATH",
+			matchVal: "/:" + defaultPath,
+		},
+		{
+			name:     "DefaultLdLibraryPath",
+			image:    defaultImage,
+			matchEnv: "LD_LIBRARY_PATH",
+			matchVal: singularityLibs,
+		},
+		{
+			name:     "CustomLdLibraryPath",
+			image:    defaultImage,
+			envFile:  "LD_LIBRARY_PATH=/foo",
+			matchEnv: "LD_LIBRARY_PATH",
+			matchVal: "/foo:" + singularityLibs,
+		},
+		{
+			name:     "CustomTrailingCommaPath",
+			image:    defaultImage,
+			envFile:  "LD_LIBRARY_PATH=/foo,",
+			matchEnv: "LD_LIBRARY_PATH",
+			matchVal: "/foo,:" + singularityLibs,
+		},
+	}
+
+	for _, tt := range tests {
+		args := make([]string, 0)
+		if tt.envOpt != nil {
+			args = append(args, "--env", strings.Join(tt.envOpt, ","))
+		}
+		if tt.envFile != "" {
+			os.WriteFile(p, []byte(tt.envFile), 0o644)
+			args = append(args, "--env-file", p)
+		}
+		args = append(args, tt.image, "/bin/sh", "-c", "echo $"+tt.matchEnv)
+
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
