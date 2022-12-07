@@ -319,9 +319,11 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	// Assemble the runtime & user-requested environment, which will be merged
 	// with the image ENV and set in the container at runtime.
 	rtEnv := defaultEnv(image, bundleDir)
+	// SINGULARITYENV_
+	rtEnv = mergeMap(rtEnv, singularityEnvMap())
 	// --env flag
 	rtEnv = mergeMap(rtEnv, l.cfg.Env)
-	// TODO - --env-file, SINGULARITYENV_
+	// TODO - --env-file
 
 	b, err := native.New(
 		native.OptBundlePath(bundleDir),
