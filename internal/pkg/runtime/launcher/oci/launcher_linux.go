@@ -127,9 +127,6 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "Proot")
 	}
 
-	if len(lo.Env) > 0 {
-		badOpt = append(badOpt, "Env")
-	}
 	if lo.EnvFile != "" {
 		badOpt = append(badOpt, "EnvFile")
 	}
@@ -230,8 +227,9 @@ func checkOpts(lo launcher.Options) error {
 }
 
 // createSpec produces an OCI runtime specification, suitable to launch a
-// container. This spec excludes ProcessArgs, as these have to be computed where
-// the image config is available, to account for the image's CMD / ENTRYPOINT.
+// container. This spec excludes ProcessArgs and Env, as these have to be
+// computed where the image config is available, to account for the image's CMD
+// / ENTRYPOINT / ENV.
 func (l *Launcher) createSpec() (*specs.Spec, error) {
 	spec := minimalSpec()
 
@@ -318,12 +316,20 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		return fmt.Errorf("while creating OCI spec: %w", err)
 	}
 
+	// Assemble the runtime & user-requested environment, which will be merged
+	// with the image ENV and set in the container at runtime.
+	rtEnv := defaultEnv(image, bundleDir)
+	// --env flag
+	rtEnv = mergeMap(rtEnv, l.cfg.Env)
+	// TODO - --env-file, SINGULARITYENV_
+
 	b, err := native.New(
 		native.OptBundlePath(bundleDir),
 		native.OptImageRef(image),
 		native.OptSysCtx(sysCtx),
 		native.OptImgCache(imgCache),
 		native.OptProcessArgs(process, args),
+		native.OptProcessEnv(rtEnv),
 	)
 	if err != nil {
 		return err
@@ -350,4 +356,11 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		os.Exit(exitErr.ExitCode())
 	}
 	return err
+}
+
+func mergeMap(a map[string]string, b map[string]string) map[string]string {
+	for k, v := range b {
+		a[k] = v
+	}
+	return a
 }

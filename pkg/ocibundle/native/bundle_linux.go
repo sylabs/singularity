@@ -35,6 +35,8 @@ import (
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
+const singularityLibs = "/.singularity.d/libs"
+
 // Bundle is a native OCI bundle, created from imageRef.
 type Bundle struct {
 	// imageRef is the reference to the OCI image source, e.g. docker://ubuntu:latest.
@@ -53,6 +55,8 @@ type Bundle struct {
 	process string
 	// args are the command arguments, which may override the image's CMD.
 	args []string
+	// env is the container environment to set, which will be merged with the image's env.
+	env map[string]string
 	// Generic bundle properties
 	ocibundle.Bundle
 }
@@ -100,6 +104,14 @@ func OptProcessArgs(process string, args []string) Option {
 	return func(b *Bundle) error {
 		b.process = process
 		b.args = args
+		return nil
+	}
+}
+
+// OptEnv sets the environment to be set, merged with the image ENV.
+func OptProcessEnv(env map[string]string) Option {
+	return func(b *Bundle) error {
+		b.env = env
 		return nil
 	}
 }
@@ -156,6 +168,8 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	// consult the image Config to handle combining ENTRYPOINT/CMD with user
 	// provided args.
 	b.setProcessArgs(g)
+	// Ditto for environment handling (merge image and user/rt requested).
+	b.setProcessEnv(g)
 
 	return b.writeConfig(g)
 }
@@ -183,6 +197,71 @@ func (b *Bundle) setProcessArgs(g *generate.Generator) {
 	}
 
 	g.SetProcessArgs(processArgs)
+}
+
+// setProcessEnv compines the image config ENV with the ENV requested in the runtime provided spec.
+// APPEND_PATH and PREPEND_PATH are honored as with the native singularity runtime.
+// LD_LIBRARY_PATH is modified to always include the singularity lib bind directory.
+func (b *Bundle) setProcessEnv(g *generate.Generator) {
+	if g.Config == nil {
+		g.Config = &specs.Spec{}
+	}
+	if g.Config.Process == nil {
+		g.Config.Process = &specs.Process{}
+	}
+	g.Config.Process.Env = b.imageSpec.Config.Env
+
+	path := ""
+	appendPath := ""
+	prependPath := ""
+	ldLibraryPath := ""
+
+	// Obtain PATH, and LD_LIBRARY_PATH if set in the image config.
+	for _, env := range b.imageSpec.Config.Env {
+		e := strings.SplitN(env, "=", 2)
+		if len(e) < 2 {
+			continue
+		}
+		if e[0] == "PATH" {
+			path = e[1]
+		}
+		if e[0] == "LD_LIBRARY_PATH" {
+			ldLibraryPath = e[1]
+		}
+	}
+
+	// Apply env vars from spec, except PATH and LD_LIBRARY_PATH releated.
+	for k, v := range b.env {
+		switch k {
+		case "PATH":
+			path = v
+		case "APPEND_PATH":
+			appendPath = v
+		case "PREPEND_PATH":
+			prependPath = v
+		case "LD_LIBRARY_PATH":
+			ldLibraryPath = v
+		default:
+			g.AddProcessEnv(k, v)
+		}
+	}
+
+	// Compute and set optionally APPEND-ed / PREPEND-ed PATH.
+	if appendPath != "" {
+		path = path + ":" + appendPath
+	}
+	if prependPath != "" {
+		path = prependPath + ":" + path
+	}
+	if path != "" {
+		g.AddProcessEnv("PATH", path)
+	}
+
+	// Ensure LD_LIBRARY_PATH always contains singularity lib binding dir.
+	if !strings.Contains(ldLibraryPath, singularityLibs) {
+		ldLibraryPath = strings.TrimPrefix(ldLibraryPath+":"+singularityLibs, ":")
+	}
+	g.AddProcessEnv("LD_LIBRARY_PATH", ldLibraryPath)
 }
 
 func (b *Bundle) writeConfig(g *generate.Generator) error {

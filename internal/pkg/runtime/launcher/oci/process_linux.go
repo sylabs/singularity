@@ -137,3 +137,11 @@ func (l *Launcher) getReverseUserMaps() (uidMap, gidMap []specs.LinuxIDMapping, 
 
 	return uidMap, gidMap, nil
 }
+
+// defaultEnv returns default environment variables set in the container.
+func defaultEnv(image, bundle string) map[string]string {
+	return map[string]string{
+		"SINGULARITY_CONTAINER": bundle,
+		"SINGULARITY_NAME":      image,
+	}
+}
