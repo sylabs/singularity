@@ -82,6 +82,12 @@
 - Instance name is available inside an instance via the new
   `SINGULARITY_INSTANCE` environment variable.
 
+### Bug Fixes
+
+- In `--rocm` mode, the whole of `/dev/dri` is now bound into the container when
+  `--contain` is in use. This makes `/dev/dri/render` devices available,
+  required for later ROCm versions.
+
 ## 3.10.4 \[2022-11-10\]
 
 ### Bug Fixes
