@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -23,7 +24,10 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
+	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/ocibundle/native"
+	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
@@ -112,12 +116,6 @@ func checkOpts(lo launcher.Options) error {
 	}
 	if lo.NoNvidia {
 		badOpt = append(badOpt, "NoNvidia")
-	}
-	if lo.Rocm {
-		badOpt = append(badOpt, "Rocm")
-	}
-	if lo.NoRocm {
-		badOpt = append(badOpt, "NoRocm")
 	}
 
 	if len(lo.ContainLibs) > 0 {
@@ -265,6 +263,43 @@ func (l *Launcher) createSpec() (*specs.Spec, error) {
 	return &spec, nil
 }
 
+func (l *Launcher) updatePasswdGroup(rootfs string) error {
+	uid := os.Getuid()
+	gid := os.Getgid()
+
+	if os.Getuid() == 0 || l.cfg.Fakeroot {
+		return nil
+	}
+
+	containerPasswd := filepath.Join(rootfs, "etc", "passwd")
+	containerGroup := filepath.Join(rootfs, "etc", "group")
+
+	pw, err := user.CurrentOriginal()
+	if err != nil {
+		return err
+	}
+
+	sylog.Debugf("Updating passwd file: %s", containerPasswd)
+	content, err := files.Passwd(containerPasswd, pw.Dir, uid)
+	if err != nil {
+		return fmt.Errorf("while creating passwd file: %w", err)
+	}
+	if err := os.WriteFile(containerPasswd, content, 0o755); err != nil {
+		return fmt.Errorf("while writing passwd file: %w", err)
+	}
+
+	sylog.Debugf("Updating group file: %s", containerGroup)
+	content, err = files.Group(containerGroup, uid, []int{gid})
+	if err != nil {
+		return fmt.Errorf("while creating group file: %w", err)
+	}
+	if err := os.WriteFile(containerGroup, content, 0o755); err != nil {
+		return fmt.Errorf("while writing passwd file: %w", err)
+	}
+
+	return nil
+}
+
 // Exec will interactively execute a container via the runc low-level runtime.
 // image is a reference to an OCI image, e.g. docker://ubuntu or oci:/tmp/mycontainer
 func (l *Launcher) Exec(ctx context.Context, image string, process string, args []string, instanceName string) error {
@@ -342,6 +377,10 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	}
 
 	if err := b.Create(ctx, spec); err != nil {
+		return err
+	}
+
+	if err := l.updatePasswdGroup(tools.RootFs(b.Path()).Path()); err != nil {
 		return err
 	}
 
