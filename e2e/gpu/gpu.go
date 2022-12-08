@@ -24,10 +24,11 @@ From: %[1]s
 
 %%setup
 	touch $SINGULARITY_ROOTFS%[2]s
+	touch $SINGULARITY_ROOTFS%[3]s
 %%post
-	%[3]s
+	%[4]s
 %%test
-	%[3]s
+	%[4]s
 `
 
 type ctx struct {
@@ -207,9 +208,17 @@ func (c ctx) testNvCCLI(t *testing.T) {
 
 func (c ctx) testRocm(t *testing.T) {
 	require.Rocm(t)
-	// Use Ubuntu 20.04 as this is the most recent distro officially supported by ROCm.
+	require.Command(t, "lsmod")
+
+	// rocminfo now needs lsmod - do a brittle bind in for simplicity.
+	lsmod, err := exec.LookPath("lsmod")
+	if err != nil {
+		t.Fatalf("while finding lsmod: %v", err)
+	}
+
+	// Use Ubuntu 22.04 as this is the most recent distro officially supported by ROCm.
 	// We can't use our test image as it's alpine based and we need a compatible glibc.
-	imageURL := "docker://ubuntu:20.04"
+	imageURL := "docker://ubuntu:22.04"
 	imageFile, err := fs.MakeTmpFile("", "test-rocm-", 0o755)
 	if err != nil {
 		t.Fatalf("Could not create test file: %v", err)
@@ -235,27 +244,27 @@ func (c ctx) testRocm(t *testing.T) {
 		{
 			name:    "User",
 			profile: e2e.UserProfile,
-			args:    []string{"--rocm", imagePath, "rocminfo"},
+			args:    []string{"-B", lsmod, "--rocm", imagePath, "rocminfo"},
 		},
 		{
 			name:    "UserContain",
 			profile: e2e.UserProfile,
-			args:    []string{"--contain", "--rocm", imagePath, "rocminfo"},
+			args:    []string{"-B", lsmod, "--contain", "--rocm", imagePath, "rocminfo"},
 		},
 		{
 			name:    "UserNamespace",
 			profile: e2e.UserNamespaceProfile,
-			args:    []string{"--rocm", imagePath, "rocminfo"},
+			args:    []string{"-B", lsmod, "--rocm", imagePath, "rocminfo"},
 		},
 		{
 			name:    "Fakeroot",
 			profile: e2e.FakerootProfile,
-			args:    []string{"--rocm", imagePath, "rocminfo"},
+			args:    []string{"-B", lsmod, "--rocm", imagePath, "rocminfo"},
 		},
 		{
 			name:    "Root",
 			profile: e2e.RootProfile,
-			args:    []string{"--rocm", imagePath, "rocminfo"},
+			args:    []string{"-B", lsmod, "--rocm", imagePath, "rocminfo"},
 		},
 	}
 
@@ -273,9 +282,18 @@ func (c ctx) testRocm(t *testing.T) {
 
 func (c ctx) ociTestRocm(t *testing.T) {
 	require.Rocm(t)
-	// Use Ubuntu 20.04 as this is the most recent distro officially supported by ROCm.
+
+	require.Command(t, "lsmod")
+
+	// rocminfo now needs lsmod - do a brittle bind in for simplicity.
+	lsmod, err := exec.LookPath("lsmod")
+	if err != nil {
+		t.Fatalf("while finding lsmod: %v", err)
+	}
+
+	// Use Ubuntu 22.04 as this is the most recent distro officially supported by ROCm.
 	// We can't use our test image as it's alpine based and we need a compatible glibc.
-	imageURL := "docker://ubuntu:20.04"
+	imageURL := "docker://ubuntu:22.04"
 
 	// Basic test that we can run the bound in `rocminfo` which *should* be on the PATH
 	tests := []struct {
@@ -284,15 +302,15 @@ func (c ctx) ociTestRocm(t *testing.T) {
 	}{
 		{
 			profile: e2e.OCIUserProfile,
-			args:    []string{"--rocm", imageURL, "rocminfo"},
+			args:    []string{"-B", lsmod, "--rocm", imageURL, "rocminfo"},
 		},
 		{
 			profile: e2e.OCIFakerootProfile,
-			args:    []string{"--rocm", imageURL, "rocminfo"},
+			args:    []string{"-B", lsmod, "--rocm", imageURL, "rocminfo"},
 		},
 		{
 			profile: e2e.OCIRootProfile,
-			args:    []string{"--rocm", imageURL, "rocminfo"},
+			args:    []string{"-B", lsmod, "--rocm", imageURL, "rocminfo"},
 		},
 	}
 
@@ -365,7 +383,7 @@ func (c ctx) testBuildNvidiaLegacy(t *testing.T) {
 		},
 	}
 
-	rawDef := fmt.Sprintf(buildDefinition, sourceImage, nvsmi, "nvidia-smi")
+	rawDef := fmt.Sprintf(buildDefinition, sourceImage, nvsmi, "", "nvidia-smi")
 
 	for _, tt := range tests {
 		defFile := e2e.RawDefFile(t, tmpdir, strings.NewReader(rawDef))
@@ -439,7 +457,7 @@ func (c ctx) testBuildNvCCLI(t *testing.T) {
 		},
 	}
 
-	rawDef := fmt.Sprintf(buildDefinition, sourceImage, nvsmi, "nvidia-smi")
+	rawDef := fmt.Sprintf(buildDefinition, sourceImage, nvsmi, "", "nvidia-smi")
 
 	for _, tt := range tests {
 		defFile := e2e.RawDefFile(t, tmpdir, strings.NewReader(rawDef))
@@ -471,13 +489,20 @@ func (c ctx) testBuildNvCCLI(t *testing.T) {
 //nolint:dupl
 func (c ctx) testBuildRocm(t *testing.T) {
 	require.Rocm(t)
+	require.Command(t, "lsmod")
+
+	// rocminfo now needs lsmod - do a brittle bind in for simplicity.
+	lsmod, err := exec.LookPath("lsmod")
+	if err != nil {
+		t.Fatalf("while finding lsmod: %v", err)
+	}
 
 	// ignore the error as it's already done in the require call above
 	rocmInfo, _ := exec.LookPath("rocminfo")
 
-	// Use Ubuntu 20.04 as this is the most recent distro officially supported by ROCm.
+	// Use Ubuntu 22.04 as this is the most recent distro officially supported by ROCm.
 	// We can't use our test image as it's alpine based and we need a compatible glibc.
-	imageURL := "docker://ubuntu:20.04"
+	imageURL := "docker://ubuntu:22.04"
 
 	tmpdir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "build-rocm-image", "build with rocm")
 	defer cleanup(t)
@@ -525,7 +550,7 @@ func (c ctx) testBuildRocm(t *testing.T) {
 		},
 	}
 
-	rawDef := fmt.Sprintf(buildDefinition, sourceImage, rocmInfo, "rocminfo")
+	rawDef := fmt.Sprintf(buildDefinition, sourceImage, rocmInfo, lsmod, "rocminfo")
 
 	for _, tt := range tests {
 		defFile := e2e.RawDefFile(t, tmpdir, strings.NewReader(rawDef))
@@ -535,7 +560,7 @@ func (c ctx) testBuildRocm(t *testing.T) {
 		if tt.setRocmFlag {
 			args = append(args, "--rocm")
 		}
-		args = append(args, "--force", "--sandbox", sandboxImage, defFile)
+		args = append(args, "-B", lsmod, "--force", "--sandbox", sandboxImage, defFile)
 
 		c.env.RunSingularity(
 			t,
