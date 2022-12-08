@@ -79,6 +79,8 @@
     - Additional namespaces requests with `--net`, `--uts`, `--user`.
     - Container environment variables via `--env`, `--env-file`, and
       `SINGULARITYENV_` host env vars.
+- Instance name is available inside an instance via the new
+  `SINGULARITY_INSTANCE` environment variable.
 
 ## 3.10.4 \[2022-11-10\]
 

@@ -283,6 +283,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 
 	// Setup instance specific configuration if required.
 	if instanceName != "" {
+		l.generator.AddProcessEnv("SINGULARITY_INSTANCE", instanceName)
 		l.cfg.Namespaces.PID = true
 		l.engineConfig.SetInstance(true)
 		l.engineConfig.SetBootInstance(l.cfg.Boot)
@@ -420,6 +421,7 @@ func (l *Launcher) setImageOrInstance(image string, name string) error {
 		l.cfg.Namespaces.User = file.UserNs
 		l.generator.AddProcessEnv("SINGULARITY_CONTAINER", file.Image)
 		l.generator.AddProcessEnv("SINGULARITY_NAME", filepath.Base(file.Image))
+		l.generator.AddProcessEnv("SINGULARITY_INSTANCE", instanceName)
 		l.engineConfig.SetImage(image)
 		l.engineConfig.SetInstanceJoin(true)
 
