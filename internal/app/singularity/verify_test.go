@@ -18,7 +18,6 @@ import (
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/ProtonMail/go-crypto/openpgp/armor"
-	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/sif/v2/pkg/integrity"
@@ -30,37 +29,18 @@ const (
 	invalidFingerPrint = "0000000000000000000000000000000000000000"
 )
 
-// getTestSignerVerifier returns a fixed test SignerVerifier.
-func getTestSignerVerifier(t *testing.T) signature.SignerVerifier {
-	path := filepath.Join("..", "..", "..", "test", "keys", "private.pem")
+// getTestVerifier returns a fixed test Verifier.
+func getTestVerifier(t *testing.T, file string) signature.Verifier {
+	t.Helper()
 
-	sv, err := signature.LoadSignerVerifierFromPEMFile(path, crypto.SHA256, cryptoutils.SkipPassword)
+	path := filepath.Join("..", "..", "..", "test", "keys", file)
+
+	sv, err := signature.LoadVerifierFromPEMFile(path, crypto.SHA256)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	return sv
-}
-
-// getTestEntity returns a fixed test PGP entity.
-func getTestEntity(t *testing.T) *openpgp.Entity {
-	t.Helper()
-
-	f, err := os.Open(filepath.Join("..", "..", "..", "test", "keys", "private.asc"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer f.Close()
-
-	el, err := openpgp.ReadArmoredKeyRing(f)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if got, want := len(el), 1; got != want {
-		t.Fatalf("got %v entities, want %v", got, want)
-	}
-	return el[0]
 }
 
 type mockHKP struct {
@@ -83,7 +63,7 @@ func (m mockHKP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func Test_newVerifier(t *testing.T) {
-	sv := getTestSignerVerifier(t)
+	sv := getTestVerifier(t, "ed25519-public.pem")
 	opts := []client.Option{client.OptBearerToken("token")}
 
 	tests := []struct {
@@ -200,7 +180,7 @@ func Test_verifier_getOpts(t *testing.T) {
 			name: "Verifier",
 			v: verifier{
 				svs: []signature.Verifier{
-					getTestSignerVerifier(t),
+					getTestVerifier(t, "ed25519-public.pem"),
 				},
 			},
 			f:        oneGroupImage,
@@ -292,8 +272,14 @@ func Test_verifier_getOpts(t *testing.T) {
 }
 
 func TestVerify(t *testing.T) {
-	sv := getTestSignerVerifier(t)
-	pub, err := sv.PublicKey()
+	ed25519 := getTestVerifier(t, "ed25519-public.pem")
+	ed25519Pub, err := ed25519.PublicKey()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rsa := getTestVerifier(t, "rsa-public.pem")
+	rsaPub, err := rsa.PublicKey()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -345,13 +331,22 @@ func TestVerify(t *testing.T) {
 			wantErr: &integrity.SignatureNotFoundError{},
 		},
 		{
-			name: "Verifier",
+			name: "VerifierEd25519",
 			path: filepath.Join("..", "..", "..", "test", "images", "one-group-signed-dsse.sif"),
 			opts: []VerifyOpt{
-				OptVerifyWithVerifier(sv),
+				OptVerifyWithVerifier(ed25519),
 			},
 			wantVerified:   [][]uint32{{1, 2}},
-			wantPublicKeys: []crypto.PublicKey{pub},
+			wantPublicKeys: []crypto.PublicKey{ed25519Pub},
+		},
+		{
+			name: "VerifierRSA",
+			path: filepath.Join("..", "..", "..", "test", "images", "one-group-signed-dsse.sif"),
+			opts: []VerifyOpt{
+				OptVerifyWithVerifier(rsa),
+			},
+			wantVerified:   [][]uint32{{1, 2}},
+			wantPublicKeys: []crypto.PublicKey{rsaPub},
 		},
 		{
 			name: "PGP",
@@ -366,11 +361,11 @@ func TestVerify(t *testing.T) {
 			name: "OptVerifyGroupVerifier",
 			path: filepath.Join("..", "..", "..", "test", "images", "one-group-signed-dsse.sif"),
 			opts: []VerifyOpt{
-				OptVerifyWithVerifier(sv),
+				OptVerifyWithVerifier(ed25519),
 				OptVerifyGroup(1),
 			},
 			wantVerified:   [][]uint32{{1, 2}},
-			wantPublicKeys: []crypto.PublicKey{pub},
+			wantPublicKeys: []crypto.PublicKey{ed25519Pub},
 		},
 		{
 			name: "OptVerifyGroupPGP",
@@ -386,11 +381,11 @@ func TestVerify(t *testing.T) {
 			name: "OptVerifyObjectVerifier",
 			path: filepath.Join("..", "..", "..", "test", "images", "one-group-signed-dsse.sif"),
 			opts: []VerifyOpt{
-				OptVerifyWithVerifier(sv),
+				OptVerifyWithVerifier(ed25519),
 				OptVerifyObject(1),
 			},
 			wantVerified:   [][]uint32{{1}},
-			wantPublicKeys: []crypto.PublicKey{pub},
+			wantPublicKeys: []crypto.PublicKey{ed25519Pub},
 		},
 		{
 			name: "OptVerifyObjectPGP",
