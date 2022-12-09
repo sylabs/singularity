@@ -64,6 +64,21 @@
   when running unprivileged, or explicitly requesting a user
   namespace, on systems with a kernel that supports unprivileged
   overlay mounts in a user namespace.
+- A new `--oci` flag for `run/exec/shell` enables the experimental OCI runtime
+  mode. This mode:
+  - Runs OCI container images from an OCI bundle, using `runc` or `crun`.
+  - Supports `docker://`, `docker-archive:`, `docker-daemon:`, `oci:`,
+    `oci-archive:` image sources.
+  - Does not support running Singularity SIF, SquashFS, or EXT3 images.
+  - Provides an environment similar to Singularity's native runtime, running
+    with `--compat`.
+  - Supports the following options / flags. Other options are not yet supported:
+    - `--fakeroot` for effective root in the container. Requires subuid/subgid
+      mappings.
+    - Bind mounts via `--bind` or `--mount`. No image mounts.
+    - Additional namespaces requests with `--net`, `--uts`, `--user`.
+    - Container environment variables via `--env`, `--env-file`, and
+      `SINGULARITYENV_` host env vars.
 
 ## 3.10.4 \[2022-11-10\]
 
