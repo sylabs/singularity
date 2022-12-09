@@ -79,6 +79,7 @@
     - Additional namespaces requests with `--net`, `--uts`, `--user`.
     - Container environment variables via `--env`, `--env-file`, and
       `SINGULARITYENV_` host env vars.
+    - `--rocm` to bind ROCm GPU libraries and devices into the container.
 - Instance name is available inside an instance via the new
   `SINGULARITY_INSTANCE` environment variable.
 
