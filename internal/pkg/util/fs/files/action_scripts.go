@@ -42,7 +42,7 @@ clear_env() {
         case "${key}" in
         PWD|HOME|OPTIND|UID|SINGULARITY_APPNAME|SINGULARITY_SHELL)
             ;;
-        SINGULARITY_NAME|SINGULARITY_CONTAINER)
+        SINGULARITY_NAME|SINGULARITY_CONTAINER|SINGULARITY_INSTANCE)
             readonly "${key}"
             ;;
         *)
