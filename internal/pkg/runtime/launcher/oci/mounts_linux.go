@@ -15,10 +15,14 @@ import (
 	"strings"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/util/gpu"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/bind"
 )
+
+const containerLibDir = "/.singularity.d/libs"
 
 // getMounts returns a mount list for the container's OCI runtime spec.
 func (l *Launcher) getMounts() ([]specs.Mount, error) {
@@ -35,6 +39,12 @@ func (l *Launcher) getMounts() ([]specs.Mount, error) {
 	if err := l.addBindMounts(mounts); err != nil {
 		return nil, fmt.Errorf("while configuring bind mount(s): %w", err)
 	}
+	if (l.cfg.Rocm || l.singularityConf.AlwaysUseRocm) && !l.cfg.NoRocm {
+		if err := l.addRocmMounts(mounts); err != nil {
+			return nil, fmt.Errorf("while configuring ROCm mount(s): %w", err)
+		}
+	}
+
 	return *mounts, nil
 }
 
@@ -249,5 +259,90 @@ func addBindMount(mounts *[]specs.Mount, b bind.Path) error {
 			Type:        "none",
 			Options:     opts,
 		})
+	return nil
+}
+
+func addDevBindMount(mounts *[]specs.Mount, b bind.Path) error {
+	opts := []string{"bind", "nosuid"}
+	if b.Readonly() {
+		opts = append(opts, "ro")
+	}
+
+	b.Source = filepath.Clean(b.Source)
+	if !strings.HasPrefix(b.Source, "/dev") {
+		return fmt.Errorf("device bind source must be an absolute path under /dev: %s", b.Source)
+	}
+	if b.Source != b.Destination {
+		return fmt.Errorf("device bind source %s must be the same as destination %s", b.Source, b.Destination)
+	}
+	if _, err := os.Stat(b.Source); err != nil {
+		return fmt.Errorf("cannot stat bind source %s: %w", b.Source, err)
+	}
+
+	sylog.Debugf("Adding device bind of %s to %s, with options %v", b.Source, b.Destination, opts)
+
+	*mounts = append(*mounts,
+		specs.Mount{
+			Source:      b.Source,
+			Destination: b.Destination,
+			Type:        "none",
+			Options:     opts,
+		})
+	return nil
+}
+
+func (l *Launcher) addRocmMounts(mounts *[]specs.Mount) error {
+	gpuConfFile := filepath.Join(buildcfg.SINGULARITY_CONFDIR, "rocmliblist.conf")
+
+	libs, bins, err := gpu.RocmPaths(gpuConfFile)
+	if err != nil {
+		sylog.Warningf("While finding ROCm bind points: %v", err)
+	}
+	if len(libs) == 0 {
+		sylog.Warningf("Could not find any ROCm libraries on this host!")
+	}
+
+	devs, err := gpu.RocmDevices()
+	if err != nil {
+		sylog.Warningf("While finding ROCm devices: %v", err)
+	}
+	if len(devs) == 0 {
+		sylog.Warningf("Could not find any ROCm devices on this host!")
+	}
+
+	for _, binary := range bins {
+		containerBinary := filepath.Join("/usr/bin", filepath.Base(binary))
+		bind := bind.Path{
+			Source:      binary,
+			Destination: containerBinary,
+			Options:     map[string]*bind.Option{"ro": {}},
+		}
+		if err := addBindMount(mounts, bind); err != nil {
+			return err
+		}
+	}
+
+	for _, lib := range libs {
+		containerLib := filepath.Join(containerLibDir, filepath.Base(lib))
+		bind := bind.Path{
+			Source:      lib,
+			Destination: containerLib,
+			Options:     map[string]*bind.Option{"ro": {}},
+		}
+		if err := addBindMount(mounts, bind); err != nil {
+			return err
+		}
+	}
+
+	for _, dev := range devs {
+		bind := bind.Path{
+			Source:      dev,
+			Destination: dev,
+		}
+		if err := addDevBindMount(mounts, bind); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
