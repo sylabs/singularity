@@ -18,6 +18,7 @@ import (
 	"syscall"
 	"time"
 
+	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 	sifuser "github.com/sylabs/sif/v2/pkg/user"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
@@ -253,16 +254,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		l.cfg.Namespaces.User = true
 	}
 
-	// If we are not root, we need to pass in XDG / DBUS environment so we can communicate
-	// with systemd for any cgroups (v2) operations.
-	if l.uid != 0 {
-		sylog.Debugf("Recording rootless XDG_RUNTIME_DIR / DBUS_SESSION_BUS_ADDRESS")
-		l.engineConfig.SetXdgRuntimeDir(os.Getenv("XDG_RUNTIME_DIR"))
-		l.engineConfig.SetDbusSessionBusAddress(os.Getenv("DBUS_SESSION_BUS_ADDRESS"))
-	}
-
-	// Handle cgroups configuration (parsed from file or flags in CLI).
-	l.engineConfig.SetCgroupsJSON(l.cfg.CGroupsJSON)
+	l.setCgroups(instanceName)
 
 	// --boot flag requires privilege, so check for this.
 	err = launcher.WithPrivilege(l.cfg.Boot, "--boot", func() error { return nil })
@@ -891,6 +883,48 @@ func (l *Launcher) setProcessCwd() {
 	} else {
 		sylog.Warningf("can't determine current working directory: %s", err)
 	}
+}
+
+// setCgroups sets cgroup related configuration
+func (l *Launcher) setCgroups(instanceName string) error {
+	// If we are not root, we need to pass in XDG / DBUS environment so we can communicate
+	// with systemd for any cgroups (v2) operations.
+	if l.uid != 0 {
+		sylog.Debugf("Recording rootless XDG_RUNTIME_DIR / DBUS_SESSION_BUS_ADDRESS")
+		l.engineConfig.SetXdgRuntimeDir(os.Getenv("XDG_RUNTIME_DIR"))
+		l.engineConfig.SetDbusSessionBusAddress(os.Getenv("DBUS_SESSION_BUS_ADDRESS"))
+	}
+
+	if l.cfg.CGroupsJSON != "" {
+		// Handle cgroups configuration (parsed from file or flags in CLI).
+		l.engineConfig.SetCgroupsJSON(l.cfg.CGroupsJSON)
+		return nil
+	}
+
+	if instanceName == "" {
+		return nil
+	}
+
+	// If we are an instance, always use a cgroup if possible, to enable stats.
+	// root can always create a cgroup.
+	useCG := l.uid == 0
+	// non-root needs cgroups v2 unified mode + systemd as cgroups manager.
+	if l.uid != 0 && lccgroups.IsCgroup2UnifiedMode() && l.engineConfig.File.SystemdCgroups {
+		useCG = true
+	}
+
+	if useCG {
+		cg := cgroups.Config{}
+		cgJSON, err := cg.MarshalJSON()
+		if err != nil {
+			return err
+		}
+		l.engineConfig.SetCgroupsJSON(cgJSON)
+		return nil
+	}
+
+	sylog.Infof("Instance stats will not be available - requires cgroups v2 with systemd as manager.")
+	return nil
 }
 
 // PrepareImage perfoms any image preparation required before execution.

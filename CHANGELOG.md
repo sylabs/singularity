@@ -16,6 +16,9 @@
   Singularity.
 - `sessiondir maxsize` in `singularity.conf` now defaults to 64 MiB for new
   installations. This is an increase from 16 MiB in prior versions.
+- Instances are started in a cgroup, by default, when run as root or when
+  unified cgroups v2 with systemd as manager is configured. This allows
+  `singularity instance stats` to be supported by default when possible.
 
 ### Development / Testing
 
