@@ -82,6 +82,17 @@
     - `--rocm` to bind ROCm GPU libraries and devices into the container.
 - Instance name is available inside an instance via the new
   `SINGULARITY_INSTANCE` environment variable.
+- The `sign` command now supports signing with non-PGP key material by
+  specifying the path to a private key via the `--key` flag.
+- The `verify` command now supports verification with non-PGP key material by
+  specifying the path to a public key via the `--key` flag.
+- The `verify` command now supports verification with X.509 certificates by
+  specifying the path to a certificate via the `--certificate` flag. By
+  default, the system root certificate pool is used as trust anchors unless
+  overridden via the `--certificate-roots` flag. A pool of intermediate
+  certificates that are not trust anchors, but can be used to form a
+  certificate chain can also be specified via the `--certificate-intermediates`
+  flag.
 
 ### Bug Fixes
 
