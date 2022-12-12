@@ -16,6 +16,9 @@
   Singularity.
 - `sessiondir maxsize` in `singularity.conf` now defaults to 64 MiB for new
   installations. This is an increase from 16 MiB in prior versions.
+- Instances are started in a cgroup, by default, when run as root or when
+  unified cgroups v2 with systemd as manager is configured. This allows
+  `singularity instance stats` to be supported by default when possible.
 
 ### Development / Testing
 
@@ -220,7 +223,10 @@
 - Correctly launch CleanupHost process only when needed in `--sif-fuse` flow.
 - Add specific error for unreadable image / overlay file.
 - Ensure cgroups device limits are default allow per past behavior.
-- Improve error message when remote build server does not support the `%files` section.
+- Improve error message when remote build server does not support the `%files`
+  section.
+- Fix non-root instance join with unprivileged systemd managed cgroups, when
+  join is from outside a user-owned cgroup.
 
 ## v3.9.9 \[2022-04-22\]
 

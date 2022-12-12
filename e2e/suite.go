@@ -66,8 +66,9 @@ var (
 
 // Groups run without a PID NS (systemd cgroups related)
 var e2eGroupsNoPIDNS = map[string]testhelper.Group{
-	"CGROUPS": cgroups.E2ETests,
-	"OCI":     oci.E2ETests,
+	"CGROUPS":  cgroups.E2ETests,
+	"INSTANCE": instance.E2ETests,
+	"OCI":      oci.E2ETests,
 }
 
 // Groups run inside a PID NS
@@ -85,7 +86,6 @@ var e2eGroups = map[string]testhelper.Group{
 	"GPU":        gpu.E2ETests,
 	"HELP":       help.E2ETests,
 	"INSPECT":    inspect.E2ETests,
-	"INSTANCE":   instance.E2ETests,
 	"KEY":        key.E2ETests,
 	"OVERLAY":    overlay.E2ETests,
 	"PLUGIN":     plugin.E2ETests,
