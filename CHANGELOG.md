@@ -205,9 +205,10 @@
 - Correctly launch CleanupHost process only when needed in `--sif-fuse` flow.
 - Add specific error for unreadable image / overlay file.
 - Ensure cgroups device limits are default allow per past behavior.
-- Improve error message when remote build server does not support the `%files` section.
-- Fix non-root instance join with unprivileged systemd managed cgroups, when join is
-  from outside a user-owned cgroup.
+- Improve error message when remote build server does not support the `%files`
+  section.
+- Fix non-root instance join with unprivileged systemd managed cgroups, when
+  join is from outside a user-owned cgroup.
 
 ## v3.9.9 \[2022-04-22\]
 
