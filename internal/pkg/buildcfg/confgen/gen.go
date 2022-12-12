@@ -113,6 +113,10 @@ func RelocatePath(original string) (string) {
 {{ range $i, $d := .Defines }}
 {{$d.WriteLine $.IsSuidInstall -}}
 {{end}}
+
+func IsReproducibleBuild() bool {
+	return SOURCEDIR == "REPRODUCIBLE_BUILD"
+}
 `))
 
 func main() {

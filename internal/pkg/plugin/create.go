@@ -53,6 +53,10 @@ const gitIgnore = `singularity_source
 // Create creates a skeleton plugin directory structure
 // to start development of a new plugin.
 func Create(path, name string) error {
+	if buildcfg.IsReproducibleBuild() {
+		return fmt.Errorf("plugin functionality is not available in --reproducible builds of singularity")
+	}
+
 	dir, err := filepath.Abs(path)
 	if err != nil {
 		return fmt.Errorf("could not determine absolute path for %s: %s", path, err)

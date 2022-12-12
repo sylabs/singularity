@@ -41,6 +41,10 @@ type buildToolchain struct {
 
 // getSingularitySrcDir returns the source directory for singularity.
 func getSingularitySrcDir() (string, error) {
+	if buildcfg.IsReproducibleBuild() {
+		return "", fmt.Errorf("plugin functionality is not available in --reproducible builds of singularity")
+	}
+
 	dir := buildcfg.SOURCEDIR
 	canary := filepath.Join(dir, canaryFile)
 	sylog.Debugf("Searching source file %s", canary)

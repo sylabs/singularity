@@ -96,6 +96,9 @@
   certificates that are not trust anchors, but can be used to form a
   certificate chain can also be specified via the `--certificate-intermediates`
   flag.
+- A new `--reproducible` flag for `./mconfig` will configure Singularity so that
+  its binaries do not contain non-reproducible paths. This disables plugin
+  functionality.
 
 ### Bug Fixes
 
