@@ -246,9 +246,7 @@ func (c *ctx) instanceStatsRootless(t *testing.T) {
 	c.instanceStats(t, e2e.UserProfile)
 }
 
-func (c *ctx) actionApply(t *testing.T, profile e2e.Profile) {
-	e2e.EnsureImage(t, c.env)
-
+func (c *ctx) actionApply(t *testing.T, profile e2e.Profile, imageRef string) {
 	tests := []struct {
 		name            string
 		args            []string
@@ -256,64 +254,92 @@ func (c *ctx) actionApply(t *testing.T, profile e2e.Profile) {
 		expectErrorOut  string
 		rootfull        bool
 		rootless        bool
+		skipOCI         bool
+		onlyOCI         bool
 	}{
 		{
 			name:            "nonexistent toml",
-			args:            []string{"--apply-cgroups", "testdata/cgroups/doesnotexist.toml", c.env.ImagePath, "/bin/sleep", "5"},
+			args:            []string{"--apply-cgroups", "testdata/cgroups/doesnotexist.toml", imageRef, "/bin/sleep", "5"},
 			expectErrorCode: 255,
 			expectErrorOut:  "no such file or directory",
 			rootfull:        true,
 			rootless:        true,
+			skipOCI:         false,
+			onlyOCI:         false,
 		},
 		{
 			name:            "invalid toml",
-			args:            []string{"--apply-cgroups", "testdata/cgroups/invalid.toml", c.env.ImagePath, "/bin/sleep", "5"},
+			args:            []string{"--apply-cgroups", "testdata/cgroups/invalid.toml", imageRef, "/bin/sleep", "5"},
 			expectErrorCode: 255,
 			expectErrorOut:  "parsing error",
 			rootfull:        true,
 			rootless:        true,
+			skipOCI:         false,
+			onlyOCI:         false,
 		},
 		{
 			name:            "memory limit",
-			args:            []string{"--apply-cgroups", "testdata/cgroups/memory_limit.toml", c.env.ImagePath, "/bin/sleep", "5"},
+			args:            []string{"--apply-cgroups", "testdata/cgroups/memory_limit.toml", imageRef, "/bin/sleep", "5"},
 			expectErrorCode: 137,
 			rootfull:        true,
 			rootless:        true,
+			skipOCI:         true,
+			onlyOCI:         false,
+		},
+		{
+			name: "memory limit oci",
+			args: []string{"--apply-cgroups", "testdata/cgroups/memory_limit.toml", imageRef, "/bin/sleep", "5"},
+			// crun returns a 1 when the OOM kill happens.
+			expectErrorCode: 1,
+			rootfull:        true,
+			rootless:        true,
+			skipOCI:         false,
+			onlyOCI:         true,
 		},
 		{
 			name:            "cpu success",
-			args:            []string{"--apply-cgroups", "testdata/cgroups/cpu_success.toml", c.env.ImagePath, "/bin/true"},
+			args:            []string{"--apply-cgroups", "testdata/cgroups/cpu_success.toml", imageRef, "/bin/true"},
 			expectErrorCode: 0,
 			rootfull:        true,
 			// This currently fails in the e2e scenario due to the way we are using a mount namespace.
 			// It *does* work if you test it, directly calling the singularity CLI.
 			// Reason is believed to be: https://github.com/opencontainers/runc/issues/3026
 			rootless: false,
+			skipOCI:  false,
+			onlyOCI:  false,
 		},
 		// Device access is allowed by default.
 		{
 			name:            "device allow default",
-			args:            []string{"--apply-cgroups", "testdata/cgroups/null.toml", c.env.ImagePath, "cat", "/dev/null"},
+			args:            []string{"--apply-cgroups", "testdata/cgroups/null.toml", imageRef, "cat", "/dev/null"},
 			expectErrorCode: 0,
 			rootfull:        true,
 			rootless:        true,
+			skipOCI:         false,
+			onlyOCI:         false,
 		},
 		// Device limits are properly applied only in rootful mode. Rootless will ignore them with a warning.
 		{
 			name:            "device deny",
-			args:            []string{"--apply-cgroups", "testdata/cgroups/deny_device.toml", c.env.ImagePath, "cat", "/dev/null"},
+			args:            []string{"--apply-cgroups", "testdata/cgroups/deny_device.toml", imageRef, "cat", "/dev/null"},
 			expectErrorCode: 1,
 			expectErrorOut:  "Operation not permitted",
 			rootfull:        true,
 			rootless:        false,
+			// runc/crun always allow /dev/null access
+			skipOCI: true,
+			onlyOCI: false,
 		},
 		{
 			name:            "device ignored",
-			args:            []string{"--apply-cgroups", "testdata/cgroups/deny_device.toml", c.env.ImagePath, "cat", "/dev/null"},
+			args:            []string{"--apply-cgroups", "testdata/cgroups/deny_device.toml", imageRef, "cat", "/dev/null"},
 			expectErrorCode: 0,
 			expectErrorOut:  "Device limits will not be applied with rootless cgroups",
 			rootfull:        false,
 			rootless:        true,
+			// runc/crun silently ignore in rootless
+			skipOCI: true,
+			onlyOCI: false,
 		},
 	}
 
@@ -325,6 +351,13 @@ func (c *ctx) actionApply(t *testing.T, profile e2e.Profile) {
 			if !profile.Privileged() && !tt.rootless {
 				t.Skip()
 			}
+			if profile.OCI() && tt.skipOCI {
+				t.Skip()
+			}
+			if !profile.OCI() && tt.onlyOCI {
+				t.Skip()
+			}
+
 			exitFunc := []e2e.SingularityCmdResultOp{}
 			if tt.expectErrorOut != "" {
 				exitFunc = []e2e.SingularityCmdResultOp{e2e.ExpectError(e2e.ContainMatch, tt.expectErrorOut)}
@@ -341,13 +374,27 @@ func (c *ctx) actionApply(t *testing.T, profile e2e.Profile) {
 }
 
 func (c *ctx) actionApplyRoot(t *testing.T) {
-	c.actionApply(t, e2e.RootProfile)
+	e2e.EnsureImage(t, c.env)
+	e2e.EnsureOCIImage(t, c.env)
+	t.Run(e2e.RootProfile.String(), func(t *testing.T) {
+		c.actionApply(t, e2e.RootProfile, c.env.ImagePath)
+	})
+	t.Run(e2e.OCIRootProfile.String(), func(t *testing.T) {
+		c.actionApply(t, e2e.OCIRootProfile, "oci-archive:"+c.env.OCIImagePath)
+	})
 }
 
 func (c *ctx) actionApplyRootless(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+	e2e.EnsureOCIImage(t, c.env)
 	for _, profile := range []e2e.Profile{e2e.UserProfile, e2e.UserNamespaceProfile, e2e.FakerootProfile} {
 		t.Run(profile.String(), func(t *testing.T) {
-			c.actionApply(t, profile)
+			c.actionApply(t, profile, c.env.ImagePath)
+		})
+	}
+	for _, profile := range []e2e.Profile{e2e.OCIUserProfile, e2e.OCIFakerootProfile} {
+		t.Run(profile.String(), func(t *testing.T) {
+			c.actionApply(t, profile, "oci-archive:"+c.env.OCIImagePath)
 		})
 	}
 }
@@ -487,21 +534,21 @@ var resourceFlagTests = []resourceFlagTest{
 	},
 }
 
-func (c *ctx) actionFlags(t *testing.T, profile e2e.Profile) {
+func (c *ctx) actionFlags(t *testing.T, profile e2e.Profile, imageRef string) {
 	e2e.EnsureImage(t, c.env)
 
 	for _, tt := range resourceFlagTests {
 		t.Run(tt.name, func(t *testing.T) {
 			if cgroups.IsCgroup2UnifiedMode() {
-				c.actionFlagV2(t, tt, profile)
+				c.actionFlagV2(t, tt, profile, imageRef)
 				return
 			}
-			c.actionFlagV1(t, tt, profile)
+			c.actionFlagV1(t, tt, profile, imageRef)
 		})
 	}
 }
 
-func (c *ctx) actionFlagV1(t *testing.T, tt resourceFlagTest, profile e2e.Profile) {
+func (c *ctx) actionFlagV1(t *testing.T, tt resourceFlagTest, profile e2e.Profile, imageRef string) {
 	// Don't try to test a resource that doesn't exist in our caller cgroup.
 	// E.g. some systems don't have memory.memswp, and might not have blkio.bfq
 	require.CgroupsResourceExists(t, tt.controllerV1, tt.resourceV1)
@@ -518,7 +565,7 @@ func (c *ctx) actionFlagV1(t *testing.T, tt resourceFlagTest, profile e2e.Profil
 	}
 
 	args := tt.args
-	args = append(args, "-B", "/sys/fs/cgroup", c.env.ImagePath, "/bin/sh", "-c", shellCmd)
+	args = append(args, "-B", "/sys/fs/cgroup", imageRef, "/bin/sh", "-c", shellCmd)
 
 	c.env.RunSingularity(
 		t,
@@ -529,7 +576,7 @@ func (c *ctx) actionFlagV1(t *testing.T, tt resourceFlagTest, profile e2e.Profil
 	)
 }
 
-func (c *ctx) actionFlagV2(t *testing.T, tt resourceFlagTest, profile e2e.Profile) {
+func (c *ctx) actionFlagV2(t *testing.T, tt resourceFlagTest, profile e2e.Profile, imageRef string) {
 	if tt.skipV2 {
 		t.Skip()
 	}
@@ -554,7 +601,7 @@ func (c *ctx) actionFlagV2(t *testing.T, tt resourceFlagTest, profile e2e.Profil
 	shellCmd := fmt.Sprintf("cat /sys/fs/cgroup$(cat /proc/self/cgroup | grep '^0::' | cut -d ':' -f 3)/%s", tt.resourceV2)
 
 	args := tt.args
-	args = append(args, "-B", "/sys/fs/cgroup", c.env.ImagePath, "/bin/sh", "-c", shellCmd)
+	args = append(args, "-B", "/sys/fs/cgroup", imageRef, "/bin/sh", "-c", shellCmd)
 
 	c.env.RunSingularity(
 		t,
@@ -566,13 +613,27 @@ func (c *ctx) actionFlagV2(t *testing.T, tt resourceFlagTest, profile e2e.Profil
 }
 
 func (c *ctx) actionFlagsRoot(t *testing.T) {
-	c.actionFlags(t, e2e.RootProfile)
+	e2e.EnsureImage(t, c.env)
+	e2e.EnsureOCIImage(t, c.env)
+	t.Run(e2e.RootProfile.String(), func(t *testing.T) {
+		c.actionFlags(t, e2e.RootProfile, c.env.ImagePath)
+	})
+	t.Run(e2e.OCIRootProfile.String(), func(t *testing.T) {
+		c.actionFlags(t, e2e.OCIRootProfile, "oci-archive:"+c.env.OCIImagePath)
+	})
 }
 
 func (c *ctx) actionFlagsRootless(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+	e2e.EnsureOCIImage(t, c.env)
 	for _, profile := range []e2e.Profile{e2e.UserProfile, e2e.UserNamespaceProfile, e2e.FakerootProfile} {
 		t.Run(profile.String(), func(t *testing.T) {
-			c.actionFlags(t, profile)
+			c.actionFlags(t, profile, c.env.ImagePath)
+		})
+	}
+	for _, profile := range []e2e.Profile{e2e.OCIUserProfile, e2e.OCIFakerootProfile} {
+		t.Run(profile.String(), func(t *testing.T) {
+			c.actionFlags(t, profile, "oci-archive:"+c.env.OCIImagePath)
 		})
 	}
 }

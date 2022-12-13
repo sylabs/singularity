@@ -10,9 +10,12 @@ package singularity
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher/oci"
 	ocibundle "github.com/sylabs/singularity/pkg/ocibundle/sif"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 // OciArgs contains CLI arguments
@@ -30,52 +33,92 @@ type OciArgs struct {
 
 // OciRun runs a container (equivalent to create/start/delete)
 func OciRun(ctx context.Context, containerID string, args *OciArgs) error {
-	return oci.Run(ctx, containerID, args.BundlePath, args.PidFile)
+	systemdCgroups, err := systemdCgroups()
+	if err != nil {
+		return err
+	}
+	return oci.Run(ctx, containerID, args.BundlePath, args.PidFile, systemdCgroups)
 }
 
 // OciCreate creates a container from an OCI bundle
 func OciCreate(containerID string, args *OciArgs) error {
-	return oci.Create(containerID, args.BundlePath)
+	systemdCgroups, err := systemdCgroups()
+	if err != nil {
+		return err
+	}
+	return oci.Create(containerID, args.BundlePath, systemdCgroups)
 }
 
 // OciStart starts a previously create container
 func OciStart(containerID string) error {
-	return oci.Start(containerID)
+	systemdCgroups, err := systemdCgroups()
+	if err != nil {
+		return err
+	}
+	return oci.Start(containerID, systemdCgroups)
 }
 
 // OciDelete deletes container resources
 func OciDelete(ctx context.Context, containerID string) error {
-	return oci.Delete(ctx, containerID)
+	systemdCgroups, err := systemdCgroups()
+	if err != nil {
+		return err
+	}
+	return oci.Delete(ctx, containerID, systemdCgroups)
 }
 
 // OciExec executes a command in a container
 func OciExec(containerID string, cmdArgs []string) error {
-	return oci.Exec(containerID, cmdArgs)
+	systemdCgroups, err := systemdCgroups()
+	if err != nil {
+		return err
+	}
+	return oci.Exec(containerID, cmdArgs, systemdCgroups)
 }
 
 // OciKill kills container process
 func OciKill(containerID string, killSignal string) error {
-	return oci.Kill(containerID, killSignal)
+	systemdCgroups, err := systemdCgroups()
+	if err != nil {
+		return err
+	}
+	return oci.Kill(containerID, killSignal, systemdCgroups)
 }
 
 // OciPause pauses processes in a container
 func OciPause(containerID string) error {
-	return oci.Pause(containerID)
+	systemdCgroups, err := systemdCgroups()
+	if err != nil {
+		return err
+	}
+	return oci.Pause(containerID, systemdCgroups)
 }
 
 // OciResume pauses processes in a container
 func OciResume(containerID string) error {
-	return oci.Resume(containerID)
+	systemdCgroups, err := systemdCgroups()
+	if err != nil {
+		return err
+	}
+	return oci.Resume(containerID, systemdCgroups)
 }
 
 // OciState queries container state
 func OciState(containerID string, args *OciArgs) error {
-	return oci.State(containerID)
+	systemdCgroups, err := systemdCgroups()
+	if err != nil {
+		return err
+	}
+	return oci.State(containerID, systemdCgroups)
 }
 
 // OciUpdate updates container cgroups resources
 func OciUpdate(containerID string, args *OciArgs) error {
-	return oci.Update(containerID, args.FromFile)
+	systemdCgroups, err := systemdCgroups()
+	if err != nil {
+		return err
+	}
+	return oci.Update(containerID, args.FromFile, systemdCgroups)
 }
 
 // OciMount mount a SIF image to create an OCI bundle
@@ -94,4 +137,15 @@ func OciUmount(bundle string) error {
 		return err
 	}
 	return d.Delete()
+}
+
+func systemdCgroups() (use bool, err error) {
+	cfg := singularityconf.GetCurrentConfig()
+	if cfg == nil {
+		cfg, err = singularityconf.Parse(buildcfg.SINGULARITY_CONF_FILE)
+		if err != nil {
+			return false, fmt.Errorf("unable to parse singularity configuration file: %w", err)
+		}
+	}
+	return cfg.SystemdCgroups, nil
 }

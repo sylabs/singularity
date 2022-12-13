@@ -24,7 +24,7 @@ import (
 )
 
 // Delete deletes container resources
-func Delete(ctx context.Context, containerID string) error {
+func Delete(ctx context.Context, containerID string, systemdCgroups bool) error {
 	runtimeBin, err := runtime()
 	if err != nil {
 		return err
@@ -36,9 +36,11 @@ func Delete(ctx context.Context, containerID string) error {
 
 	runtimeArgs := []string{
 		"--root", rsd,
-		"delete",
-		containerID,
 	}
+	if systemdCgroups {
+		runtimeArgs = append(runtimeArgs, "--systemd-cgroup")
+	}
+	runtimeArgs = append(runtimeArgs, "delete", containerID)
 
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
@@ -71,7 +73,7 @@ func Delete(ctx context.Context, containerID string) error {
 }
 
 // Exec executes a command in a container
-func Exec(containerID string, cmdArgs []string) error {
+func Exec(containerID string, cmdArgs []string, systemdCgroups bool) error {
 	runtimeBin, err := runtime()
 	if err != nil {
 		return err
@@ -83,9 +85,11 @@ func Exec(containerID string, cmdArgs []string) error {
 
 	runtimeArgs := []string{
 		"--root", rsd,
-		"exec",
-		containerID,
 	}
+	if systemdCgroups {
+		runtimeArgs = append(runtimeArgs, "--systemd-cgroup")
+	}
+	runtimeArgs = append(runtimeArgs, "exec", containerID)
 	runtimeArgs = append(runtimeArgs, cmdArgs...)
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
@@ -96,7 +100,7 @@ func Exec(containerID string, cmdArgs []string) error {
 }
 
 // Kill kills container process
-func Kill(containerID string, killSignal string) error {
+func Kill(containerID string, killSignal string, systemdCgroups bool) error {
 	runtimeBin, err := runtime()
 	if err != nil {
 		return err
@@ -122,7 +126,7 @@ func Kill(containerID string, killSignal string) error {
 }
 
 // Pause pauses processes in a container
-func Pause(containerID string) error {
+func Pause(containerID string, systemdCgroups bool) error {
 	runtimeBin, err := runtime()
 	if err != nil {
 		return err
@@ -134,9 +138,11 @@ func Pause(containerID string) error {
 
 	runtimeArgs := []string{
 		"--root", rsd,
-		"pause",
-		containerID,
 	}
+	if systemdCgroups {
+		runtimeArgs = append(runtimeArgs, "--systemd-cgroup")
+	}
+	runtimeArgs = append(runtimeArgs, "pause", containerID)
 
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
@@ -147,7 +153,7 @@ func Pause(containerID string) error {
 }
 
 // Resume pauses processes in a container
-func Resume(containerID string) error {
+func Resume(containerID string, systemdCgroups bool) error {
 	runtimeBin, err := runtime()
 	if err != nil {
 		return err
@@ -159,9 +165,11 @@ func Resume(containerID string) error {
 
 	runtimeArgs := []string{
 		"--root", rsd,
-		"resume",
-		containerID,
 	}
+	if systemdCgroups {
+		runtimeArgs = append(runtimeArgs, "--systemd-cgroup")
+	}
+	runtimeArgs = append(runtimeArgs, "resume", containerID)
 
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
@@ -172,7 +180,7 @@ func Resume(containerID string) error {
 }
 
 // Run runs a container (equivalent to create/start/delete)
-func Run(ctx context.Context, containerID, bundlePath, pidFile string) error {
+func Run(ctx context.Context, containerID, bundlePath, pidFile string, systemdCgroups bool) error {
 	runtimeBin, err := runtime()
 	if err != nil {
 		return err
@@ -193,12 +201,15 @@ func Run(ctx context.Context, containerID, bundlePath, pidFile string) error {
 
 	runtimeArgs := []string{
 		"--root", rsd,
-		"run",
-		"-b", absBundle,
 	}
+	if systemdCgroups {
+		runtimeArgs = append(runtimeArgs, "--systemd-cgroup")
+	}
+	runtimeArgs = append(runtimeArgs, "run", "-b", absBundle)
 	if pidFile != "" {
 		runtimeArgs = append(runtimeArgs, "--pid-file="+pidFile)
 	}
+
 	runtimeArgs = append(runtimeArgs, containerID)
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
@@ -233,9 +244,13 @@ func RunNS(ctx context.Context, containerID, bundlePath, pidFile string) error {
 	sylog.Debugf("Calling fakeroot engine to execute %q", strings.Join(args, " "))
 
 	cfg := &config.Common{
-		EngineName:   fakerootConfig.Name,
-		ContainerID:  "fakeroot",
-		EngineConfig: &fakerootConfig.EngineConfig{Args: args, NoPIDNS: true},
+		EngineName:  fakerootConfig.Name,
+		ContainerID: "fakeroot",
+		EngineConfig: &fakerootConfig.EngineConfig{
+			Envs:    os.Environ(),
+			Args:    args,
+			NoPIDNS: true,
+		},
 	}
 
 	return starter.Run(
@@ -248,7 +263,7 @@ func RunNS(ctx context.Context, containerID, bundlePath, pidFile string) error {
 }
 
 // Start starts a previously created container
-func Start(containerID string) error {
+func Start(containerID string, systemdCgroups bool) error {
 	runtimeBin, err := runtime()
 	if err != nil {
 		return err
@@ -260,9 +275,11 @@ func Start(containerID string) error {
 
 	runtimeArgs := []string{
 		"--root", rsd,
-		"start",
-		containerID,
 	}
+	if systemdCgroups {
+		runtimeArgs = append(runtimeArgs, "--systemd-cgroup")
+	}
+	runtimeArgs = append(runtimeArgs, "start", containerID)
 
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
@@ -273,7 +290,7 @@ func Start(containerID string) error {
 }
 
 // State queries container state
-func State(containerID string) error {
+func State(containerID string, systemdCgroups bool) error {
 	runtimeBin, err := runtime()
 	if err != nil {
 		return err
@@ -285,9 +302,11 @@ func State(containerID string) error {
 
 	runtimeArgs := []string{
 		"--root", rsd,
-		"state",
-		containerID,
 	}
+	if systemdCgroups {
+		runtimeArgs = append(runtimeArgs, "--systemd-cgroup")
+	}
+	runtimeArgs = append(runtimeArgs, "state", containerID)
 
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
@@ -298,7 +317,7 @@ func State(containerID string) error {
 }
 
 // Update updates container cgroups resources
-func Update(containerID, cgFile string) error {
+func Update(containerID, cgFile string, systemdCgroups bool) error {
 	runtimeBin, err := runtime()
 	if err != nil {
 		return err
@@ -310,10 +329,11 @@ func Update(containerID, cgFile string) error {
 
 	runtimeArgs := []string{
 		"--root", rsd,
-		"update",
-		"-r", cgFile,
-		containerID,
 	}
+	if systemdCgroups {
+		runtimeArgs = append(runtimeArgs, "--systemd-cgroup")
+	}
+	runtimeArgs = append(runtimeArgs, "update", "-r", cgFile, containerID)
 
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout

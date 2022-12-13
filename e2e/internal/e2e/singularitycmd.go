@@ -531,6 +531,20 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 			cmd.Env = os.Environ()
 		}
 
+		// Clear user-specific DBUS / XDG vars when we are using a priv profile,
+		// as they don't make sense for the root user... and wouldn't be set in a
+		// real root user session.
+		if privileged {
+			i := 0
+			for _, e := range cmd.Env {
+				if !(strings.HasPrefix(e, "DBUS_SESSION_BUS_ADDRESS=") || strings.HasPrefix(e, "XDG_RUNTIME_DIR=")) {
+					cmd.Env[i] = e
+					i++
+				}
+			}
+			cmd.Env = cmd.Env[:i]
+		}
+
 		// By default, each E2E command shares a temporary image cache
 		// directory. If a test is directly testing the cache, or depends on
 		// specific ordered cache behavior then
