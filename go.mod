@@ -38,7 +38,7 @@ require (
 	github.com/sylabs/json-resp v0.8.2
 	github.com/sylabs/scs-build-client v0.7.5
 	github.com/sylabs/scs-key-client v0.7.2
-	github.com/sylabs/scs-library-client v1.3.3
+	github.com/sylabs/scs-library-client v1.4.1
 	github.com/sylabs/sif/v2 v2.9.0
 	github.com/vbauerster/mpb/v8 v8.1.4
 	golang.org/x/sys v0.3.0
