@@ -103,6 +103,44 @@ func (c ctx) testNvidiaLegacy(t *testing.T) {
 	}
 }
 
+func (c ctx) ociTestNvidiaLegacy(t *testing.T) {
+	require.Nvidia(t)
+
+	imageURL := "docker://ubuntu:20.04"
+
+	// Basic test that we can run the bound in `nvidia-smi` which *should* be on the PATH
+	tests := []struct {
+		profile e2e.Profile
+		args    []string
+		env     []string
+	}{
+		{
+			profile: e2e.OCIUserProfile,
+			args:    []string{"--nv", imageURL, "nvidia-smi"},
+		},
+		{
+			profile: e2e.OCIFakerootProfile,
+			args:    []string{"--nv", imageURL, "nvidia-smi"},
+		},
+		{
+			profile: e2e.OCIRootProfile,
+			args:    []string{"--nv", imageURL, "nvidia-smi"},
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.profile.String()),
+			e2e.WithProfile(tt.profile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(tt.args...),
+			e2e.WithEnv(tt.env),
+			e2e.ExpectExit(0),
+		)
+	}
+}
+
 func (c ctx) testNvCCLI(t *testing.T) {
 	require.Nvidia(t)
 	require.NvCCLI(t)
@@ -593,6 +631,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"build nvccli": c.testBuildNvCCLI,
 		"build rocm":   c.testBuildRocm,
 		// oci mode
-		"oci rocm": c.ociTestRocm,
+		"oci nvidia": c.ociTestNvidiaLegacy,
+		"oci rocm":   c.ociTestRocm,
 	}
 }
