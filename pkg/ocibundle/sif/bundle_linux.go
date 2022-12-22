@@ -153,6 +153,11 @@ func (s *sifBundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	return nil
 }
 
+// Update will update the OCI config for the OCI bundle, so that it is ready for execution.
+func (s *sifBundle) Update(ctx context.Context, ociConfig *specs.Spec) error {
+	return fmt.Errorf("cannot update config of a SIF OCI bundle: not implemented")
+}
+
 // Delete erases OCI bundle create from SIF image
 func (s *sifBundle) Delete() error {
 	if s.writable {
@@ -167,6 +172,11 @@ func (s *sifBundle) Delete() error {
 	}
 	// delete bundle directory
 	return tools.DeleteBundle(s.bundlePath)
+}
+
+// ImageSpec returns nil for SIF bundles, as they currently do not carry an OCI image spec.
+func (s *sifBundle) ImageSpec() (imgSpec *imageSpecs.Image) {
+	return nil
 }
 
 func (s *sifBundle) Path() string {

@@ -238,6 +238,7 @@ The source files:
 
 * `pkg/sypgp/testdata_test.go`
 * `internal/pkg/util/user/cgo_lookup_unix.go`
+* `internal/pkg/util/passwdfile/passwdfile_unix.go`
 
 Contain code from the Go project.
 

@@ -8,12 +8,15 @@ package ocibundle
 import (
 	"context"
 
+	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 )
 
 // Bundle defines an OCI bundle interface to create/delete OCI bundles
 type Bundle interface {
 	Create(context.Context, *specs.Spec) error
+	Update(context.Context, *specs.Spec) error
+	ImageSpec() *imgspecv1.Image
 	Delete() error
 	Path() string
 }

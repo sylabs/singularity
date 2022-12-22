@@ -16,7 +16,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	"github.com/containers/image/v5/types"
 	"github.com/google/uuid"
@@ -33,7 +32,6 @@ import (
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
-	"golang.org/x/term"
 )
 
 var (
@@ -213,18 +211,11 @@ func checkOpts(lo launcher.Options) error {
 }
 
 // createSpec produces an OCI runtime specification, suitable to launch a
-// container. This spec excludes ProcessArgs and Env, as these have to be
+// container. This spec excludes the Process config, as this have to be
 // computed where the image config is available, to account for the image's CMD
 // / ENTRYPOINT / ENV.
 func (l *Launcher) createSpec() (*specs.Spec, error) {
 	spec := minimalSpec()
-
-	// Override the default Process.Terminal to false if our stdin is not a terminal.
-	if !term.IsTerminal(syscall.Stdin) {
-		spec.Process.Terminal = false
-	}
-
-	spec.Process.User = l.getProcessUser()
 
 	// If we are *not* requesting fakeroot, then we need to map the container
 	// uid back to host uid, through the initial fakeroot userns.
@@ -343,42 +334,37 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		}
 	}
 
+	// Create OCI runtime spec, excluding the Process settings which must consider the image spec.
 	spec, err := l.createSpec()
 	if err != nil {
 		return fmt.Errorf("while creating OCI spec: %w", err)
 	}
 
-	// Assemble the runtime & user-requested environment, which will be merged
-	// with the image ENV and set in the container at runtime.
-	rtEnv := defaultEnv(image, bundleDir)
-	// SINGULARITYENV_ has lowest priority
-	rtEnv = mergeMap(rtEnv, singularityEnvMap())
-	// --env-file can override SINGULARITYENV_
-	if l.cfg.EnvFile != "" {
-		e, err := envFileMap(ctx, l.cfg.EnvFile)
-		if err != nil {
-			return err
-		}
-		rtEnv = mergeMap(rtEnv, e)
-	}
-	// --env flag can override --env-file and SINGULARITYENV_
-	rtEnv = mergeMap(rtEnv, l.cfg.Env)
-
+	// Create a bundle - obtain and extract the image.
 	b, err := native.New(
 		native.OptBundlePath(bundleDir),
 		native.OptImageRef(image),
 		native.OptSysCtx(sysCtx),
 		native.OptImgCache(imgCache),
-		native.OptProcessArgs(process, args),
-		native.OptProcessEnv(rtEnv),
 	)
 	if err != nil {
 		return err
 	}
-
 	if err := b.Create(ctx, spec); err != nil {
 		return err
 	}
+
+	// With reference to the bundle's image spec, now set the process configuration.
+	imgSpec := b.ImageSpec()
+	if imgSpec == nil {
+		return fmt.Errorf("bundle has no image spec")
+	}
+	specProcess, err := l.getProcess(ctx, *imgSpec, image, b.Path(), process, args)
+	if err != nil {
+		return err
+	}
+	spec.Process = specProcess
+	b.Update(ctx, spec)
 
 	if err := l.updatePasswdGroup(tools.RootFs(b.Path()).Path()); err != nil {
 		return err

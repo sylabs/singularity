@@ -10,13 +10,83 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"syscall"
 
+	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/fakeroot"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/shell/interpreter"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"golang.org/x/term"
 )
+
+const singularityLibs = "/.singularity.d/libs"
+
+func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, image, bundle, process string, args []string) (*specs.Process, error) {
+	// Assemble the runtime & user-requested environment, which will be merged
+	// with the image ENV and set in the container at runtime.
+	rtEnv := defaultEnv(image, bundle)
+	// SINGULARITYENV_ has lowest priority
+	rtEnv = mergeMap(rtEnv, singularityEnvMap())
+	// --env-file can override SINGULARITYENV_
+	if l.cfg.EnvFile != "" {
+		e, err := envFileMap(ctx, l.cfg.EnvFile)
+		if err != nil {
+			return nil, err
+		}
+		rtEnv = mergeMap(rtEnv, e)
+	}
+	// --env flag can override --env-file and SINGULARITYENV_
+	rtEnv = mergeMap(rtEnv, l.cfg.Env)
+
+	cwd, err := l.getProcessCwd()
+	if err != nil {
+		return nil, err
+	}
+
+	p := specs.Process{
+		Args:     getProcessArgs(imgSpec, process, args),
+		Cwd:      cwd,
+		Env:      getProcessEnv(imgSpec, rtEnv),
+		User:     l.getProcessUser(),
+		Terminal: getProcessTerminal(),
+	}
+
+	return &p, nil
+}
+
+// getProcessTerminal determines whether the container process should run with a terminal.
+func getProcessTerminal() bool {
+	// Override the default Process.Terminal to false if our stdin is not a terminal.
+	if term.IsTerminal(syscall.Stdin) {
+		return true
+	}
+	return false
+}
+
+// getProcessArgs returns the process args for a container, with reference to the OCI Image Spec.
+// The process and image parameters may override the image CMD and/or ENTRYPOINT.
+func getProcessArgs(imageSpec imgspecv1.Image, process string, args []string) []string {
+	var processArgs []string
+
+	if process != "" {
+		processArgs = []string{process}
+	} else {
+		processArgs = imageSpec.Config.Entrypoint
+	}
+
+	if len(args) > 0 {
+		processArgs = append(processArgs, args...)
+	} else {
+		if process == "" {
+			processArgs = append(processArgs, imageSpec.Config.Cmd...)
+		}
+	}
+
+	return processArgs
+}
 
 // getProcessUser computes the uid/gid(s) to be set on process execution.
 // Currently this only supports the same uid / primary gid as on the host.
@@ -140,6 +210,69 @@ func (l *Launcher) getReverseUserMaps() (uidMap, gidMap []specs.LinuxIDMapping, 
 	}
 
 	return uidMap, gidMap, nil
+}
+
+// getProcessEnv combines the image config ENV with the ENV requested at runtime.
+// APPEND_PATH and PREPEND_PATH are honored as with the native singularity runtime.
+// LD_LIBRARY_PATH is modified to always include the singularity lib bind directory.
+func getProcessEnv(imageSpec imgspecv1.Image, runtimeEnv map[string]string) []string {
+	path := ""
+	appendPath := ""
+	prependPath := ""
+	ldLibraryPath := ""
+
+	// Start with the environment from the image config.
+	g := generate.New(nil)
+	g.Config.Process = &specs.Process{Env: imageSpec.Config.Env}
+
+	// Obtain PATH, and LD_LIBRARY_PATH if set in the image config, for special handling.
+	for _, env := range imageSpec.Config.Env {
+		e := strings.SplitN(env, "=", 2)
+		if len(e) < 2 {
+			continue
+		}
+		if e[0] == "PATH" {
+			path = e[1]
+		}
+		if e[0] == "LD_LIBRARY_PATH" {
+			ldLibraryPath = e[1]
+		}
+	}
+
+	// Apply env vars from runtime, except PATH and LD_LIBRARY_PATH releated.
+	for k, v := range runtimeEnv {
+		switch k {
+		case "PATH":
+			path = v
+		case "APPEND_PATH":
+			appendPath = v
+		case "PREPEND_PATH":
+			prependPath = v
+		case "LD_LIBRARY_PATH":
+			ldLibraryPath = v
+		default:
+			g.AddProcessEnv(k, v)
+		}
+	}
+
+	// Compute and set optionally APPEND-ed / PREPEND-ed PATH.
+	if appendPath != "" {
+		path = path + ":" + appendPath
+	}
+	if prependPath != "" {
+		path = prependPath + ":" + path
+	}
+	if path != "" {
+		g.AddProcessEnv("PATH", path)
+	}
+
+	// Ensure LD_LIBRARY_PATH always contains singularity lib binding dir.
+	if !strings.Contains(ldLibraryPath, singularityLibs) {
+		ldLibraryPath = strings.TrimPrefix(ldLibraryPath+":"+singularityLibs, ":")
+	}
+	g.AddProcessEnv("LD_LIBRARY_PATH", ldLibraryPath)
+
+	return g.Config.Process.Env
 }
 
 // defaultEnv returns default environment variables set in the container.
