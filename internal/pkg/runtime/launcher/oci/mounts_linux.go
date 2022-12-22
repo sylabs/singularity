@@ -44,6 +44,11 @@ func (l *Launcher) getMounts() ([]specs.Mount, error) {
 			return nil, fmt.Errorf("while configuring ROCm mount(s): %w", err)
 		}
 	}
+	if (l.cfg.Nvidia || l.singularityConf.AlwaysUseNv) && !l.cfg.NoNvidia {
+		if err := l.addNvidiaMounts(mounts); err != nil {
+			return nil, fmt.Errorf("while configuring Nvidia mount(s): %w", err)
+		}
+	}
 
 	return *mounts, nil
 }
@@ -328,6 +333,80 @@ func (l *Launcher) addRocmMounts(mounts *[]specs.Mount) error {
 			Source:      lib,
 			Destination: containerLib,
 			Options:     map[string]*bind.Option{"ro": {}},
+		}
+		if err := addBindMount(mounts, bind); err != nil {
+			return err
+		}
+	}
+
+	for _, dev := range devs {
+		bind := bind.Path{
+			Source:      dev,
+			Destination: dev,
+		}
+		if err := addDevBindMount(mounts, bind); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (l *Launcher) addNvidiaMounts(mounts *[]specs.Mount) error {
+	if l.singularityConf.UseNvCCLI {
+		sylog.Warningf("--nvccli not yet supported with --oci. Falling back to legacy --nv support.")
+	}
+
+	gpuConfFile := filepath.Join(buildcfg.SINGULARITY_CONFDIR, "nvliblist.conf")
+	libs, bins, err := gpu.NvidiaPaths(gpuConfFile)
+	if err != nil {
+		sylog.Warningf("While finding Nvidia bind points: %v", err)
+	}
+	if len(libs) == 0 {
+		sylog.Warningf("Could not find any Nvidia libraries on this host!")
+	}
+
+	ipcs, err := gpu.NvidiaIpcsPath()
+	if err != nil {
+		sylog.Warningf("While finding Nvidia IPCs: %v", err)
+	}
+
+	devs, err := gpu.NvidiaDevices(true)
+	if err != nil {
+		sylog.Warningf("While finding Nvidia devices: %v", err)
+	}
+	if len(devs) == 0 {
+		sylog.Warningf("Could not find any ROCm devices on this host!")
+	}
+
+	for _, binary := range bins {
+		containerBinary := filepath.Join("/usr/bin", filepath.Base(binary))
+		bind := bind.Path{
+			Source:      binary,
+			Destination: containerBinary,
+			Options:     map[string]*bind.Option{"ro": {}},
+		}
+		if err := addBindMount(mounts, bind); err != nil {
+			return err
+		}
+	}
+
+	for _, lib := range libs {
+		containerLib := filepath.Join(containerLibDir, filepath.Base(lib))
+		bind := bind.Path{
+			Source:      lib,
+			Destination: containerLib,
+			Options:     map[string]*bind.Option{"ro": {}},
+		}
+		if err := addBindMount(mounts, bind); err != nil {
+			return err
+		}
+	}
+
+	for _, ipc := range ipcs {
+		bind := bind.Path{
+			Source:      ipc,
+			Destination: ipc,
 		}
 		if err := addBindMount(mounts, bind); err != nil {
 			return err

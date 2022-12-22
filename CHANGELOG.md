@@ -83,6 +83,8 @@
     - Container environment variables via `--env`, `--env-file`, and
       `SINGULARITYENV_` host env vars.
     - `--rocm` to bind ROCm GPU libraries and devices into the container.
+    - `--nv` to bind Nvidia driver / basic CUDA libraries and devices into
+      the container.
 - Instance name is available inside an instance via the new
   `SINGULARITY_INSTANCE` environment variable.
 - The `sign` command now supports signing with non-PGP key material by

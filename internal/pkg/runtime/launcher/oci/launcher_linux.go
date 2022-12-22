@@ -108,14 +108,8 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "NoMount")
 	}
 
-	if lo.Nvidia {
-		badOpt = append(badOpt, "Nvidia")
-	}
 	if lo.NvCCLI {
 		badOpt = append(badOpt, "NvCCLI")
-	}
-	if lo.NoNvidia {
-		badOpt = append(badOpt, "NoNvidia")
 	}
 
 	if len(lo.ContainLibs) > 0 {
