@@ -23,6 +23,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cache"
+	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
@@ -164,10 +165,6 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "NoUmask")
 	}
 
-	if lo.CGroupsJSON != "" {
-		badOpt = append(badOpt, "CGroupsJSON")
-	}
-
 	// ConfigFile always set by CLI. We should support only the default from build time.
 	if lo.ConfigFile != "" && lo.ConfigFile != buildcfg.SINGULARITY_CONF_FILE {
 		badOpt = append(badOpt, "ConfigFile")
@@ -253,6 +250,15 @@ func (l *Launcher) createSpec() (*specs.Spec, error) {
 		return nil, err
 	}
 	spec.Mounts = mounts
+
+	cgPath, resources, err := l.getCgroup()
+	if err != nil {
+		return nil, err
+	}
+	if cgPath != "" {
+		spec.Linux.CgroupsPath = cgPath
+		spec.Linux.Resources = resources
+	}
 
 	return &spec, nil
 }
@@ -385,9 +391,10 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 
 	if os.Getuid() == 0 {
 		// Direct execution of runc/crun run.
-		err = Run(ctx, id.String(), b.Path(), "")
+		err = Run(ctx, id.String(), b.Path(), "", l.singularityConf.SystemdCgroups)
 	} else {
 		// Reexec singularity oci run in a userns with mappings.
+		// Note - the oci run command will pull out the SystemdCgroups setting from config.
 		err = RunNS(ctx, id.String(), b.Path(), "")
 	}
 	var exitErr *exec.ExitError
@@ -395,6 +402,19 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		os.Exit(exitErr.ExitCode())
 	}
 	return err
+}
+
+// getCgroup will return a cgroup path and resources for the runtime to create.
+func (l *Launcher) getCgroup() (path string, resources *specs.LinuxResources, err error) {
+	if l.cfg.CGroupsJSON == "" {
+		return "", nil, nil
+	}
+	path = cgroups.DefaultPathForPid(l.singularityConf.SystemdCgroups, -1)
+	resources, err = cgroups.UnmarshalJSONResources(l.cfg.CGroupsJSON)
+	if err != nil {
+		return "", nil, err
+	}
+	return path, resources, nil
 }
 
 func mergeMap(a map[string]string, b map[string]string) map[string]string {

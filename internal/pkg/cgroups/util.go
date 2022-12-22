@@ -7,6 +7,9 @@ package cgroups
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
 
 	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 )
@@ -46,4 +49,25 @@ func pidToPath(pid int) (path string, err error) {
 		return "", fmt.Errorf("could not find cgroups v1 path (using devices subsystem)")
 	}
 	return path, nil
+}
+
+// DefaultPathForPid returns a default cgroup path for a given PID.
+func DefaultPathForPid(systemd bool, pid int) (group string) {
+	// Default naming is pid of first process added to cgroup.
+	strPid := strconv.Itoa(pid)
+	// Request is for an empty cgroup... name it for the requestor's (our) pid.
+	if pid == -1 {
+		strPid = "parent-" + strconv.Itoa(os.Getpid())
+	}
+
+	if systemd {
+		if os.Getuid() == 0 {
+			group = "system.slice:singularity:" + strPid
+		} else {
+			group = "user.slice:singularity:" + strPid
+		}
+	} else {
+		group = filepath.Join("/singularity", strPid)
+	}
+	return group
 }

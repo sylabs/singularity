@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/opencontainers/runc/libcontainer/cgroups"
@@ -337,15 +336,8 @@ func NewManagerWithSpec(spec *specs.LinuxResources, pid int, group string, syste
 	if pid == 0 {
 		return nil, fmt.Errorf("a pid is required to create a new cgroup")
 	}
-	if group == "" && !systemd {
-		group = filepath.Join("/singularity", strconv.Itoa(pid))
-	}
-	if group == "" && systemd {
-		if os.Getuid() == 0 {
-			group = "system.slice:singularity:" + strconv.Itoa(pid)
-		} else {
-			group = "user.slice:singularity:" + strconv.Itoa(pid)
-		}
+	if group == "" {
+		group = DefaultPathForPid(systemd, pid)
 	}
 
 	sylog.Debugf("Creating cgroups manager for %s", group)

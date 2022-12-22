@@ -72,6 +72,7 @@ func (c ctx) ociSingularityEnv(t *testing.T) {
 			e2e.WithProfile(e2e.OCIUserProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithEnv(tt.env),
+			e2e.WithRootlessEnv(),
 			e2e.WithArgs(tt.image, "/bin/sh", "-c", "echo $PATH"),
 			e2e.ExpectExit(
 				0,
@@ -181,6 +182,7 @@ func (c ctx) ociEnvOption(t *testing.T) {
 			e2e.WithProfile(e2e.OCIUserProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithEnv(tt.hostEnv),
+			e2e.WithRootlessEnv(),
 			e2e.WithArgs(args...),
 			e2e.ExpectExit(
 				0,
@@ -283,6 +285,7 @@ func (c ctx) ociEnvFile(t *testing.T) {
 			e2e.WithProfile(e2e.OCIUserProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithEnv(tt.hostEnv),
+			e2e.WithRootlessEnv(),
 			e2e.WithArgs(args...),
 			e2e.ExpectExit(
 				0,
