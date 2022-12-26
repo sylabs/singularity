@@ -45,6 +45,7 @@ require (
 	github.com/sylabs/scs-library-client v1.4.1
 	github.com/sylabs/sif/v2 v2.9.0
 	github.com/vbauerster/mpb/v8 v8.1.4
+	golang.org/x/crypto v0.4.0
 	golang.org/x/sys v0.4.0
 	golang.org/x/term v0.4.0
 	golang.org/x/text v0.6.0
@@ -151,7 +152,6 @@ require (
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	golang.org/x/crypto v0.4.0 // indirect
 	golang.org/x/mod v0.6.0 // indirect
 	golang.org/x/net v0.4.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
