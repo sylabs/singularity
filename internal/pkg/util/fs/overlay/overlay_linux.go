@@ -41,6 +41,7 @@ const (
 	ecrypt int64 = 0xF15F
 	lustre int64 = 0x0BD00BD0 //nolint:misspell
 	gpfs   int64 = 0x47504653
+	panfs  int64 = 0xAAD7AAEA
 )
 
 var incompatibleFs = map[int64]fs{
@@ -68,6 +69,11 @@ var incompatibleFs = map[int64]fs{
 	// GPFS filesystem
 	gpfs: {
 		name:       "GPFS",
+		overlayDir: lowerDir | upperDir,
+	},
+	// panfs filesystem
+	panfs: {
+		name:       "PANFS",
 		overlayDir: lowerDir | upperDir,
 	},
 }
