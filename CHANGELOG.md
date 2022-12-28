@@ -109,6 +109,8 @@
 - In `--rocm` mode, the whole of `/dev/dri` is now bound into the container when
   `--contain` is in use. This makes `/dev/dri/render` devices available,
   required for later ROCm versions.
+- Overlay is blocked on the `panfs` filesystem, allowing sandbox directories to be
+  run from `panfs` without error.
 
 ## 3.10.4 \[2022-11-10\]
 
