@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -108,7 +108,7 @@ func DeleteBundle(bundlePath string) error {
 }
 
 // BundleUser returns a user struct for the specified user, from the bundle passwd file.
-func Bundle(bundlePath, user string) (u *user.User, err error) {
+func BundleUser(bundlePath, user string) (u *user.User, err error) {
 	passwd := filepath.Join(RootFs(bundlePath).Path(), "etc", "passwd")
 	if _, err := os.Stat(passwd); err != nil {
 		return nil, fmt.Errorf("cannot access container passwd file: %w", err)

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/containers/image/v5/types"
@@ -211,31 +212,14 @@ func checkOpts(lo launcher.Options) error {
 	return nil
 }
 
-// createSpec produces an OCI runtime specification, suitable to launch a
-// container. This spec excludes the Process config, as this have to be
-// computed where the image config is available, to account for the image's CMD
-// / ENTRYPOINT / ENV.
+// createSpec creates an initial OCI runtime specification, suitable to launch a
+// container. This spec excludes the Process config, as this has to be computed
+// where the image config is available, to account for the image's CMD /
+// ENTRYPOINT / ENV / USER.
 func (l *Launcher) createSpec() (*specs.Spec, error) {
 	spec := minimalSpec()
 
-	// If we are *not* requesting fakeroot, then we need to map the container
-	// uid back to host uid, through the initial fakeroot userns.
-	if !l.cfg.Fakeroot && os.Getuid() != 0 {
-		uidMap, gidMap, err := l.getReverseUserMaps()
-		if err != nil {
-			return nil, err
-		}
-		spec.Linux.UIDMappings = uidMap
-		spec.Linux.GIDMappings = gidMap
-	}
-
 	spec = addNamespaces(spec, l.cfg.Namespaces)
-
-	cwd, err := l.getProcessCwd()
-	if err != nil {
-		return nil, err
-	}
-	spec.Process.Cwd = cwd
 
 	mounts, err := l.getMounts()
 	if err != nil {
@@ -255,13 +239,64 @@ func (l *Launcher) createSpec() (*specs.Spec, error) {
 	return &spec, nil
 }
 
-func (l *Launcher) updateSpecFromImage(ctx context.Context, b ocibundle.Bundle, spec *specs.Spec, image string, process string, args []string) error {
+// finalizeSpec updates the bundle config, filling in Process config that depends on the image spec.
+func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *specs.Spec, image string, process string, args []string) (err error) {
 	imgSpec := b.ImageSpec()
 	if imgSpec == nil {
 		return fmt.Errorf("bundle has no image spec")
 	}
 
-	specProcess, err := l.getProcess(ctx, *imgSpec, image, b.Path(), process, args)
+	// In the absence of a USER in the OCI image config, we will run the
+	// container process as our current user / group.
+	currentUID := uint32(os.Getuid())
+	currentGID := uint32(os.Getgid())
+	targetUID := currentUID
+	targetGID := currentGID
+	containerUser := false
+
+	// If the OCI image config specifies a USER we will:
+	//  * When unprivileged - run as that user, via nested subuid/gid mappings (host user -> userns root -> OCI USER)
+	//  * When privileged - directly run as that user, as a host uid/gid.
+	if imgSpec.Config.User != "" {
+		imgUser, err := tools.BundleUser(b.Path(), imgSpec.Config.User)
+		if err != nil {
+			return err
+		}
+		imgUID, err := strconv.ParseUint(imgUser.Uid, 10, 32)
+		if err != nil {
+			return err
+		}
+		imgGID, err := strconv.ParseUint(imgUser.Gid, 10, 32)
+		if err != nil {
+			return err
+		}
+		targetUID = uint32(imgUID)
+		targetGID = uint32(imgGID)
+		containerUser = true
+		sylog.Debugf("Running as USER specified in OCI image config %d:%d", targetUID, targetGID)
+	}
+
+	// Fakeroot always overrides to give us root in the container (via userns & idmap if unprivileged).
+	if l.cfg.Fakeroot {
+		targetUID = 0
+		targetGID = 0
+	}
+
+	if targetUID != 0 && currentUID != 0 {
+		uidMap, gidMap, err := l.getReverseUserMaps(targetUID, targetGID)
+		if err != nil {
+			return err
+		}
+		spec.Linux.UIDMappings = uidMap
+		spec.Linux.GIDMappings = gidMap
+	}
+
+	u := specs.User{
+		UID: targetUID,
+		GID: targetGID,
+	}
+
+	specProcess, err := l.getProcess(ctx, *imgSpec, image, b.Path(), process, args, u)
 	if err != nil {
 		return err
 	}
@@ -270,16 +305,19 @@ func (l *Launcher) updateSpecFromImage(ctx context.Context, b ocibundle.Bundle, 
 		return err
 	}
 
-	if err := l.updatePasswdGroup(tools.RootFs(b.Path()).Path()); err != nil {
+	// If we are entering as root, or a USER defined in the container, then passwd/group
+	// information should be present already.
+	if targetUID == 0 || containerUser {
+		return nil
+	}
+	// Otherewise, add to the passwd and group files in the container.
+	if err := l.updatePasswdGroup(tools.RootFs(b.Path()).Path(), targetUID, targetGID); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (l *Launcher) updatePasswdGroup(rootfs string) error {
-	uid := os.Getuid()
-	gid := os.Getgid()
-
+func (l *Launcher) updatePasswdGroup(rootfs string, uid, gid uint32) error {
 	if os.Getuid() == 0 || l.cfg.Fakeroot {
 		return nil
 	}
@@ -293,7 +331,7 @@ func (l *Launcher) updatePasswdGroup(rootfs string) error {
 	}
 
 	sylog.Debugf("Updating passwd file: %s", containerPasswd)
-	content, err := files.Passwd(containerPasswd, pw.Dir, uid)
+	content, err := files.Passwd(containerPasswd, pw.Dir, int(uid))
 	if err != nil {
 		return fmt.Errorf("while creating passwd file: %w", err)
 	}
@@ -302,7 +340,7 @@ func (l *Launcher) updatePasswdGroup(rootfs string) error {
 	}
 
 	sylog.Debugf("Updating group file: %s", containerGroup)
-	content, err = files.Group(containerGroup, uid, []int{gid})
+	content, err = files.Group(containerGroup, int(uid), []int{int(gid)})
 	if err != nil {
 		return fmt.Errorf("while creating group file: %w", err)
 	}
@@ -377,7 +415,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	}
 
 	// With reference to the bundle's image spec, now set the process configuration.
-	if err := l.updateSpecFromImage(ctx, b, spec, image, process, args); err != nil {
+	if err := l.finalizeSpec(ctx, b, spec, image, process, args); err != nil {
 		return err
 	}
 

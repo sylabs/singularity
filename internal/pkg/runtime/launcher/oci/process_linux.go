@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -24,7 +24,7 @@ import (
 
 const singularityLibs = "/.singularity.d/libs"
 
-func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, image, bundle, process string, args []string) (*specs.Process, error) {
+func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, image, bundle, process string, args []string, u specs.User) (*specs.Process, error) {
 	// Assemble the runtime & user-requested environment, which will be merged
 	// with the image ENV and set in the container at runtime.
 	rtEnv := defaultEnv(image, bundle)
@@ -50,7 +50,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, imag
 		Args:     getProcessArgs(imgSpec, process, args),
 		Cwd:      cwd,
 		Env:      getProcessEnv(imgSpec, rtEnv),
-		User:     l.getProcessUser(),
+		User:     u,
 		Terminal: getProcessTerminal(),
 	}
 
@@ -59,11 +59,8 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, imag
 
 // getProcessTerminal determines whether the container process should run with a terminal.
 func getProcessTerminal() bool {
-	// Override the default Process.Terminal to false if our stdin is not a terminal.
-	if term.IsTerminal(syscall.Stdin) {
-		return true
-	}
-	return false
+	// Sets the default Process.Terminal to false if our stdin is not a terminal.
+	return term.IsTerminal(syscall.Stdin)
 }
 
 // getProcessArgs returns the process args for a container, with reference to the OCI Image Spec.
@@ -88,22 +85,6 @@ func getProcessArgs(imageSpec imgspecv1.Image, process string, args []string) []
 	return processArgs
 }
 
-// getProcessUser computes the uid/gid(s) to be set on process execution.
-// Currently this only supports the same uid / primary gid as on the host.
-// TODO - expand for fakeroot, and arbitrary mapped user.
-func (l *Launcher) getProcessUser() specs.User {
-	if l.cfg.Fakeroot {
-		return specs.User{
-			UID: 0,
-			GID: 0,
-		}
-	}
-	return specs.User{
-		UID: uint32(os.Getuid()),
-		GID: uint32(os.Getgid()),
-	}
-}
-
 // getProcessCwd computes the Cwd that the container process should start in.
 // Currently this is the user's tmpfs home directory (see --containall).
 func (l *Launcher) getProcessCwd() (dir string, err error) {
@@ -118,12 +99,12 @@ func (l *Launcher) getProcessCwd() (dir string, err error) {
 	return pw.Dir, nil
 }
 
-// getReverseUserMaps returns uid and gid mappings that re-map container uid to host
+// getReverseUserMaps returns uid and gid mappings that re-map container uid to target
 // uid. This 'reverses' the host user to container root mapping in the initial
 // userns from which the OCI runtime is launched.
 //
-//	host 1001 -> fakeroot userns 0 -> container 1001
-func (l *Launcher) getReverseUserMaps() (uidMap, gidMap []specs.LinuxIDMapping, err error) {
+//	e.g. host 1001 -> fakeroot userns 0 -> container targetUID
+func (l *Launcher) getReverseUserMaps(targetUID, targetGID uint32) (uidMap, gidMap []specs.LinuxIDMapping, err error) {
 	uid := uint32(os.Getuid())
 	gid := uint32(os.Getgid())
 	// Get user's configured subuid & subgid ranges
