@@ -26,6 +26,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ocibundle/native"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/syfs"
@@ -254,6 +255,27 @@ func (l *Launcher) createSpec() (*specs.Spec, error) {
 	return &spec, nil
 }
 
+func (l *Launcher) updateSpecFromImage(ctx context.Context, b ocibundle.Bundle, spec *specs.Spec, image string, process string, args []string) error {
+	imgSpec := b.ImageSpec()
+	if imgSpec == nil {
+		return fmt.Errorf("bundle has no image spec")
+	}
+
+	specProcess, err := l.getProcess(ctx, *imgSpec, image, b.Path(), process, args)
+	if err != nil {
+		return err
+	}
+	spec.Process = specProcess
+	if err := b.Update(ctx, spec); err != nil {
+		return err
+	}
+
+	if err := l.updatePasswdGroup(tools.RootFs(b.Path()).Path()); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (l *Launcher) updatePasswdGroup(rootfs string) error {
 	uid := os.Getuid()
 	gid := os.Getgid()
@@ -355,18 +377,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	}
 
 	// With reference to the bundle's image spec, now set the process configuration.
-	imgSpec := b.ImageSpec()
-	if imgSpec == nil {
-		return fmt.Errorf("bundle has no image spec")
-	}
-	specProcess, err := l.getProcess(ctx, *imgSpec, image, b.Path(), process, args)
-	if err != nil {
-		return err
-	}
-	spec.Process = specProcess
-	b.Update(ctx, spec)
-
-	if err := l.updatePasswdGroup(tools.RootFs(b.Path()).Path()); err != nil {
+	if err := l.updateSpecFromImage(ctx, b, spec, image, process, args); err != nil {
 		return err
 	}
 
