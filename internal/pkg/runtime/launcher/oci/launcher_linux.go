@@ -198,9 +198,6 @@ func checkOpts(lo launcher.Options) error {
 	if lo.SIFFUSE {
 		badOpt = append(badOpt, "SIFFUSE")
 	}
-	if lo.CacheDisabled {
-		badOpt = append(badOpt, "CacheDisabled")
-	}
 
 	if len(badOpt) > 0 {
 		return fmt.Errorf("%w: %s", ErrUnsupportedOption, strings.Join(badOpt, ","))
