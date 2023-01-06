@@ -111,6 +111,7 @@
   required for later ROCm versions.
 - Overlay is blocked on the `panfs` filesystem, allowing sandbox directories to be
   run from `panfs` without error.
+- Ensure `DOCKER_HOST` is honored in non-build flows.
 
 ## 3.10.4 \[2022-11-10\]
 
