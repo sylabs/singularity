@@ -198,49 +198,55 @@ func (c ctx) testDockerHost(t *testing.T) {
 		},
 	}
 
-	t.Run("exec", func(t *testing.T) {
-		for _, tt := range tests {
-			cmdOps := []e2e.SingularityCmdOp{
-				e2e.WithProfile(e2e.RootProfile),
-				e2e.AsSubtest(tt.name),
-				e2e.WithCommand("exec"),
-				e2e.WithArgs("--disable-cache", dockerURI, "/bin/true"),
-				e2e.WithEnv(append(os.Environ(), tt.envarName+"="+tt.envarValue)),
-				e2e.ExpectExit(tt.exit),
-			}
-			c.env.RunSingularity(t, cmdOps...)
-		}
-	})
+	for _, profile := range []e2e.Profile{e2e.RootProfile, e2e.OCIRootProfile} {
+		t.Run(profile.String(), func(t *testing.T) {
 
-	t.Run("pull", func(t *testing.T) {
-		for _, tt := range tests {
-			cmdOps := []e2e.SingularityCmdOp{
-				e2e.WithProfile(e2e.RootProfile),
-				e2e.AsSubtest(tt.name),
-				e2e.WithCommand("pull"),
-				e2e.WithArgs("--force", "--disable-cache", dockerURI),
-				e2e.WithEnv(append(os.Environ(), tt.envarName+"="+tt.envarValue)),
-				e2e.WithDir(tmpPath),
-				e2e.ExpectExit(tt.exit),
-			}
-			c.env.RunSingularity(t, cmdOps...)
-		}
-	})
+			t.Run("exec", func(t *testing.T) {
+				for _, tt := range tests {
+					cmdOps := []e2e.SingularityCmdOp{
+						e2e.WithProfile(profile),
+						e2e.AsSubtest(profile.String() + "/" + tt.name),
+						e2e.WithCommand("exec"),
+						e2e.WithArgs("--disable-cache", dockerURI, "/bin/true"),
+						e2e.WithEnv(append(os.Environ(), tt.envarName+"="+tt.envarValue)),
+						e2e.ExpectExit(tt.exit),
+					}
+					c.env.RunSingularity(t, cmdOps...)
+				}
+			})
 
-	t.Run("build", func(t *testing.T) {
-		for _, tt := range tests {
-			cmdOps := []e2e.SingularityCmdOp{
-				e2e.WithProfile(e2e.RootProfile),
-				e2e.AsSubtest(tt.name),
-				e2e.WithCommand("build"),
-				e2e.WithArgs("--force", "--disable-cache", "test.sif", dockerURI),
-				e2e.WithEnv(append(os.Environ(), tt.envarName+"="+tt.envarValue)),
-				e2e.WithDir(tmpPath),
-				e2e.ExpectExit(tt.exit),
-			}
-			c.env.RunSingularity(t, cmdOps...)
-		}
-	})
+			t.Run("pull", func(t *testing.T) {
+				for _, tt := range tests {
+					cmdOps := []e2e.SingularityCmdOp{
+						e2e.WithProfile(profile),
+						e2e.AsSubtest(tt.name),
+						e2e.WithCommand("pull"),
+						e2e.WithArgs("--force", "--disable-cache", dockerURI),
+						e2e.WithEnv(append(os.Environ(), tt.envarName+"="+tt.envarValue)),
+						e2e.WithDir(tmpPath),
+						e2e.ExpectExit(tt.exit),
+					}
+					c.env.RunSingularity(t, cmdOps...)
+				}
+			})
+
+			t.Run("build", func(t *testing.T) {
+				for _, tt := range tests {
+					cmdOps := []e2e.SingularityCmdOp{
+						e2e.WithProfile(profile),
+						e2e.AsSubtest(tt.name),
+						e2e.WithCommand("build"),
+						e2e.WithArgs("--force", "--disable-cache", "test.sif", dockerURI),
+						e2e.WithEnv(append(os.Environ(), tt.envarName+"="+tt.envarValue)),
+						e2e.WithDir(tmpPath),
+						e2e.ExpectExit(tt.exit),
+					}
+					c.env.RunSingularity(t, cmdOps...)
+				}
+			})
+
+		})
+	}
 
 	// Clean up docker image
 	e2e.Privileged(func(t *testing.T) {
