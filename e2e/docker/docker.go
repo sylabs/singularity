@@ -200,7 +200,6 @@ func (c ctx) testDockerHost(t *testing.T) {
 
 	for _, profile := range []e2e.Profile{e2e.RootProfile, e2e.OCIRootProfile} {
 		t.Run(profile.String(), func(t *testing.T) {
-
 			t.Run("exec", func(t *testing.T) {
 				for _, tt := range tests {
 					cmdOps := []e2e.SingularityCmdOp{
@@ -244,13 +243,12 @@ func (c ctx) testDockerHost(t *testing.T) {
 					c.env.RunSingularity(t, cmdOps...)
 				}
 			})
-
 		})
 	}
 
 	// Clean up docker image
 	e2e.Privileged(func(t *testing.T) {
-		cmd := exec.Command("docker", "rmi", dockerURI)
+		cmd := exec.Command("docker", "rmi", dockerRef)
 		_, err = cmd.Output()
 		if err != nil {
 			t.Fatalf("Unexpected error while cleaning up docker image.\n%s", err)
