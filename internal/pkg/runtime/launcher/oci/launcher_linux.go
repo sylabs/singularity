@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,8 +15,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/containers/image/v5/types"
 	"github.com/google/uuid"
@@ -27,13 +27,13 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ocibundle/native"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
-	"golang.org/x/term"
 )
 
 var (
@@ -212,38 +212,14 @@ func checkOpts(lo launcher.Options) error {
 	return nil
 }
 
-// createSpec produces an OCI runtime specification, suitable to launch a
-// container. This spec excludes ProcessArgs and Env, as these have to be
-// computed where the image config is available, to account for the image's CMD
-// / ENTRYPOINT / ENV.
+// createSpec creates an initial OCI runtime specification, suitable to launch a
+// container. This spec excludes the Process config, as this has to be computed
+// where the image config is available, to account for the image's CMD /
+// ENTRYPOINT / ENV / USER.
 func (l *Launcher) createSpec() (*specs.Spec, error) {
 	spec := minimalSpec()
 
-	// Override the default Process.Terminal to false if our stdin is not a terminal.
-	if !term.IsTerminal(syscall.Stdin) {
-		spec.Process.Terminal = false
-	}
-
-	spec.Process.User = l.getProcessUser()
-
-	// If we are *not* requesting fakeroot, then we need to map the container
-	// uid back to host uid, through the initial fakeroot userns.
-	if !l.cfg.Fakeroot && os.Getuid() != 0 {
-		uidMap, gidMap, err := l.getReverseUserMaps()
-		if err != nil {
-			return nil, err
-		}
-		spec.Linux.UIDMappings = uidMap
-		spec.Linux.GIDMappings = gidMap
-	}
-
 	spec = addNamespaces(spec, l.cfg.Namespaces)
-
-	cwd, err := l.getProcessCwd()
-	if err != nil {
-		return nil, err
-	}
-	spec.Process.Cwd = cwd
 
 	mounts, err := l.getMounts()
 	if err != nil {
@@ -263,10 +239,85 @@ func (l *Launcher) createSpec() (*specs.Spec, error) {
 	return &spec, nil
 }
 
-func (l *Launcher) updatePasswdGroup(rootfs string) error {
-	uid := os.Getuid()
-	gid := os.Getgid()
+// finalizeSpec updates the bundle config, filling in Process config that depends on the image spec.
+func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *specs.Spec, image string, process string, args []string) (err error) {
+	imgSpec := b.ImageSpec()
+	if imgSpec == nil {
+		return fmt.Errorf("bundle has no image spec")
+	}
 
+	// In the absence of a USER in the OCI image config, we will run the
+	// container process as our current user / group.
+	currentUID := uint32(os.Getuid())
+	currentGID := uint32(os.Getgid())
+	targetUID := currentUID
+	targetGID := currentGID
+	containerUser := false
+
+	// If the OCI image config specifies a USER we will:
+	//  * When unprivileged - run as that user, via nested subuid/gid mappings (host user -> userns root -> OCI USER)
+	//  * When privileged - directly run as that user, as a host uid/gid.
+	if imgSpec.Config.User != "" {
+		imgUser, err := tools.BundleUser(b.Path(), imgSpec.Config.User)
+		if err != nil {
+			return err
+		}
+		imgUID, err := strconv.ParseUint(imgUser.Uid, 10, 32)
+		if err != nil {
+			return err
+		}
+		imgGID, err := strconv.ParseUint(imgUser.Gid, 10, 32)
+		if err != nil {
+			return err
+		}
+		targetUID = uint32(imgUID)
+		targetGID = uint32(imgGID)
+		containerUser = true
+		sylog.Debugf("Running as USER specified in OCI image config %d:%d", targetUID, targetGID)
+	}
+
+	// Fakeroot always overrides to give us root in the container (via userns & idmap if unprivileged).
+	if l.cfg.Fakeroot {
+		targetUID = 0
+		targetGID = 0
+	}
+
+	if targetUID != 0 && currentUID != 0 {
+		uidMap, gidMap, err := l.getReverseUserMaps(targetUID, targetGID)
+		if err != nil {
+			return err
+		}
+		spec.Linux.UIDMappings = uidMap
+		spec.Linux.GIDMappings = gidMap
+	}
+
+	u := specs.User{
+		UID: targetUID,
+		GID: targetGID,
+	}
+
+	specProcess, err := l.getProcess(ctx, *imgSpec, image, b.Path(), process, args, u)
+	if err != nil {
+		return err
+	}
+	spec.Process = specProcess
+	if err := b.Update(ctx, spec); err != nil {
+		return err
+	}
+
+	// If we are entering as root, or a USER defined in the container, then passwd/group
+	// information should be present already.
+	if targetUID == 0 || containerUser {
+		return nil
+	}
+	// Otherewise, add to the passwd and group files in the container.
+	if err := l.updatePasswdGroup(tools.RootFs(b.Path()).Path(), targetUID, targetGID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (l *Launcher) updatePasswdGroup(rootfs string, uid, gid uint32) error {
 	if os.Getuid() == 0 || l.cfg.Fakeroot {
 		return nil
 	}
@@ -280,7 +331,7 @@ func (l *Launcher) updatePasswdGroup(rootfs string) error {
 	}
 
 	sylog.Debugf("Updating passwd file: %s", containerPasswd)
-	content, err := files.Passwd(containerPasswd, pw.Dir, uid)
+	content, err := files.Passwd(containerPasswd, pw.Dir, int(uid))
 	if err != nil {
 		return fmt.Errorf("while creating passwd file: %w", err)
 	}
@@ -289,7 +340,7 @@ func (l *Launcher) updatePasswdGroup(rootfs string) error {
 	}
 
 	sylog.Debugf("Updating group file: %s", containerGroup)
-	content, err = files.Group(containerGroup, uid, []int{gid})
+	content, err = files.Group(containerGroup, int(uid), []int{int(gid)})
 	if err != nil {
 		return fmt.Errorf("while creating group file: %w", err)
 	}
@@ -343,44 +394,28 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		}
 	}
 
+	// Create OCI runtime spec, excluding the Process settings which must consider the image spec.
 	spec, err := l.createSpec()
 	if err != nil {
 		return fmt.Errorf("while creating OCI spec: %w", err)
 	}
 
-	// Assemble the runtime & user-requested environment, which will be merged
-	// with the image ENV and set in the container at runtime.
-	rtEnv := defaultEnv(image, bundleDir)
-	// SINGULARITYENV_ has lowest priority
-	rtEnv = mergeMap(rtEnv, singularityEnvMap())
-	// --env-file can override SINGULARITYENV_
-	if l.cfg.EnvFile != "" {
-		e, err := envFileMap(ctx, l.cfg.EnvFile)
-		if err != nil {
-			return err
-		}
-		rtEnv = mergeMap(rtEnv, e)
-	}
-	// --env flag can override --env-file and SINGULARITYENV_
-	rtEnv = mergeMap(rtEnv, l.cfg.Env)
-
+	// Create a bundle - obtain and extract the image.
 	b, err := native.New(
 		native.OptBundlePath(bundleDir),
 		native.OptImageRef(image),
 		native.OptSysCtx(sysCtx),
 		native.OptImgCache(imgCache),
-		native.OptProcessArgs(process, args),
-		native.OptProcessEnv(rtEnv),
 	)
 	if err != nil {
 		return err
 	}
-
 	if err := b.Create(ctx, spec); err != nil {
 		return err
 	}
 
-	if err := l.updatePasswdGroup(tools.RootFs(b.Path()).Path()); err != nil {
+	// With reference to the bundle's image spec, now set the process configuration.
+	if err := l.finalizeSpec(ctx, b, spec, image, process, args); err != nil {
 		return err
 	}
 
