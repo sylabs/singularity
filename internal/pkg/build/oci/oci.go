@@ -70,7 +70,12 @@ func (t *ImageReference) newImageSource(ctx context.Context, sys *types.SystemCo
 		return nil, err
 	}
 
-	// First we are fetching into the cache
+	// Check if the image is in the cache layout already
+	if _, err = layout.LoadManifestDescriptor(t.ImageReference); err == nil {
+		return t.ImageReference.NewImageSource(ctx, sys)
+	}
+
+	// Otherwise, we are copying into the cache layout first
 	_, err = copy.Image(ctx, policyCtx, t.ImageReference, t.source, &copy.Options{
 		ReportWriter: w,
 		SourceCtx:    sys,
@@ -79,6 +84,34 @@ func (t *ImageReference) newImageSource(ctx context.Context, sys *types.SystemCo
 		return nil, err
 	}
 	return t.ImageReference.NewImageSource(ctx, sys)
+}
+
+// NewImage wraps the cache's oci-layout ref to first download the real source image to the cache
+func (t *ImageReference) NewImage(ctx context.Context, sys *types.SystemContext) (types.ImageCloser, error) {
+	return t.newImage(ctx, sys, sylog.Writer())
+}
+
+func (t *ImageReference) newImage(ctx context.Context, sys *types.SystemContext, w io.Writer) (types.ImageCloser, error) {
+	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
+	policyCtx, err := signature.NewPolicyContext(policy)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if the image is in the cache layout already
+	if _, err = layout.LoadManifestDescriptor(t.ImageReference); err == nil {
+		return t.ImageReference.NewImage(ctx, sys)
+	}
+
+	// Otherwise, we are copying into the cache layout first
+	_, err = copy.Image(ctx, policyCtx, t.ImageReference, t.source, &copy.Options{
+		ReportWriter: w,
+		SourceCtx:    sys,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return t.ImageReference.NewImage(ctx, sys)
 }
 
 // ParseImageName parses a uri (e.g. docker://ubuntu) into it's transport:reference

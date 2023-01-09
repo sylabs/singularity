@@ -21,6 +21,7 @@ import (
 	ociarchive "github.com/containers/image/v5/oci/archive"
 	ocilayout "github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/signature"
+	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -145,25 +146,48 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	if err != nil {
 		return fmt.Errorf("failed to generate OCI bundle/config: %s", err)
 	}
-	// Due to our caching approach for OCI blobs, we need to pull blobs for the image
-	// out into a separate oci-layout directory.
-	tmpDir, err := os.MkdirTemp("", "oci-tmp")
+
+	// Get a reference to an OCI layout source for the image. If the cache is
+	// enabled, we pull through the blob cache layout, otherwise there will be a
+	// temp dir and image Copy to it.
+	layoutRef, layoutDir, cleanup, err := b.fetchLayout(ctx)
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tmpDir)
-	// Fetch into temp oci layout (will pull through cache if enabled)
-	if err := b.fetchImage(ctx, tmpDir); err != nil {
+	if cleanup != nil {
+		defer cleanup()
+	}
+	sylog.Debugf("Original imgref: %s, OCI layout: %s", b.imageRef, transports.ImageName(layoutRef))
+
+	// Get the Image Manifest and ImageSpec
+	img, err := layoutRef.NewImage(ctx, b.sysCtx)
+	if err != nil {
 		return err
 	}
+	defer img.Close()
+
+	manifestData, mediaType, err := img.Manifest(ctx)
+	if err != nil {
+		return fmt.Errorf("error obtaining manifest source: %s", err)
+	}
+	if mediaType != imgspecv1.MediaTypeImageManifest {
+		return fmt.Errorf("error verifying manifest media type: %s", mediaType)
+	}
+	var manifest imgspecv1.Manifest
+	if err := json.Unmarshal(manifestData, &manifest); err != nil {
+		return fmt.Errorf("error parsing manifest: %w", err)
+	}
+
+	b.imageSpec, err = img.OCIConfig(ctx)
+	if err != nil {
+		return err
+	}
+
 	// Extract from temp oci layout into bundle rootfs
-	if err := b.extractImage(ctx, tmpDir); err != nil {
+	if err := b.extractImage(ctx, layoutDir, manifest); err != nil {
 		return err
 	}
-	// Remove the temp oci layout.
-	if err := os.RemoveAll(tmpDir); err != nil {
-		return err
-	}
+
 	// ProcessArgs are set here, rather than in the launcher spec generation, as we need to
 	// consult the image Config to handle combining ENTRYPOINT/CMD with user
 	// provided args.
@@ -268,20 +292,20 @@ func (b *Bundle) writeConfig(g *generate.Generator) error {
 	return tools.SaveBundleConfig(b.bundlePath, g)
 }
 
-func (b *Bundle) fetchImage(ctx context.Context, tmpDir string) error {
+func (b *Bundle) fetchLayout(ctx context.Context) (layoutRef types.ImageReference, layoutDir string, cleanup func(), err error) {
 	if b.sysCtx == nil {
-		return fmt.Errorf("sysctx must be provided")
+		return nil, "", nil, fmt.Errorf("sysctx must be provided")
 	}
 
 	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
 	policyCtx, err := signature.NewPolicyContext(policy)
 	if err != nil {
-		return err
+		return nil, "", nil, err
 	}
 
 	parts := strings.SplitN(b.imageRef, ":", 2)
 	if len(parts) < 2 {
-		return fmt.Errorf("could not parse image ref: %s", b.imageRef)
+		return nil, "", nil, fmt.Errorf("could not parse image ref: %s", b.imageRef)
 	}
 	var srcRef types.ImageReference
 
@@ -297,24 +321,40 @@ func (b *Bundle) fetchImage(ctx context.Context, tmpDir string) error {
 	case "oci-archive":
 		srcRef, err = ociarchive.ParseReference(parts[1])
 	default:
-		return fmt.Errorf("cannot create an OCI container from %s source", parts[0])
+		return nil, "", nil, fmt.Errorf("cannot create an OCI container from %s source", parts[0])
 	}
 
 	if err != nil {
-		return fmt.Errorf("invalid image source: %w", err)
+		return nil, "", nil, fmt.Errorf("invalid image source: %w", err)
 	}
 
-	if b.imgCache != nil {
+	// If the cache is enabled, then we transparently pull through an oci-layout in the cache.
+	if b.imgCache != nil && !b.imgCache.IsDisabled() {
 		// Grab the modified source ref from the cache
 		srcRef, err = oci.ConvertReference(ctx, b.imgCache, srcRef, b.sysCtx)
 		if err != nil {
-			return err
+			return nil, "", nil, err
 		}
+		layoutDir, err := b.imgCache.GetOciCacheDir(cache.OciBlobCacheType)
+		if err != nil {
+			return nil, "", nil, err
+		}
+		return srcRef, layoutDir, nil, nil
+	}
+
+	// Otherwise we have to stage things in a temporary oci layout.
+	tmpDir, err := os.MkdirTemp("", "oci-tmp")
+	if err != nil {
+		return nil, "", nil, err
+	}
+	cleanup = func() {
+		os.RemoveAll(tmpDir)
 	}
 
 	tmpfsRef, err := ocilayout.ParseReference(tmpDir + ":" + "tmp")
 	if err != nil {
-		return err
+		cleanup()
+		return nil, "", nil, err
 	}
 
 	_, err = copy.Image(ctx, policyCtx, tmpfsRef, srcRef, &copy.Options{
@@ -322,23 +362,14 @@ func (b *Bundle) fetchImage(ctx context.Context, tmpDir string) error {
 		SourceCtx:    b.sysCtx,
 	})
 	if err != nil {
-		return err
+		cleanup()
+		return nil, "", nil, err
 	}
 
-	img, err := srcRef.NewImage(ctx, b.sysCtx)
-	if err != nil {
-		return err
-	}
-	defer img.Close()
-
-	b.imageSpec, err = img.OCIConfig(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
+	return tmpfsRef, tmpDir, cleanup, nil
 }
 
-func (b *Bundle) extractImage(ctx context.Context, tmpDir string) error {
+func (b *Bundle) extractImage(ctx context.Context, layoutDir string, manifest imgspecv1.Manifest) error {
 	var mapOptions umocilayer.MapOptions
 
 	loggerLevel := sylog.GetLevel()
@@ -374,29 +405,12 @@ func (b *Bundle) extractImage(ctx context.Context, tmpDir string) error {
 		mapOptions.GIDMappings = append(mapOptions.GIDMappings, gidMap)
 	}
 
-	engineExt, err := umoci.OpenLayout(tmpDir)
+	sylog.Debugf("Extracting manifest %s, from layout %s, to %s", manifest.Config.Digest, layoutDir, b.bundlePath)
+
+	engineExt, err := umoci.OpenLayout(layoutDir)
 	if err != nil {
 		return fmt.Errorf("error opening layout: %s", err)
 	}
-
-	// Obtain the manifest
-	tmpfsRef, err := ocilayout.ParseReference(tmpDir + ":" + "tmp")
-	if err != nil {
-		return err
-	}
-	imageSource, err := tmpfsRef.NewImageSource(ctx, b.sysCtx)
-	if err != nil {
-		return fmt.Errorf("error creating image source: %s", err)
-	}
-	manifestData, mediaType, err := imageSource.GetManifest(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("error obtaining manifest source: %s", err)
-	}
-	if mediaType != imgspecv1.MediaTypeImageManifest {
-		return fmt.Errorf("error verifying manifest media type: %s", mediaType)
-	}
-	var manifest imgspecv1.Manifest
-	json.Unmarshal(manifestData, &manifest)
 
 	// UnpackRootfs from umoci v0.4.2 expects a path to a non-existing directory
 	os.RemoveAll(tools.RootFs(b.bundlePath).Path())
