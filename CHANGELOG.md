@@ -103,6 +103,8 @@
 - A new `--reproducible` flag for `./mconfig` will configure Singularity so that
   its binaries do not contain non-reproducible paths. This disables plugin
   functionality.
+- Support for online verification checks of x509 certificates using OCSP protocol.
+  (introduced flag: `verify --ocsp-verify`)
 
 ### Bug Fixes
 
