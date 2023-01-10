@@ -6,50 +6,17 @@
 package build
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
-	ocitypes "github.com/containers/image/v5/types"
-	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/pkg/build/types"
-	buildtypes "github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/slice"
 	"golang.org/x/sys/unix"
 )
-
-// ConvertOciToSIF will convert an OCI source into a SIF using the build routines
-func ConvertOciToSIF(ctx context.Context, imgCache *cache.Handle, image, cachedImgPath, tmpDir string, noHTTPS, noCleanUp bool, authConf *ocitypes.DockerAuthConfig) error {
-	if imgCache == nil {
-		return fmt.Errorf("image cache is undefined")
-	}
-
-	b, err := NewBuild(
-		image,
-		Config{
-			Dest:      cachedImgPath,
-			Format:    "sif",
-			NoCleanUp: noCleanUp,
-			Opts: buildtypes.Options{
-				TmpDir:           tmpDir,
-				NoCache:          imgCache.IsDisabled(),
-				NoTest:           true,
-				NoHTTPS:          noHTTPS,
-				DockerAuthConfig: authConf,
-				ImgCache:         imgCache,
-			},
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("unable to create new build: %v", err)
-	}
-
-	return b.Full(ctx)
-}
 
 func createStageFile(source string, b *types.Bundle, warnMsg string) (string, error) {
 	dest := filepath.Join(b.RootfsPath, source)

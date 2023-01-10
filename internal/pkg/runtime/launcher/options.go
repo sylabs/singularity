@@ -6,6 +6,7 @@
 package launcher
 
 import (
+	"github.com/containers/image/v5/types"
 	"github.com/sylabs/singularity/pkg/util/cryptkey"
 )
 
@@ -136,6 +137,10 @@ type Options struct {
 	// userns flows we will need to delete the redundant temporary pulled image after
 	// conversion to sandbox.
 	CacheDisabled bool
+
+	// SysContext holds Docker/OCI image handling configuration.
+	// This will be used by a launcher handling OCI images directly.
+	SysContext *types.SystemContext
 }
 
 type Option func(co *Options) error
@@ -470,10 +475,18 @@ func OptSIFFuse(b bool) Option {
 	}
 }
 
-// CacheDisabled indicates caching of images was disabled in the CLI.
+// OptCacheDisabled indicates caching of images was disabled in the CLI.
 func OptCacheDisabled(b bool) Option {
 	return func(lo *Options) error {
 		lo.CacheDisabled = b
+		return nil
+	}
+}
+
+// OptSysContext sets Docker/OCI image handling configuration.
+func OptSysContext(sc *types.SystemContext) Option {
+	return func(lo *Options) error {
+		lo.SysContext = sc
 		return nil
 	}
 }

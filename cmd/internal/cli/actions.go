@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/cache"
@@ -25,7 +26,9 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher/native"
 	ocilauncher "github.com/sylabs/singularity/internal/pkg/runtime/launcher/oci"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
+	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 const (
@@ -71,7 +74,15 @@ func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, 
 	if err != nil {
 		sylog.Fatalf("While creating Docker credentials: %v", err)
 	}
-	return oci.Pull(ctx, imgCache, pullFrom, tmpDir, ociAuth, noHTTPS, false)
+
+	pullOpts := oci.PullOptions{
+		TmpDir:     tmpDir,
+		OciAuth:    ociAuth,
+		DockerHost: dockerHost,
+		NoHTTPS:    noHTTPS,
+	}
+
+	return oci.Pull(ctx, imgCache, pullFrom, pullOpts)
 }
 
 func handleOras(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, pullFrom string) (string, error) {
@@ -384,6 +395,20 @@ func launchContainer(cmd *cobra.Command, image string, containerCmd string, cont
 
 	if ociRuntime {
 		sylog.Debugf("Using OCI runtime launcher.")
+
+		sysCtx := &types.SystemContext{
+			OCIInsecureSkipTLSVerify: noHTTPS,
+			DockerAuthConfig:         &dockerAuthConfig,
+			DockerDaemonHost:         dockerHost,
+			OSChoice:                 "linux",
+			AuthFilePath:             syfs.DockerConf(),
+			DockerRegistryUserAgent:  useragent.Value(),
+		}
+		if noHTTPS {
+			sysCtx.DockerInsecureSkipTLSVerify = types.NewOptionalBool(true)
+		}
+		opts = append(opts, launcher.OptSysContext(sysCtx))
+
 		l, err = ocilauncher.NewLauncher(opts...)
 		if err != nil {
 			return fmt.Errorf("while configuring container: %s", err)

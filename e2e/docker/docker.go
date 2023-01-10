@@ -118,7 +118,7 @@ func (c ctx) testDockerPulls(t *testing.T) {
 func (c ctx) testDockerHost(t *testing.T) {
 	require.Command(t, "docker")
 
-	// Write a temporary "empty" Dockerfile (from scratch)
+	// Create a Dockerfile for a small image we can build locally
 	tmpPath, err := fs.MakeTmpDir(c.env.TestDir, "docker-", 0o755)
 	err = errors.Wrapf(err, "creating temporary directory in %q for docker host test", c.env.TestDir)
 	if err != nil {
@@ -126,37 +126,27 @@ func (c ctx) testDockerHost(t *testing.T) {
 	}
 	defer os.RemoveAll(tmpPath)
 
-	// Here is the Dockerfile, and a temporary image path
 	dockerfile := filepath.Join(tmpPath, "Dockerfile")
-	emptyfile := filepath.Join(tmpPath, "file")
-	tmpImage := filepath.Join(tmpPath, "scratch-tmp.sif")
-
-	// Write Dockerfile and empty file to file
-	dockerfileContent := []byte("FROM scratch\nCOPY file /mrbigglesworth")
+	dockerfileContent := []byte("FROM alpine:latest\n")
 	err = os.WriteFile(dockerfile, dockerfileContent, 0o644)
 	if err != nil {
 		t.Fatalf("failed to create temporary Dockerfile: %+v", err)
 	}
 
-	fileContent := []byte("")
-	err = os.WriteFile(emptyfile, fileContent, 0o644)
-	if err != nil {
-		t.Fatalf("failed to create empty file: %+v", err)
-	}
+	dockerRef := "dinosaur/test-image:latest"
+	dockerURI := "docker-daemon:" + dockerRef
 
-	dockerURI := "dinosaur/test-image:latest"
-	pullURI := "docker-daemon:" + dockerURI
-
-	// Invoke docker build to build an empty scratch image in the docker daemon.
+	// Invoke docker build to build image in the docker daemon.
 	// Use os/exec because easier to generate a command with a working directory
 	e2e.Privileged(func(t *testing.T) {
-		cmd := exec.Command("docker", "build", "-t", dockerURI, ".")
+		cmd := exec.Command("docker", "build", "-t", dockerRef, tmpPath)
 		cmd.Dir = tmpPath
 		out, err := cmd.CombinedOutput()
+		t.Log(cmd.Args)
 		if err != nil {
 			t.Fatalf("Unexpected error while running command.\n%s: %s", err, string(out))
 		}
-	})
+	})(t)
 
 	tests := []struct {
 		name       string
@@ -208,42 +198,62 @@ func (c ctx) testDockerHost(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		// Export variable to environment if it's defined
-		if tt.envarValue != "" {
-			e2e.Privileged(func(t *testing.T) {
-				c.env.RunSingularity(
-					t,
-					e2e.WithEnv(append(os.Environ(), tt.envarValue)),
-					e2e.AsSubtest(tt.name),
-					e2e.WithProfile(e2e.UserProfile),
-					e2e.WithCommand("pull"),
-					e2e.WithArgs("--disable-cache", tmpImage, pullURI),
-					e2e.ExpectExit(tt.exit),
-				)
+	for _, profile := range []e2e.Profile{e2e.RootProfile, e2e.OCIRootProfile} {
+		t.Run(profile.String(), func(t *testing.T) {
+			t.Run("exec", func(t *testing.T) {
+				for _, tt := range tests {
+					cmdOps := []e2e.SingularityCmdOp{
+						e2e.WithProfile(profile),
+						e2e.AsSubtest(profile.String() + "/" + tt.name),
+						e2e.WithCommand("exec"),
+						e2e.WithArgs("--disable-cache", dockerURI, "/bin/true"),
+						e2e.WithEnv(append(os.Environ(), tt.envarName+"="+tt.envarValue)),
+						e2e.ExpectExit(tt.exit),
+					}
+					c.env.RunSingularity(t, cmdOps...)
+				}
 			})
-		} else {
-			e2e.Privileged(func(t *testing.T) {
-				c.env.RunSingularity(
-					t,
-					e2e.AsSubtest(tt.name),
-					e2e.WithProfile(e2e.UserProfile),
-					e2e.WithCommand("pull"),
-					e2e.WithArgs("--disable-cache", tmpImage, pullURI),
-					e2e.ExpectExit(tt.exit),
-				)
+
+			t.Run("pull", func(t *testing.T) {
+				for _, tt := range tests {
+					cmdOps := []e2e.SingularityCmdOp{
+						e2e.WithProfile(profile),
+						e2e.AsSubtest(tt.name),
+						e2e.WithCommand("pull"),
+						e2e.WithArgs("--force", "--disable-cache", dockerURI),
+						e2e.WithEnv(append(os.Environ(), tt.envarName+"="+tt.envarValue)),
+						e2e.WithDir(tmpPath),
+						e2e.ExpectExit(tt.exit),
+					}
+					c.env.RunSingularity(t, cmdOps...)
+				}
 			})
-		}
+
+			t.Run("build", func(t *testing.T) {
+				for _, tt := range tests {
+					cmdOps := []e2e.SingularityCmdOp{
+						e2e.WithProfile(profile),
+						e2e.AsSubtest(tt.name),
+						e2e.WithCommand("build"),
+						e2e.WithArgs("--force", "--disable-cache", "test.sif", dockerURI),
+						e2e.WithEnv(append(os.Environ(), tt.envarName+"="+tt.envarValue)),
+						e2e.WithDir(tmpPath),
+						e2e.ExpectExit(tt.exit),
+					}
+					c.env.RunSingularity(t, cmdOps...)
+				}
+			})
+		})
 	}
 
 	// Clean up docker image
 	e2e.Privileged(func(t *testing.T) {
-		cmd := exec.Command("docker", "rmi", dockerURI)
+		cmd := exec.Command("docker", "rmi", dockerRef)
 		_, err = cmd.Output()
 		if err != nil {
 			t.Fatalf("Unexpected error while cleaning up docker image.\n%s", err)
 		}
-	})
+	})(t)
 }
 
 // AUFS sanity tests
