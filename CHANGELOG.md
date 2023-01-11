@@ -1,53 +1,37 @@
 # SingularityCE Changelog
 
-## Changes Since Last Release
+## 3.11.0 Release Candidate 1 \[2023-01-11\]
+
+*This is the first release candidate for the upcoming Singularity 3.11.0
+release. Users are encouraged to test and report any issues, but should use the
+stable 3.10 release for production deployments.*
 
 ### Changed defaults / behaviours
 
-- Image driver plugins, implementing the RegisterImageDriver callback, are
+- Image driver plugins, implementing the `RegisterImageDriver` callback, are
   deprecated and will be removed in 4.0. Support for the example plugin,
-  permitting Ubuntu unprivileged overlay functionality, will be replaced with a
-  non-plugin implementation.
-- When the kernel supports unprivileged overlay mounts in a user
-  namespace, the container will be constructed using an overlay
-  instead of underlay layout.
+  permitting Ubuntu unprivileged overlay functionality, has been replaced with
+  direct support for kernel unprivileged overlay.
+- When the kernel supports unprivileged overlay mounts in a user namespace, the
+  container will be constructed using an overlay instead of underlay layout.
 - `crun` will be used as the low-level OCI runtime, when available, rather than
-  `runc`. `runc` will not support all rootless OCI runtime functionality used by
-  Singularity.
+  `runc`. If `crun` is not available, `runc` will be used.
 - `sessiondir maxsize` in `singularity.conf` now defaults to 64 MiB for new
   installations. This is an increase from 16 MiB in prior versions.
 - Instances are started in a cgroup, by default, when run as root or when
   unified cgroups v2 with systemd as manager is configured. This allows
   `singularity instance stats` to be supported by default when possible.
 
-### Development / Testing
-
-- The `e2e-test` makefile target now accepts an argument `E2E_GROUPS` to only
-  run specified groups of end to end tests. E.g. `make -C builddir e2e-test
-  E2E_GROUPS=VERSION,HELP` will run end to end tests in the `VERSION` and `HELP`
-  groups only.
-- The `e2e-test` makefile target now accepts an argument `E2E_TESTS` which is a
-  regular expression specifying the names of (top level) end to end tests that
-  should be run. E.g. `make -C builddir e2e-test E2E_TESTS=^semantic` will only
-  run end to end tests with a name that begins with `semantic`.
-
 ### New features / functionalities
+
+#### Image Building
 
 - Support for a custom hashbang in the `%test` section of a Singularity recipe
   (akin to the runscript and start sections).
-- A new `instance stats` command displays basic resource usage statistics for a
-  specified instance, running within a cgroup.
-- Add `--sparse` flag to `overlay create` command to allow generation of a
-  sparse ext3 overlay image.
-- Support for `DOCKER_HOST` parsing when using `docker-daemon://`
-- `DOCKER_USERNAME` and `DOCKER_PASSWORD` supported without `SINGULARITY_` prefix.
-- The `--no-mount` flag now accepts the value `bind-paths` to disable mounting of
-  all `bind path` entries in `singularity.conf`.
-- Instances started by a non-root user can use `--apply-cgroups` to apply
-  resource limits. Requires cgroups v2, and delegation configured via systemd.
 - Non-root users can now build from a definition file, on systems that do not
   support `--fakeroot`. This requires the statically built `proot` command
-  (<https://proot-me.github.io/>) to be available on the user `PATH`. These builds:
+  (<https://proot-me.github.io/>) to be available on the user `PATH`. These
+  builds:
   - Do not support `arch` / `debootstrap` / `yum` / `zypper` bootstraps. Use
     `localimage`, `library`, `oras`, or one of the docker/oci sources.
   - Do not support `%pre` and `%setup` sections.
@@ -56,17 +40,35 @@
   - Run the `%test` section of a build as the non-root user, like `singularity
     test`.
   - Are subject to any restrictions imposed in `singularity.conf`.
-  - Incur a performance penalty due to `proot`'s `ptrace` based interception of syscalls.
+  - Incur a performance penalty due to `proot`'s `ptrace` based interception of
+    syscalls.
   - May fail if the `%post` script requires privileged operations that `proot`
     cannot emulate.
-- Add new Linux capabilities: `CAP_PERFMON`, `CAP_BPF`, `CAP_CHECKPOINT_RESTORE`.
-- `--writable-tmpfs` is now available when running unprivileged, or
-  explicitly requesting a user namespace, on systems with a kernel
-  that supports unprivileged overlay mounts in a user namespace.
-- Persistent overlays (`--overlay`) from a directory are now available
-  when running unprivileged, or explicitly requesting a user
-  namespace, on systems with a kernel that supports unprivileged
-  overlay mounts in a user namespace.
+
+#### Instances
+
+- Instances started by a non-root user can use `--apply-cgroups` to apply
+  resource limits. Requires cgroups v2, and delegation configured via systemd.
+- A new `instance stats` command displays basic resource usage statistics for a
+  specified instance, running within a cgroup.
+
+#### Mounts & Overlays
+
+- `--writable-tmpfs` is now available when running unprivileged, or explicitly
+  requesting a user namespace, on systems with a kernel that supports
+  unprivileged overlay mounts in a user namespace.
+- The `--no-mount` flag now accepts the value `bind-paths` to disable mounting
+  of all `bind path` entries in `singularity.conf`.
+- Persistent overlays (`--overlay`) from a directory are now available when
+  running unprivileged, or explicitly requesting a user namespace, on systems
+  with a kernel that supports unprivileged overlay mounts in a user namespace.
+- Add `--sparse` flag to `overlay create` command to allow generation of a
+  sparse ext3 overlay image.
+
+#### OCI / Docker Compatibility
+
+- Support for `DOCKER_HOST` parsing when using `docker-daemon://`
+- `DOCKER_USERNAME` and `DOCKER_PASSWORD` supported without `SINGULARITY_` prefix.
 - A new `--oci` flag for `run/exec/shell` enables the experimental OCI runtime
   mode. This mode:
   - Runs OCI container images from an OCI bundle, using `runc` or `crun`.
@@ -83,37 +85,58 @@
     - Container environment variables via `--env`, `--env-file`, and
       `SINGULARITYENV_` host env vars.
     - `--rocm` to bind ROCm GPU libraries and devices into the container.
-    - `--nv` to bind Nvidia driver / basic CUDA libraries and devices into
-      the container.
+    - `--nv` to bind Nvidia driver / basic CUDA libraries and devices into the
+      container.
     - `--apply-cgroups`, and the `--cpu*`, `--blkio*`, `--memory*`,
       `--pids-limit` flags to apply resource limits.
 - Instance name is available inside an instance via the new
   `SINGULARITY_INSTANCE` environment variable.
+
+#### Signing & Verification
+
 - The `sign` command now supports signing with non-PGP key material by
   specifying the path to a private key via the `--key` flag.
 - The `verify` command now supports verification with non-PGP key material by
   specifying the path to a public key via the `--key` flag.
 - The `verify` command now supports verification with X.509 certificates by
-  specifying the path to a certificate via the `--certificate` flag. By
-  default, the system root certificate pool is used as trust anchors unless
-  overridden via the `--certificate-roots` flag. A pool of intermediate
-  certificates that are not trust anchors, but can be used to form a
-  certificate chain can also be specified via the `--certificate-intermediates`
-  flag.
+  specifying the path to a certificate via the `--certificate` flag. By default,
+  the system root certificate pool is used as trust anchors unless overridden
+  via the `--certificate-roots` flag. A pool of intermediate certificates that
+  are not trust anchors, but can be used to form a certificate chain can also be
+  specified via the `--certificate-intermediates` flag.
+- Support for online verification checks of x509 certificates using OCSP
+  protocol. (introduced flag: `verify --ocsp-verify`)
+
+#### Other
+
+- Add new Linux capabilities: `CAP_PERFMON`, `CAP_BPF`,
+  `CAP_CHECKPOINT_RESTORE`.
 - A new `--reproducible` flag for `./mconfig` will configure Singularity so that
   its binaries do not contain non-reproducible paths. This disables plugin
   functionality.
-- Support for online verification checks of x509 certificates using OCSP protocol.
-  (introduced flag: `verify --ocsp-verify`)
 
 ### Bug Fixes
 
 - In `--rocm` mode, the whole of `/dev/dri` is now bound into the container when
   `--contain` is in use. This makes `/dev/dri/render` devices available,
   required for later ROCm versions.
-- Overlay is blocked on the `panfs` filesystem, allowing sandbox directories to be
-  run from `panfs` without error.
-- Ensure `DOCKER_HOST` is honored in non-build flows.
+- Overlay is blocked on the `panfs` filesystem, allowing sandbox directories to
+  be run from `panfs` without error.
+
+### Development / Testing
+
+- Significant reduction in the use of network image sources in the e2e tests.
+- Improved parallelization and use of image caches in the e2e tests.
+- The `e2e-test` makefile target now accepts an argument `E2E_GROUPS` to only
+  run specified groups of end to end tests. E.g. `make -C builddir e2e-test
+  E2E_GROUPS=VERSION,HELP` will run end to end tests in the `VERSION` and `HELP`
+  groups only.
+- The `e2e-test` makefile target now accepts an argument `E2E_TESTS` which is a
+  regular expression specifying the names of (top level) end to end tests that
+  should be run. E.g. `make -C builddir e2e-test E2E_TESTS=^semantic` will only
+  run end to end tests with a name that begins with `semantic`. These `E2E_`
+  variables offer an alternative to the `-run` flag, which may be easier to use
+  given the structure of e2e tests.
 
 ## 3.10.4 \[2022-11-10\]
 
