@@ -12,7 +12,7 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/containerd/containerd v1.6.15
 	github.com/containernetworking/cni v1.1.2
-	github.com/containernetworking/plugins v1.1.1
+	github.com/containernetworking/plugins v1.2.0
 	github.com/containers/common v0.50.1
 	github.com/containers/image/v5 v5.23.1
 	github.com/cyphar/filepath-securejoin v0.2.3
@@ -63,7 +63,7 @@ require (
 	github.com/Microsoft/hcsshim v0.9.6 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
-	github.com/alexflint/go-filemutex v1.1.0 // indirect
+	github.com/alexflint/go-filemutex v1.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/bugsnag/bugsnag-go v1.5.1 // indirect
@@ -76,7 +76,7 @@ require (
 	github.com/containers/ocicrypt v1.1.5 // indirect
 	github.com/containers/storage v1.43.0 // indirect
 	github.com/coreos/go-iptables v0.6.0 // indirect
-	github.com/coreos/go-systemd/v22 v22.4.0 // indirect
+	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/creack/pty v1.1.18 // indirect
 	github.com/d2g/dhcp4 v0.0.0-20170904100407-a1d1b6c41b1c // indirect
@@ -130,7 +130,7 @@ require (
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/rootless-containers/proto v0.1.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/safchain/ethtool v0.0.0-20210803160452-9aa261dae9b1 // indirect
+	github.com/safchain/ethtool v0.2.0 // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.4.0 // indirect
 	github.com/stefanberger/go-pkcs11uri v0.0.0-20201008174630-78d3cae3a980 // indirect
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
@@ -141,7 +141,7 @@ require (
 	github.com/vbatts/go-mtree v0.5.0 // indirect
 	github.com/vbatts/tar-split v0.11.2 // indirect
 	github.com/vbauerster/mpb/v7 v7.5.3 // indirect
-	github.com/vishvananda/netlink v1.1.1-0.20210330154013-f5de75959ad5 // indirect
+	github.com/vishvananda/netlink v1.2.1-beta.2 // indirect
 	github.com/vishvananda/netns v0.0.0-20210104183010-2eb08e3e575f // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
