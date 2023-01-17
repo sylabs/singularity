@@ -1,5 +1,18 @@
 # SingularityCE Changelog
 
+## 3.10.5 \[2022-01-17\]
+
+### Security Related Fixes
+
+- [CVE-2022-23538](https://github.com/sylabs/scs-library-client/security/advisories/GHSA-7p8m-22h4-9pj7):
+  The github.com/sylabs/scs-library-client dependency included in SingularityCE
+  \>=3.10.0, \<3.10.5 may leak user credentials to a third-party service via HTTP
+  redirect. This issue is limited to `library://` access to specific Singularity
+  Enterprise 1.x or 3rd party library configurations, which implement a
+  concurrent multi-part download flow. Access to Singularity Enterprise 2.x, or
+  Singularity Container Services (cloud.sylabs.io), does not trigger the
+  vulnerable flow. See the linked advisory for full details.
+
 ## 3.10.4 \[2022-11-10\]
 
 ### Bug Fixes
