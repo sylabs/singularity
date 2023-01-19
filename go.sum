@@ -377,7 +377,7 @@ github.com/frankban/quicktest v1.11.3/go.mod h1:wRf/ReqHper53s+kmmSZizM8NamnL3IM
 github.com/frankban/quicktest v1.14.4 h1:g2rn0vABPOOXmZUj+vbmUp0lPoXEMuhTpIluN0XL9UY=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
-github.com/fsnotify/fsnotify v1.5.4 h1:jRbGcIw6P2Meqdwuo0H1p6JVLbL5DHKAKlYndzMwVZI=
+github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=
 github.com/fullsailor/pkcs7 v0.0.0-20190404230743-d7302db945fa/go.mod h1:KnogPXtdwXqoenmZCw6S+25EAm2MkxbG0deNDu4cbSA=
 github.com/garyburd/redigo v0.0.0-20150301180006-535138d7bcd7/go.mod h1:NR3MbYisc3/PwhQ00EMzDiPmrwpPxAn5GI05/YaO1SY=
 github.com/ghodss/yaml v0.0.0-20150909031657-73d445a93680/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
@@ -903,8 +903,8 @@ github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKs
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/sylabs/json-resp v0.8.2 h1:k2dgtMXL+nztYtxrI24Zck/sfexyly4D1+X504eZTKQ=
 github.com/sylabs/json-resp v0.8.2/go.mod h1:Q9X4wRlZNPv3x76KaL8vTCBO4aC/DP2gh13xdtEqd1g=
-github.com/sylabs/scs-build-client v0.7.5 h1:pgR+dC6jGjBO9ElEFTafX8G1HLR0FWRP1k5PX+FbcNU=
-github.com/sylabs/scs-build-client v0.7.5/go.mod h1:BeB2nV1//koiMcJ7L7dLm2NlqBZtmysHGafXq4UaA5I=
+github.com/sylabs/scs-build-client v0.7.6 h1:9WYy6CCWTJORJLCU/o+hkOsR4afukqrp8+aONSSTr/c=
+github.com/sylabs/scs-build-client v0.7.6/go.mod h1:fuQWaBPzV96QWOx4CbiNDAEqcTFYNbgl/AkZcN3LDgQ=
 github.com/sylabs/scs-key-client v0.7.2 h1:q1ia4gSVD7z3u706N7aIwtk70SayfeAeL8Uo322JuYo=
 github.com/sylabs/scs-key-client v0.7.2/go.mod h1:cmD4C9QfNLXW4QSXvwoaPZAuwaToIsHuD0AUHNdjDlA=
 github.com/sylabs/scs-library-client v1.4.2 h1:E028yFbhYij/IwNYQ0r2QAWwUkmFR0mwmEGUaGgPSrQ=
