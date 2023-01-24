@@ -77,6 +77,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/coreos/go-systemd/blob/master/v22/dbus/LICENSE>
 
+## github.com/cyberphone/json-canonicalization/go/src/webpki.org/jsoncanonicalizer
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/cyberphone/json-canonicalization/blob/master/go/src/webpki.org/jsoncanonicalizer/LICENSE>
+
 ## github.com/docker/cli/cli/config
 
 **License:** Apache-2.0
@@ -118,6 +124,66 @@ The dependencies and their licenses are as follows:
 **License:** Apache-2.0
 
 **License URL:** <https://github.com/docker/libtrust/blob/master/LICENSE>
+
+## github.com/go-openapi/analysis
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/go-openapi/analysis/blob/master/LICENSE>
+
+## github.com/go-openapi/errors
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/go-openapi/errors/blob/master/LICENSE>
+
+## github.com/go-openapi/jsonpointer
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/go-openapi/jsonpointer/blob/master/LICENSE>
+
+## github.com/go-openapi/jsonreference
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/go-openapi/jsonreference/blob/master/LICENSE>
+
+## github.com/go-openapi/loads
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/go-openapi/loads/blob/master/LICENSE>
+
+## github.com/go-openapi/runtime
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/go-openapi/runtime/blob/master/LICENSE>
+
+## github.com/go-openapi/spec
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/go-openapi/spec/blob/master/LICENSE>
+
+## github.com/go-openapi/strfmt
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/go-openapi/strfmt/blob/master/LICENSE>
+
+## github.com/go-openapi/swag
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/go-openapi/swag/blob/master/LICENSE>
+
+## github.com/go-openapi/validate
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/go-openapi/validate/blob/master/LICENSE>
 
 ## github.com/google/go-containerregistry/pkg/name
 
@@ -178,6 +244,12 @@ The dependencies and their licenses are as follows:
 **License:** Apache-2.0
 
 **License URL:** <https://github.com/modern-go/reflect2/blob/master/LICENSE>
+
+## github.com/oklog/ulid
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/oklog/ulid/blob/master/LICENSE>
 
 ## github.com/opencontainers/go-digest
 
@@ -263,6 +335,18 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/safchain/ethtool/blob/master/LICENSE>
 
+## github.com/sigstore/fulcio/pkg/certificate
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/sigstore/fulcio/blob/master/pkg/certificate/LICENSE>
+
+## github.com/sigstore/rekor/pkg/generated/models
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/sigstore/rekor/blob/master/pkg/generated/models/LICENSE>
+
 ## github.com/sigstore/sigstore/pkg
 
 **License:** Apache-2.0
@@ -298,6 +382,12 @@ The dependencies and their licenses are as follows:
 **License:** Apache-2.0
 
 **License URL:** <https://github.com/vishvananda/netns/blob/master/LICENSE>
+
+## go.mongodb.org/mongo-driver
+
+**License:** Apache-2.0
+
+**Project URL:** <https://go.mongodb.org/mongo-driver>
 
 ## google.golang.org/genproto/googleapis/rpc/status
 
@@ -593,6 +683,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/apex/log/blob/master/LICENSE>
 
+## github.com/asaskevich/govalidator
+
+**License:** MIT
+
+**License URL:** <https://github.com/asaskevich/govalidator/blob/master/LICENSE>
+
 ## github.com/beorn7/perks/quantile
 
 **License:** MIT
@@ -671,6 +767,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/go-log/log/blob/master/LICENSE>
 
+## github.com/josharian/intern
+
+**License:** MIT
+
+**License URL:** <https://github.com/josharian/intern/blob/master/license.md>
+
 ## github.com/json-iterator/go
 
 **License:** MIT
@@ -695,6 +797,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/kr/pty/blob/master/LICENSE>
 
+## github.com/mailru/easyjson
+
+**License:** MIT
+
+**License URL:** <https://github.com/mailru/easyjson/blob/master/LICENSE>
+
 ## github.com/mattn/go-colorable
 
 **License:** MIT
@@ -712,6 +820,12 @@ The dependencies and their licenses are as follows:
 **License:** MIT
 
 **License URL:** <https://github.com/mattn/go-runewidth/blob/master/LICENSE>
+
+## github.com/mitchellh/mapstructure
+
+**License:** MIT
+
+**License URL:** <https://github.com/mitchellh/mapstructure/blob/master/LICENSE>
 
 ## github.com/morikuni/aec
 
