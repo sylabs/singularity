@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -640,6 +640,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"issue 5057":               c.issue5057, // https://github.com/sylabs/hpcng/issues/5057
 		"issue 5426":               c.issue5426, // https://github.com/sylabs/hpcng/issues/5426
 		"issue 43":                 c.issue43,   // https://github.com/sylabs/singularity/issues/43
+		"issue 1263":               c.issue1263, // https://github.com/sylabs/singularity/issues/1263
 		//
 		// --oci mode
 		//

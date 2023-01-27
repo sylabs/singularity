@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -857,6 +857,11 @@ func (l *Launcher) setEnv(ctx context.Context, args []string) error {
 			e := strings.SplitN(envar, "=", 2)
 			if len(e) != 2 {
 				sylog.Warningf("Ignored environment variable %q: '=' is missing", envar)
+				continue
+			}
+			// Don't attempt to overwrite bash builtin readonly vars
+			// https://github.com/sylabs/singularity/issues/1263
+			if e[0] == "UID" || e[0] == "GID" {
 				continue
 			}
 			// Ensure we don't overwrite --env variables with environment file
