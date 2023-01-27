@@ -148,7 +148,10 @@ func runBuild(cmd *cobra.Command, args []string) {
 	dest := args[0]
 	spec := args[1]
 
-	if syscall.Getuid() != 0 && !buildArgs.fakeroot && fs.IsFile(spec) && !isImage(spec) {
+	// Non-remote build with def file as source
+	rootNeeded := !buildArgs.remote && fs.IsFile(spec) && !isImage(spec)
+
+	if rootNeeded && syscall.Getuid() != 0 && !buildArgs.fakeroot {
 		prootPath, err := bin.FindBin("proot")
 		if err != nil {
 			sylog.Fatalf("--remote, --fakeroot, or the proot command are required to build this source as a non-root user")
