@@ -9,7 +9,7 @@ require (
 	github.com/apex/log v1.9.0
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buger/jsonparser v1.1.1
-	github.com/containerd/containerd v1.6.15
+	github.com/containerd/containerd v1.6.16
 	github.com/containernetworking/cni v1.1.2
 	github.com/containernetworking/plugins v1.2.0
 	github.com/containers/common v0.51.0
