@@ -1,5 +1,11 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Avoid UID / GID readonly var warnings with `--env-file`.
+
 ## 3.11.0 Release Candidate 1 \[2023-01-11\]
 
 *This is the first release candidate for the upcoming Singularity 3.11.0
