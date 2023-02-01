@@ -445,3 +445,22 @@ From: {{ .From }}
 		e2e.ExpectExit(0),
 	)
 }
+
+// Ensure a `--remote` build request fails (not-authorized) and proot flow is not invoked.
+func (c *imgBuildTests) issue1273(t *testing.T) {
+	image := filepath.Join(c.env.TestDir, "issue_1273.sif")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--remote", image, "testdata/proot_alpine.def"),
+		e2e.PostRun(func(t *testing.T) {
+			os.Remove(image)
+		}),
+		e2e.ExpectExit(
+			255,
+			e2e.ExpectError(e2e.UnwantedContainMatch, "proot"),
+		),
+	)
+}
