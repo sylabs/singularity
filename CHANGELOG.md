@@ -1,10 +1,11 @@
 # SingularityCE Changelog
 
-## Changes Since Last Release
+## 3.11.0 Release Candidate 2 \[2023-02-02\]
 
 ### Bug Fixes
 
 - Avoid UID / GID readonly var warnings with `--env-file`.
+- Ensure proot flow does not override `--remote` build.
 
 ## 3.11.0 Release Candidate 1 \[2023-01-11\]
 
