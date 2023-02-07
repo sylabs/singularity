@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
-	github.com/ProtonMail/go-crypto v0.0.0-20221026131551-cf6655e29de4
+	github.com/ProtonMail/go-crypto v0.0.0-20230201104953-d1d05f4e2bfb
 	github.com/adigunhammedolalekan/registry-auth v0.0.0-20200730122110-8cde180a3a60
 	github.com/apex/log v1.9.0
 	github.com/blang/semver/v4 v4.0.0
@@ -39,7 +39,7 @@ require (
 	github.com/sylabs/scs-build-client v0.7.6
 	github.com/sylabs/scs-key-client v0.7.2
 	github.com/sylabs/scs-library-client v1.4.2
-	github.com/sylabs/sif/v2 v2.9.0
+	github.com/sylabs/sif/v2 v2.9.1
 	github.com/vbauerster/mpb/v8 v8.1.4
 	golang.org/x/sys v0.4.0
 	golang.org/x/term v0.4.0
