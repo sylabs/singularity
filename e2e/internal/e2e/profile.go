@@ -163,6 +163,18 @@ var OCIProfiles = map[string]Profile{
 	},
 }
 
+// AllProfiles is initialized to the union of NativeProfiles and OCIProfiles
+func AllProfiles() map[string]Profile {
+	ap := map[string]Profile{}
+	for k, p := range NativeProfiles {
+		ap[k] = p
+	}
+	for k, p := range OCIProfiles {
+		ap[k] = p
+	}
+	return ap
+}
+
 // Privileged returns whether the test should be executed with
 // elevated privileges or not.
 func (p Profile) Privileged() bool {

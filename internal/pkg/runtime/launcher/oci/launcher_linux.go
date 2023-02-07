@@ -327,18 +327,16 @@ func (l *Launcher) updatePasswdGroup(rootfs string, uid, gid uint32) error {
 	sylog.Debugf("Updating passwd file: %s", containerPasswd)
 	content, err := files.Passwd(containerPasswd, pw.Dir, int(uid))
 	if err != nil {
-		return fmt.Errorf("while creating passwd file: %w", err)
-	}
-	if err := os.WriteFile(containerPasswd, content, 0o755); err != nil {
+		sylog.Warningf("%s", err)
+	} else if err := os.WriteFile(containerPasswd, content, 0o755); err != nil {
 		return fmt.Errorf("while writing passwd file: %w", err)
 	}
 
 	sylog.Debugf("Updating group file: %s", containerGroup)
 	content, err = files.Group(containerGroup, int(uid), []int{int(gid)})
 	if err != nil {
-		return fmt.Errorf("while creating group file: %w", err)
-	}
-	if err := os.WriteFile(containerGroup, content, 0o755); err != nil {
+		sylog.Warningf("%s", err)
+	} else if err := os.WriteFile(containerGroup, content, 0o755); err != nil {
 		return fmt.Errorf("while writing passwd file: %w", err)
 	}
 
