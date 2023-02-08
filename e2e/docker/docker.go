@@ -906,6 +906,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			t.Run("user", c.testDockerUSER)
 			// Regressions
 			t.Run("issue 4524", c.issue4524)
+			t.Run("issue 1286", c.issue1286)
 		},
 		// Tests that are especially slow, or run against a local docker
 		// registry, can be run in parallel, with `--disable-cache` used within
