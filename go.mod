@@ -45,10 +45,10 @@ require (
 	github.com/sylabs/scs-library-client v1.4.2
 	github.com/sylabs/sif/v2 v2.9.1
 	github.com/vbauerster/mpb/v8 v8.1.6
-	golang.org/x/crypto v0.5.0
+	golang.org/x/crypto v0.6.0
 	golang.org/x/sys v0.5.0
 	golang.org/x/term v0.5.0
-	golang.org/x/text v0.6.0
+	golang.org/x/text v0.7.0
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.4.0
 	mvdan.cc/sh/v3 v3.6.0
@@ -173,7 +173,7 @@ require (
 	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	golang.org/x/mod v0.7.0 // indirect
-	golang.org/x/net v0.5.0 // indirect
+	golang.org/x/net v0.6.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
 	golang.org/x/tools v0.4.0 // indirect
 	google.golang.org/genproto v0.0.0-20221227171554-f9683d7f8bef // indirect
