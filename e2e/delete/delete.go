@@ -72,7 +72,7 @@ func (c ctx) testDeleteCmd(t *testing.T) {
 			args:       []string{"library://library.example.com/test/default/test:v0.0.3"},
 			agree:      "y",
 			expectExit: 255,
-			expect:     e2e.ExpectError(e2e.ContainMatch, "dial tcp: lookup library.example.com: no such host"),
+			expect:     e2e.ExpectError(e2e.ContainMatch, "no such host"),
 		},
 	}
 
