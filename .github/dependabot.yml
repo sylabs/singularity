@@ -14,9 +14,4 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
-    target-branch: release-3.10
-  - package-ecosystem: "gomod" # See documentation for possible values
-    directory: "/" # Location of package manifests
-    schedule:
-      interval: "daily"
     target-branch: release-3.11
