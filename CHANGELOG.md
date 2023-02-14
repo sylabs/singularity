@@ -8,6 +8,9 @@
   removal of a private key by fingerprint.
 - Added `--private` as a synonym for `--secret` in `key list`, `key export`, and
   `key remove` subcommands.
+- Added `remote get-login-password` subcommand that allows the user to
+  retrieve a CLI token to interact with the OCI registry of a
+  Singularity Enterprise instance.
 
 ### Bug Fixes
 
