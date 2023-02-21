@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/jarrett-sylabs/singularity/docs"
+	"github.com/sylabs/singularity/docs"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/pkg/cmdline"
