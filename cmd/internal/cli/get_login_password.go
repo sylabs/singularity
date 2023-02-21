@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/jarrett-sylabs/singularity/docs"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/pkg/cmdline"
@@ -44,19 +45,12 @@ var GetLoginPasswordCmd = &cobra.Command{
 			fmt.Errorf("failed to get secret: %v", err)
 		}
 
-		//harborURI := "https://harbor.se.k3s/api/v2.0/"
-		// Make a config to use shim api for base URL
-		//_, authToken, _ := getClientConfig(harborURI)
-		// hit the harbor api and decode the json resp
-		// I might need to se the User Agent Header ????
-		// decode json resp
-
 	},
 
-	Use:     "get-login-password",
-	Short:   "",
-	Long:    "",
-	Example: "",
+	Use:     docs.GetLoginPasswordUse,
+	Short:   docs.GetLoginPasswordShort,
+	Long:    docs.GetLoginPasswordLong,
+	Example: docs.GetLoginPasswordExample,
 }
 
 func getClientConfig(uri string) (baseURI, authToken string, err error) {
