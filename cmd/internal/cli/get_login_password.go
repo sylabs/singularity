@@ -19,7 +19,7 @@ func init() {
 
 var GetLoginPasswordCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Args:                  cobra.ExatArgs(1),
+	Args:                  cobra.ExactArgs(1),
 	// where is the name of this command
 	// figure out how to call oci library api call
 	// below is code from search feature
@@ -30,13 +30,19 @@ var GetLoginPasswordCmd = &cobra.Command{
 		authToken := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3Rva2VuLnNlLmszcyIsInN1YiI6IjYzZGFkYjliZjMwMzEzMzE3YmI2ODc5YSIsImV4cCI6MTY3OTM0NjQxOCwiaWF0IjoxNjc2NzU0NDE4LCJqdGkiOiI2M2YxM2RmMmYyY2M1MTZkYzUwNGUwMmUifQ.fA2jn5x4YWJXib3fKHY1Qc6qp8D4If0GAY_K4Na0J7F_cY0JnY0irPErTb2ttLV683-QmgHopqz_DGmxzde5vxzoKCjMf1BJSO5WoFj5TEAcaiIy97V8n0yBgWpEbEySjhmcEFI5kJGDRKKUViPNj7sY1cus2owpMf9iuteO3IC_EPnjaFGk4RUuNVqdf8glioWK70Fy6ycBbuNj5_ldJnIhgl47ra2xVBFUs9lBCTk35WZRoLZlnHUqAP_0h3l7EHQsFm0ljjNiWY28UMkI3XxCrI6erUdAgPdPJEoUEICEVl9sPj8ZLa5n83dy1PB6MMZD49SYU3HUBuXNPVwJqA"
 
 		req, err := http.NewRequest("GET", ep, nil)
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", authToken))
-		client := http.DefaultClient{}
-		res, err := client.Do(req)
-		var u User
-		err := json.NewDecoder(r.Body).Decode(&u)
 		if err != nil {
-
+			fmt.Errorf("request err: ", err)
+		}
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", authToken))
+		client := http.DefaultClient
+		res, err := client.Do(req)
+		if err != nil {
+			fmt.Errorf("client err: ", err)
+		}
+		var u User
+		err = json.NewDecoder(res.Body).Decode(&u)
+		if err != nil {
+			fmt.Errorf("jsonerr: ", err)
 		}
 		fmt.Println("user object: ", u)
 
