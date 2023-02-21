@@ -138,6 +138,16 @@ func DownloadImageNoProgress(ctx context.Context, c *scslibrary.Client, imagePat
 	return DownloadImage(ctx, c, imagePath, arch, libraryRef, nil)
 }
 
+func GetLoginPassword(ctx context.Context, c *scslibrary.Client) error {
+	res, err := c.GetLoginPassword(ctx)
+	if err != nil {
+		return err
+	}
+	fmt.Println(res.Password)
+
+	return nil
+}
+
 // SearchLibrary searches the library and outputs results to stdout
 func SearchLibrary(ctx context.Context, c *scslibrary.Client, value, arch string, signed bool) error {
 	if len(value) < 3 {
