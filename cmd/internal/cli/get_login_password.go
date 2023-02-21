@@ -20,6 +20,7 @@ func init() {
 var GetLoginPasswordCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Args:                  cobra.ExatArgs(1),
+	// where is the name of this command
 	// figure out how to call oci library api call
 	// below is code from search feature
 	Run: func(cmd *cobra.Command, args []string) {
@@ -38,7 +39,7 @@ var GetLoginPasswordCmd = &cobra.Command{
 		}
 		fmt.Println("user object: ", u)
 
-		fmt.Println("Password from api 	:", u.OidcUserMeta.Secret)
+		fmt.Println("Password from api :", u.OidcUserMeta.Secret)
 		//harborURI := "https://harbor.se.k3s/api/v2.0/"
 		// Make a config to use shim api for base URL
 		//_, authToken, _ := getClientConfig(harborURI)
@@ -48,7 +49,7 @@ var GetLoginPasswordCmd = &cobra.Command{
 
 	},
 
-	Use:     "",
+	Use:     "get-login-password",
 	Short:   "",
 	Long:    "",
 	Example: "",
