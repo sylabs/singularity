@@ -31,18 +31,19 @@ var GetLoginPasswordCmd = &cobra.Command{
 		client := http.DefaultClient
 		res, err := client.Do(req)
 		if err != nil {
-			fmt.Errorf("client err: ", err)
+			fmt.Errorf("client err: %v", err)
 		}
 		var u User
 		err = json.NewDecoder(res.Body).Decode(&u)
 		if err != nil {
-			fmt.Errorf("jsonerr: ", err)
+			fmt.Errorf("jsonerr: %v", err)
 		}
 		if u.OidcUserMeta.Secret != "" {
 			fmt.Println(u.OidcUserMeta.Secret)
+		} else {
+			fmt.Errorf("failed to get secret: %v", err)
 		}
 
-		fmt.Println(u.OidcUserMeta.Secret)
 		//harborURI := "https://harbor.se.k3s/api/v2.0/"
 		// Make a config to use shim api for base URL
 		//_, authToken, _ := getClientConfig(harborURI)
