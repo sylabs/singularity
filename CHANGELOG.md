@@ -1,5 +1,12 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Fix implied `--writable-tmpfs` with `--nvccli`, to avoid r/o filesytem
+  error.
+
 ## 3.11.0 \[2023-02-10\]
 
 ### Changed defaults / behaviours
