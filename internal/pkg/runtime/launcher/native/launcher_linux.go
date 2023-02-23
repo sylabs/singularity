@@ -130,13 +130,6 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	// Overlay or writable image requested?
 	l.engineConfig.SetOverlayImage(l.cfg.OverlayPaths)
 	l.engineConfig.SetWritableImage(l.cfg.Writable)
-	// --writable-tmpfs is for an ephemeral overlay, doesn't make sense if also asking to write to image itself.
-	if l.cfg.Writable && l.cfg.WritableTmpfs {
-		sylog.Warningf("Disabling --writable-tmpfs flag, mutually exclusive with --writable")
-		l.engineConfig.SetWritableTmpfs(false)
-	} else {
-		l.engineConfig.SetWritableTmpfs(l.cfg.WritableTmpfs)
-	}
 
 	// Check key is available for encrypted image, if applicable.
 	// If we are joining an instance, then any encrypted image is already mounted.
@@ -181,10 +174,19 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	l.setNoMountFlags()
 
 	// GPU configuration may add library bind to /.singularity.d/libs.
+	// Note: --nvccli may implicitly add --writable-tmpfs, so handle that *after* GPUs.
 	if err := l.SetGPUConfig(); err != nil {
 		// We must fatal on error, as we are checking for correct ownership of nvidia-container-cli,
 		// which is important to maintain security.
 		sylog.Fatalf("While setting GPU configuration: %s", err)
+	}
+
+	// --writable-tmpfs is for an ephemeral overlay, doesn't make sense if also asking to write to image itself.
+	if l.cfg.Writable && l.cfg.WritableTmpfs {
+		sylog.Warningf("Disabling --writable-tmpfs flag, mutually exclusive with --writable")
+		l.engineConfig.SetWritableTmpfs(false)
+	} else {
+		l.engineConfig.SetWritableTmpfs(l.cfg.WritableTmpfs)
 	}
 
 	// If proot is requested (we are running an unprivileged build, without userns) we must bind it
