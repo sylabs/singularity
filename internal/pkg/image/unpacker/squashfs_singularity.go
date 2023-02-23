@@ -279,7 +279,7 @@ func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, filte
 	cmd := exec.Command(filepath.Join(buildcfg.BINDIR, "singularity"), args...)
 	cmd.Dir = "/"
 	cmd.Env = []string{
-		fmt.Sprintf("LD_LIBRARY_PATH=%s", strings.Join(libraryPath, string(os.PathListSeparator))),
+		fmt.Sprintf("SINGULARITYENV_LD_LIBRARY_PATH=%s", strings.Join(libraryPath, string(os.PathListSeparator))),
 		fmt.Sprintf("SINGULARITY_DEBUG=%s", os.Getenv("SINGULARITY_DEBUG")),
 	}
 
