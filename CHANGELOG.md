@@ -7,6 +7,8 @@
 - Fix implied `--writable-tmpfs` with `--nvccli`, to avoid r/o filesytem
   error.
 - Avoid incorrect error when reqesting fakeroot network.
+- Pass computed `LD_LIBRARY_PATH` to wrapped unsquashfs. Fixes issues where
+  `unsquashfs` on host uses libraries in non-default paths.
 
 ## 3.11.0 \[2023-02-10\]
 
