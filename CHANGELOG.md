@@ -6,6 +6,7 @@
 
 - Fix implied `--writable-tmpfs` with `--nvccli`, to avoid r/o filesytem
   error.
+- Avoid incorrect error when reqesting fakeroot network.
 
 ## 3.11.0 \[2023-02-10\]
 

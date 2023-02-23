@@ -802,8 +802,6 @@ func (l *Launcher) setNamespaces() {
 	// so we fallback to none
 	if l.cfg.Namespaces.Net {
 		if l.cfg.Fakeroot && l.cfg.Network != "none" {
-			l.engineConfig.SetNetwork("fakeroot")
-
 			if buildcfg.SINGULARITY_SUID_INSTALL == 0 || !l.engineConfig.File.AllowSetuid {
 				sylog.Warningf(
 					"fakeroot with unprivileged installation or 'allow setuid = no' " +
