@@ -204,8 +204,9 @@ func (c *ctx) testContain(t *testing.T) {
 
 // Test by running directly from URI
 func (c *ctx) testInstanceFromURI(t *testing.T) {
-	name := "test_from_library"
-	args := []string{"library://busybox:1.31.1", name}
+	e2e.EnsureORASImage(t, c.env)
+	name := "test_from_uri"
+	args := []string{c.env.OrasTestImage, name}
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(c.profile),
