@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -164,7 +164,7 @@ func doSignCmd(cmd *cobra.Command, cpath string) {
 	}
 
 	// Sign the image.
-	if err := singularity.Sign(cpath, opts...); err != nil {
+	if err := singularity.Sign(cmd.Context(), cpath, opts...); err != nil {
 		sylog.Fatalf("Failed to sign container: %v", err)
 	}
 	sylog.Infof("Signature created and applied to image '%v'", cpath)

@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,6 +7,7 @@
 package syecl
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -435,7 +436,7 @@ func TestShouldRun(t *testing.T) {
 			}
 
 			// Test ShouldRun (takes path).
-			got, err := c.ShouldRun(tt.path, openpgp.EntityList{getTestEntity(t)})
+			got, err := c.ShouldRun(context.Background(), tt.path, openpgp.EntityList{getTestEntity(t)})
 
 			if want := !tt.wantErr; got != want {
 				t.Errorf("got run %v, want %v", got, want)
@@ -452,7 +453,7 @@ func TestShouldRun(t *testing.T) {
 			}
 			defer f.Close()
 
-			got, err = c.ShouldRunFp(f, openpgp.EntityList{getTestEntity(t)})
+			got, err = c.ShouldRunFp(context.Background(), f, openpgp.EntityList{getTestEntity(t)})
 
 			if want := !tt.wantErr; got != want {
 				t.Errorf("got run %v, want %v", got, want)

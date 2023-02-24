@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -6,6 +6,7 @@
 package singularity
 
 import (
+	"context"
 	"crypto"
 	"errors"
 	"io"
@@ -143,7 +144,7 @@ func TestSign(t *testing.T) {
 			}
 			defer os.Remove(path)
 
-			if got, want := Sign(path, tt.opts...), tt.wantErr; !errors.Is(got, want) {
+			if got, want := Sign(context.Background(), path, tt.opts...), tt.wantErr; !errors.Is(got, want) {
 				t.Errorf("got error %v, want %v", got, want)
 			}
 		})
