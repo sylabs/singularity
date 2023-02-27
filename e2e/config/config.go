@@ -598,9 +598,10 @@ func (c configTests) configGlobalCombination(t *testing.T) {
 			exit: 255,
 		},
 		{
-			name:    "AllowNetUsersUserOK",
-			argv:    []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
-			profile: e2e.UserProfile,
+			name:              "AllowNetUsersUserOK",
+			addRequirementsFn: e2e.Privileged(require.Network),
+			argv:              []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
+			profile:           e2e.UserProfile,
 			directives: map[string]string{
 				"allow net users":    u.Name,
 				"allow net networks": "bridge",
@@ -608,9 +609,10 @@ func (c configTests) configGlobalCombination(t *testing.T) {
 			exit: 0,
 		},
 		{
-			name:    "AllowNetUsersUIDOK",
-			argv:    []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
-			profile: e2e.UserProfile,
+			name:              "AllowNetUsersUIDOK",
+			addRequirementsFn: e2e.Privileged(require.Network),
+			argv:              []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
+			profile:           e2e.UserProfile,
 			directives: map[string]string{
 				"allow net users":    fmt.Sprintf("%d", u.UID),
 				"allow net networks": "bridge",
@@ -645,9 +647,10 @@ func (c configTests) configGlobalCombination(t *testing.T) {
 			exit: 255,
 		},
 		{
-			name:    "AllowNetGroupsGroupOK",
-			argv:    []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
-			profile: e2e.UserProfile,
+			name:              "AllowNetGroupsGroupOK",
+			addRequirementsFn: e2e.Privileged(require.Network),
+			argv:              []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
+			profile:           e2e.UserProfile,
 			directives: map[string]string{
 				"allow net groups":   g.Name,
 				"allow net networks": "bridge",
@@ -655,9 +658,10 @@ func (c configTests) configGlobalCombination(t *testing.T) {
 			exit: 0,
 		},
 		{
-			name:    "AllowNetGroupsGIDOK",
-			argv:    []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
-			profile: e2e.UserProfile,
+			name:              "AllowNetGroupsGIDOK",
+			addRequirementsFn: e2e.Privileged(require.Network),
+			argv:              []string{"--net", "--network", "bridge", c.env.ImagePath, "true"},
+			profile:           e2e.UserProfile,
 			directives: map[string]string{
 				"allow net groups":   fmt.Sprintf("%d", g.GID),
 				"allow net networks": "bridge",
@@ -665,7 +669,8 @@ func (c configTests) configGlobalCombination(t *testing.T) {
 			exit: 0,
 		},
 		{
-			name: "AllowNetNetworksMultiMulti",
+			name:              "AllowNetNetworksMultiMulti",
+			addRequirementsFn: e2e.Privileged(require.Network),
 			// Two networks allowed, asking for both
 			argv:    []string{"--net", "--network", "bridge,ptp", c.env.ImagePath, "true"},
 			profile: e2e.UserProfile,
@@ -677,9 +682,10 @@ func (c configTests) configGlobalCombination(t *testing.T) {
 		},
 		{
 			// Two networks allowed, asking for one
-			name:    "AllowNetNetworksMultiOne",
-			argv:    []string{"--net", "--network", "ptp", c.env.ImagePath, "true"},
-			profile: e2e.UserProfile,
+			name:              "AllowNetNetworksMultiOne",
+			addRequirementsFn: e2e.Privileged(require.Network),
+			argv:              []string{"--net", "--network", "ptp", c.env.ImagePath, "true"},
+			profile:           e2e.UserProfile,
 			directives: map[string]string{
 				"allow net users":    u.Name,
 				"allow net networks": "bridge,ptp",
