@@ -37,6 +37,7 @@ type testStruct struct {
 	desc             string // case description
 	srcURI           string // source URI for image
 	library          string // use specific library, XXX(mem): not tested yet
+	arch             string // architecture to force, if any
 	force            bool   // pass --force
 	createDst        bool   // create destination file before pull
 	unauthenticated  bool   // pass --allow-unauthenticated
@@ -61,6 +62,10 @@ func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 	// element in the slice, which would cause the command to fail, without
 	// over-complicating the code.
 	argv := ""
+
+	if tt.arch != "" {
+		argv += "--arch " + tt.arch + " "
+	}
 
 	if tt.force {
 		argv += "--force "
@@ -216,6 +221,7 @@ func (c ctx) testPullCmd(t *testing.T) {
 		{
 			desc:             "image with specific hash",
 			srcURI:           "library://alpine:sha256.03883ca565b32e58fa0a496316d69de35741f2ef34b5b4658a6fec04ed8149a8",
+			arch:             "amd64",
 			unauthenticated:  true,
 			expectedExitCode: 0,
 		},
