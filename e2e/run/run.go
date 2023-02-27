@@ -25,6 +25,7 @@ type ctx struct {
 // using that directory as cache. This reflects a problem that is important
 // for the grid use case.
 func (c ctx) testRun555Cache(t *testing.T) {
+	e2e.EnsureORASImage(t, c.env)
 	tempDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "", "")
 	defer cleanup(t)
 	cacheDir := filepath.Join(tempDir, "image-cache")
@@ -34,7 +35,7 @@ func (c ctx) testRun555Cache(t *testing.T) {
 	}
 	// Directory is deleted when tempDir is deleted
 
-	cmdArgs := []string{"library://alpine:3.11.5", "true"}
+	cmdArgs := []string{c.env.OrasTestImage, "true"}
 	// We explicitly pass the environment to the command, not through c.env.ImgCacheDir
 	// because c.env is shared between all the tests, something we do not want here.
 	cacheDirEnv := fmt.Sprintf("%s=%s", cache.DirEnv, cacheDir)
