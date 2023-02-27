@@ -9,21 +9,26 @@ package e2e
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 	"sync"
 	"testing"
 
 	"github.com/containers/image/v5/copy"
 	"github.com/containers/image/v5/docker"
+	dockerarchive "github.com/containers/image/v5/docker/archive"
+	ociarchive "github.com/containers/image/v5/oci/archive"
+	ocilayout "github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/types"
+	"github.com/sylabs/singularity/pkg/syfs"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
-
-const ociArchiveURI = "https://s3.amazonaws.com/singularity-ci-public/alpine-oci-archive.tar"
 
 var (
 	ensureMutex sync.Mutex
@@ -123,11 +128,22 @@ func CopyOCIImage(t *testing.T, source, dest string, insecureSource, insecureDes
 		DockerRegistryUserAgent:     useragent.Value(),
 	}
 
-	srcRef, err := docker.ParseReference("//" + source)
+	// Use the auth config written out in dockerhub_auth.go - only if source/dest are not insecure.
+	// We don't want to inadvertently send out credentials over http (!)
+	u := CurrentUser(t)
+	configPath := filepath.Join(u.Dir, ".singularity", syfs.DockerConfFile)
+	if !insecureSource {
+		srcCtx.AuthFilePath = configPath
+	}
+	if !insecureDest {
+		dstCtx.AuthFilePath = configPath
+	}
+
+	srcRef, err := parseRef(source)
 	if err != nil {
 		t.Fatalf("failed to parse %s reference: %s", source, err)
 	}
-	dstRef, err := docker.ParseReference("//" + dest)
+	dstRef, err := parseRef(dest)
 	if err != nil {
 		t.Fatalf("failed to parse %s reference: %s", dest, err)
 	}
@@ -151,6 +167,7 @@ func EnsureORASImage(t *testing.T, env TestEnv) {
 	defer ensureMutex.Unlock()
 
 	orasImageOnce.Do(func() {
+		t.Logf("Pushing %s to %s", env.ImagePath, env.OrasTestImage)
 		env.RunSingularity(
 			t,
 			WithProfile(UserProfile),
@@ -184,13 +201,13 @@ func DownloadFile(url string, path string) error {
 	return nil
 }
 
-// EnsureImage checks if e2e OCI test image is available, and fetches
+// EnsureImage checks if e2e OCI test archive is available, and fetches
 // it otherwise.
-func EnsureOCIImage(t *testing.T, env TestEnv) {
+func EnsureOCIArchive(t *testing.T, env TestEnv) {
 	ensureMutex.Lock()
 	defer ensureMutex.Unlock()
 
-	switch _, err := os.Stat(env.OCIImagePath); {
+	switch _, err := os.Stat(env.OCIArchivePath); {
 	case err == nil:
 		// OK: file exists, return
 		return
@@ -201,13 +218,59 @@ func EnsureOCIImage(t *testing.T, env TestEnv) {
 	default:
 		// FATAL: something else is wrong
 		t.Fatalf("Failed when checking image %q: %+v\n",
-			env.OCIImagePath,
+			env.OCIArchivePath,
 			err)
 	}
 
 	// Prepare oci-archive source
-	err := DownloadFile(ociArchiveURI, env.OCIImagePath)
-	if err != nil {
-		t.Fatalf("Could not download oci archive test file: %v", err)
+	t.Logf("Copying %s to %s", env.TestRegistryImage, "oci-archive:"+env.OCIArchivePath)
+	CopyOCIImage(t, env.TestRegistryImage, "oci-archive:"+env.OCIArchivePath, true, false)
+}
+
+// EnsureDockerArchive checks if e2e Docker test archive is available, and fetches
+// it otherwise.
+func EnsureDockerArchive(t *testing.T, env TestEnv) {
+	ensureMutex.Lock()
+	defer ensureMutex.Unlock()
+
+	switch _, err := os.Stat(env.DockerArchivePath); {
+	case err == nil:
+		// OK: file exists, return
+		return
+
+	case os.IsNotExist(err):
+		// OK: file does not exist, continue
+
+	default:
+		// FATAL: something else is wrong
+		t.Fatalf("Failed when checking image %q: %+v\n",
+			env.DockerArchivePath,
+			err)
 	}
+
+	// Prepare oci-archive source
+	t.Logf("Copying %s to %s", env.TestRegistryImage, "docker-archive:"+env.DockerArchivePath)
+	CopyOCIImage(t, env.TestRegistryImage, "docker-archive:"+env.DockerArchivePath, true, false)
+}
+
+func parseRef(refString string) (ref types.ImageReference, err error) {
+	parts := strings.SplitN(refString, ":", 2)
+	if len(parts) < 2 {
+		return nil, fmt.Errorf("could not parse image ref: %s", refString)
+	}
+
+	switch parts[0] {
+	case "docker":
+		ref, err = docker.ParseReference(parts[1])
+	case "docker-archive":
+		ref, err = dockerarchive.ParseReference(parts[1])
+	case "oci":
+		ref, err = ocilayout.ParseReference(parts[1])
+	case "oci-archive":
+		ref, err = ociarchive.ParseReference(parts[1])
+	default:
+		return nil, fmt.Errorf("cannot create an OCI container from %s source", parts[0])
+	}
+
+	return ref, err
 }

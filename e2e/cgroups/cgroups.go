@@ -375,18 +375,18 @@ func (c *ctx) actionApply(t *testing.T, profile e2e.Profile, imageRef string) {
 
 func (c *ctx) actionApplyRoot(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
-	e2e.EnsureOCIImage(t, c.env)
+	e2e.EnsureOCIArchive(t, c.env)
 	t.Run(e2e.RootProfile.String(), func(t *testing.T) {
 		c.actionApply(t, e2e.RootProfile, c.env.ImagePath)
 	})
 	t.Run(e2e.OCIRootProfile.String(), func(t *testing.T) {
-		c.actionApply(t, e2e.OCIRootProfile, "oci-archive:"+c.env.OCIImagePath)
+		c.actionApply(t, e2e.OCIRootProfile, "oci-archive:"+c.env.OCIArchivePath)
 	})
 }
 
 func (c *ctx) actionApplyRootless(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
-	e2e.EnsureOCIImage(t, c.env)
+	e2e.EnsureOCIArchive(t, c.env)
 	for _, profile := range []e2e.Profile{e2e.UserProfile, e2e.UserNamespaceProfile, e2e.FakerootProfile} {
 		t.Run(profile.String(), func(t *testing.T) {
 			c.actionApply(t, profile, c.env.ImagePath)
@@ -394,7 +394,7 @@ func (c *ctx) actionApplyRootless(t *testing.T) {
 	}
 	for _, profile := range []e2e.Profile{e2e.OCIUserProfile, e2e.OCIFakerootProfile} {
 		t.Run(profile.String(), func(t *testing.T) {
-			c.actionApply(t, profile, "oci-archive:"+c.env.OCIImagePath)
+			c.actionApply(t, profile, "oci-archive:"+c.env.OCIArchivePath)
 		})
 	}
 }
@@ -614,18 +614,18 @@ func (c *ctx) actionFlagV2(t *testing.T, tt resourceFlagTest, profile e2e.Profil
 
 func (c *ctx) actionFlagsRoot(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
-	e2e.EnsureOCIImage(t, c.env)
+	e2e.EnsureOCIArchive(t, c.env)
 	t.Run(e2e.RootProfile.String(), func(t *testing.T) {
 		c.actionFlags(t, e2e.RootProfile, c.env.ImagePath)
 	})
 	t.Run(e2e.OCIRootProfile.String(), func(t *testing.T) {
-		c.actionFlags(t, e2e.OCIRootProfile, "oci-archive:"+c.env.OCIImagePath)
+		c.actionFlags(t, e2e.OCIRootProfile, "oci-archive:"+c.env.OCIArchivePath)
 	})
 }
 
 func (c *ctx) actionFlagsRootless(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
-	e2e.EnsureOCIImage(t, c.env)
+	e2e.EnsureOCIArchive(t, c.env)
 	for _, profile := range []e2e.Profile{e2e.UserProfile, e2e.UserNamespaceProfile, e2e.FakerootProfile} {
 		t.Run(profile.String(), func(t *testing.T) {
 			c.actionFlags(t, profile, c.env.ImagePath)
@@ -633,7 +633,7 @@ func (c *ctx) actionFlagsRootless(t *testing.T) {
 	}
 	for _, profile := range []e2e.Profile{e2e.OCIUserProfile, e2e.OCIFakerootProfile} {
 		t.Run(profile.String(), func(t *testing.T) {
-			c.actionFlags(t, profile, "oci-archive:"+c.env.OCIImagePath)
+			c.actionFlags(t, profile, "oci-archive:"+c.env.OCIArchivePath)
 		})
 	}
 }
