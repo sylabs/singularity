@@ -9,6 +9,8 @@
 - Ensure consistent binding of libraries under `--nv/--rocm` when duplicate
   `<library>.so[.version]` files are listed by `ldconfig -p`.
 - Avoid incorrect error when requesting fakeroot network.
+- Pass computed `LD_LIBRARY_PATH` to wrapped unsquashfs. Fixes issues where
+  `unsquashfs` on host uses libraries in non-default paths.
 
 ## 3.11.0 \[2023-02-10\]
 
