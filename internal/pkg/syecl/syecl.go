@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
-	toml "github.com/pelletier/go-toml"
+	toml "github.com/pelletier/go-toml/v2"
 	"github.com/sylabs/sif/v2/pkg/integrity"
 	"github.com/sylabs/sif/v2/pkg/sif"
 )
@@ -34,7 +34,7 @@ var (
 type EclConfig struct {
 	Activated  bool        `toml:"activated"`      // toggle the activation of the ECL rules
 	Legacy     bool        `toml:"legacyinsecure"` // Legacy (insecure) signature mode
-	ExecGroups []Execgroup `toml:"execgroup"`      // Slice of all execution groups
+	ExecGroups []Execgroup `toml:"execgroup,omitempty"`      // Slice of all execution groups
 }
 
 // Execgroup describes an execution group, the main unit of configuration:
