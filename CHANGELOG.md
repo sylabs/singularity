@@ -6,6 +6,8 @@
 
 - Fix implied `--writable-tmpfs` with `--nvccli`, to avoid r/o filesytem
   error.
+- Ensure consistent binding of libraries under `--nv/--rocm` when duplicate
+  `<library>.so[.version]` files are listed by `ldconfig -p`.
 
 ## 3.11.0 \[2023-02-10\]
 
