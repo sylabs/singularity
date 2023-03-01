@@ -66,8 +66,8 @@ all your interactions with the project members and users.
    - New features / functionalities
 1. PRs which introduce a new Go dependency to the project via `go get` and
    additions to `go.mod` should explain why the dependency is required.
-1. Any new or updated dependency should be reflected in `LICENSE_DEPENDENCIES.md`, by
-   running `scripts/update-license-dependencies.sh`
+1. Any new or updated dependency should be reflected in
+   `LICENSE_DEPENDENCIES.md`, by running `scripts/update-license-dependencies.sh`
 
 ## Documentation
 
