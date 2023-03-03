@@ -458,18 +458,16 @@ func (c ctx) testDockerDefFile(t *testing.T) {
 				}
 			}),
 			e2e.PostRun(func(t *testing.T) {
-				t.Cleanup(func() {
-					if !t.Failed() {
-						os.Remove(imagePath)
-						os.Remove(defFile)
-					}
-				})
-
 				if t.Failed() {
 					return
 				}
 
 				c.env.ImageVerify(t, imagePath)
+
+				if !t.Failed() {
+					os.Remove(imagePath)
+					os.Remove(defFile)
+				}
 			}),
 			e2e.ExpectExit(0),
 		)
@@ -528,18 +526,16 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 			e2e.WithCommand("build"),
 			e2e.WithArgs("--disable-cache", "--no-https", imagePath, defFile),
 			e2e.PostRun(func(t *testing.T) {
-				t.Cleanup(func() {
-					if !t.Failed() {
-						os.Remove(imagePath)
-						os.Remove(defFile)
-					}
-				})
-
 				if t.Failed() || tt.exit != 0 {
 					return
 				}
 
 				c.env.ImageVerify(t, imagePath)
+
+				if !t.Failed() {
+					os.Remove(imagePath)
+					os.Remove(defFile)
+				}
 			}),
 			e2e.ExpectExit(tt.exit),
 		)
