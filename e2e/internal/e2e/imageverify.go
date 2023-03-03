@@ -37,12 +37,12 @@ func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 	)
 
 	tests := []struct {
-		// name      string
+		name      string
 		jsonPath  []string
 		expectOut string
 	}{
 		{
-			// name:      "LabelCheckType",
+			name:      "LabelCheckType",
 			jsonPath:  []string{"type"},
 			expectOut: "container",
 		},
@@ -55,13 +55,15 @@ func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 
 	verifyOutput := func(t *testing.T, r *SingularityCmdResult) {
 		for _, tt := range tests {
-			jsonOut, err := jsonparser.GetString(r.Stdout, tt.jsonPath...)
-			if err != nil {
-				t.Fatalf("unable to get expected output from json: %v", err)
-			}
-			if jsonOut != tt.expectOut {
-				t.Fatalf("unexpected failure: got: '%s', expecting: '%s'", jsonOut, tt.expectOut)
-			}
+			t.Run(tt.name, func(t *testing.T) {
+				jsonOut, err := jsonparser.GetString(r.Stdout, tt.jsonPath...)
+				if err != nil {
+					t.Fatalf("unable to get expected output from json: %v", err)
+				}
+				if jsonOut != tt.expectOut {
+					t.Fatalf("unexpected failure: got: '%s', expecting: '%s'", jsonOut, tt.expectOut)
+				}
+			})
 		}
 	}
 
