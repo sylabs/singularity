@@ -25,14 +25,14 @@ func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 		AsSubtest("BasicIntegrityTests"),
 		WithProfile(UserProfile),
 		WithCommand("exec"),
-		WithArgs(imagePath, "/bin/sh", "-c", "( false ) || "+
-			"( test -f /.singularity.d/runscript -a "+
-			"-f /.singularity.d/env/01-base.sh -a "+
-			"-f /.singularity.d/actions/shell -a "+
-			"-f /.singularity.d/actions/exec -a "+
-			"-f /.singularity.d/actions/run -a "+
-			"-L /environment -a "+
-			"-L /singularity )"),
+		WithArgs(imagePath, "/bin/sh", "-c",
+			"test -f /.singularity.d/runscript -a "+
+				"-f /.singularity.d/env/01-base.sh -a "+
+				"-f /.singularity.d/actions/shell -a "+
+				"-f /.singularity.d/actions/exec -a "+
+				"-f /.singularity.d/actions/run -a "+
+				"-L /environment -a "+
+				"-L /singularity"),
 		ExpectExit(0),
 	)
 
