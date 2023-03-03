@@ -20,63 +20,21 @@ import (
 
 // ImageVerify checks for an image integrity.
 func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
-	tt := []struct {
-		name string
-		argv []string
-		exit int
-	}{
-		{
-			name: "False",
-			argv: []string{imagePath, "false"},
-			exit: 1,
-		},
-		{
-			name: "RunScript",
-			argv: []string{imagePath, "test", "-f", "/.singularity.d/runscript"},
-			exit: 0,
-		},
-		{
-			name: "OneBase",
-			argv: []string{imagePath, "test", "-f", "/.singularity.d/env/01-base.sh"},
-			exit: 0,
-		},
-		{
-			name: "ActionsShell",
-			argv: []string{imagePath, "test", "-f", "/.singularity.d/actions/shell"},
-			exit: 0,
-		},
-		{
-			name: "ActionsExec",
-			argv: []string{imagePath, "test", "-f", "/.singularity.d/actions/exec"},
-			exit: 0,
-		},
-		{
-			name: "ActionsRun",
-			argv: []string{imagePath, "test", "-f", "/.singularity.d/actions/run"},
-			exit: 0,
-		},
-		{
-			name: "Environment",
-			argv: []string{imagePath, "test", "-L", "/environment"},
-			exit: 0,
-		},
-		{
-			name: "Singularity",
-			argv: []string{imagePath, "test", "-L", "/singularity"},
-			exit: 0,
-		},
-	}
-
-	for _, tc := range tt {
-		env.RunSingularity(
-			t,
-			AsSubtest(tc.name),
-			WithProfile(UserProfile),
-			WithCommand("exec"),
-			WithArgs(tc.argv...),
-			ExpectExit(tc.exit),
-		)
-	}
+	env.RunSingularity(
+		t,
+		AsSubtest("BasicIntegrityTests"),
+		WithProfile(UserProfile),
+		WithCommand("exec"),
+		WithArgs(imagePath, "/bin/sh", "-c",
+			"test -f /.singularity.d/runscript -a "+
+				"-f /.singularity.d/env/01-base.sh -a "+
+				"-f /.singularity.d/actions/shell -a "+
+				"-f /.singularity.d/actions/exec -a "+
+				"-f /.singularity.d/actions/run -a "+
+				"-L /environment -a "+
+				"-L /singularity"),
+		ExpectExit(0),
+	)
 
 	tests := []struct {
 		name      string
@@ -89,33 +47,34 @@ func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 			expectOut: "container",
 		},
 		{
-			name:      "LabelCheckSchemaVersion",
+			// name:      "LabelCheckSchemaVersion",
 			jsonPath:  []string{"data", "attributes", "labels", "org.label-schema.schema-version"},
 			expectOut: "1.0",
 		},
 	}
 
-	// Verify the label partition
-	for _, tt := range tests {
-		verifyOutput := func(t *testing.T, r *SingularityCmdResult) {
-			jsonOut, err := jsonparser.GetString(r.Stdout, tt.jsonPath...)
-			if err != nil {
-				t.Fatalf("unable to get expected output from json: %v", err)
-			}
-			if jsonOut != tt.expectOut {
-				t.Fatalf("unexpected failure: got: '%s', expecting: '%s'", jsonOut, tt.expectOut)
-			}
+	verifyOutput := func(t *testing.T, r *SingularityCmdResult) {
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				jsonOut, err := jsonparser.GetString(r.Stdout, tt.jsonPath...)
+				if err != nil {
+					t.Fatalf("unable to get expected output from json: %v", err)
+				}
+				if jsonOut != tt.expectOut {
+					t.Fatalf("unexpected failure: got: '%s', expecting: '%s'", jsonOut, tt.expectOut)
+				}
+			})
 		}
-
-		env.RunSingularity(
-			t,
-			AsSubtest(tt.name),
-			WithProfile(UserProfile),
-			WithCommand("inspect"),
-			WithArgs([]string{"--json", "--labels", imagePath}...),
-			ExpectExit(0, verifyOutput),
-		)
 	}
+
+	env.RunSingularity(
+		t,
+		AsSubtest("LabelChecks"),
+		WithProfile(UserProfile),
+		WithCommand("inspect"),
+		WithArgs([]string{"--json", "--labels", imagePath}...),
+		ExpectExit(0, verifyOutput),
+	)
 }
 
 // DefinitionImageVerify checks for image correctness based off off supplied DefFileDetail

@@ -36,7 +36,11 @@ func (c imgBuildTests) issue4203(t *testing.T) {
 		e2e.WithCommand("build"),
 		e2e.WithArgs(image, "testdata/regressions/issue_4203.def"),
 		e2e.PostRun(func(t *testing.T) {
-			defer os.Remove(image)
+			t.Cleanup(func() {
+				if !t.Failed() {
+					os.Remove(image)
+				}
+			})
 
 			if t.Failed() {
 				return
@@ -99,7 +103,11 @@ func (c *imgBuildTests) issue4407(t *testing.T) {
 					return
 				}
 
-				defer os.RemoveAll(imagePath)
+				t.Cleanup(func() {
+					if !t.Failed() {
+						os.RemoveAll(imagePath)
+					}
+				})
 
 				c.env.ImageVerify(t, imagePath)
 			}),
@@ -117,7 +125,11 @@ func (c *imgBuildTests) issue4583(t *testing.T) {
 		e2e.WithCommand("build"),
 		e2e.WithArgs(image, "testdata/regressions/issue_4583.def"),
 		e2e.PostRun(func(t *testing.T) {
-			defer os.Remove(image)
+			t.Cleanup(func() {
+				if !t.Failed() {
+					os.Remove(image)
+				}
+			})
 
 			if t.Failed() {
 				return
@@ -291,11 +303,11 @@ func (c *imgBuildTests) issue5315(t *testing.T) {
 func (c *imgBuildTests) issue5435(t *testing.T) {
 	// create a directory that we don't care about
 	cwd, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "throwaway-dir-", "")
-	defer func(t *testing.T) {
+	t.Cleanup(func() {
 		if !t.Failed() {
 			cleanup(t)
 		}
-	}(t)
+	})
 
 	c.env.RunSingularity(
 		t,
@@ -352,7 +364,11 @@ func (c *imgBuildTests) issue5668(t *testing.T) {
 		t.Fatalf("Could not get home dir: %v", err)
 	}
 	sbDir, sbCleanup := e2e.MakeTempDir(t, home, "issue-5668-", "")
-	defer e2e.Privileged(sbCleanup)(t)
+	t.Cleanup(func() {
+		if !t.Failed() {
+			e2e.Privileged(sbCleanup)(t)
+		}
+	})
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.UserProfile),
@@ -368,7 +384,11 @@ func (c *imgBuildTests) issue5690(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	sandbox, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-5690-", "")
-	defer e2e.Privileged(cleanup)(t)
+	t.Cleanup(func() {
+		if !t.Failed() {
+			e2e.Privileged(cleanup)(t)
+		}
+	})
 
 	c.env.RunSingularity(
 		t,
@@ -389,7 +409,11 @@ func (c *imgBuildTests) issue5690(t *testing.T) {
 
 func (c *imgBuildTests) issue3848(t *testing.T) {
 	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue-3848-", "")
-	defer cleanup(t)
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup(t)
+		}
+	})
 
 	f, err := os.CreateTemp(tmpDir, "test-def-")
 	if err != nil {
@@ -401,7 +425,11 @@ func (c *imgBuildTests) issue3848(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tmpfile) // clean up
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(tmpfile)
+		}
+	})
 
 	d := struct {
 		From string
