@@ -437,11 +437,11 @@ The dependencies and their licenses are as follows:
 
 **Project URL:** <https://gopkg.in/square/go-jose.v2>
 
-## gopkg.in/yaml.v3
+## gopkg.in/yaml.v2
 
 **License:** Apache-2.0
 
-**Project URL:** <https://gopkg.in/yaml.v3>
+**Project URL:** <https://gopkg.in/yaml.v2>
 
 ## gotest.tools/v3
 
