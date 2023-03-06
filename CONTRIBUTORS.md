@@ -74,6 +74,7 @@ The following have contributed code and/or documentation to this repository.
 - Michael Herzberg <michael@mherzberg.de>
 - Michael Milton <ttmigueltt@gmail.com>
 - Michael Moore <michael.moore@nuance.com>
+- Michael Richards <m.richards@utexas.edu>
 - Mike Frisch <michael.frisch@sylabs.io>
 - Mike Gray <mike@sylabs.io>
 - Nathan Chou <nathan.chou@sylabs.io>, <choun@berkeley.edu>
@@ -104,6 +105,7 @@ The following have contributed code and/or documentation to this repository.
 - Westley Kurtzer <westley@sylabs.io>, <westleyk@nym.hush.com>
 - Yannick Cote <y@sylabs.io>, <yhcote@gmail.com>
 - Yaroslav Halchenko <debian@onerussian.com>
+- Yinuo Chen <ynchen2829@utexas.edu>
 - Onur Yılmaz <csonuryilmaz@gmail.com>
 - Pranathi Locula <locula@deshaw.com>
 ```
