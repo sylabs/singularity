@@ -12,9 +12,11 @@ import (
 	"context"
 	"fmt"
 
+	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher/oci"
 	ocibundle "github.com/sylabs/singularity/pkg/ocibundle/sif"
+	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
@@ -147,5 +149,18 @@ func systemdCgroups() (use bool, err error) {
 			return false, fmt.Errorf("unable to parse singularity configuration file: %w", err)
 		}
 	}
-	return cfg.SystemdCgroups, nil
+
+	useSystemd := cfg.SystemdCgroups
+
+	// As non-root, we need cgroups v2 unified mode for systemd support.
+	// Fall back to cgroupfs if this is not available.
+	hostUID, err := namespaces.HostUID()
+	if err != nil {
+		return false, fmt.Errorf("while finding host uid: %w", err)
+	}
+	if hostUID != 0 && !lccgroups.IsCgroup2UnifiedMode() {
+		useSystemd = false
+	}
+
+	return useSystemd, nil
 }

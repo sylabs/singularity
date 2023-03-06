@@ -12,6 +12,8 @@
 - Show correct memory limit in `instance stats` when a limit is set.
 - Ensure consistent binding of libraries under `--nv/--rocm` when duplicate
   `<library>.so[.version]` files are listed by `ldconfig -p`.
+- Fix systemd cgroup manager error when running a container as a non-root
+  user with `--oci`, on systems with cgroups v1 and `runc`.
 
 ## 3.11.0 \[2023-02-10\]
 
