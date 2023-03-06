@@ -24,12 +24,23 @@ var keyRemoveSecretFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "secret",
 	ShortHand:    "s",
-	Usage:        "remove a secret key",
+	Usage:        "remove a secret key (synonym for --private)",
+}
+
+// -p|--private
+var keyRemovePrivateFlag = cmdline.Flag{
+	ID:           "keyRemovePrivateFlag",
+	Value:        &secretRemove,
+	DefaultValue: false,
+	Name:         "private",
+	ShortHand:    "p",
+	Usage:        "remove a private key (synonym for --secret)",
 }
 
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterFlagForCmd(&keyRemoveSecretFlag, KeyRemoveCmd)
+		cmdManager.RegisterFlagForCmd(&keyRemovePrivateFlag, KeyRemoveCmd)
 	})
 }
 
