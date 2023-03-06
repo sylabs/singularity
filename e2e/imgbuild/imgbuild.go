@@ -130,7 +130,11 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 		t.Run(profile.String(), func(t *testing.T) {
 			for _, tc := range tt {
 				dn, cleanup := c.tempDir(t, "build-from")
-				defer cleanup()
+				t.Cleanup(func() {
+					if !t.Failed() {
+						cleanup()
+					}
+				})
 
 				imagePath := path.Join(dn, "sandbox")
 
@@ -160,7 +164,11 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 							return
 						}
 
-						defer os.RemoveAll(imagePath)
+						t.Cleanup(func() {
+							if !t.Failed() {
+								os.RemoveAll(imagePath)
+							}
+						})
 						c.env.ImageVerify(t, imagePath)
 					}),
 					e2e.ExpectExit(0),
@@ -205,7 +213,11 @@ func (c imgBuildTests) nonRootBuild(t *testing.T) {
 
 	for _, tc := range tt {
 		dn, cleanup := c.tempDir(t, "non-root-build")
-		defer cleanup()
+		t.Cleanup(func() {
+			if !t.Failed() {
+				cleanup()
+			}
+		})
 
 		imagePath := path.Join(dn, "container")
 
@@ -236,13 +248,21 @@ func (c imgBuildTests) buildLocalImage(t *testing.T) {
 
 	tmpdir, cleanup := c.tempDir(t, "build-local-image")
 
-	defer cleanup()
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup()
+		}
+	})
 
 	liDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
 		Bootstrap: "localimage",
 		From:      c.env.ImagePath,
 	})
-	defer os.Remove(liDefFile)
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(liDefFile)
+		}
+	})
 
 	labels := make(map[string]string)
 	labels["FOO"] = "bar"
@@ -251,7 +271,11 @@ func (c imgBuildTests) buildLocalImage(t *testing.T) {
 		From:      c.env.ImagePath,
 		Labels:    labels,
 	})
-	defer os.Remove(liLabelDefFile)
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(liLabelDefFile)
+		}
+	})
 
 	sandboxImage := path.Join(tmpdir, "test-sandbox")
 
@@ -271,7 +295,11 @@ func (c imgBuildTests) buildLocalImage(t *testing.T) {
 		From:      sandboxImage,
 		Labels:    labels,
 	})
-	defer os.Remove(localSandboxDefFile)
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(localSandboxDefFile)
+		}
+	})
 
 	tt := []struct {
 		name      string
@@ -301,7 +329,11 @@ func (c imgBuildTests) buildLocalImage(t *testing.T) {
 						if t.Failed() {
 							return
 						}
-						defer os.RemoveAll(imagePath)
+						t.Cleanup(func() {
+							if !t.Failed() {
+								os.RemoveAll(imagePath)
+							}
+						})
 						c.env.ImageVerify(t, imagePath)
 					}),
 					e2e.ExpectExit(0),
@@ -313,7 +345,11 @@ func (c imgBuildTests) buildLocalImage(t *testing.T) {
 
 func (c imgBuildTests) badPath(t *testing.T) {
 	dn, cleanup := c.tempDir(t, "bad-path")
-	defer cleanup()
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup()
+		}
+	})
 
 	imagePath := path.Join(dn, "container")
 
@@ -332,7 +368,11 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.Remove(tmpfile) // clean up
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(tmpfile)
+		}
+	})
 
 	tests := []struct {
 		name    string
@@ -511,7 +551,11 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 
 	for _, tt := range tests {
 		dn, cleanup := c.tempDir(t, "multi-stage-definition")
-		defer cleanup()
+		t.Cleanup(func() {
+			if !t.Failed() {
+				cleanup()
+			}
+		})
 
 		imagePath := path.Join(dn, "container")
 
@@ -526,7 +570,11 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 			e2e.WithCommand("build"),
 			e2e.WithArgs(args...),
 			e2e.PostRun(func(t *testing.T) {
-				defer os.Remove(defFile)
+				t.Cleanup(func() {
+					if !t.Failed() {
+						os.Remove(defFile)
+					}
+				})
 
 				e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, tt.correct)
 			}),
@@ -542,7 +590,11 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.Remove(tmpfile) // clean up
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(tmpfile)
+		}
+	})
 
 	tt := map[string]e2e.DefFileDetails{
 		"Empty": {
@@ -807,7 +859,11 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 		t.Run(profile.String(), func(t *testing.T) {
 			for name, dfd := range tt {
 				dn, cleanup := c.tempDir(t, "build-definition")
-				defer cleanup()
+				t.Cleanup(func() {
+					if !t.Failed() {
+						cleanup()
+					}
+				})
 
 				imagePath := path.Join(dn, "container")
 
@@ -823,7 +879,11 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 						if t.Failed() {
 							return
 						}
-						defer os.Remove(defFile)
+						t.Cleanup(func() {
+							if !t.Failed() {
+								os.Remove(defFile)
+							}
+						})
 						e2e.DefinitionImageVerify(t, c.env.CmdPath, imagePath, dfd)
 					}),
 					e2e.ExpectExit(0),
@@ -858,7 +918,11 @@ func (c imgBuildTests) buildEncryptPemFile(t *testing.T) {
 	// We create a temporary directory to store the image, making sure tests
 	// will not pollute each other
 	dn, cleanup := c.tempDir(t, "pem-encryption")
-	defer cleanup()
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup()
+		}
+	})
 
 	// Generate the PEM file
 	pemFile, _ := e2e.GeneratePemFiles(t, c.env.TestDir)
@@ -926,7 +990,11 @@ func (c imgBuildTests) buildEncryptPassphrase(t *testing.T) {
 	// We create a temporary directory to store the image, making sure tests
 	// will not pollute each other
 	dn, cleanup := c.tempDir(t, "passphrase-encryption")
-	defer cleanup()
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup()
+		}
+	})
 
 	// If the version of cryptsetup is not compatible with Singularity encryption,
 	// the build commands are expected to fail
@@ -1024,7 +1092,11 @@ func (c imgBuildTests) buildUpdateSandbox(t *testing.T) {
 	const badSandbox = "/bad/sandbox/path"
 
 	testDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "build-sandbox-", "")
-	defer e2e.Privileged(cleanup)
+	t.Cleanup(func() {
+		if !t.Failed() {
+			e2e.Privileged(cleanup)
+		}
+	})
 
 	tests := []struct {
 		name     string
@@ -1073,10 +1145,10 @@ func (c imgBuildTests) buildUpdateSandbox(t *testing.T) {
 // buildWithFingerprint checks that we correctly verify a source image fingerprint when specified
 func (c imgBuildTests) buildWithFingerprint(t *testing.T) {
 	tmpDir, remove := e2e.MakeTempDir(t, "", "imgbuild-fingerprint-", "")
-	defer func() {
+	t.Cleanup(func() {
 		c.env.KeyringDir = ""
 		remove(t)
-	}()
+	})
 
 	pgpDir, _ := e2e.MakeSyPGPDir(t, tmpDir)
 	c.env.KeyringDir = pgpDir
@@ -1240,7 +1312,11 @@ func (c imgBuildTests) buildWithFingerprint(t *testing.T) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		defer os.Remove(defFile)
+		t.Cleanup(func() {
+			if !t.Failed() {
+				os.Remove(defFile)
+			}
+		})
 		c.env.RunSingularity(t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(e2e.RootProfile),
@@ -1258,7 +1334,11 @@ func (c imgBuildTests) buildBindMount(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	tmpdir, cleanup := c.tempDir(t, "build-local-image")
-	defer cleanup()
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup()
+		}
+	})
 
 	dir, _ := e2e.MakeTempDir(t, tmpdir, "mount", "")
 
@@ -1426,7 +1506,11 @@ func (c imgBuildTests) testWritableTmpfs(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	tmpdir, cleanup := c.tempDir(t, "build-writabletmpfs-test")
-	defer cleanup()
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup()
+		}
+	})
 
 	// Definition will attempt to touch a file in /var/test during %test.
 	// This would fail without a writable tmpfs.
@@ -1450,7 +1534,11 @@ func (c imgBuildTests) buildLibraryHost(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	tmpdir, cleanup := c.tempDir(t, "build-libraryhost-test")
-	defer cleanup()
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup()
+		}
+	})
 
 	// Library hostname in the From URI
 	// The hostname is invalid, and we should get an error to that effect.
@@ -1503,7 +1591,11 @@ func (c imgBuildTests) buildProot(t *testing.T) {
 		t.Run(profile.String(), func(t *testing.T) {
 			for _, tc := range tt {
 				dn, cleanup := c.tempDir(t, "build-proot")
-				defer cleanup()
+				t.Cleanup(func() {
+					if !t.Failed() {
+						cleanup()
+					}
+				})
 
 				imagePath := path.Join(dn, "image.sif")
 
@@ -1522,7 +1614,11 @@ func (c imgBuildTests) buildProot(t *testing.T) {
 							return
 						}
 
-						defer os.RemoveAll(imagePath)
+						t.Cleanup(func() {
+							if !t.Failed() {
+								os.RemoveAll(imagePath)
+							}
+						})
 						c.env.ImageVerify(t, imagePath)
 					}),
 					e2e.ExpectExit(0),
@@ -1535,7 +1631,11 @@ func (c imgBuildTests) buildProot(t *testing.T) {
 // Check that test and runscript that specify a custom #! use it as the interpreter.
 func (c imgBuildTests) buildCustomShebang(t *testing.T) {
 	tmpdir, cleanup := c.tempDir(t, "build-shebang-test")
-	defer cleanup()
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup()
+		}
+	})
 
 	definition := `Bootstrap: localimage
 From: %s
