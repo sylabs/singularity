@@ -485,6 +485,10 @@ func removeKey(list openpgp.EntityList, fingerprint string) openpgp.EntityList {
 
 // RemovePrivKey will delete a secret key matching toDelete
 func (keyring *Handle) RemovePrivKey(toDelete string) error {
+	if keyring.global {
+		return fmt.Errorf("global keyring only holds public keys")
+	}
+
 	// read all the local private keys
 	elist, err := loadKeyring(keyring.SecretPath())
 	switch {
