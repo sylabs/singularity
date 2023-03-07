@@ -30,13 +30,12 @@ var keyListSecretFlag = cmdline.Flag{
 	EnvKeys:      []string{"SECRET"},
 }
 
-// -p|--private
+// --private
 var keyListPrivateFlag = cmdline.Flag{
 	ID:           "keyListPrivateFlag",
 	Value:        &secret,
 	DefaultValue: false,
 	Name:         "private",
-	ShortHand:    "p",
 	Usage:        "list private keys instead of the default which displays public ones (synonym for --secret)",
 	EnvKeys:      []string{"SECRET"},
 }

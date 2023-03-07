@@ -27,13 +27,12 @@ var keyRemoveSecretFlag = cmdline.Flag{
 	Usage:        "remove a secret key (synonym for --private)",
 }
 
-// -p|--private
+// --private
 var keyRemovePrivateFlag = cmdline.Flag{
 	ID:           "keyRemovePrivateFlag",
 	Value:        &secretRemove,
 	DefaultValue: false,
 	Name:         "private",
-	ShortHand:    "p",
 	Usage:        "remove a private key (synonym for --secret)",
 }
 

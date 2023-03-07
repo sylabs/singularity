@@ -32,13 +32,12 @@ var keyExportSecretFlag = cmdline.Flag{
 	Usage:        "export a secret key (synonym for --private)",
 }
 
-// -p|--private
+// --private
 var keyExportPrivateFlag = cmdline.Flag{
 	ID:           "keyExportPrivateFlag",
 	Value:        &secretExport,
 	DefaultValue: false,
 	Name:         "private",
-	ShortHand:    "p",
 	Usage:        "export a private key (synonym for --secret)",
 }
 
