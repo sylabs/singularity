@@ -384,10 +384,11 @@ func (keyring *Handle) appendPubKey(e *openpgp.Entity) error {
 
 // storePrivKeyring overwrites the private keyring with the listed keys
 func (keyring *Handle) storePrivKeyring(keys openpgp.EntityList) error {
-	mode := os.FileMode(0o600)
 	if keyring.global {
-		mode = os.FileMode(0o644)
+		return fmt.Errorf("private keys cannot be stored in global keyring")
 	}
+
+	mode := os.FileMode(0o600)
 
 	f, err := createOrTruncateFile(keyring.SecretPath(), mode)
 	if err != nil {
