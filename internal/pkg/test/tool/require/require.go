@@ -22,6 +22,7 @@ import (
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
+	"github.com/sylabs/singularity/internal/pkg/util/rpm"
 	"github.com/sylabs/singularity/pkg/network"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/pkg/util/slice"
@@ -342,4 +343,15 @@ func Kernel(t *testing.T, reqMajor, reqMinor int) {
 	}
 
 	t.Skipf("Kernel %d.%d found, but %d.%d required", major, minor, reqMajor, reqMinor)
+}
+
+func RPMMacro(t *testing.T, name, value string) {
+	eval, err := rpm.GetMacro(name)
+	if err != nil {
+		t.Skipf("Couldn't get value of %s: %s", name, err)
+	}
+
+	if eval != value {
+		t.Skipf("Need %s as value of %s, got %s", value, name, eval)
+	}
 }

@@ -19,14 +19,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 )
 
-// rpmMacrosContent contains required content to
-// place in $HOME/.rpmmacros file for yum bootstrap
-// build
-var rpmMacrosContent = `
-%_var /var
-%_dbpath %{_var}/lib/rpm
-`
-
 // SetupHomeDirectories creates temporary home directories for
 // privileged and unprivileged users and bind mount those directories
 // on top of real ones. It's possible because e2e tests are executed
@@ -128,18 +120,6 @@ func SetupHomeDirectories(t *testing.T) {
 		if err := os.Chdir(cwd); err != nil {
 			err = errors.Wrapf(err, "change working directory to %s", cwd)
 			t.Fatalf("failed to change working directory: %+v", err)
-		}
-
-		// create .rpmmacros files for yum bootstrap builds
-		macrosFile := filepath.Join(unprivSessionHome, ".rpmmacros")
-		if err := os.WriteFile(macrosFile, []byte(rpmMacrosContent), 0o444); err != nil {
-			err = errors.Wrapf(err, "writing macros file at %s", macrosFile)
-			t.Fatalf("could not write macros file: %+v", err)
-		}
-		macrosFile = filepath.Join(privSessionHome, ".rpmmacros")
-		if err := os.WriteFile(macrosFile, []byte(rpmMacrosContent), 0o444); err != nil {
-			err = errors.Wrapf(err, "writing macros file at %s", macrosFile)
-			t.Fatalf("could not write macros file: %+v", err)
 		}
 	})(t)
 }
