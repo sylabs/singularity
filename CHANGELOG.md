@@ -2,6 +2,13 @@
 
 ## Changes Since Last Release
 
+### New Features & Functionality
+
+- Added `--secret` flag (shorthand: `-s`) to `key remove` subcommand, to allow
+  removal of a private key by fingerprint.
+- Added `--private` as a synonym for `--secret` in `key list`, `key export`, and
+  `key remove` subcommands.
+
 ### Bug Fixes
 
 - Fix implied `--writable-tmpfs` with `--nvccli`, to avoid r/o filesytem
