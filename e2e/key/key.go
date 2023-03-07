@@ -451,7 +451,7 @@ func (c *ctx) singularityKeyRemove(t *testing.T) {
 		},
 		{
 			name:       "remove unknown private key",
-			args:       []string{"remove", "--secret", "0100000000000001"},
+			args:       []string{"remove", "--private", "0100000000000001"},
 			expectExit: 255,
 		},
 		{
