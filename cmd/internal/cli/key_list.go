@@ -26,13 +26,24 @@ var keyListSecretFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "secret",
 	ShortHand:    "s",
-	Usage:        "list private keys instead of the default which displays public ones",
+	Usage:        "list secret keys instead of the default which displays public ones (synonym for --private)",
+	EnvKeys:      []string{"SECRET"},
+}
+
+// --private
+var keyListPrivateFlag = cmdline.Flag{
+	ID:           "keyListPrivateFlag",
+	Value:        &secret,
+	DefaultValue: false,
+	Name:         "private",
+	Usage:        "list private keys instead of the default which displays public ones (synonym for --secret)",
 	EnvKeys:      []string{"SECRET"},
 }
 
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterFlagForCmd(&keyListSecretFlag, KeyListCmd)
+		cmdManager.RegisterFlagForCmd(&keyListPrivateFlag, KeyListCmd)
 	})
 }
 

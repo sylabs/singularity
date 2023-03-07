@@ -413,28 +413,123 @@ func (c *ctx) singularityKeyPull(t *testing.T) {
 	}
 }
 
+// singularityKeyRemove will import a private-public key pair. It
+// will then try to remove a couple of unrecognized (=wrong fingerprint)
+// keys from the public and private keyrings, respectively, and check that
+// the actual, previously imported keys are still in the keyring and were
+// unaffected. Lastly, it will try to remove the imported keys using the
+// correct fingerprints, and check they are successfully removed.
+// Note that removing keys from the global keyring is tested separately,
+// in the globalKeyring() method.
 func (c *ctx) singularityKeyRemove(t *testing.T) {
+	keyMap := map[string]string{
+		"key1": "0C5B8C9A5FFC44E2A0AC79851CD6FA281D476DD1",
+	}
+
 	tests := []struct {
-		name          string
-		cmdArgs       []string
-		expectedExit  int
-		expectedRegex string
+		name           string
+		args           []string
+		consoleOps     []string
+		stdout         string
+		expectExit     int
+		otherResultOps []e2e.SingularityCmdResultOp
 	}{
 		{
-			name:          "remove help",
-			cmdArgs:       []string{"--help"},
-			expectedExit:  0,
-			expectedRegex: `^Remove a local public key from your local or the global keyring`,
+			name:       "remove help",
+			args:       []string{"--help"},
+			stdout:     "Remove a local public key from your local or the global keyring",
+			expectExit: 0,
+		},
+		{
+			name: "import private key in remove test",
+			args: []string{"import", "testdata/ecl-pgpkeys/key1.asc"},
+			consoleOps: []string{
+				"e2e", // The password to decrypt the key
+			},
+			stdout:     "successfully added to the private keyring",
+			expectExit: 0,
+		},
+		{
+			name:       "remove unknown private key",
+			args:       []string{"remove", "--private", "0100000000000001"},
+			expectExit: 255,
+		},
+		{
+			name:       "remove unknown private key secret synonym",
+			args:       []string{"remove", "--secret", "0100000000000001"},
+			expectExit: 255,
+			// This is still useful to test, because if the synonym isn't
+			// recognized, we'd get an exit code of 1 rather than 255.
+		},
+		{
+			name:       "remove unknown public key",
+			args:       []string{"remove", "0100000000000001"},
+			expectExit: 255,
+		},
+		{
+			name: "list public pre-remove",
+			args: []string{"list"},
+			otherResultOps: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.ContainMatch, keyMap["key1"]),
+			},
+			expectExit: 0,
+		},
+		{
+			name:       "remove public key",
+			args:       []string{"remove", keyMap["key1"]},
+			expectExit: 0,
+		},
+		{
+			name:       "remove already-removed public key",
+			args:       []string{"remove", keyMap["key1"]},
+			expectExit: 255,
+		},
+		{
+			name: "list public post-remove",
+			args: []string{"list"},
+			otherResultOps: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.UnwantedContainMatch, keyMap["key1"]),
+			},
+			expectExit: 0,
+		},
+		{
+			name: "list private pre-remove",
+			args: []string{"list", "--private"},
+			otherResultOps: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.ContainMatch, keyMap["key1"]),
+			},
+			expectExit: 0,
+		},
+		{
+			name:       "remove private key",
+			args:       []string{"remove", "--private", keyMap["key1"]},
+			expectExit: 0,
+		},
+		{
+			name:       "remove already-removed private key",
+			args:       []string{"remove", "--private", keyMap["key1"]},
+			expectExit: 255,
+		},
+		{
+			name: "list private post-remove",
+			args: []string{"list", "--private"},
+			otherResultOps: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.UnwantedContainMatch, keyMap["key1"]),
+			},
+			expectExit: 0,
 		},
 	}
+	c.singularityResetKeyring(t) // Remove the tmp keyring
 	for _, tt := range tests {
+		resultOps := append([]e2e.SingularityCmdResultOp{e2e.ExpectOutput(e2e.ContainMatch, tt.stdout)}, tt.otherResultOps...)
 		c.env.RunSingularity(
 			t,
-			e2e.WithProfile(e2e.UserProfile),
 			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
 			e2e.WithCommand("key"),
-			e2e.WithArgs(append([]string{"remove"}, tt.cmdArgs...)...),
-			e2e.ExpectExit(tt.expectedExit, e2e.ExpectOutput(e2e.RegexMatch, tt.expectedRegex)),
+			e2e.WithArgs(tt.args...),
+			e2e.ConsoleRun(buildConsoleLines(tt.consoleOps...)...),
+			e2e.ExpectExit(tt.expectExit, resultOps...),
 		)
 	}
 }
@@ -578,6 +673,13 @@ func (c *ctx) globalKeyring(t *testing.T) {
 			command: "key remove",
 			profile: e2e.RootProfile,
 			args:    []string{"--global", "0100000000000001"},
+			exit:    255,
+		},
+		{
+			name:    "remove private from global",
+			command: "key remove",
+			profile: e2e.RootProfile,
+			args:    []string{"--private", "--global", keyMap["key1"]},
 			exit:    255,
 		},
 		{

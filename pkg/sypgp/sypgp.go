@@ -382,6 +382,29 @@ func (keyring *Handle) appendPubKey(e *openpgp.Entity) error {
 	return storePubKeys(f, openpgp.EntityList{e})
 }
 
+// storePrivKeyring overwrites the private keyring with the listed keys
+func (keyring *Handle) storePrivKeyring(keys openpgp.EntityList) error {
+	if keyring.global {
+		return fmt.Errorf("private keys cannot be stored in global keyring")
+	}
+
+	mode := os.FileMode(0o600)
+
+	f, err := createOrTruncateFile(keyring.SecretPath(), mode)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	for _, k := range keys {
+		if err := k.Serialize(f); err != nil {
+			return fmt.Errorf("could not store private key: %s", err)
+		}
+	}
+
+	return nil
+}
+
 // storePubKeyring overwrites the public keyring with the listed keys
 func (keyring *Handle) storePubKeyring(keys openpgp.EntityList) error {
 	mode := os.FileMode(0o600)
@@ -459,6 +482,32 @@ func removeKey(list openpgp.EntityList, fingerprint string) openpgp.EntityList {
 	}
 
 	return nil
+}
+
+// RemovePrivKey will delete a secret key matching toDelete
+func (keyring *Handle) RemovePrivKey(toDelete string) error {
+	if keyring.global {
+		return fmt.Errorf("global keyring only holds public keys")
+	}
+
+	// read all the local private keys
+	elist, err := loadKeyring(keyring.SecretPath())
+	switch {
+	case os.IsNotExist(err):
+		return nil
+
+	case err != nil:
+		return fmt.Errorf("unable to list local keyring: %v", err)
+	}
+
+	newKeyList := removeKey(elist, toDelete)
+	if newKeyList == nil {
+		return fmt.Errorf("no key matching given fingerprint found")
+	}
+
+	sylog.Verbosef("Updating local keyring: %v", keyring.SecretPath())
+
+	return keyring.storePrivKeyring(newKeyList)
 }
 
 // RemovePubKey will delete a public key matching toDelete

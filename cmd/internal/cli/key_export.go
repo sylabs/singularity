@@ -29,7 +29,16 @@ var keyExportSecretFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "secret",
 	ShortHand:    "s",
-	Usage:        "export a secret key",
+	Usage:        "export a secret key (synonym for --private)",
+}
+
+// --private
+var keyExportPrivateFlag = cmdline.Flag{
+	ID:           "keyExportPrivateFlag",
+	Value:        &secretExport,
+	DefaultValue: false,
+	Name:         "private",
+	Usage:        "export a private key (synonym for --secret)",
 }
 
 // -a|--armor
@@ -45,6 +54,7 @@ var keyExportArmorFlag = cmdline.Flag{
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterFlagForCmd(&keyExportSecretFlag, KeyExportCmd)
+		cmdManager.RegisterFlagForCmd(&keyExportPrivateFlag, KeyExportCmd)
 		cmdManager.RegisterFlagForCmd(&keyExportArmorFlag, KeyExportCmd)
 	})
 }
