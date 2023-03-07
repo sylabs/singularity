@@ -518,13 +518,6 @@ func (c *ctx) singularityKeyRemove(t *testing.T) {
 			},
 			expectExit: 0,
 		},
-		// {
-		// 	name:    "remove private from global",
-		// 	command: "key remove",
-		// 	profile: e2e.RootProfile,
-		// 	args:    []string{"--private", "--global", keyMap["key1"]},
-		// 	exit:    255,
-		// },
 	}
 	c.singularityResetKeyring(t) // Remove the tmp keyring
 	for _, tt := range tests {
