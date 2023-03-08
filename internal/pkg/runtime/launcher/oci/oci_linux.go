@@ -47,7 +47,7 @@ func runtime() (path string, err error) {
 		return
 	}
 	sylog.Debugf("While finding crun: %s", err)
-	sylog.Warningf("crun not found. Will attempt to use runc, but not all functionality is supported.")
+	sylog.Debugf("Falling back to runc as OCI runtime.")
 	return bin.FindBin("runc")
 }
 
