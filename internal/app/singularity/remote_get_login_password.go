@@ -36,7 +36,7 @@ func RemoteGetLoginPassword(config *scslibclient.Config) (string, error) {
 		if res.StatusCode == http.StatusUnauthorized {
 			return "", fmt.Errorf("must be logged in to retrieve token")
 		}
-		return "", fmt.Errorf("status is not ok: %v", err)
+		return "", fmt.Errorf("status is not ok: %v", res.StatusCode)
 	}
 
 	var u oUser
@@ -46,7 +46,7 @@ func RemoteGetLoginPassword(config *scslibclient.Config) (string, error) {
 	}
 
 	if u.OidcUserMeta.Secret == "" {
-		return "", fmt.Errorf("user does not have cli token set: %v", err)
+		return "", fmt.Errorf("user does not have cli token set")
 	}
 
 	return u.OidcUserMeta.Secret, nil
