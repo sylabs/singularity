@@ -1594,7 +1594,7 @@ func (c imgBuildTests) buildLibraryHost(t *testing.T) {
 	definition := "Bootstrap: library\nFrom: library.example.com/test/test/test:latest\n"
 
 	defFile := e2e.RawDefFile(t, tmpdir, strings.NewReader(definition))
-	imagePath := filepath.Join(tmpdir, "image-libaryhost")
+	imagePath := filepath.Join(tmpdir, "image-libraryhost")
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.RootProfile),
@@ -1604,7 +1604,7 @@ func (c imgBuildTests) buildLibraryHost(t *testing.T) {
 			os.Remove(defFile)
 		}),
 		e2e.ExpectExit(255,
-			e2e.ExpectError(e2e.ContainMatch, "dial tcp: lookup library.example.com: no such host"),
+			e2e.ExpectError(e2e.ContainMatch, "no such host"),
 		),
 	)
 }
