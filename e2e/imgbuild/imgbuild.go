@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
@@ -58,22 +57,26 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 	// `singularity build -s /tmp/sand/ <URI>` works,
 	// see https://github.com/sylabs/singularity/issues/4407
 	tt := []struct {
-		name        string
-		dependency  string
-		buildSpec   string
-		requireArch string
+		name         string
+		dependency   string
+		buildSpec    string
+		requirements func(t *testing.T)
 	}{
 		// Disabled due to frequent download failures of the busybox tgz
 		// {
 		// 	name:      "BusyBox",
 		// 	buildSpec: "../examples/busybox/Singularity",
 		// 	// TODO: example has arch hard coded in download URL
-		// 	requireArch: "amd64",
+		//  requirements: func(t *testing.T) {
+		//   require.Arch(t, "amd64")
+		//  },
 		// },
 		{
-			name:       "Debootstrap",
-			dependency: "debootstrap",
-			buildSpec:  "../examples/debian/Singularity",
+			name:      "Debootstrap",
+			buildSpec: "../examples/debian/Singularity",
+			requirements: func(t *testing.T) {
+				require.Command(t, "debootstrap")
+			},
 		},
 		// TODO(mem): reenable this; disabled while shub is down
 		// {
@@ -98,28 +101,83 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 			buildSpec: c.env.OrasTestImage,
 		},
 		{
-			name:        "Yum",
-			dependency:  "yum",
-			buildSpec:   "../examples/centos/Singularity",
-			requireArch: "amd64",
+			name:      "Yum CentOS7",
+			buildSpec: "../examples/centos/Singularity",
+			requirements: func(t *testing.T) {
+				require.Command(t, "yum")
+				require.RPMMacro(t, "_db_backend", "bdb")
+				require.RPMMacro(t, "_dbpath", "/var/lib/rpm")
+				require.Arch(t, "arm64")
+			},
 		},
 		{
-			name:        "YumArm64",
-			dependency:  "yum",
-			buildSpec:   "../examples/centos-arm64/Singularity",
-			requireArch: "arm64",
+			name:       "YumArm64 CentOS 7",
+			dependency: "yum",
+			buildSpec:  "../examples/centos-arm64/Singularity",
+			requirements: func(t *testing.T) {
+				require.Command(t, "yum")
+				require.RPMMacro(t, "_db_backend", "bdb")
+				require.RPMMacro(t, "_dbpath", "/var/lib/rpm")
+				require.Arch(t, "arm64")
+			},
 		},
 		{
-			name:        "Zypper",
-			dependency:  "zypper",
-			buildSpec:   "../examples/opensuse/Singularity",
-			requireArch: "amd64",
+			name:      "Dnf AlmaLinux 9",
+			buildSpec: "../examples/almalinux/Singularity",
+			requirements: func(t *testing.T) {
+				require.Command(t, "dnf")
+				require.RPMMacro(t, "_db_backend", "sqlite")
+				require.RPMMacro(t, "_dbpath", "/var/lib/rpm")
+				require.Arch(t, "amd64")
+			},
 		},
 		{
-			name:        "ZypperArm64",
-			dependency:  "zypper",
-			buildSpec:   "../examples/opensuse-arm64/Singularity",
-			requireArch: "arm64",
+			name:       "DnfArm64 AlmaLinux 9",
+			dependency: "yum",
+			buildSpec:  "../examples/almalinux-arm64/Singularity",
+			requirements: func(t *testing.T) {
+				require.Command(t, "dnf")
+				require.RPMMacro(t, "_db_backend", "sqlite")
+				require.RPMMacro(t, "_dbpath", "/var/lib/rpm")
+				require.Arch(t, "arm64")
+			},
+		},
+		{
+			name:      "Dnf Fedora 37",
+			buildSpec: "../examples/fedora/Singularity",
+			requirements: func(t *testing.T) {
+				require.Command(t, "dnf")
+				require.RPMMacro(t, "_db_backend", "sqlite")
+				require.RPMMacro(t, "_dbpath", "/usr/lib/sysimage/rpm")
+				require.Arch(t, "amd64")
+			},
+		},
+		{
+			name:       "DnfArm64 Fedora 37",
+			dependency: "yum",
+			buildSpec:  "../examples/fedora-arm64/Singularity",
+			requirements: func(t *testing.T) {
+				require.Command(t, "dnf")
+				require.RPMMacro(t, "_db_backend", "sqlite")
+				require.RPMMacro(t, "_dbpath", "/usr/lib/sysimage/rpm")
+				require.Arch(t, "arm64")
+			},
+		},
+		{
+			name:      "Zypper",
+			buildSpec: "../examples/opensuse/Singularity",
+			requirements: func(t *testing.T) {
+				require.Command(t, "zypper")
+				require.Arch(t, "amd64")
+			},
+		},
+		{
+			name:      "ZypperArm64",
+			buildSpec: "../examples/opensuse-arm64/Singularity",
+			requirements: func(t *testing.T) {
+				require.Command(t, "zypper")
+				require.Arch(t, "arm64")
+			},
 		},
 	}
 
@@ -129,6 +187,7 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 
 		t.Run(profile.String(), func(t *testing.T) {
 			for _, tc := range tt {
+
 				dn, cleanup := c.tempDir(t, "build-from")
 				t.Cleanup(func() {
 					if !t.Failed() {
@@ -148,17 +207,7 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 					e2e.WithProfile(profile),
 					e2e.WithCommand("build"),
 					e2e.WithArgs(args...),
-					e2e.PreRun(func(t *testing.T) {
-						require.Arch(t, tc.requireArch)
-
-						if tc.dependency == "" {
-							return
-						}
-
-						if _, err := exec.LookPath(tc.dependency); err != nil {
-							t.Skipf("%v not found in path", tc.dependency)
-						}
-					}),
+					e2e.PreRun(tc.requirements),
 					e2e.PostRun(func(t *testing.T) {
 						if t.Failed() {
 							return

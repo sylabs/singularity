@@ -2,6 +2,16 @@
 
 ## Changes Since Last Release
 
+### New Features & Functionality
+
+- Add `setopt` definition file header for the `yum` bootstrap agent. The
+  `setopt` value is passed to `yum / dnf` using the `--setopt` flag. This
+  permits setting e.g. `install_weak_deps=False` to bootstrap recent versions of
+  Fedora, where `systemd` (a weak dependency) cannot install correctly in the
+  container. See `examples/Fedora` for an example defintion file.
+- Warn user that a `yum` bootstrap of an older distro may fail if the host rpm
+  `_db_backend` is not `bdb`.
+
 ### Bug Fixes
 
 - Fix implied `--writable-tmpfs` with `--nvccli`, to avoid r/o filesytem
@@ -14,6 +24,10 @@
   `<library>.so[.version]` files are listed by `ldconfig -p`.
 - Fix systemd cgroup manager error when running a container as a non-root
   user with `--oci`, on systems with cgroups v1 and `runc`.
+
+### Changed defaults / behaviours
+
+- Show standard output of yum bootstrap if log level is verbose or higher.
 
 ## 3.11.0 \[2023-02-10\]
 
