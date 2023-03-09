@@ -55,6 +55,7 @@ The following have contributed code and/or documentation to this repository.
 - Ian Kaneshiro <ian@ctrliq.com>, <iankane@umich.edu>
 - Jack Morrison <morrisonjc@ornl.gov>, <jack@rescale.com>
 - Jacob Chappell <chappellind@gmail.com>, <jacob.chappell@uky.edu>
+- Jarrett Dixon <jarrett@sylabs.io>
 - Jarrod Johnson <jjohnson2@lenovo.com>
 - Jason Stover <jms@sylabs.io>, <jason.stover@gmail.com>
 - Jeff Kriske <jekriske@gmail.com>

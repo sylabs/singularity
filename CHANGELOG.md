@@ -15,6 +15,9 @@
   container. See `examples/Fedora` for an example defintion file.
 - Warn user that a `yum` bootstrap of an older distro may fail if the host rpm
   `_db_backend` is not `bdb`.
+- Added `remote get-login-password` subcommand that allows the user to
+  retrieve a CLI token to interact with the OCI registry of a
+  Singularity Enterprise instance.
 
 ### Bug Fixes
 
