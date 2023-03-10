@@ -24,6 +24,8 @@
   `<library>.so[.version]` files are listed by `ldconfig -p`.
 - Fix systemd cgroup manager error when running a container as a non-root
   user with `--oci`, on systems with cgroups v1 and `runc`.
+- Fix joining cgroup of instance started as root, with cgroups v1,
+  non-default cgroupfs manager, and no device rules.
 
 ### Changed defaults / behaviours
 
