@@ -19,7 +19,7 @@ require (
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/docker/docker v23.0.1+incompatible
 	github.com/docker/go-units v0.5.0
-	github.com/fatih/color v1.14.1
+	github.com/fatih/color v1.15.0
 	github.com/go-log/log v0.2.0
 	github.com/google/uuid v1.3.0
 	github.com/gosimple/slug v1.13.1
