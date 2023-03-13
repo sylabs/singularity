@@ -131,6 +131,18 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/docker/libtrust/blob/master/LICENSE>
 
+## github.com/go-logr/logr
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/go-logr/logr/blob/master/LICENSE>
+
+## github.com/go-logr/stdr
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/go-logr/stdr/blob/master/LICENSE>
+
 ## github.com/go-openapi/analysis
 
 **License:** Apache-2.0
@@ -395,29 +407,23 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/vishvananda/netns/blob/master/LICENSE>
 
-## github.com/xeipuuv/gojsonpointer
-
-**License:** Apache-2.0
-
-**License URL:** <https://github.com/xeipuuv/gojsonpointer/blob/master/LICENSE-APACHE-2.0.txt>
-
-## github.com/xeipuuv/gojsonreference
-
-**License:** Apache-2.0
-
-**License URL:** <https://github.com/xeipuuv/gojsonreference/blob/master/LICENSE-APACHE-2.0.txt>
-
-## github.com/xeipuuv/gojsonschema
-
-**License:** Apache-2.0
-
-**License URL:** <https://github.com/xeipuuv/gojsonschema/blob/master/LICENSE-APACHE-2.0.txt>
-
 ## go.mongodb.org/mongo-driver
 
 **License:** Apache-2.0
 
 **Project URL:** <https://go.mongodb.org/mongo-driver>
+
+## go.opentelemetry.io/otel
+
+**License:** Apache-2.0
+
+**Project URL:** <https://go.opentelemetry.io/otel>
+
+## go.opentelemetry.io/otel/trace
+
+**License:** Apache-2.0
+
+**Project URL:** <https://go.opentelemetry.io/otel/trace>
 
 ## google.golang.org/genproto/googleapis/rpc/status
 
@@ -634,6 +640,12 @@ The dependencies and their licenses are as follows:
 **License:** BSD-3-Clause
 
 **Project URL:** <https://golang.org/x/crypto>
+
+## golang.org/x/mod/semver
+
+**License:** BSD-3-Clause
+
+**Project URL:** <https://golang.org/x/mod/semver>
 
 ## golang.org/x/net
 
