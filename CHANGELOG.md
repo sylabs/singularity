@@ -1,6 +1,6 @@
 # SingularityCE Changelog
 
-## Changes Since Last Release
+## 3.11.1 \[2023-03-14\]
 
 ### New Features & Functionality
 
