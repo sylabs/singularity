@@ -102,7 +102,7 @@ container platform designed to be simple, fast, and secure.
         --includedir=%{_includedir} \
         --libdir=%{_libdir} \
         --libexecdir=%{_libexecdir} \
-        --localstatedir=%{_localstatedir} \
+        --localstatedir=%{_sharedstatedir} \
         --sharedstatedir=%{_sharedstatedir} \
         --mandir=%{_mandir} \
         --infodir=%{_infodir}

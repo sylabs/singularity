@@ -37,6 +37,8 @@
 ### Changed defaults / behaviours
 
 - Show standard output of yum bootstrap if log level is verbose or higher.
+- When building RPM, we will now use `/var/lib/singularity` (rather than
+  `/var/singularity`) to store local state files.
 
 ## 3.11.0 \[2023-02-10\]
 
