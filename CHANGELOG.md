@@ -1,5 +1,13 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Require `runc` in RPM packages built on SLES, not `crun`, because `crun` is
+  part of the Package Hub community repository that may not be enabled.
+  SingularityCE will still prefer `crun` if it has been installed.
+
 ## 3.11.1 \[2023-03-14\]
 
 ### New Features & Functionality
