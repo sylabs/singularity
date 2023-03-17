@@ -2,12 +2,25 @@
 
 ## Changes Since Last Release
 
+### Changed defaults / behaviours
+
+- When building RPM, we will now use `/var/lib/singularity` (rather than
+  `/var/singularity`) to store local state files.
+
 ### New Features & Functionality
 
 - Added `--secret` flag (shorthand: `-s`) to `key remove` subcommand, to allow
   removal of a private key by fingerprint.
 - Added `--private` as a synonym for `--secret` in `key list`, `key export`, and
   `key remove` subcommands.
+- Added `remote get-login-password` subcommand that allows the user to
+  retrieve a CLI token to interact with the OCI registry of a
+  Singularity Enterprise instance.
+
+## 3.11.1 \[2023-03-14\]
+
+### New Features & Functionality
+
 - Add `setopt` definition file header for the `yum` bootstrap agent. The
   `setopt` value is passed to `yum / dnf` using the `--setopt` flag. This
   permits setting e.g. `install_weak_deps=False` to bootstrap recent versions of
@@ -15,15 +28,12 @@
   container. See `examples/Fedora` for an example defintion file.
 - Warn user that a `yum` bootstrap of an older distro may fail if the host rpm
   `_db_backend` is not `bdb`.
-- Added `remote get-login-password` subcommand that allows the user to
-  retrieve a CLI token to interact with the OCI registry of a
-  Singularity Enterprise instance.
 
 ### Bug Fixes
 
 - Fix implied `--writable-tmpfs` with `--nvccli`, to avoid r/o filesytem
   error.
-- Avoid incorrect error when reqesting fakeroot network.
+- Avoid incorrect error when requesting fakeroot network.
 - Pass computed `LD_LIBRARY_PATH` to wrapped unsquashfs. Fixes issues where
   `unsquashfs` on host uses libraries in non-default paths.
 - Show correct memory limit in `instance stats` when a limit is set.
@@ -37,8 +47,6 @@
 ### Changed defaults / behaviours
 
 - Show standard output of yum bootstrap if log level is verbose or higher.
-- When building RPM, we will now use `/var/lib/singularity` (rather than
-  `/var/singularity`) to store local state files.
 
 ## 3.11.0 \[2023-02-10\]
 
