@@ -10,8 +10,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/container-orchestrated-devices/container-device-interface/pkg/cdi"
-
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
 )
@@ -47,9 +45,4 @@ func HidepidProc() bool {
 		}
 	}
 	return false
-}
-
-// IsCDIDevice checks whether a string is a valid CDI device selector.
-func IsCDIDevice(str string) bool {
-	return cdi.IsQualifiedName(str)
 }

@@ -209,7 +209,7 @@ func checkOpts(lo launcher.Options) error {
 // createSpec creates an initial OCI runtime specification, suitable to launch a
 // container. This spec excludes the Process config, as this has to be computed
 // where the image config is available, to account for the image's CMD /
-// ENTRYPOINT / ENV / USER.
+// ENTRYPOINT / ENV / USER. See finalizeSpec() function.
 func (l *Launcher) createSpec() (*specs.Spec, error) {
 	spec := minimalSpec()
 
@@ -219,15 +219,7 @@ func (l *Launcher) createSpec() (*specs.Spec, error) {
 	if err != nil {
 		return nil, err
 	}
-	spec.Mounts = append(spec.Mounts, mounts...)
-
-	for _, cdiDevice := range l.cfg.CDIDevices {
-		newSpec, err := addCDIDevice(spec, cdiDevice)
-		if err != nil {
-			return nil, err
-		}
-		spec = newSpec
-	}
+	spec.Mounts = mounts
 
 	cgPath, resources, err := l.getCgroup()
 	if err != nil {
@@ -304,6 +296,11 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 	}
 	spec.Process = specProcess
 	if err := b.Update(ctx, spec); err != nil {
+		return err
+	}
+
+	err = addCDIDevice(spec, l.cfg.Device)
+	if err != nil {
 		return err
 	}
 

@@ -37,7 +37,7 @@ var (
 	singularityEnvFile string
 	noMount            []string
 	proot              string
-	cdiDevices         []string
+	device             []string
 
 	isBoot          bool
 	isFakeroot      bool
@@ -814,12 +814,12 @@ var actionOCIFlag = cmdline.Flag{
 }
 
 // -B|--bind
-var actionCDIDevices = cmdline.Flag{
-	ID:           "actionCDIDevices",
-	Value:        &cdiDevices,
+var actionDevice = cmdline.Flag{
+	ID:           "actionDevice",
+	Value:        &device,
 	DefaultValue: []string{},
-	Name:         "devices",
-	Usage:        "a CDI device mapping. A device mapping consists of a kind specification followed by the equal sign (=) and a device label (e.g. vendor.com/device=mydevice). Kind specifications consists of a prefix and a name, separated by a slash (e.g. vendor.com/device, in the previous example). Multiple device mappings can be given by a comma separated list.",
+	Name:         "device",
+	Usage:        "a CDI device mapping. A device mapping consists of a kind specification followed by the equal sign (=) and a device label (e.g. vendor.com/device=mydevice). Kind specifications consist of a prefix and a name, separated by a slash (e.g. vendor.com/device, in the previous example). Multiple device mappings can be given by a comma separated list.",
 }
 
 func init() {
@@ -916,6 +916,6 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionSIFFUSEFlag, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&actionProotFlag, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&actionOCIFlag, actionsCmd...)
-		cmdManager.RegisterFlagForCmd(&actionCDIDevices, actionsCmd...)
+		cmdManager.RegisterFlagForCmd(&actionDevice, actionsCmd...)
 	})
 }

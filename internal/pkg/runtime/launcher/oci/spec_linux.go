@@ -6,10 +6,8 @@
 package oci
 
 import (
-	"fmt"
 	"os"
 
-	"github.com/container-orchestrated-devices/container-device-interface/pkg/cdi"
 	"github.com/opencontainers/runtime-spec/specs-go"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
@@ -117,26 +115,4 @@ func addNamespaces(spec specs.Spec, ns launcher.Namespaces) specs.Spec {
 	}
 
 	return spec
-}
-
-// addCDIDevice adds the requested device to an existing spec.
-func addCDIDevice(spec specs.Spec, cdiDevice string) (specs.Spec, error) {
-	if !launcher.IsCDIDevice(cdiDevice) {
-		return spec, fmt.Errorf("string %#v does not represent a valid CDI device", cdiDevice)
-	}
-
-	// Get the CDI registry, passing a cdi.WithAutoRefresh(false) option so that CDI registry files are not scanned asynchronously. (We are about to call a manual refresh, below.)
-	registry := cdi.GetRegistry(cdi.WithAutoRefresh(false))
-
-	// Refresh the CDI registry.
-	if err := registry.Refresh(); err != nil {
-		return spec, fmt.Errorf("Error encountered refreshing the CDI registry: %v", err)
-	}
-
-	_, err := registry.InjectDevices(&spec, cdiDevice)
-	if err != nil {
-		return spec, fmt.Errorf("Error encountered setting up CDI devices: %w", err)
-	}
-
-	return spec, nil
 }
