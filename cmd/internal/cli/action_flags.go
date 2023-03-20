@@ -37,6 +37,7 @@ var (
 	singularityEnvFile string
 	noMount            []string
 	proot              string
+	cdiDevices         []string
 
 	isBoot          bool
 	isFakeroot      bool
@@ -105,7 +106,7 @@ var actionBindFlag = cmdline.Flag{
 	DefaultValue: []string{},
 	Name:         "bind",
 	ShortHand:    "B",
-	Usage:        "a user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src.  Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.",
+	Usage:        "a user-bind path specification. spec has the format src[:dest[:opts]], where src and dest are outside and inside paths. If dest is not given, it is set equal to src. Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.",
 	EnvKeys:      []string{"BIND", "BINDPATH"},
 	Tag:          "<spec>",
 	EnvHandler:   cmdline.EnvAppendValue,
@@ -131,7 +132,7 @@ var actionHomeFlag = cmdline.Flag{
 	DefaultValue: CurrentUser.HomeDir,
 	Name:         "home",
 	ShortHand:    "H",
-	Usage:        "a home directory specification.  spec can either be a src path or src:dest pair.  src is the source path of the home directory outside the container and dest overrides the home directory within the container.",
+	Usage:        "a home directory specification. spec can either be a src path or src:dest pair. src is the source path of the home directory outside the container and dest overrides the home directory within the container.",
 	EnvKeys:      []string{"HOME"},
 	Tag:          "<spec>",
 }
@@ -812,6 +813,15 @@ var actionOCIFlag = cmdline.Flag{
 	EnvKeys:      []string{"OCI"},
 }
 
+// -B|--bind
+var actionCDIDevices = cmdline.Flag{
+	ID:           "actionCDIDevices",
+	Value:        &cdiDevices,
+	DefaultValue: []string{},
+	Name:         "devices",
+	Usage:        "a CDI device mapping. A device mapping consists of a kind specification followed by the equal sign (=) and a device label (e.g. vendor.com/device=mydevice). Kind specifications consists of a prefix and a name, separated by a slash (e.g. vendor.com/device, in the previous example). Multiple device mappings can be given by a comma separated list.",
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(ExecCmd)
@@ -906,5 +916,6 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionSIFFUSEFlag, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&actionProotFlag, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&actionOCIFlag, actionsCmd...)
+		cmdManager.RegisterFlagForCmd(&actionCDIDevices, actionsCmd...)
 	})
 }

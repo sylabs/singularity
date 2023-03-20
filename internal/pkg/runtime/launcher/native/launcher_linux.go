@@ -70,6 +70,9 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 			return nil, fmt.Errorf("%w", err)
 		}
 	}
+	if len(lo.CDIDevices) > 0 {
+		return nil, fmt.Errorf("CDI device mappings unsupported in native launcher")
+	}
 
 	// Initialize empty default Singularity Engine and OCI configuration
 	engineConfig := singularityConfig.NewConfig()

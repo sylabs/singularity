@@ -141,6 +141,9 @@ type Options struct {
 	// SysContext holds Docker/OCI image handling configuration.
 	// This will be used by a launcher handling OCI images directly.
 	SysContext *types.SystemContext
+
+	// CDIDevices contains the list of CDI device mappings (if any)
+	CDIDevices []string
 }
 
 type Option func(co *Options) error
@@ -487,6 +490,14 @@ func OptCacheDisabled(b bool) Option {
 func OptSysContext(sc *types.SystemContext) Option {
 	return func(lo *Options) error {
 		lo.SysContext = sc
+		return nil
+	}
+}
+
+// OptCDIDevices sets CDI device mappings to apply.
+func OptCDIDevices(op []string) Option {
+	return func(lo *Options) error {
+		lo.CDIDevices = op
 		return nil
 	}
 }

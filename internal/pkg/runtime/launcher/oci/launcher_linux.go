@@ -219,7 +219,15 @@ func (l *Launcher) createSpec() (*specs.Spec, error) {
 	if err != nil {
 		return nil, err
 	}
-	spec.Mounts = mounts
+	spec.Mounts = append(spec.Mounts, mounts...)
+
+	for _, cdiDevice := range l.cfg.CDIDevices {
+		newSpec, err := addCDIDevice(spec, cdiDevice)
+		if err != nil {
+			return nil, err
+		}
+		spec = newSpec
+	}
 
 	cgPath, resources, err := l.getCgroup()
 	if err != nil {

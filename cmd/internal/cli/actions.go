@@ -388,6 +388,7 @@ func launchContainer(cmd *cobra.Command, image string, containerCmd string, cont
 		launcher.OptKeyInfo(ki),
 		launcher.OptSIFFuse(sifFUSE),
 		launcher.OptCacheDisabled(disableCache),
+		launcher.OptCDIDevices(cdiDevices),
 	}
 
 	// Explicitly use the interface type here, as we will add alternative launchers later...
