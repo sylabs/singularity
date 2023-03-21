@@ -295,12 +295,12 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 		return err
 	}
 	spec.Process = specProcess
-	if err := b.Update(ctx, spec); err != nil {
+
+	if err := addCDIDevices(spec, l.cfg.Devices); err != nil {
 		return err
 	}
 
-	err = addCDIDevices(spec, l.cfg.Devices)
-	if err != nil {
+	if err := b.Update(ctx, spec); err != nil {
 		return err
 	}
 
