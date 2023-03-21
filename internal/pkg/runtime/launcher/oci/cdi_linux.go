@@ -15,8 +15,8 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
-// addCDIDevice adds an array of CDI devices to an existing spec.
-func addCDIDevice(spec *specs.Spec, cdiDevices []string) error {
+// addCDIDevices adds an array of CDI devices to an existing spec.
+func addCDIDevices(spec *specs.Spec, cdiDevices []string) error {
 	// Get the CDI registry, passing a cdi.WithAutoRefresh(false) option so that CDI registry files are not scanned asynchronously. (We are about to call a manual refresh, below.)
 	registry := cdi.GetRegistry(cdi.WithAutoRefresh(false))
 
@@ -26,21 +26,12 @@ func addCDIDevice(spec *specs.Spec, cdiDevices []string) error {
 	}
 
 	for _, cdiDevice := range cdiDevices {
-		if err := addSingleCDIDevice(spec, cdiDevice, registry); err != nil {
-			return err
+		if !isCDIDevice(cdiDevice) {
+			return fmt.Errorf("string %#v does not represent a valid CDI device", cdiDevice)
 		}
 	}
 
-	return nil
-}
-
-// addSingleCDIDevice adds a single CDI device to an existing spec.
-func addSingleCDIDevice(spec *specs.Spec, cdiDevice string, registry cdi.Registry) error {
-	if !isCDIDevice(cdiDevice) {
-		return fmt.Errorf("string %#v does not represent a valid CDI device", cdiDevice)
-	}
-
-	if _, err := registry.InjectDevices(spec, cdiDevice); err != nil {
+	if _, err := registry.InjectDevices(spec, cdiDevices...); err != nil {
 		return fmt.Errorf("Error encountered setting up CDI devices: %w", err)
 	}
 

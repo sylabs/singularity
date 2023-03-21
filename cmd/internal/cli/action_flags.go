@@ -813,13 +813,13 @@ var actionOCIFlag = cmdline.Flag{
 	EnvKeys:      []string{"OCI"},
 }
 
-// -B|--bind
+// --device
 var actionDevice = cmdline.Flag{
 	ID:           "actionDevice",
 	Value:        &device,
 	DefaultValue: []string{},
 	Name:         "device",
-	Usage:        "a CDI device mapping. A device mapping consists of a kind specification followed by the equal sign (=) and a device label (e.g. vendor.com/device=mydevice). Kind specifications consist of a prefix and a name, separated by a slash (e.g. vendor.com/device, in the previous example). Multiple device mappings can be given by a comma separated list.",
+	Usage:        "fully-qualified CDI device name(s). A fully-qualified CDI device name consists of a VENDOR, CLASS, and NAME, which are combined as follows: <VENDOR>/<CLASS>=<NAME> (e.g. vendor.com/device=mydevice). Multiple fully-qualified CDI device names can be given as a comma separated list.",
 }
 
 func init() {

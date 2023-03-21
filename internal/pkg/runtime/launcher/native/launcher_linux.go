@@ -70,7 +70,7 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 			return nil, fmt.Errorf("%w", err)
 		}
 	}
-	if len(lo.Device) > 0 {
+	if len(lo.Devices) > 0 {
 		return nil, fmt.Errorf("CDI device mappings unsupported in native launcher")
 	}
 

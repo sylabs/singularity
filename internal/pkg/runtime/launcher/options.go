@@ -142,8 +142,8 @@ type Options struct {
 	// This will be used by a launcher handling OCI images directly.
 	SysContext *types.SystemContext
 
-	// Device contains the list of device mappings (if any), e.g. CDI mappings.
-	Device []string
+	// Devices contains the list of device mappings (if any), e.g. CDI mappings.
+	Devices []string
 }
 
 type Option func(co *Options) error
@@ -497,7 +497,7 @@ func OptSysContext(sc *types.SystemContext) Option {
 // OptDevice sets CDI device mappings to apply.
 func OptDevice(op []string) Option {
 	return func(lo *Options) error {
-		lo.Device = op
+		lo.Devices = op
 		return nil
 	}
 }

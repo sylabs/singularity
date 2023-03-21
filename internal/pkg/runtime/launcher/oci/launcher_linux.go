@@ -299,7 +299,7 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 		return err
 	}
 
-	err = addCDIDevice(spec, l.cfg.Device)
+	err = addCDIDevices(spec, l.cfg.Devices)
 	if err != nil {
 		return err
 	}
