@@ -1,0 +1,37 @@
+{
+	"cdiVersion": "0.5.0",
+	"kind": "singularityCEtesting.sylabs.io/device",
+
+	"devices": [
+		{
+			"name": "kmsgDevice",
+			"containerEdits": {
+				"deviceNodes": [
+					{
+						"hostPath": "/dev/kmsg",
+						"path": "/dev/kmsg",
+						"permissions": "rw",
+						"uid": 1000,
+						"gid": 1000
+					}
+				],
+				"mounts": [
+					{
+						"containerPath": "/mountedtmp",
+						"options": [
+							"rw"
+						],
+						"hostPath": "/tmp"
+					}
+				]
+			}
+		}
+	],
+
+	"containerEdits": {
+		"env": [
+			"FOO=VALID_SPEC",
+			"BAR=BARVALUE1"
+		  ]
+	  }
+}

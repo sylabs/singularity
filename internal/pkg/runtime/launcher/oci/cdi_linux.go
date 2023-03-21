@@ -24,10 +24,12 @@ var regSyncContainer struct {
 }
 
 // addCDIDevices adds an array of CDI devices to an existing spec.
-func addCDIDevices(spec *specs.Spec, cdiDevices []string) error {
+// Accepts optional, variable number of cdi.Option arguments (to which cdi.WithAutoRefresh(false) will be prepended). Note that due to the use of a sync.Once initialization strategy, these options will only have an effect if this is the first call made to addCDIDevices().
+func addCDIDevices(spec *specs.Spec, cdiDevices []string, cdiRegOptions ...cdi.Option) error {
 	regSyncContainer.initOnce.Do(func() {
 		// Get the CDI registry, passing a cdi.WithAutoRefresh(false) option so that CDI registry files are not scanned asynchronously. (We are about to call a manual refresh, below.)
-		regSyncContainer.reg = cdi.GetRegistry(cdi.WithAutoRefresh(false))
+		realCDIOptions := append([]cdi.Option{cdi.WithAutoRefresh(false)}, cdiRegOptions...)
+		regSyncContainer.reg = cdi.GetRegistry(realCDIOptions...)
 		regSyncContainer.err = regSyncContainer.reg.Refresh()
 	})
 
