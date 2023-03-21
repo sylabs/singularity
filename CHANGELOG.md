@@ -16,6 +16,10 @@
 - Added `remote get-login-password` subcommand that allows the user to
   retrieve a CLI token to interact with the OCI registry of a
   Singularity Enterprise instance.
+- Added `--device` flag to "action" commands (`run`/`exec`/`shell`) when run in
+  OCI mode (`--oci`). Currently supports passing one or more (comma-separated)
+  fully-qualified CDI device names, and those devices will then be made
+  available inside the container.
 
 ### Bug Fixes
 
