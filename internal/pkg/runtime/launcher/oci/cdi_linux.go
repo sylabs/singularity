@@ -10,19 +10,29 @@ package oci
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/container-orchestrated-devices/container-device-interface/pkg/cdi"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
+// A container to hold the CDI registry, plus a sync.Once object to ensure we only have to ask for it once
+var regSyncContainer struct {
+	reg      cdi.Registry
+	initOnce sync.Once
+	err      error
+}
+
 // addCDIDevices adds an array of CDI devices to an existing spec.
 func addCDIDevices(spec *specs.Spec, cdiDevices []string) error {
-	// Get the CDI registry, passing a cdi.WithAutoRefresh(false) option so that CDI registry files are not scanned asynchronously. (We are about to call a manual refresh, below.)
-	registry := cdi.GetRegistry(cdi.WithAutoRefresh(false))
+	regSyncContainer.initOnce.Do(func() {
+		// Get the CDI registry, passing a cdi.WithAutoRefresh(false) option so that CDI registry files are not scanned asynchronously. (We are about to call a manual refresh, below.)
+		regSyncContainer.reg = cdi.GetRegistry(cdi.WithAutoRefresh(false))
+		regSyncContainer.err = regSyncContainer.reg.Refresh()
+	})
 
-	// Refresh the CDI registry.
-	if err := registry.Refresh(); err != nil {
-		return fmt.Errorf("Error encountered refreshing the CDI registry: %v", err)
+	if regSyncContainer.err != nil {
+		return fmt.Errorf("Error encountered refreshing the CDI registry during initialization: %v", regSyncContainer.err)
 	}
 
 	for _, cdiDevice := range cdiDevices {
@@ -31,7 +41,7 @@ func addCDIDevices(spec *specs.Spec, cdiDevices []string) error {
 		}
 	}
 
-	if _, err := registry.InjectDevices(spec, cdiDevices...); err != nil {
+	if _, err := regSyncContainer.reg.InjectDevices(spec, cdiDevices...); err != nil {
 		return fmt.Errorf("Error encountered setting up CDI devices: %w", err)
 	}
 
