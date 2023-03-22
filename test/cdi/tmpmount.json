@@ -10,21 +10,23 @@
 					{
 						"containerPath": "/tmpmount13",
 						"options": [
-							"r"
+							"rw"
 						],
 						"hostPath": "/tmp"
 					},
 					{
 						"containerPath": "/tmpmount3",
 						"options": [
-							"r"
+							"rbind",
+							"nosuid",
+							"nodev"
 						],
 						"hostPath": "/tmp"
 					},
 					{
 						"containerPath": "/tmpmount1",
 						"options": [
-							"r"
+							"ro"
 						],
 						"hostPath": "/tmp"
 					}
