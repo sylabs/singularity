@@ -17,9 +17,23 @@
 				],
 				"mounts": [
 					{
-						"containerPath": "/mountedtmp",
+						"containerPath": "/tmpmountforkmsg",
 						"options": [
 							"rw"
+						],
+						"hostPath": "/tmp"
+					}
+				]
+			}
+		},
+		{
+			"name": "tmpmountDevice17",
+			"containerEdits": {
+				"mounts": [
+					{
+						"containerPath": "/tmpmount17",
+						"options": [
+							"r"
 						],
 						"hostPath": "/tmp"
 					}

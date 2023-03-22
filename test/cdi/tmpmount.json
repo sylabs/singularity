@@ -1,0 +1,43 @@
+{
+	"cdiVersion": "0.5.0",
+	"kind": "singularityCEtesting.sylabs.io/device",
+
+	"devices": [
+		{
+			"name": "tmpmountDevice1",
+			"containerEdits": {
+				"mounts": [
+					{
+						"containerPath": "/tmpmount13",
+						"options": [
+							"r"
+						],
+						"hostPath": "/tmp"
+					},
+					{
+						"containerPath": "/tmpmount3",
+						"options": [
+							"r"
+						],
+						"hostPath": "/tmp"
+					},
+					{
+						"containerPath": "/tmpmount1",
+						"options": [
+							"r"
+						],
+						"hostPath": "/tmp"
+					}
+				]
+			}
+		}
+	],
+
+	"containerEdits": {
+		"env": [
+			"ABCD=QWERTY",
+			"EFGH=ASDFGH",
+			"IJKL=ZXCVBN"
+		  ]
+	}
+}
