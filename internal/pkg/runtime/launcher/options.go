@@ -144,6 +144,9 @@ type Options struct {
 
 	// Devices contains the list of device mappings (if any), e.g. CDI mappings.
 	Devices []string
+
+	// CdiDirs contains the list of directories in which CDI should look for device definition JSON files
+	CdiDirs []string
 }
 
 type Option func(co *Options) error
@@ -498,6 +501,14 @@ func OptSysContext(sc *types.SystemContext) Option {
 func OptDevice(op []string) Option {
 	return func(lo *Options) error {
 		lo.Devices = op
+		return nil
+	}
+}
+
+// OptCdiDirs sets CDI spec search-directories to apply.
+func OptCdiDirs(op []string) Option {
+	return func(lo *Options) error {
+		lo.CdiDirs = op
 		return nil
 	}
 }

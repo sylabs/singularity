@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/container-orchestrated-devices/container-device-interface/pkg/cdi"
 	"github.com/google/uuid"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -296,7 +297,12 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 	}
 	spec.Process = specProcess
 
-	if err := addCDIDevices(spec, l.cfg.Devices); err != nil {
+	if len(l.cfg.CdiDirs) > 0 {
+		err = addCDIDevices(spec, l.cfg.Devices, cdi.WithSpecDirs(l.cfg.CdiDirs...))
+	} else {
+		err = addCDIDevices(spec, l.cfg.Devices)
+	}
+	if err != nil {
 		return err
 	}
 

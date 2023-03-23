@@ -6,11 +6,16 @@
 package actions
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
+	"text/template"
 
+	cdispecs "github.com/container-orchestrated-devices/container-device-interface/specs-go"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
@@ -475,4 +480,178 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 			}
 		})
 	}
+}
+
+func (c actionTests) actionOciCdi(t *testing.T) {
+	// Grab the reference OCI archive we're going to use
+	e2e.EnsureOCIArchive(t, c.env)
+	imageRef := "oci-archive:" + c.env.OCIArchivePath
+
+	// Set up a custom subtestWorkspace object that will holds the collection of temporary directories (nested under the main temporary directory, mainDir) that each test will use.
+	type subtestWorkspace struct {
+		mainDir   string
+		jsonsDir  string
+		mountDirs []string
+	}
+
+	// Create a function to create a fresh subtestWorkspace, with distinct temporary directories, that each individual subtest will use
+	setupIndivSubtestWorkspace := func(t *testing.T, numMountDirs int) *subtestWorkspace {
+		tw := subtestWorkspace{}
+		mainDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "", "")
+		t.Cleanup(func() {
+			if !t.Failed() {
+				e2e.Privileged(cleanup)
+			}
+		})
+		tw.mainDir = mainDir
+
+		// No need to do anything with the cleanup functions returned here, because the directories created are all going to be children of (tw.)mainDir, whose cleanup was already registered above.
+		tw.jsonsDir, _ = e2e.MakeTempDir(t, tw.mainDir, "cdi-jsons-", "")
+		tw.mountDirs = make([]string, 0, numMountDirs)
+		for len(tw.mountDirs) < numMountDirs {
+			dir, _ := e2e.MakeTempDir(t, tw.mainDir, fmt.Sprintf("mount-dir-%d-", len(tw.mountDirs)+1), "")
+			tw.mountDirs = append(tw.mountDirs, dir)
+		}
+
+		return &tw
+	}
+
+	// Set up the JSON template that we're going to populate on a per-subtest basis with particular CDI spec values
+	e2eMountTemplateFilename := "e2eMountTemplate.json.tpl"
+	cdiJSONTemplateFilePath := filepath.Join("..", "test", "cdi", e2eMountTemplateFilename)
+	funcMap := template.FuncMap{
+		// The name "title" is what the function will be called in the template text.
+		"tojson": func(o any) string {
+			s, _ := json.Marshal(o)
+			return string(s)
+		},
+	}
+	cdiJSONTemplate, err := template.New(e2eMountTemplateFilename).Funcs(funcMap).ParseFiles(cdiJSONTemplateFilePath)
+	if err != nil {
+		t.Errorf("Could not read JSON template for CDI e2e tests from file %#v", cdiJSONTemplateFilePath)
+		return
+	}
+
+	// The set of actual subtests
+	tests := []struct {
+		name        string
+		devices     []string
+		wantExit    int
+		DeviceNodes []cdispecs.Device
+		Mounts      []cdispecs.Mount
+		Env         []string
+	}{
+		{
+			name: "ValidMounts",
+			devices: []string{
+				"singularityCEtesting.sylabs.io/device=e2eMountTester",
+			},
+			wantExit:    0,
+			DeviceNodes: []cdispecs.Device{},
+			Mounts: []cdispecs.Mount{
+				{
+					ContainerPath: "/tmp/mount1",
+					Options:       []string{"rw", "bind", "users"},
+				},
+				{
+					ContainerPath: "/tmp/mount3",
+					Options:       []string{"rw", "bind", "users"},
+				},
+				{
+					ContainerPath: "/tmp/mount13",
+					Options:       []string{"rw", "bind", "users"},
+				},
+				{
+					ContainerPath: "/tmp/mount17",
+					Options:       []string{"rw", "bind", "users"},
+				},
+			},
+			Env: []string{
+				"ABCD=QWERTY",
+				"EFGH=ASDFGH",
+				"IJKL=ZXCVBN",
+			},
+		},
+	}
+
+	profile := e2e.OCIFakerootProfile
+	t.Run(profile.String(), func(t *testing.T) {
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				stws := setupIndivSubtestWorkspace(t, len(tt.Mounts))
+
+				// Populate the HostPath values we're going to feed into the CDI JSON template, based on the subtestWorkspace we just created
+				for i, d := range stws.mountDirs {
+					tt.Mounts[i].HostPath = d
+				}
+
+				// Inject this subtest's values into the template to create the CDI JSON file
+				cdiJSONFilePath := filepath.Join(stws.jsonsDir, fmt.Sprintf("%s-cdi.json", tt.name))
+				cdiJSONFile, err := os.OpenFile(cdiJSONFilePath, os.O_CREATE|os.O_WRONLY, 0o644)
+				if err != nil {
+					t.Errorf("could not create file %#v for writing CDI JSON: %v", cdiJSONFilePath, err)
+				}
+				if err = cdiJSONTemplate.Execute(cdiJSONFile, tt); err != nil {
+					t.Errorf("error executing template %#v to create CDI JSON: %v", cdiJSONTemplateFilePath, err)
+					return
+				}
+				cdiJSONFile.Close()
+
+				// Create a list of test strings, each of which will be echoed into a separate file in a separate mount in the container.
+				testfileStrings := make([]string, 0, len(tt.Mounts))
+				for i := range tt.Mounts {
+					testfileStrings = append(testfileStrings, fmt.Sprintf("test_string_for_mount_%d_in_test_%s", i, tt.name))
+				}
+
+				// Generate the command to be executed in the container
+				execCmd := ""
+				for i, m := range tt.Mounts {
+					// Add a separate teststring echo statement for each mount
+					execCmd += fmt.Sprintf("echo %s > %s/testfile_%d; ", testfileStrings[i], m.ContainerPath, i)
+				}
+				// Add the printing of all environment variables, to test using e2e.ContainMatch conditions later
+				execCmd += "/bin/env"
+
+				// Create a postRun function to check that the testfiles written to the container mounts made their way to the right host temporary directories
+				postRun := func(t *testing.T) {
+					for i, m := range tt.Mounts {
+						testfileFilename := filepath.Join(m.HostPath, fmt.Sprintf("testfile_%d", i))
+						b, err := os.ReadFile(testfileFilename)
+						if err != nil {
+							t.Errorf("could not read testfile %s", testfileFilename)
+							return
+						}
+
+						s := string(b)
+						if s != testfileStrings[i]+"\n" {
+							t.Errorf("mismatched testfileString; expected %#v, got %#v (mount: %#v)", s, testfileStrings[i], m)
+						}
+					}
+				}
+
+				// Create a set of e2e.SingularityCmdResultOp objects to test that environment variables have been correctly injected into the container
+				envExpects := make([]e2e.SingularityCmdResultOp, 0, len(tt.Env))
+				for _, e := range tt.Env {
+					envExpects = append(envExpects, e2e.ExpectOutput(e2e.ContainMatch, e))
+				}
+
+				c.env.RunSingularity(
+					t,
+					e2e.AsSubtest(tt.name),
+					e2e.WithCommand("exec"),
+					e2e.WithArgs(
+						"--oci",
+						"--device",
+						strings.Join(tt.devices, ","),
+						"--cdidirs",
+						stws.jsonsDir,
+						imageRef,
+						"/bin/sh", "-c", execCmd),
+					e2e.WithProfile(profile),
+					e2e.ExpectExit(tt.wantExit, envExpects...),
+					e2e.PostRun(postRun),
+				)
+			})
+		}
+	})
 }
