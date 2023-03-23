@@ -68,7 +68,7 @@ func Test_addCDIDevice(t *testing.T) {
 			},
 		},
 		{
-			name: "ValidSeveralDevicesTmpMount",
+			name: "ValidTmpDevices",
 			devices: []string{
 				"singularityCEtesting.sylabs.io/device=tmpmountDevice17",
 				"singularityCEtesting.sylabs.io/device=tmpmountDevice1",
@@ -104,6 +104,98 @@ func Test_addCDIDevice(t *testing.T) {
 				"ABCD=QWERTY",
 				"EFGH=ASDFGH",
 				"IJKL=ZXCVBN",
+				"FOO=VALID_SPEC",
+				"BAR=BARVALUE1",
+			},
+		},
+		{
+			name: "ValidTmpDevicesFromOneJSON",
+			devices: []string{
+				"singularityCEtesting.sylabs.io/device=tmpmountDevice1",
+			},
+			wantDevices: []specs.LinuxDevice{},
+			wantMounts: mountsList{
+				{
+					Source:      "/tmp",
+					Destination: "/tmpmount1",
+					Type:        "",
+					Options:     []string{"ro"},
+				},
+				{
+					Source:      "/tmp",
+					Destination: "/tmpmount3",
+					Type:        "",
+					Options:     []string{"rbind", "nosuid", "nodev"},
+				},
+				{
+					Source:      "/tmp",
+					Destination: "/tmpmount13",
+					Type:        "",
+					Options:     []string{"rw"},
+				},
+			},
+			wantEnv: []string{
+				"ABCD=QWERTY",
+				"EFGH=ASDFGH",
+				"IJKL=ZXCVBN",
+			},
+		},
+		{
+			name: "ValidMixedDevices",
+			devices: []string{
+				"singularityCEtesting.sylabs.io/device=tmpmountDevice17",
+				"singularityCEtesting.sylabs.io/device=kmsgDevice",
+				"singularityCEtesting.sylabs.io/device=tmpmountDevice1",
+			},
+			wantDevices: []specs.LinuxDevice{
+				{
+					Path:     "/dev/kmsg",
+					Type:     "c",
+					Major:    1,
+					Minor:    11,
+					FileMode: nil,
+					UID:      &wantUID,
+					GID:      &wantGID,
+				},
+			},
+			wantMounts: mountsList{
+				{
+					Source:      "/tmp",
+					Destination: "/tmpmount1",
+					Type:        "",
+					Options:     []string{"ro"},
+				},
+				{
+					Source:      "/tmp",
+					Destination: "/tmpmount3",
+					Type:        "",
+					Options:     []string{"rbind", "nosuid", "nodev"},
+				},
+				{
+					Source:      "/tmp",
+					Destination: "/tmpmount13",
+					Type:        "",
+					Options:     []string{"rw"},
+				},
+				{
+					Source:      "/tmp",
+					Destination: "/tmpmount17",
+					Type:        "",
+					Options:     []string{"r"},
+				},
+				{
+					Source:      "/tmp",
+					Destination: "/tmpmountforkmsg",
+					Type:        "",
+					Options:     []string{"rw"},
+				},
+			},
+			wantEnv: []string{
+				"ABCD=QWERTY",
+				"EFGH=ASDFGH",
+				"IJKL=ZXCVBN",
+				"FOO=VALID_SPEC",
+				"BAR=BARVALUE1",
 			},
 		},
 		{
@@ -121,47 +213,16 @@ func Test_addCDIDevice(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		// {
-		// 	name: "InvalidNameAmongValids",
-		// 	devices: []string{
-		// 		"singularityCEtesting.sylabs.io/device=tmpmountDevice17",
-		// 		"singularityCEtesting.sylabs.io/device=noSuchDevice",
-		// 		"singularityCEtesting.sylabs.io/device=tmpmountDevice1",
-		// 		"singularityCEtesting.sylabs.io/device=kmsgDevice",
-		// 	},
-		// 	wantDevices: []specs.LinuxDevice{},
-		// 	wantMounts: mountsList{
-		// 		{
-		// 			Source:      "/tmp",
-		// 			Destination: "/tmpmount1",
-		// 			Type:        "",
-		// 			Options:     []string{"ro"},
-		// 		},
-		// 		{
-		// 			Source:      "/tmp",
-		// 			Destination: "/tmpmount3",
-		// 			Type:        "",
-		// 			Options:     []string{"rbind", "nosuid", "nodev"},
-		// 		},
-		// 		{
-		// 			Source:      "/tmp",
-		// 			Destination: "/tmpmount13",
-		// 			Type:        "",
-		// 			Options:     []string{"rw"},
-		// 		},
-		// 		{
-		// 			Source:      "/tmp",
-		// 			Destination: "/tmpmount17",
-		// 			Type:        "",
-		// 			Options:     []string{"r"},
-		// 		},
-		// 	},
-		// 	wantEnv: []string{
-		// 		"ABCD=QWERTY",
-		// 		"EFGH=ASDFGH",
-		// 		"IJKL=ZXCVBN",
-		// 	},
-		// },
+		{
+			name: "InvalidNameAmongValids",
+			devices: []string{
+				"singularityCEtesting.sylabs.io/device=tmpmountDevice17",
+				"singularityCEtesting.sylabs.io/device=noSuchDevice",
+				"singularityCEtesting.sylabs.io/device=tmpmountDevice1",
+				"singularityCEtesting.sylabs.io/device=kmsgDevice",
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -169,11 +230,6 @@ func Test_addCDIDevice(t *testing.T) {
 			err := addCDIDevices(&spec, tt.devices, cdi.WithSpecDirs(specDirs...))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("addCDIDevices() mismatched error values; expected %v, got %v.", tt.wantErr, err)
-			}
-
-			// If there's been an error, OCI/CDI won't have generated the mounts and environment-variables we would be checking for. And we have already checked, at this point, whether the error was an expected one or not.
-			if err != nil {
-				return
 			}
 
 			// We need this if-statement because the comparison below is done with reflection, and so a nil array and a non-nil but zero-length array will be considered different (which is not what we want here)
@@ -185,13 +241,19 @@ func Test_addCDIDevice(t *testing.T) {
 				}
 			}
 
-			wantEnvMap := lo.FromEntries(lo.Map(tt.wantEnv, func(s string, _ int) lo.Entry[string, bool] {
-				return lo.Entry[string, bool]{Key: s, Value: true}
-			}))
-			envMissing := lo.Keys(lo.OmitByKeys(wantEnvMap, spec.Process.Env))
+			envMissing := hashingListSubtract(tt.wantEnv, spec.Process.Env)
 			if len(envMissing) > 0 {
 				t.Errorf("addCDIDevices() mismatched environment variables; expected, but did not find, the following environment variables: %v", envMissing)
 			}
 		})
 	}
+}
+
+// hashingListSubtract is a utility-function for subtracting a list from another list, using map's internal hashing function to do this more efficiently than lo.Difference or lo.Without (which only assume comparable, and thus run in quadratic time).
+func hashingListSubtract[T comparable](toSubstractFrom []T, toSubstract []T) []T {
+	subtractionMap := lo.FromEntries(lo.Map(toSubstractFrom, func(item T, _ int) lo.Entry[T, bool] {
+		return lo.Entry[T, bool]{Key: item, Value: true}
+	}))
+
+	return lo.Keys(lo.OmitByKeys(subtractionMap, toSubstract))
 }
