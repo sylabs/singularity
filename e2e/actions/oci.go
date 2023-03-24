@@ -496,24 +496,27 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 
 	// Create a function to create a fresh subtestWorkspace, with distinct temporary directories, that each individual subtest will use
 	setupIndivSubtestWorkspace := func(t *testing.T, numMountDirs int) *subtestWorkspace {
-		tw := subtestWorkspace{}
+		stws := subtestWorkspace{}
 		mainDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "", "")
 		t.Cleanup(func() {
 			if !t.Failed() {
 				e2e.Privileged(cleanup)
 			}
 		})
-		tw.mainDir = mainDir
+		stws.mainDir = mainDir
 
 		// No need to do anything with the cleanup functions returned here, because the directories created are all going to be children of (tw.)mainDir, whose cleanup was already registered above.
-		tw.jsonsDir, _ = e2e.MakeTempDir(t, tw.mainDir, "cdi-jsons-", "")
-		tw.mountDirs = make([]string, 0, numMountDirs)
-		for len(tw.mountDirs) < numMountDirs {
-			dir, _ := e2e.MakeTempDir(t, tw.mainDir, fmt.Sprintf("mount-dir-%d-", len(tw.mountDirs)+1), "")
-			tw.mountDirs = append(tw.mountDirs, dir)
+		stws.jsonsDir, _ = e2e.MakeTempDir(t, stws.mainDir, "cdi-jsons-", "")
+		stws.mountDirs = make([]string, 0, numMountDirs)
+		for len(stws.mountDirs) < numMountDirs {
+			dir, _ := e2e.MakeTempDir(t, stws.mainDir, fmt.Sprintf("mount-dir-%d-", len(stws.mountDirs)+1), "")
+			// Make writable to all, due to current nested userns mapping restrictions.
+			// Will work without this once crun-specific single mapping is present.
+			os.Chmod(dir, 0o777)
+			stws.mountDirs = append(stws.mountDirs, dir)
 		}
 
-		return &tw
+		return &stws
 	}
 
 	// Set up the JSON template that we're going to populate on a per-subtest basis with particular CDI spec values
@@ -574,84 +577,84 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 		},
 	}
 
-	profile := e2e.OCIFakerootProfile
-	t.Run(profile.String(), func(t *testing.T) {
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				stws := setupIndivSubtestWorkspace(t, len(tt.Mounts))
+	for _, profile := range e2e.OCIProfiles {
+		t.Run(profile.String(), func(t *testing.T) {
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					stws := setupIndivSubtestWorkspace(t, len(tt.Mounts))
 
-				// Populate the HostPath values we're going to feed into the CDI JSON template, based on the subtestWorkspace we just created
-				for i, d := range stws.mountDirs {
-					tt.Mounts[i].HostPath = d
-				}
+					// Populate the HostPath values we're going to feed into the CDI JSON template, based on the subtestWorkspace we just created
+					for i, d := range stws.mountDirs {
+						tt.Mounts[i].HostPath = d
+					}
 
-				// Inject this subtest's values into the template to create the CDI JSON file
-				cdiJSONFilePath := filepath.Join(stws.jsonsDir, fmt.Sprintf("%s-cdi.json", tt.name))
-				cdiJSONFile, err := os.OpenFile(cdiJSONFilePath, os.O_CREATE|os.O_WRONLY, 0o644)
-				if err != nil {
-					t.Errorf("could not create file %#v for writing CDI JSON: %v", cdiJSONFilePath, err)
-				}
-				if err = cdiJSONTemplate.Execute(cdiJSONFile, tt); err != nil {
-					t.Errorf("error executing template %#v to create CDI JSON: %v", cdiJSONTemplateFilePath, err)
-					return
-				}
-				cdiJSONFile.Close()
+					// Inject this subtest's values into the template to create the CDI JSON file
+					cdiJSONFilePath := filepath.Join(stws.jsonsDir, fmt.Sprintf("%s-cdi.json", tt.name))
+					cdiJSONFile, err := os.OpenFile(cdiJSONFilePath, os.O_CREATE|os.O_WRONLY, 0o644)
+					if err != nil {
+						t.Errorf("could not create file %#v for writing CDI JSON: %v", cdiJSONFilePath, err)
+					}
+					if err = cdiJSONTemplate.Execute(cdiJSONFile, tt); err != nil {
+						t.Errorf("error executing template %#v to create CDI JSON: %v", cdiJSONTemplateFilePath, err)
+						return
+					}
+					cdiJSONFile.Close()
 
-				// Create a list of test strings, each of which will be echoed into a separate file in a separate mount in the container.
-				testfileStrings := make([]string, 0, len(tt.Mounts))
-				for i := range tt.Mounts {
-					testfileStrings = append(testfileStrings, fmt.Sprintf("test_string_for_mount_%d_in_test_%s", i, tt.name))
-				}
+					// Create a list of test strings, each of which will be echoed into a separate file in a separate mount in the container.
+					testfileStrings := make([]string, 0, len(tt.Mounts))
+					for i := range tt.Mounts {
+						testfileStrings = append(testfileStrings, fmt.Sprintf("test_string_for_mount_%d_in_test_%s", i, tt.name))
+					}
 
-				// Generate the command to be executed in the container
-				execCmd := ""
-				for i, m := range tt.Mounts {
-					// Add a separate teststring echo statement for each mount
-					execCmd += fmt.Sprintf("echo %s > %s/testfile_%d; ", testfileStrings[i], m.ContainerPath, i)
-				}
-				// Add the printing of all environment variables, to test using e2e.ContainMatch conditions later
-				execCmd += "/bin/env"
-
-				// Create a postRun function to check that the testfiles written to the container mounts made their way to the right host temporary directories
-				postRun := func(t *testing.T) {
+					// Generate the command to be executed in the container
+					execCmd := ""
 					for i, m := range tt.Mounts {
-						testfileFilename := filepath.Join(m.HostPath, fmt.Sprintf("testfile_%d", i))
-						b, err := os.ReadFile(testfileFilename)
-						if err != nil {
-							t.Errorf("could not read testfile %s", testfileFilename)
-							return
-						}
+						// Add a separate teststring echo statement for each mount
+						execCmd += fmt.Sprintf("echo %s > %s/testfile_%d && ", testfileStrings[i], m.ContainerPath, i)
+					}
+					// Add the printing of all environment variables, to test using e2e.ContainMatch conditions later
+					execCmd += "/bin/env"
 
-						s := string(b)
-						if s != testfileStrings[i]+"\n" {
-							t.Errorf("mismatched testfileString; expected %#v, got %#v (mount: %#v)", s, testfileStrings[i], m)
+					// Create a postRun function to check that the testfiles written to the container mounts made their way to the right host temporary directories
+					postRun := func(t *testing.T) {
+						for i, m := range tt.Mounts {
+							testfileFilename := filepath.Join(m.HostPath, fmt.Sprintf("testfile_%d", i))
+							b, err := os.ReadFile(testfileFilename)
+							if err != nil {
+								t.Errorf("could not read testfile %s", testfileFilename)
+								return
+							}
+
+							s := string(b)
+							if s != testfileStrings[i]+"\n" {
+								t.Errorf("mismatched testfileString; expected %#v, got %#v (mount: %#v)", s, testfileStrings[i], m)
+							}
 						}
 					}
-				}
 
-				// Create a set of e2e.SingularityCmdResultOp objects to test that environment variables have been correctly injected into the container
-				envExpects := make([]e2e.SingularityCmdResultOp, 0, len(tt.Env))
-				for _, e := range tt.Env {
-					envExpects = append(envExpects, e2e.ExpectOutput(e2e.ContainMatch, e))
-				}
+					// Create a set of e2e.SingularityCmdResultOp objects to test that environment variables have been correctly injected into the container
+					envExpects := make([]e2e.SingularityCmdResultOp, 0, len(tt.Env))
+					for _, e := range tt.Env {
+						envExpects = append(envExpects, e2e.ExpectOutput(e2e.ContainMatch, e))
+					}
 
-				c.env.RunSingularity(
-					t,
-					e2e.AsSubtest(tt.name),
-					e2e.WithCommand("exec"),
-					e2e.WithArgs(
-						"--oci",
-						"--device",
-						strings.Join(tt.devices, ","),
-						"--cdidirs",
-						stws.jsonsDir,
-						imageRef,
-						"/bin/sh", "-c", execCmd),
-					e2e.WithProfile(profile),
-					e2e.ExpectExit(tt.wantExit, envExpects...),
-					e2e.PostRun(postRun),
-				)
-			})
-		}
-	})
+					c.env.RunSingularity(
+						t,
+						e2e.AsSubtest(tt.name),
+						e2e.WithCommand("exec"),
+						e2e.WithArgs(
+							"--device",
+							strings.Join(tt.devices, ","),
+							"--cdidirs",
+							stws.jsonsDir,
+							imageRef,
+							"/bin/sh", "-c", execCmd),
+						e2e.WithProfile(profile),
+						e2e.ExpectExit(tt.wantExit, envExpects...),
+						e2e.PostRun(postRun),
+					)
+				})
+			}
+		})
+	}
 }
