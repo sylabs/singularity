@@ -115,3 +115,12 @@ debian/singularity-ce*/
 debian/tmp/
 
 .LICENSE_DEPENDENCIES.csv
+
+# VSCode debugging build targets
+__debug_bin
+*/__debug_bin
+*/*/__debug_bin
+*/*/*/__debug_bin
+*/*/*/*/__debug_bin
+*/*/*/*/*/__debug_bin
+*/*/*/*/*/*/__debug_bin
