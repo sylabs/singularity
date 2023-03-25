@@ -520,7 +520,7 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 	}
 
 	// Set up the JSON template that we're going to populate on a per-subtest basis with particular CDI spec values
-	e2eMountTemplateFilename := "e2eMountTemplate.json.tpl"
+	e2eMountTemplateFilename := "cditemplate.json.tpl"
 	cdiJSONTemplateFilePath := filepath.Join("..", "test", "cdi", e2eMountTemplateFilename)
 	funcMap := template.FuncMap{
 		// The name "title" is what the function will be called in the template text.
@@ -536,21 +536,24 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 	}
 
 	// The set of actual subtests
+	var wantUID uint32 = 1000
+	var wantGID uint32 = 1000
 	tests := []struct {
 		name        string
 		devices     []string
 		wantExit    int
-		DeviceNodes []cdispecs.Device
+		postRun     func(t *testing.T)
+		DeviceNodes []cdispecs.DeviceNode
 		Mounts      []cdispecs.Mount
 		Env         []string
 	}{
 		{
 			name: "ValidMounts",
 			devices: []string{
-				"singularityCEtesting.sylabs.io/device=e2eMountTester",
+				"singularityCEtesting.sylabs.io/device=TesterDevice",
 			},
 			wantExit:    0,
-			DeviceNodes: []cdispecs.Device{},
+			DeviceNodes: []cdispecs.DeviceNode{},
 			Mounts: []cdispecs.Mount{
 				{
 					ContainerPath: "/tmp/mount1",
@@ -573,6 +576,33 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 				"ABCD=QWERTY",
 				"EFGH=ASDFGH",
 				"IJKL=ZXCVBN",
+			},
+		},
+		{
+			name: "InvalidDevice",
+			devices: []string{
+				"singularityCEtesting.sylabs.io/device=DoesNotExist",
+			},
+			wantExit:    255,
+			DeviceNodes: []cdispecs.DeviceNode{},
+			Mounts:      []cdispecs.Mount{},
+			Env:         []string{},
+		},
+		{
+			name: "KmsgDevice",
+			devices: []string{
+				"singularityCEtesting.sylabs.io/device=TesterDevice",
+			},
+			wantExit: 0,
+			DeviceNodes: []cdispecs.DeviceNode{
+				{
+					HostPath:    "/dev/kmsg",
+					Path:        "/dev/kmsg",
+					Permissions: "rw",
+					Type:        "c",
+					UID:         &wantUID,
+					GID:         &wantGID,
+				},
 			},
 		},
 	}
@@ -607,16 +637,23 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 					}
 
 					// Generate the command to be executed in the container
-					execCmd := ""
+					// Start by printing all environment variables, to test using e2e.ContainMatch conditions later
+					execCmd := "/bin/env"
+					for _, d := range tt.DeviceNodes {
+						testFlag := "-f"
+						switch d.Type {
+						case "c":
+							testFlag = "-c"
+						}
+						execCmd += fmt.Sprintf(" && test %s %s", testFlag, d.Path)
+					}
 					for i, m := range tt.Mounts {
 						// Add a separate teststring echo statement for each mount
-						execCmd += fmt.Sprintf("echo %s > %s/testfile_%d && ", testfileStrings[i], m.ContainerPath, i)
+						execCmd += fmt.Sprintf(" && echo %s > %s/testfile_%d", testfileStrings[i], m.ContainerPath, i)
 					}
-					// Add the printing of all environment variables, to test using e2e.ContainMatch conditions later
-					execCmd += "/bin/env"
 
 					// Create a postRun function to check that the testfiles written to the container mounts made their way to the right host temporary directories
-					postRun := func(t *testing.T) {
+					testMountsAndEnv := func(t *testing.T) {
 						for i, m := range tt.Mounts {
 							testfileFilename := filepath.Join(m.HostPath, fmt.Sprintf("testfile_%d", i))
 							b, err := os.ReadFile(testfileFilename)
@@ -651,7 +688,8 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 							"/bin/sh", "-c", execCmd),
 						e2e.WithProfile(profile),
 						e2e.ExpectExit(tt.wantExit, envExpects...),
-						e2e.PostRun(postRun),
+						e2e.PostRun(tt.postRun),
+						e2e.PostRun(testMountsAndEnv),
 					)
 				})
 			}
