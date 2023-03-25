@@ -682,7 +682,7 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 						e2e.WithArgs(
 							"--device",
 							strings.Join(tt.devices, ","),
-							"--cdidirs",
+							"--cdi-dirs",
 							stws.jsonsDir,
 							imageRef,
 							"/bin/sh", "-c", execCmd),

@@ -823,12 +823,12 @@ var actionDevice = cmdline.Flag{
 	Usage:        "fully-qualified CDI device name(s). A fully-qualified CDI device name consists of a VENDOR, CLASS, and NAME, which are combined as follows: <VENDOR>/<CLASS>=<NAME> (e.g. vendor.com/device=mydevice). Multiple fully-qualified CDI device names can be given as a comma separated list.",
 }
 
-// --cdidirs
+// --cdi-dirs
 var actionCdiDirs = cmdline.Flag{
 	ID:           "actionCdiDirs",
 	Value:        &cdiDirs,
 	DefaultValue: []string{},
-	Name:         "cdidirs",
+	Name:         "cdi-dirs",
 	Usage:        "comma-separated list of directories in which CDI should look for device definition JSON files. If omitted, default will be: /etc/cdi,/var/run/cdi",
 }
 
