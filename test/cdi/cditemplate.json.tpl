@@ -4,7 +4,7 @@
 
 	"devices": [
 		{
-			"name": "e2eMountTester",
+			"name": "TesterDevice",
 			"containerEdits": {
 				"deviceNodes": {{tojson .DeviceNodes}},
 				"mounts": {{tojson .Mounts}}
