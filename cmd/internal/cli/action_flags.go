@@ -37,6 +37,8 @@ var (
 	singularityEnvFile string
 	noMount            []string
 	proot              string
+	device             []string
+	cdiDirs            []string
 
 	isBoot          bool
 	isFakeroot      bool
@@ -105,7 +107,7 @@ var actionBindFlag = cmdline.Flag{
 	DefaultValue: []string{},
 	Name:         "bind",
 	ShortHand:    "B",
-	Usage:        "a user-bind path specification.  spec has the format src[:dest[:opts]], where src and dest are outside and inside paths.  If dest is not given, it is set equal to src.  Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.",
+	Usage:        "a user-bind path specification. spec has the format src[:dest[:opts]], where src and dest are outside and inside paths. If dest is not given, it is set equal to src. Mount options ('opts') may be specified as 'ro' (read-only) or 'rw' (read/write, which is the default). Multiple bind paths can be given by a comma separated list.",
 	EnvKeys:      []string{"BIND", "BINDPATH"},
 	Tag:          "<spec>",
 	EnvHandler:   cmdline.EnvAppendValue,
@@ -131,7 +133,7 @@ var actionHomeFlag = cmdline.Flag{
 	DefaultValue: CurrentUser.HomeDir,
 	Name:         "home",
 	ShortHand:    "H",
-	Usage:        "a home directory specification.  spec can either be a src path or src:dest pair.  src is the source path of the home directory outside the container and dest overrides the home directory within the container.",
+	Usage:        "a home directory specification. spec can either be a src path or src:dest pair. src is the source path of the home directory outside the container and dest overrides the home directory within the container.",
 	EnvKeys:      []string{"HOME"},
 	Tag:          "<spec>",
 }
@@ -812,6 +814,24 @@ var actionOCIFlag = cmdline.Flag{
 	EnvKeys:      []string{"OCI"},
 }
 
+// --device
+var actionDevice = cmdline.Flag{
+	ID:           "actionDevice",
+	Value:        &device,
+	DefaultValue: []string{},
+	Name:         "device",
+	Usage:        "fully-qualified CDI device name(s). A fully-qualified CDI device name consists of a VENDOR, CLASS, and NAME, which are combined as follows: <VENDOR>/<CLASS>=<NAME> (e.g. vendor.com/device=mydevice). Multiple fully-qualified CDI device names can be given as a comma separated list.",
+}
+
+// --cdi-dirs
+var actionCdiDirs = cmdline.Flag{
+	ID:           "actionCdiDirs",
+	Value:        &cdiDirs,
+	DefaultValue: []string{},
+	Name:         "cdi-dirs",
+	Usage:        "comma-separated list of directories in which CDI should look for device definition JSON files. If omitted, default will be: /etc/cdi,/var/run/cdi",
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(ExecCmd)
@@ -906,5 +926,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionSIFFUSEFlag, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&actionProotFlag, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&actionOCIFlag, actionsCmd...)
+		cmdManager.RegisterFlagForCmd(&actionDevice, actionsCmd...)
+		cmdManager.RegisterFlagForCmd(&actionCdiDirs, actionsCmd...)
 	})
 }

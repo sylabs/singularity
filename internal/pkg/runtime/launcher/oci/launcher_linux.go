@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/container-orchestrated-devices/container-device-interface/pkg/cdi"
 	"github.com/google/uuid"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
@@ -209,7 +210,7 @@ func checkOpts(lo launcher.Options) error {
 // createSpec creates an initial OCI runtime specification, suitable to launch a
 // container. This spec excludes the Process config, as this has to be computed
 // where the image config is available, to account for the image's CMD /
-// ENTRYPOINT / ENV / USER.
+// ENTRYPOINT / ENV / USER. See finalizeSpec() function.
 func (l *Launcher) createSpec() (*specs.Spec, error) {
 	spec := minimalSpec()
 
@@ -295,6 +296,16 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 		return err
 	}
 	spec.Process = specProcess
+
+	if len(l.cfg.CdiDirs) > 0 {
+		err = addCDIDevices(spec, l.cfg.Devices, cdi.WithSpecDirs(l.cfg.CdiDirs...))
+	} else {
+		err = addCDIDevices(spec, l.cfg.Devices)
+	}
+	if err != nil {
+		return err
+	}
+
 	if err := b.Update(ctx, spec); err != nil {
 		return err
 	}

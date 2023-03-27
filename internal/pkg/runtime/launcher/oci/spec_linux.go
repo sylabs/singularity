@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
+
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
