@@ -8,7 +8,9 @@ package endpoint
 
 import (
 	"fmt"
+	"net/http"
 	"strings"
+	"time"
 
 	golog "github.com/go-log/log"
 	keyclient "github.com/sylabs/scs-key-client/client"
@@ -98,9 +100,10 @@ func (ep *Config) LibraryClientConfig(uri string) (*libclient.Config, error) {
 	isDefault := uri == ""
 
 	config := &libclient.Config{
-		BaseURL:   uri,
-		UserAgent: useragent.Value(),
-		Logger:    (golog.Logger)(sylog.DebugLogger{}),
+		BaseURL:    uri,
+		UserAgent:  useragent.Value(),
+		Logger:     (golog.Logger)(sylog.DebugLogger{}),
+		HTTPClient: &http.Client{Timeout: 5 * time.Second},
 	}
 
 	if isDefault {

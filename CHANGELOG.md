@@ -20,6 +20,8 @@
   OCI mode (`--oci`). Currently supports passing one or more (comma-separated)
   fully-qualified CDI device names, and those devices will then be made
   available inside the container.
+- The `remote status` command will now print the username, realname, and email
+  of the logged-in user, if available.
 
 ### Bug Fixes
 
