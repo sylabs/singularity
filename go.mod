@@ -54,7 +54,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.4.0
 	mvdan.cc/sh/v3 v3.6.0
-	oras.land/oras-go v1.2.3-0.20230221065300-6cd929aff421
+	oras.land/oras-go v1.2.3
 )
 
 require (
