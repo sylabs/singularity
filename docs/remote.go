@@ -141,10 +141,11 @@ const (
 	RemoteStatusShort string = `Check the status of the singularity services at an endpoint, and your authentication token`
 	RemoteStatusLong  string = `
   The 'remote status' command checks the status of the specified remote endpoint
-  and reports the availability of services and their versions. If no endpoint is
-  specified, it will check the status of the default remote (SylabsCloud). If you
-  have logged in with an authentication token the validity of that token will be
-  checked.`
+  and reports the availability of services and their versions, and reports the
+  user's logged-in status (or lack thereof) on that endpoint. If no endpoint is
+  specified, it will check the status of the default remote (SylabsCloud). If
+  you have logged in with an authentication token the validity of that token
+  will be checked.`
 	RemoteStatusExample string = `
   $ singularity remote status SylabsCloud`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
