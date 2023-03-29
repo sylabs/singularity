@@ -22,6 +22,7 @@
   available inside the container.
 - The `remote status` command will now print the username, realname, and email
   of the logged-in user, if available.
+- Support `--pwd` in OCI mode.
 
 ### Bug Fixes
 
