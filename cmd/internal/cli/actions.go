@@ -47,7 +47,12 @@ func getCacheHandle(cfg cache.Config) *cache.Handle {
 	return h
 }
 
-// actionPreRun will run replaceURIWithImage and will also do the proper path unsetting
+// actionPreRun will:
+//   - run replaceURIWithImage;
+//   - do the proper path unsetting;
+//   - and implement flag inferences for:
+//     --compat
+//     --hostname (OCI-mode only)
 func actionPreRun(cmd *cobra.Command, args []string) {
 	// For compatibility - we still set USER_PATH so it will be visible in the
 	// container, and can be used there if needed. USER_PATH is not used by
@@ -66,6 +71,11 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 		noInit = true
 		noUmask = true
 		noEval = true
+	}
+
+	// --hostname in OCI mode requires UTS namespace
+	if ociRuntime && (len(hostname) > 0) {
+		utsNamespace = true
 	}
 }
 
