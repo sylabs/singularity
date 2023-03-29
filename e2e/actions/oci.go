@@ -146,10 +146,10 @@ func (c actionTests) actionOciExec(t *testing.T) {
 		},
 		{
 			name: "Hostname",
-			argv: []string{"--hostname", "whatsinaname", imageRef, "hostname"},
+			argv: []string{"--hostname", "whats-in-an-oci-name", imageRef, "hostname"},
 			exit: 0,
 			wantOutputs: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ExactMatch, "whatsinaname"),
+				e2e.ExpectOutput(e2e.ExactMatch, "whats-in-an-oci-name"),
 			},
 		},
 	}

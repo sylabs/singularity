@@ -213,7 +213,7 @@ var actionHostnameFlag = cmdline.Flag{
 	Value:        &hostname,
 	DefaultValue: "",
 	Name:         "hostname",
-	Usage:        "set container hostname. If used in OCI mode (--oci), this infers --uts",
+	Usage:        "set container hostname. Infers --uts.",
 	EnvKeys:      []string{"HOSTNAME"},
 	Tag:          "<name>",
 }

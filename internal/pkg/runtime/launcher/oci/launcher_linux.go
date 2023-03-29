@@ -216,7 +216,7 @@ func (l *Launcher) createSpec() (*specs.Spec, error) {
 	if len(l.cfg.Hostname) > 0 {
 		// This is a sanity-check; actionPreRun in actions.go should have prevented this scenario from arising.
 		if !l.cfg.Namespaces.UTS {
-			return nil, fmt.Errorf("internal error: trying to set hostname in OCI mode without UTS namespace")
+			return nil, fmt.Errorf("internal error: trying to set hostname without UTS namespace")
 		}
 
 		spec.Hostname = l.cfg.Hostname

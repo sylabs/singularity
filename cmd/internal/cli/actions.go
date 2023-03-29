@@ -52,7 +52,7 @@ func getCacheHandle(cfg cache.Config) *cache.Handle {
 //   - do the proper path unsetting;
 //   - and implement flag inferences for:
 //     --compat
-//     --hostname (OCI-mode only)
+//     --hostname
 func actionPreRun(cmd *cobra.Command, args []string) {
 	// For compatibility - we still set USER_PATH so it will be visible in the
 	// container, and can be used there if needed. USER_PATH is not used by
@@ -73,8 +73,8 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 		noEval = true
 	}
 
-	// --hostname in OCI mode requires UTS namespace
-	if ociRuntime && (len(hostname) > 0) {
+	// --hostname requires UTS namespace
+	if len(hostname) > 0 {
 		utsNamespace = true
 	}
 }
