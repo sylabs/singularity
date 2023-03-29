@@ -148,6 +148,14 @@ func (c actionTests) actionOciExec(t *testing.T) {
 				e2e.ExpectOutput(e2e.ExactMatch, "whats-in-an-oci-name"),
 			},
 		},
+		{
+			name: "Pwd",
+			argv: []string{"--pwd", "/tmp", imageRef, "pwd"},
+			exit: 0,
+			wantOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.ExactMatch, "/tmp"),
+			},
+		},
 	}
 	for _, profile := range e2e.OCIProfiles {
 		t.Run(profile.String(), func(t *testing.T) {
