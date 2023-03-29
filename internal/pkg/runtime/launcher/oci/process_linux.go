@@ -88,8 +88,8 @@ func getProcessArgs(imageSpec imgspecv1.Image, process string, args []string) []
 // getProcessCwd computes the Cwd that the container process should start in.
 // Currently this is the user's tmpfs home directory (see --containall).
 func (l *Launcher) getProcessCwd() (dir string, err error) {
-	if len(l.cfg.PwdPath) > 1 {
-		return l.cfg.PwdPath, nil
+	if len(l.cfg.CwdPath) > 1 {
+		return l.cfg.CwdPath, nil
 	}
 
 	if l.cfg.Fakeroot {

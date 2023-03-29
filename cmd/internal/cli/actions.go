@@ -378,7 +378,7 @@ func launchContainer(cmd *cobra.Command, image string, containerCmd string, cont
 		launcher.OptCgroupsJSON(cgJSON),
 		launcher.OptConfigFile(configurationFile),
 		launcher.OptShellPath(shellPath),
-		launcher.OptPwdPath(pwdPath),
+		launcher.OptCwdPath(cwdPath),
 		launcher.OptFakeroot(isFakeroot),
 		launcher.OptBoot(isBoot),
 		launcher.OptNoInit(noInit),
