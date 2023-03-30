@@ -90,9 +90,10 @@ func (c actionTests) actionOciExec(t *testing.T) {
 	imageRef := "oci-archive:" + c.env.OCIArchivePath
 
 	tests := []struct {
-		name string
-		argv []string
-		exit int
+		name        string
+		argv        []string
+		exit        int
+		wantOutputs []e2e.SingularityCmdResultOp
 	}{
 		{
 			name: "NoCommand",
@@ -139,6 +140,14 @@ func (c actionTests) actionOciExec(t *testing.T) {
 			argv: []string{"--uts", imageRef, "true"},
 			exit: 0,
 		},
+		{
+			name: "Hostname",
+			argv: []string{"--hostname", "whats-in-an-oci-name", imageRef, "hostname"},
+			exit: 0,
+			wantOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.ExactMatch, "whats-in-an-oci-name"),
+			},
+		},
 	}
 	for _, profile := range e2e.OCIProfiles {
 		t.Run(profile.String(), func(t *testing.T) {
@@ -150,7 +159,7 @@ func (c actionTests) actionOciExec(t *testing.T) {
 					e2e.WithCommand("exec"),
 					e2e.WithDir("/tmp"),
 					e2e.WithArgs(tt.argv...),
-					e2e.ExpectExit(tt.exit),
+					e2e.ExpectExit(tt.exit, tt.wantOutputs...),
 				)
 			}
 		})

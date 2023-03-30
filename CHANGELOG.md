@@ -2,6 +2,11 @@
 
 ## Changes Since Last Release
 
+### New Features & Functionality
+
+- OCI mode now supports `--hostname` (requires UTS namespace, therefore this
+  flag will infer `--uts` if running in OCI mode).
+
 ### Bug Fixes
 
 - Require `runc` in RPM packages built on SLES, not `crun`, because `crun` is

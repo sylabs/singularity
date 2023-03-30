@@ -133,9 +133,6 @@ func checkOpts(lo launcher.Options) error {
 	if len(lo.NetworkArgs) > 0 {
 		badOpt = append(badOpt, "NetworkArgs")
 	}
-	if lo.Hostname != "" {
-		badOpt = append(badOpt, "Hostname")
-	}
 	if lo.DNS != "" {
 		badOpt = append(badOpt, "DNS")
 	}
@@ -214,6 +211,15 @@ func (l *Launcher) createSpec() (*specs.Spec, error) {
 	spec := minimalSpec()
 
 	spec = addNamespaces(spec, l.cfg.Namespaces)
+
+	if len(l.cfg.Hostname) > 0 {
+		// This is a sanity-check; actionPreRun in actions.go should have prevented this scenario from arising.
+		if !l.cfg.Namespaces.UTS {
+			return nil, fmt.Errorf("internal error: trying to set hostname without UTS namespace")
+		}
+
+		spec.Hostname = l.cfg.Hostname
+	}
 
 	mounts, err := l.getMounts()
 	if err != nil {
