@@ -217,7 +217,11 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 
 	// If user wants to set a hostname, it requires the UTS namespace.
 	if l.cfg.Hostname != "" {
-		l.cfg.Namespaces.UTS = true
+		// This is a sanity-check; actionPreRun in actions.go should have prevented this scenario from arising.
+		if !l.cfg.Namespaces.UTS {
+			return fmt.Errorf("internal error: trying to set hostname without UTS namespace")
+		}
+
 		l.engineConfig.SetHostname(l.cfg.Hostname)
 	}
 
@@ -302,7 +306,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		if l.cfg.Boot {
 			l.cfg.Namespaces.UTS = true
 			l.cfg.Namespaces.Net = true
-			if l.cfg.Hostname == "" {
+			if len(l.cfg.Hostname) < 1 {
 				l.engineConfig.SetHostname(instanceName)
 			}
 			if !l.cfg.KeepPrivs {
