@@ -6,6 +6,8 @@
 
 - When building RPM, we will now use `/var/lib/singularity` (rather than
   `/var/singularity`) to store local state files.
+- `--cwd` is now the preferred form of the flag for setting the container's
+  working directory, though `--pwd` is still supported for compatibility.
 
 ### New Features & Functionality
 

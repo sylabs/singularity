@@ -203,7 +203,7 @@ var actionCwdFlag = cmdline.Flag{
 	DefaultValue: "",
 	Name:         "cwd",
 	Usage:        "initial working directory for payload process inside the container (synonym for --pwd)",
-	EnvKeys:      []string{"PWD", "TARGET_PWD"},
+	EnvKeys:      []string{"CWD", "TARGET_CWD"},
 	Tag:          "<path>",
 }
 
@@ -214,6 +214,7 @@ var actionPwdFlag = cmdline.Flag{
 	DefaultValue: "",
 	Name:         "pwd",
 	Usage:        "initial working directory for payload process inside the container (synonym for --cwd)",
+	Hidden:       true,
 	EnvKeys:      []string{"PWD", "TARGET_PWD"},
 	Tag:          "<path>",
 }
