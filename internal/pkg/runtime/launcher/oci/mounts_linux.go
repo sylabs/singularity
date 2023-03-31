@@ -36,6 +36,9 @@ func (l *Launcher) getMounts() ([]specs.Mount, error) {
 	if err := l.addHomeMount(mounts); err != nil {
 		return nil, fmt.Errorf("while configuring home mount: %w", err)
 	}
+	if err := l.addScratchMounts(mounts); err != nil {
+		return nil, fmt.Errorf("while configuring scratch mount(s): %w", err)
+	}
 	if err := l.addBindMounts(mounts); err != nil {
 		return nil, fmt.Errorf("while configuring bind mount(s): %w", err)
 	}
@@ -203,6 +206,27 @@ func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
 				fmt.Sprintf("gid=%d", pw.GID),
 			},
 		})
+	return nil
+}
+
+// addScratchMounts adds tmpfs mounts for scratch directories in the container.
+func (l *Launcher) addScratchMounts(mounts *[]specs.Mount) error {
+	for _, s := range l.cfg.ScratchDirs {
+		*mounts = append(*mounts,
+			specs.Mount{
+				Destination: s,
+				Type:        "tmpfs",
+				Source:      "tmpfs",
+				Options: []string{
+					"nosuid",
+					"relatime",
+					"nodev",
+					fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
+				},
+			},
+		)
+	}
+
 	return nil
 }
 

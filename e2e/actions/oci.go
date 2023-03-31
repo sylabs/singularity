@@ -342,10 +342,11 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		args    []string
-		postRun func(*testing.T)
-		exit    int
+		name        string
+		args        []string
+		wantOutputs []e2e.SingularityCmdResultOp
+		postRun     func(*testing.T)
+		exit        int
 	}{
 		{
 			name: "NonExistentSource",
@@ -444,6 +445,38 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 			postRun: checkHostFile(filepath.Join(hostCanaryDir, "nested")),
 			exit:    0,
 		},
+		{
+			name: "IsScratchTmpfs",
+			args: []string{
+				"--scratch", "/name-of-a-scratch",
+				imageRef,
+				"mount",
+			},
+			wantOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.RegexMatch, `\btmpfs on /name-of-a-scratch\b`),
+			},
+			exit: 0,
+		},
+		{
+			name: "BindOverScratch",
+			args: []string{
+				"--scratch", "/name-of-a-scratch",
+				"--bind", hostCanaryDir + ":/name-of-a-scratch",
+				imageRef,
+				"test", "-f", "/name-of-a-scratch/file",
+			},
+			exit: 0,
+		},
+		{
+			name: "ScratchTmpfsBind",
+			args: []string{
+				"--scratch", "/scratch",
+				"--bind", hostCanaryDir + ":/scratch/dir",
+				imageRef,
+				"test", "-f", "/scratch/dir/file",
+			},
+			exit: 0,
+		},
 		// For the --mount variants we are really just verifying the CLI
 		// acceptance of one or more --mount flags. Translation from --mount
 		// strings to BindPath structs is checked in unit tests. The
@@ -484,7 +517,7 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 					e2e.WithCommand("exec"),
 					e2e.WithArgs(tt.args...),
 					e2e.PostRun(tt.postRun),
-					e2e.ExpectExit(tt.exit),
+					e2e.ExpectExit(tt.exit, tt.wantOutputs...),
 				)
 			}
 		})

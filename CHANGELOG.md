@@ -23,7 +23,9 @@
 - The `remote status` command will now print the username, realname, and email
   of the logged-in user, if available.
 - OCI mode now supports `--hostname` (requires UTS namespace, therefore this
-  flag will infer `--uts` if running in OCI mode).
+  flag will infer `--uts`).
+- OCI mode now supports `--scratch` (shorthand: `-S`) to mount a tmpfs scratch
+  directory in the container.
 
 ### Bug Fixes
 
