@@ -1155,10 +1155,11 @@ func (c actionTests) actionBinds(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		args    []string
-		postRun func(*testing.T)
-		exit    int
+		name        string
+		args        []string
+		wantOutputs []e2e.SingularityCmdResultOp
+		postRun     func(*testing.T)
+		exit        int
 	}{
 		{
 			name: "NonExistentSource",
@@ -1489,6 +1490,28 @@ func (c actionTests) actionBinds(t *testing.T) {
 			exit:    0,
 		},
 		{
+			name: "IsScratchTmpfs",
+			args: []string{
+				"--scratch", "/name-of-a-scratch",
+				sandbox,
+				"mount",
+			},
+			wantOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.RegexMatch, `\btmpfs on /name-of-a-scratch\b`),
+			},
+			exit: 0,
+		},
+		{
+			name: "BindOverScratch",
+			args: []string{
+				"--scratch", "/name-of-a-scratch",
+				"--bind", hostCanaryDir + ":/name-of-a-scratch",
+				sandbox,
+				"test", "-f", "/name-of-a-scratch/file",
+			},
+			exit: 0,
+		},
+		{
 			name: "ScratchTmpfsBind",
 			args: []string{
 				"--scratch", "/scratch",
@@ -1550,7 +1573,7 @@ func (c actionTests) actionBinds(t *testing.T) {
 					e2e.WithCommand("exec"),
 					e2e.WithArgs(tt.args...),
 					e2e.PostRun(tt.postRun),
-					e2e.ExpectExit(tt.exit),
+					e2e.ExpectExit(tt.exit, tt.wantOutputs...),
 				)
 			}
 		})
