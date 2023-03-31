@@ -92,7 +92,11 @@ func (c actionTests) actionExec(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(testdata)
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.RemoveAll(testdata)
+		}
+	})
 
 	testdataTmp := filepath.Join(testdata, "tmp")
 	if err := os.Mkdir(testdataTmp, 0o755); err != nil {
@@ -221,7 +225,10 @@ func (c actionTests) actionExec(t *testing.T) {
 		},
 		{
 			name: "Home",
-			argv: []string{"--home", testdata, c.env.ImagePath, "test", "-f", tmpfile.Name()},
+			argv: []string{"--home", "/myhomeloc", c.env.ImagePath, "env"},
+			wantOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.RegexMatch, `\bHOME=/myhomeloc\b`),
+			},
 			exit: 0,
 		},
 		{

@@ -18,7 +18,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/shell/interpreter"
-	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"golang.org/x/term"
 )
 
@@ -87,16 +86,9 @@ func getProcessArgs(imageSpec imgspecv1.Image, process string, args []string) []
 
 // getProcessCwd computes the Cwd that the container process should start in.
 // Currently this is the user's tmpfs home directory (see --containall).
+// Because this is called after mounts have already been computed, we can count on l.cfg.HomeDir containing the right value, incorporating any custom home dir overrides (i.e., --home).
 func (l *Launcher) getProcessCwd() (dir string, err error) {
-	if l.cfg.Fakeroot {
-		return "/root", nil
-	}
-
-	pw, err := user.CurrentOriginal()
-	if err != nil {
-		return "", err
-	}
-	return pw.Dir, nil
+	return l.cfg.HomeDir, nil
 }
 
 // getReverseUserMaps returns uid and gid mappings that re-map container uid to target
