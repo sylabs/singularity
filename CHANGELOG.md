@@ -6,6 +6,8 @@
 
 - When building RPM, we will now use `/var/lib/singularity` (rather than
   `/var/singularity`) to store local state files.
+- `--cwd` is now the preferred form of the flag for setting the container's
+  working directory, though `--pwd` is still supported for compatibility.
 
 ### New Features & Functionality
 
@@ -24,6 +26,7 @@
   of the logged-in user, if available.
 - OCI mode now supports `--hostname` (requires UTS namespace, therefore this
   flag will infer `--uts`).
+- Support `--pwd` in OCI mode.
 - OCI mode now supports `--scratch` (shorthand: `-S`) to mount a tmpfs scratch
   directory in the container.
 - OCI mode now supports `--home`. Supplying a single location (e.g.
