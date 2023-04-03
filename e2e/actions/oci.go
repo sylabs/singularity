@@ -681,6 +681,8 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 					// Generate the command to be executed in the container
 					// Start by printing all environment variables, to test using e2e.ContainMatch conditions later
 					execCmd := "/bin/env"
+
+					// Add commands to test the presence of mapped devices.
 					for _, d := range tt.DeviceNodes {
 						testFlag := "-f"
 						switch d.Type {
@@ -689,6 +691,8 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 						}
 						execCmd += fmt.Sprintf(" && test %s %s", testFlag, d.Path)
 					}
+
+					// Add commands to test the presence, and functioning, of mounts.
 					for i, m := range tt.Mounts {
 						// Add a separate teststring echo statement for each mount
 						execCmd += fmt.Sprintf(" && echo %s > %s/testfile_%d", testfileStrings[i], m.ContainerPath, i)
@@ -717,6 +721,7 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 						envExpects = append(envExpects, e2e.ExpectOutput(e2e.ContainMatch, e))
 					}
 
+					// Run the subtest.
 					c.env.RunSingularity(
 						t,
 						e2e.AsSubtest(tt.name),
