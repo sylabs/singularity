@@ -33,6 +33,13 @@
 - Support `--pwd` in OCI mode.
 - OCI mode now supports `--scratch` (shorthand: `-S`) to mount a tmpfs scratch
   directory in the container.
+- OCI mode now supports `--home`. Supplying a single location (e.g.
+  `--home /myhomedir`) will result in a new tmpfs directory being created at the
+  specified location inside the container, and that dir being set as the
+  in-container user's home dir. Supplying two locations separated by a colon
+  (e.g. `--home /home/user:/myhomedir`) will result in the first location on the
+  host being bind-mounted as the second location in-container, and set as
+  the in-container user's home dir.
 
 ### Bug Fixes
 
