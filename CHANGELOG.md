@@ -20,6 +20,10 @@
   OCI mode (`--oci`). Currently supports passing one or more (comma-separated)
   fully-qualified CDI device names, and those devices will then be made
   available inside the container.
+- Added `--cdi-dirs` flag to override the default search locations for CDI
+  json files, allowing, for example, users who don't have root access on their
+  host machine to nevertheless create CDI mappings (into containers run with
+  `--fakeroot`, for example).
 - The `remote status` command will now print the username, realname, and email
   of the logged-in user, if available.
 - OCI mode now supports `--hostname` (requires UTS namespace, therefore this
