@@ -89,6 +89,32 @@ func (c actionTests) actionOciExec(t *testing.T) {
 
 	imageRef := "oci-archive:" + c.env.OCIArchivePath
 
+	// Create a temp testfile
+	testdata, err := fs.MakeTmpDir(c.env.TestDir, "testdata", 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.RemoveAll(testdata)
+		}
+	})
+
+	testdataTmp := filepath.Join(testdata, "tmp")
+	if err := os.Mkdir(testdataTmp, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create a temp testfile
+	tmpfile, err := fs.MakeTmpFile(testdataTmp, "testSingularityExec.", 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tmpfile.Close()
+
+	basename := filepath.Base(tmpfile.Name())
+	homePath := filepath.Join("/home", basename)
+
 	tests := []struct {
 		name         string
 		argv         []string
@@ -134,6 +160,30 @@ func (c actionTests) actionOciExec(t *testing.T) {
 		{
 			name: "TouchHome",
 			argv: []string{imageRef, "/bin/sh", "-c", "touch $HOME"},
+			exit: 0,
+		},
+		{
+			name: "Home",
+			argv: []string{"--home", "/myhomeloc", imageRef, "sh", "-c", "env; mount"},
+			wantOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.RegexMatch, `\bHOME=/myhomeloc\b`),
+				e2e.ExpectOutput(e2e.RegexMatch, `\btmpfs on /myhomeloc\b`),
+			},
+			exit: 0,
+		},
+		{
+			name: "HomePath",
+			argv: []string{"--home", testdataTmp + ":/home", imageRef, "test", "-f", homePath},
+			exit: 0,
+		},
+		{
+			name: "HomeTmp",
+			argv: []string{"--home", "/tmp", imageRef, "true"},
+			exit: 0,
+		},
+		{
+			name: "HomeTmpExplicit",
+			argv: []string{"--home", "/tmp:/home", imageRef, "true"},
 			exit: 0,
 		},
 		{
@@ -317,10 +367,15 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 	canaryDirBind := hostCanaryDir + ":" + contCanaryDir
 	canaryDirMount := "type=bind,source=" + hostCanaryDir + ",destination=" + contCanaryDir
 
+	hostHomeDir := filepath.Join(workspace, "home")
+
 	createWorkspaceDirs := func(t *testing.T) {
 		e2e.Privileged(func(t *testing.T) {
 			if err := os.RemoveAll(hostCanaryDir); err != nil && !os.IsNotExist(err) {
 				t.Fatalf("failed to delete canary_dir: %s", err)
+			}
+			if err := os.RemoveAll(hostHomeDir); err != nil && !os.IsNotExist(err) {
+				t.Fatalf("failed to delete workspace home: %s", err)
 			}
 		})(t)
 
@@ -332,6 +387,9 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 		}
 		if err := os.Chmod(hostCanaryFile, 0o777); err != nil {
 			t.Fatalf("failed to apply permissions on canary_file: %s", err)
+		}
+		if err := fs.Mkdir(hostHomeDir, 0o777); err != nil {
+			t.Fatalf("failed to create workspace home directory: %s", err)
 		}
 	}
 
@@ -490,6 +548,28 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 				"test", "-f", "/scratch/dir/file",
 			},
 			exit: 0,
+		},
+		{
+			name: "CustomHomeOneToOne",
+			args: []string{
+				"--home", hostHomeDir + ":" + hostHomeDir,
+				"--bind", hostCanaryDir + ":" + filepath.Join(hostHomeDir, "canary121RO"),
+				imageRef,
+				"test", "-f", filepath.Join(hostHomeDir, "canary121RO/file"),
+			},
+			postRun: checkHostDir(filepath.Join(hostHomeDir, "canary121RO")),
+			exit:    0,
+		},
+		{
+			name: "CustomHomeBind",
+			args: []string{
+				"--home", hostHomeDir + ":/home/e2e",
+				"--bind", hostCanaryDir + ":/home/e2e/canaryRO",
+				imageRef,
+				"test", "-f", "/home/e2e/canaryRO/file",
+			},
+			postRun: checkHostDir(filepath.Join(hostHomeDir, "canaryRO")),
+			exit:    0,
 		},
 		// For the --mount variants we are really just verifying the CLI
 		// acceptance of one or more --mount flags. Translation from --mount
