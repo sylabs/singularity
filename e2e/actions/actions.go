@@ -215,6 +215,11 @@ func (c actionTests) actionExec(t *testing.T) {
 			exit: 0,
 		},
 		{
+			name: "CwdGood",
+			argv: []string{"--cwd", "/etc", c.env.ImagePath, "true"},
+			exit: 0,
+		},
+		{
 			name: "PwdGood",
 			argv: []string{"--pwd", "/etc", c.env.ImagePath, "true"},
 			exit: 0,
@@ -431,6 +436,13 @@ func (c actionTests) STDPipe(t *testing.T) {
 			command: "run",
 			argv:    []string{"--app", "foo", c.env.ImagePath},
 			output:  "RUNNING FOO",
+			exit:    0,
+		},
+		{
+			name:    "CwdPath",
+			command: "exec",
+			argv:    []string{"--cwd", "/etc", c.env.ImagePath, "pwd"},
+			output:  "/etc",
 			exit:    0,
 		},
 		{
@@ -1177,6 +1189,16 @@ func (c actionTests) actionBinds(t *testing.T) {
 			exit: 0,
 		},
 		{
+			name: "SimpleFileCwd",
+			args: []string{
+				"--bind", canaryFileBind,
+				"--cwd", contCanaryDir,
+				sandbox,
+				"test", "-f", "file",
+			},
+			exit: 0,
+		},
+		{
 			name: "SimpleFilePwd",
 			args: []string{
 				"--bind", canaryFileBind,
@@ -1192,6 +1214,16 @@ func (c actionTests) actionBinds(t *testing.T) {
 				"--bind", canaryDirBind,
 				sandbox,
 				"test", "-f", contCanaryFile,
+			},
+			exit: 0,
+		},
+		{
+			name: "SimpleDirCwd",
+			args: []string{
+				"--bind", canaryDirBind,
+				"--cwd", contCanaryDir,
+				sandbox,
+				"test", "-f", "file",
 			},
 			exit: 0,
 		},

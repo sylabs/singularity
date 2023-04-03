@@ -645,9 +645,9 @@ func (l *Launcher) setHome() error {
 	targetUID := l.engineConfig.GetTargetUID()
 	if l.cfg.CustomHome && targetUID != 0 {
 		if targetUID > 500 {
-			if pwd, err := user.GetPwUID(uint32(targetUID)); err == nil {
-				sylog.Debugf("Target UID requested, set home directory to %s", pwd.Dir)
-				l.cfg.HomeDir = pwd.Dir
+			if pu, err := user.GetPwUID(uint32(targetUID)); err == nil {
+				sylog.Debugf("Target UID requested, set home directory to %s", pu.Dir)
+				l.cfg.HomeDir = pu.Dir
 				l.engineConfig.SetCustomHome(true)
 			} else {
 				sylog.Verbosef("Home directory for UID %d not found, home won't be mounted", targetUID)
@@ -903,15 +903,15 @@ func (l *Launcher) setEnv(ctx context.Context, args []string) error {
 
 // setProcessCwd sets the container process working directory
 func (l *Launcher) setProcessCwd() {
-	if pwd, err := os.Getwd(); err == nil {
-		l.engineConfig.SetCwd(pwd)
-		if l.cfg.PwdPath != "" {
-			l.generator.SetProcessCwd(l.cfg.PwdPath)
+	if cwd, err := os.Getwd(); err == nil {
+		l.engineConfig.SetCwd(cwd)
+		if l.cfg.CwdPath != "" {
+			l.generator.SetProcessCwd(l.cfg.CwdPath)
 		} else {
 			if l.engineConfig.GetContain() {
 				l.generator.SetProcessCwd(l.engineConfig.GetHomeDest())
 			} else {
-				l.generator.SetProcessCwd(pwd)
+				l.generator.SetProcessCwd(cwd)
 			}
 		}
 	} else {
@@ -1203,11 +1203,11 @@ func (l *Launcher) starterInstance(name string, useSuid bool) error {
 	// Allow any plugins with callbacks to modify the assembled Config
 	runPluginCallbacks(cfg)
 
-	pwd, err := user.GetPwUID(uint32(os.Getuid()))
+	pu, err := user.GetPwUID(uint32(os.Getuid()))
 	if err != nil {
 		return fmt.Errorf("failed to retrieve user information for UID %d: %w", os.Getuid(), err)
 	}
-	procname, err := instance.ProcName(name, pwd.Name)
+	procname, err := instance.ProcName(name, pu.Name)
 	if err != nil {
 		return err
 	}

@@ -165,9 +165,6 @@ func checkOpts(lo launcher.Options) error {
 	if lo.ShellPath != "" {
 		badOpt = append(badOpt, "ShellPath")
 	}
-	if lo.PwdPath != "" {
-		badOpt = append(badOpt, "PwdPath")
-	}
 
 	if lo.Boot {
 		badOpt = append(badOpt, "Boot")
