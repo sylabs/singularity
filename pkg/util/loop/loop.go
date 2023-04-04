@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // Copyright (c) 2021, Genomics plc.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -16,6 +16,7 @@ import (
 
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/fs/lock"
+	"golang.org/x/sys/unix"
 )
 
 // Device describes a loop device
@@ -211,7 +212,8 @@ func (loop *Device) attachLoop(image *os.File, mode int, number *int) error {
 		// Try to open the loop device, creating the device node if needed
 		loopFd, err := openLoopDev(device, mode, true)
 		if err != nil {
-			sylog.Debugf("couldn't openLoopDev loop device %d: %v", device, err)
+			sylog.Debugf("couldn't open loop device %d: %v", device, err)
+			continue
 		}
 
 		_, _, esys := syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopFd), CmdSetFd, image.Fd())
@@ -245,39 +247,41 @@ func (loop *Device) attachLoop(image *os.File, mode int, number *int) error {
 	}
 
 	if transientError != nil {
-		return fmt.Errorf("%w: %v", errTransientAttach, err)
+		return fmt.Errorf("%w: %v", errTransientAttach, transientError)
 	}
 
 	return fmt.Errorf("no loop devices available")
 }
 
-// openLoopDev will attempt to open the specified loop device number, with specified mode.
-// If it is not present in /dev, and create is true, a mknod call will be used to create it.
-// Returns the fd for the opened device, or -1 if it was not possible to openLoopDev it.
+// openLoopDev will attempt to open the specified loop device number, with
+// specified mode. If it is not present in /dev, and create is true,
+// /dev/loop-control will be used to create it. Returns the fd for the opened
+// device, or -1 if it was not possible to open it.
 func openLoopDev(device, mode int, create bool) (loopFd int, err error) {
 	path := fmt.Sprintf("/dev/loop%d", device)
 	fi, err := os.Stat(path)
 
-	// If it doesn't exist, and create is false.. we're done..
-	if os.IsNotExist(err) && !create {
-		return -1, err
-	}
-	// If there's another stat error that's likely fatal.. we're done..
-	if err != nil && !os.IsNotExist(err) {
-		return -1, fmt.Errorf("could not stat %s: %w", path, err)
-	}
-
-	// Create the device node if we need to
 	if os.IsNotExist(err) {
-		dev := int((7 << 8) | (device & 0xff) | ((device & 0xfff00) << 12))
-		esys := syscall.Mknod(path, syscall.S_IFBLK|0o660, dev)
-		if errno, ok := esys.(syscall.Errno); ok {
-			if errno != syscall.EEXIST {
-				return -1, fmt.Errorf("could not mknod %s: %w", path, esys)
-			}
+		if !create {
+			return -1, err
 		}
-	} else if fi.Mode()&os.ModeDevice == 0 {
-		return -1, fmt.Errorf("%s is not a block device", path)
+
+		err := addLoopDev(device)
+		if err != nil && err != unix.EEXIST {
+			return -1, err
+		}
+
+	} else {
+
+		// If there's another stat error that's likely fatal.. we're done..
+		if err != nil {
+			return -1, fmt.Errorf("could not stat %s: %w", path, err)
+		}
+
+		if fi.Mode()&os.ModeDevice == 0 {
+			return -1, fmt.Errorf("%s is not a block device", path)
+		}
+
 	}
 
 	// Now open the loop device
@@ -286,6 +290,39 @@ func openLoopDev(device, mode int, create bool) (loopFd int, err error) {
 		return -1, fmt.Errorf("could not open %s: %w", path, err)
 	}
 	return loopFd, nil
+}
+
+// addLoopDev will create a loop device via /dev/loop-control.
+func addLoopDev(device int) error {
+	const loopControl = "/dev/loop-control"
+
+	lc, err := os.OpenFile(loopControl, os.O_RDWR, 0o600)
+	if err != nil {
+		return fmt.Errorf("while opening loop-control device: %w", err)
+	}
+	defer lc.Close()
+
+	sylog.Debugf("LOOP_CTL_ADD for loop device %d", device)
+	if err := unix.IoctlSetInt(int(lc.Fd()), unix.LOOP_CTL_ADD, device); err != nil {
+		return err
+	}
+
+	// Verify that the loop device was created where we can see it.
+	// If it's not there, try to create it with mknod. This might be necessary where
+	// we are running nested in a container, and the new /dev/loopXX didn't propagate
+	// through the /dev mount.
+	path := fmt.Sprintf("/dev/loop%d", device)
+	_, err = os.Stat(path)
+
+	if os.IsNotExist(err) {
+		sylog.Debugf("Expected loop device %d is not visible. Creating with mknod", device)
+		dev := int((7 << 8) | (device & 0xff) | ((device & 0xfff00) << 12))
+		if err := syscall.Mknod(path, syscall.S_IFBLK|0o660, dev); err != nil {
+			return err
+		}
+	}
+
+	return err
 }
 
 // AttachFromPath finds a free loop device, opens it, and stores file descriptor
