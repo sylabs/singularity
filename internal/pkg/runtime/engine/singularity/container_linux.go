@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -37,7 +37,6 @@ import (
 	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
-	"github.com/sylabs/singularity/pkg/util/loop"
 	"github.com/sylabs/singularity/pkg/util/namespaces"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
 	"github.com/sylabs/singularity/pkg/util/slice"
@@ -757,16 +756,16 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	}
 
 	attachFlag := os.O_RDWR
-	loopFlags := uint32(loop.FlagsAutoClear)
+	loopFlags := uint32(unix.LO_FLAGS_AUTOCLEAR)
 
 	if flags&syscall.MS_RDONLY == 1 {
-		loopFlags |= loop.FlagsReadOnly
+		loopFlags |= unix.LO_FLAGS_READ_ONLY
 		attachFlag = os.O_RDONLY
 	}
 
-	info := &loop.Info64{
+	info := &unix.LoopInfo64{
 		Offset:    offset,
-		SizeLimit: sizelimit,
+		Sizelimit: sizelimit,
 		Flags:     loopFlags,
 	}
 
