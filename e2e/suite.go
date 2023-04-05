@@ -226,9 +226,11 @@ func Run(t *testing.T) {
 	testenv.OrasTestImage = fmt.Sprintf("oras://%s/oras_test_sif:latest", testenv.TestRegistry)
 
 	t.Cleanup(func() {
-		os.Remove(imagePath)
-		os.Remove(ociArchivePath)
-		os.Remove(dockerArchivePath)
+		if !t.Failed() {
+			os.Remove(imagePath)
+			os.Remove(ociArchivePath)
+			os.Remove(dockerArchivePath)
+		}
 	})
 
 	suite := testhelper.NewSuite(t, testenv)
