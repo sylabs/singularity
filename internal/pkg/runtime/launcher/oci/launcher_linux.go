@@ -277,6 +277,11 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 		}
 		spec.Linux.UIDMappings = uidMap
 		spec.Linux.GIDMappings = gidMap
+		// Must add userns to the runc/crun applied config for the inner reverse uid/gid mapping to work.
+		spec.Linux.Namespaces = append(
+			spec.Linux.Namespaces,
+			specs.LinuxNamespace{Type: specs.UserNamespace},
+		)
 	}
 
 	u := specs.User{

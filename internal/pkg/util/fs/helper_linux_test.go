@@ -163,7 +163,16 @@ func TestIsOwner(t *testing.T) {
 	defer test.ResetPrivilege(t)
 
 	if IsOwner("/etc/passwd", 0) != true {
-		t.Errorf("IsOwner returns false for /etc/passwd owner")
+		t.Errorf("IsOwner returns false for /etc/passwd root ownership")
+	}
+}
+
+func TestIsGroup(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	if IsGroup("/etc/passwd", 0) != true {
+		t.Errorf("IsGroup returns false for /etc/passwd root group ownership")
 	}
 }
 
