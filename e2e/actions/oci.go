@@ -6,6 +6,7 @@
 package actions
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -473,6 +474,49 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 					e2e.ExpectExit(tt.exit),
 				)
 			}
+		})
+	}
+}
+
+// Check that both root via fakeroot and user without fakeroot are mapped to
+// uid/gid on host, by writing a file out to host and checking ownership.
+func (c actionTests) actionOciIDMaps(t *testing.T) {
+	e2e.EnsureOCIArchive(t, c.env)
+	imageRef := "oci-archive:" + c.env.OCIArchivePath
+
+	bindDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "usermap", "")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup(t)
+		}
+	})
+
+	for _, profile := range []e2e.Profile{e2e.OCIUserProfile, e2e.OCIFakerootProfile} {
+		t.Run(profile.String(), func(t *testing.T) {
+			cmdArgs := []string{
+				"-B", fmt.Sprintf("%s:/test", bindDir),
+				imageRef,
+				"/bin/touch", fmt.Sprintf("/test/%s", profile.String()),
+			}
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest(profile.String()),
+				e2e.WithProfile(profile),
+				e2e.WithCommand("exec"),
+				e2e.WithArgs(cmdArgs...),
+				e2e.ExpectExit(0),
+				e2e.PostRun(func(t *testing.T) {
+					fp := filepath.Join(bindDir, profile.String())
+					expectUID := profile.HostUser(t).UID
+					expectGID := profile.HostUser(t).GID
+					if !fs.IsOwner(fp, expectUID) {
+						t.Errorf("%s not owned by uid %d", fp, expectUID)
+					}
+					if !fs.IsGroup(fp, expectGID) {
+						t.Errorf("%s not owned by gid %d", fp, expectGID)
+					}
+				}),
+			)
 		})
 	}
 }
