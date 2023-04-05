@@ -120,10 +120,11 @@ func (c actionTests) actionOciExec(t *testing.T) {
 	homePath := filepath.Join("/home", basename)
 
 	tests := []struct {
-		name        string
-		argv        []string
-		exit        int
-		wantOutputs []e2e.SingularityCmdResultOp
+		name         string
+		argv         []string
+		exit         int
+		wantOutputs  []e2e.SingularityCmdResultOp
+		skipProfiles map[string]bool
 	}{
 		{
 			name: "NoCommand",
@@ -172,6 +173,10 @@ func (c actionTests) actionOciExec(t *testing.T) {
 				e2e.ExpectOutput(e2e.RegexMatch, `\bHOME=/myhomeloc\b`),
 				e2e.ExpectOutput(e2e.RegexMatch, `\btmpfs on /myhomeloc\b`),
 			},
+			skipProfiles: map[string]bool{
+				e2e.OCIRootProfile.String():     true,
+				e2e.OCIFakerootProfile.String(): true,
+			},
 			exit: 0,
 		},
 		{
@@ -204,28 +209,33 @@ func (c actionTests) actionOciExec(t *testing.T) {
 		},
 		{
 			name: "Pwd",
-			argv: []string{"--pwd", "/tmp", imageRef, "pwd"},
+			argv: []string{"--pwd", "/etc", imageRef, "pwd"},
 			exit: 0,
 			wantOutputs: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ExactMatch, "/tmp"),
+				e2e.ExpectOutput(e2e.ExactMatch, "/etc"),
 			},
 		},
 		{
 			name: "Cwd",
-			argv: []string{"--cwd", "/tmp", imageRef, "pwd"},
+			argv: []string{"--cwd", "/etc", imageRef, "pwd"},
 			exit: 0,
 			wantOutputs: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ExactMatch, "/tmp"),
+				e2e.ExpectOutput(e2e.ExactMatch, "/etc"),
 			},
 		},
 	}
 	for _, profile := range e2e.OCIProfiles {
 		t.Run(profile.String(), func(t *testing.T) {
 			for _, tt := range tests {
+				skip, ok := tt.skipProfiles[profile.String()]
+				if ok && skip {
+					continue
+				}
+
 				c.env.RunSingularity(
 					t,
 					e2e.AsSubtest(tt.name),
-					e2e.WithProfile(e2e.UserProfile),
+					e2e.WithProfile(profile),
 					e2e.WithCommand("exec"),
 					e2e.WithDir("/tmp"),
 					e2e.WithArgs(tt.argv...),
@@ -356,7 +366,11 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 	imageRef := "oci-archive:" + c.env.OCIArchivePath
 
 	workspace, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "bind-workspace-", "")
-	defer e2e.Privileged(cleanup)
+	t.Cleanup(func() {
+		if !t.Failed() {
+			e2e.Privileged(cleanup)
+		}
+	})
 
 	contCanaryDir := "/canary"
 	hostCanaryDir := filepath.Join(workspace, "canary")
