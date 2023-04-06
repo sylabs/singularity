@@ -173,10 +173,6 @@ func (c actionTests) actionOciExec(t *testing.T) {
 				e2e.ExpectOutput(e2e.RegexMatch, `\bHOME=/myhomeloc\b`),
 				e2e.ExpectOutput(e2e.RegexMatch, `\btmpfs on /myhomeloc\b`),
 			},
-			skipProfiles: map[string]bool{
-				e2e.OCIRootProfile.String():     true,
-				e2e.OCIFakerootProfile.String(): true,
-			},
 			exit: 0,
 		},
 		{
