@@ -347,6 +347,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/prometheus/procfs/blob/master/LICENSE>
 
+## github.com/revel/log15
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/revel/log15/blob/master/LICENSE>
+
 ## github.com/rootless-containers/proto/go-proto
 
 **License:** Apache-2.0
@@ -448,6 +454,12 @@ The dependencies and their licenses are as follows:
 **License:** Apache-2.0
 
 **Project URL:** <https://gopkg.in/square/go-jose.v2>
+
+## gopkg.in/stack.v0
+
+**License:** Apache-2.0
+
+**Project URL:** <https://gopkg.in/stack.v0>
 
 ## gopkg.in/yaml.v2
 
@@ -689,6 +701,12 @@ The dependencies and their licenses are as follows:
 
 **Project URL:** <https://golang.org/x/text>
 
+## golang.org/x/tools
+
+**License:** BSD-3-Clause
+
+**Project URL:** <https://golang.org/x/tools>
+
 ## google.golang.org/protobuf
 
 **License:** BSD-3-Clause
@@ -827,6 +845,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/go-log/log/blob/master/LICENSE>
 
+## github.com/inconshreveable/log15/term
+
+**License:** MIT
+
+**License URL:** <https://github.com/inconshreveable/log15/blob/master/term/LICENSE>
+
 ## github.com/josharian/intern
 
 **License:** MIT
@@ -899,6 +923,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/pelletier/go-toml/blob/master/v2/LICENSE>
 
+## github.com/revel/cmd
+
+**License:** MIT
+
+**License URL:** <https://github.com/revel/cmd/blob/master/LICENSE>
+
 ## github.com/rivo/uniseg
 
 **License:** MIT
@@ -929,6 +959,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/sirupsen/logrus/blob/master/LICENSE>
 
+## github.com/stat0s2p/etcpwdparse
+
+**License:** MIT
+
+**License URL:** <https://github.com/stat0s2p/etcpwdparse/blob/master/LICENSE.md>
+
 ## github.com/titanous/rocacheck
 
 **License:** MIT
@@ -952,6 +988,12 @@ The dependencies and their licenses are as follows:
 **License:** MIT
 
 **Project URL:** <https://go.mozilla.org/pkcs7>
+
+## gopkg.in/natefinch/lumberjack.v2
+
+**License:** MIT
+
+**Project URL:** <https://gopkg.in/natefinch/lumberjack.v2>
 
 ## gopkg.in/yaml.v3
 
@@ -1000,6 +1042,12 @@ The dependencies and their licenses are as follows:
 **License:** Unknown
 
 **Project URL:** <https://github.com/garyburd/redigo/redis>
+
+## github.com/revel/config
+
+**License:** Unknown
+
+**Project URL:** <https://github.com/revel/config>
 
 ## github.com/vbauerster/mpb
 

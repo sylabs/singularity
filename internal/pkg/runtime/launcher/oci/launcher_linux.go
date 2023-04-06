@@ -313,12 +313,15 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 		return err
 	}
 
-	// If we are entering as root, or a USER defined in the container, then passwd/group
-	// information should be present already.
-	if targetUID == 0 || containerUser {
+	// If the container specifies a USER, we do not proceed to invoke l.updatePasswdGroup(). All we do is test for a conflicting --home option (in which case, we issue an error) and return
+	if containerUser {
+		if l.cfg.CustomHome {
+			return fmt.Errorf("a custom --home is not currently supported when running containers that declare a USER")
+		}
+
 		return nil
 	}
-	// Otherwise, add to the passwd and group files in the container.
+
 	if err := l.updatePasswdGroup(tools.RootFs(b.Path()).Path(), targetUID, targetGID); err != nil {
 		return err
 	}
@@ -327,10 +330,6 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 }
 
 func (l *Launcher) updatePasswdGroup(rootfs string, uid, gid uint32) error {
-	if os.Getuid() == 0 || l.cfg.Fakeroot {
-		return nil
-	}
-
 	containerPasswd := filepath.Join(rootfs, "etc", "passwd")
 	containerGroup := filepath.Join(rootfs, "etc", "group")
 

@@ -7,7 +7,10 @@ package files
 
 import (
 	"fmt"
-	"os"
+	"strings"
+
+	"github.com/revel/cmd/utils"
+	pwd "github.com/stat0s2p/etcpwdparse"
 
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
@@ -23,7 +26,7 @@ func Passwd(path string, home string, uid int) (content []byte, err error) {
 	}
 
 	sylog.Verbosef("Creating passwd content")
-	content, err = os.ReadFile(path)
+	lines, err := utils.ReadLines(path)
 	if err != nil {
 		return content, fmt.Errorf("failed to read passwd file content in container: %s", err)
 	}
@@ -39,12 +42,26 @@ func Passwd(path string, home string, uid int) (content []byte, err error) {
 	}
 	userInfo := fmt.Sprintf("%s:x:%d:%d:%s:%s:%s\n", pwInfo.Name, pwInfo.UID, pwInfo.GID, pwInfo.Gecos, homeDir, pwInfo.Shell)
 
-	if len(content) > 0 && content[len(content)-1] != '\n' {
-		content = append(content, '\n')
+	sylog.Verbosef("Creating template passwd file and injecting user data: %s", path)
+	userExists := false
+	for i, line := range lines {
+		if line == "" {
+			continue
+		}
+
+		entry, err := pwd.ParsePasswdLine(line)
+		if err != nil {
+			return content, fmt.Errorf("failed to parse this /etc/passwd line in container: %#v (%s)", line, err)
+		}
+		if entry.Uid() == uid {
+			userExists = true
+			lines[i] = userInfo
+			break
+		}
+	}
+	if !userExists {
+		lines = append(lines, userInfo)
 	}
 
-	sylog.Verbosef("Creating template passwd file and appending user data: %s", path)
-	content = append(content, []byte(userInfo)...)
-
-	return content, nil
+	return []byte(strings.Join(lines, "\n")), nil
 }
