@@ -88,13 +88,22 @@ func IsLink(name string) bool {
 	return info.Mode()&os.ModeSymlink != 0
 }
 
-// IsOwner check if name component is owned by user identified with uid.
+// IsOwner checks if named file is owned by user identified with uid.
 func IsOwner(name string, uid uint32) bool {
 	info, err := os.Stat(name)
 	if err != nil {
 		return false
 	}
 	return info.Sys().(*syscall.Stat_t).Uid == uid
+}
+
+// IsGroup checks if named file is owned by group identified with gid.
+func IsGroup(name string, gid uint32) bool {
+	info, err := os.Stat(name)
+	if err != nil {
+		return false
+	}
+	return info.Sys().(*syscall.Stat_t).Gid == gid
 }
 
 // IsExec check if name component has executable bit permission set.

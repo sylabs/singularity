@@ -2538,5 +2538,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"ociNetwork": c.actionOciNetwork, // singularity exec --oci --net
 		"ociBinds":   c.actionOciBinds,   // singularity exec --oci --bind / --mount
 		"ociCdi":     c.actionOciCdi,     // singularity exec --oci --cdi
+		"ociIDMaps":  c.actionOciIDMaps,  // check uid/gid mapping on host for --oci as user / --fakeroot
 	}
 }
