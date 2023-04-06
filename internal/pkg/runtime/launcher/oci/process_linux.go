@@ -88,6 +88,10 @@ func getProcessArgs(imageSpec imgspecv1.Image, process string, args []string) []
 // Currently this is the user's tmpfs home directory (see --containall).
 // Because this is called after mounts have already been computed, we can count on l.cfg.HomeDir containing the right value, incorporating any custom home dir overrides (i.e., --home).
 func (l *Launcher) getProcessCwd() (dir string, err error) {
+	if len(l.cfg.CwdPath) > 0 {
+		return l.cfg.CwdPath, nil
+	}
+
 	return l.cfg.HomeDir, nil
 }
 
