@@ -8,6 +8,13 @@
   `/var/singularity`) to store local state files.
 - `--cwd` is now the preferred form of the flag for setting the container's
   working directory, though `--pwd` is still supported for compatibility.
+- The way --home is handled when running as root (e.g. `sudo singularity`) or
+  with `--fakeroot` has changed. Previously, we were only modifying the `HOME`
+  environment variable in these cases, while leaving the container's
+  `/etc/passwd` file unchanged (with its homedir field pointing to `/root`,
+  regardless of the value passed to `--home`). With this change, both value of
+  `HOME` and the contents of `/etc/passwd` in the container will reflect the
+  value passed to `--home`.
 
 ### New Features & Functionality
 
