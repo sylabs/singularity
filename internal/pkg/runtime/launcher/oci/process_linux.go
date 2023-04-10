@@ -47,6 +47,9 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, imag
 	// --env flag can override --env-file and SINGULARITYENV_
 	rtEnv = mergeMap(rtEnv, l.cfg.Env)
 
+	// Ensure HOME points to the required home directory, even if it is a custom one.
+	rtEnv["HOME"] = l.cfg.HomeDir
+
 	cwd, err := l.getProcessCwd()
 	if err != nil {
 		return nil, err
