@@ -271,7 +271,7 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 	}
 
 	if targetUID != 0 && currentUID != 0 {
-		uidMap, gidMap, err := l.getReverseUserMaps(targetUID, targetGID)
+		uidMap, gidMap, err := getReverseUserMaps(currentUID, targetUID, targetGID)
 		if err != nil {
 			return err
 		}
