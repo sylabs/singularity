@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -21,6 +21,7 @@ import (
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/fs/lock"
 	"github.com/sylabs/singularity/pkg/util/loop"
+	"golang.org/x/sys/unix"
 )
 
 // Device describes a crypt device
@@ -43,10 +44,10 @@ func createLoop(path string, offset, size uint64) (string, error) {
 	loopDev := &loop.Device{
 		MaxLoopDevices: loop.GetMaxLoopDevices(),
 		Shared:         true,
-		Info: &loop.Info64{
-			SizeLimit: size,
+		Info: &unix.LoopInfo64{
+			Sizelimit: size,
 			Offset:    offset,
-			Flags:     loop.FlagsAutoClear,
+			Flags:     unix.LO_FLAGS_AUTOCLEAR,
 		},
 	}
 	idx := 0

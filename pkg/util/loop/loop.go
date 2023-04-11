@@ -12,7 +12,6 @@ import (
 	"os"
 	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/fs/lock"
@@ -23,61 +22,8 @@ import (
 type Device struct {
 	MaxLoopDevices int
 	Shared         bool
-	Info           *Info64
+	Info           *unix.LoopInfo64
 	fd             *int
-}
-
-// Loop device flags values
-const (
-	FlagsReadOnly  = 1
-	FlagsAutoClear = 4
-	FlagsPartScan  = 8
-	FlagsDirectIO  = 16
-)
-
-// Loop device encryption types
-const (
-	CryptNone      = 0
-	CryptXor       = 1
-	CryptDes       = 2
-	CryptFish2     = 3
-	CryptBlow      = 4
-	CryptCast128   = 5
-	CryptIdea      = 6
-	CryptDummy     = 9
-	CryptSkipJack  = 10
-	CryptCryptoAPI = 18
-	CryptMax       = 20
-)
-
-// Loop device IOCTL commands
-const (
-	CmdSetFd       = 0x4C00
-	CmdClrFd       = 0x4C01
-	CmdSetStatus   = 0x4C02
-	CmdGetStatus   = 0x4C03
-	CmdSetStatus64 = 0x4C04
-	CmdGetStatus64 = 0x4C05
-	CmdChangeFd    = 0x4C06
-	CmdSetCapacity = 0x4C07
-	CmdSetDirectIO = 0x4C08
-)
-
-// Info64 contains information about a loop device.
-type Info64 struct {
-	Device         uint64
-	Inode          uint64
-	Rdevice        uint64
-	Offset         uint64
-	SizeLimit      uint64
-	Number         uint32
-	EncryptType    uint32
-	EncryptKeySize uint32
-	Flags          uint32
-	FileName       [64]byte
-	CryptName      [64]byte
-	EncryptKey     [32]byte
-	Init           [2]uint64
 }
 
 // errTransientAttach is used to indicate hitting errors within loop device setup that are transient.
@@ -172,8 +118,8 @@ func (loop *Device) shareLoop(imageIno, imageDev uint64, mode int, number *int) 
 		}
 
 		if status.Inode == imageIno && status.Device == imageDev &&
-			status.Flags&FlagsReadOnly == loop.Info.Flags&FlagsReadOnly &&
-			status.Offset == loop.Info.Offset && status.SizeLimit == loop.Info.SizeLimit {
+			status.Flags&unix.LO_FLAGS_READ_ONLY == loop.Info.Flags&unix.LO_FLAGS_READ_ONLY &&
+			status.Offset == loop.Info.Offset && status.Sizelimit == loop.Info.Sizelimit {
 			// keep the reference to the loop device file descriptor to
 			// be sure that the loop device won't be released between this
 			// check and the mount of the filesystem
@@ -216,9 +162,8 @@ func (loop *Device) attachLoop(image *os.File, mode int, number *int) error {
 			continue
 		}
 
-		_, _, esys := syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopFd), CmdSetFd, image.Fd())
-		// On error, we'll move on to try the next loop device
-		if esys != 0 {
+		if err := unix.IoctlSetInt(loopFd, unix.LOOP_SET_FD, int(image.Fd())); err != nil {
+			// On error, we'll move on to try the next loop device
 			syscall.Close(loopFd)
 			continue
 		}
@@ -228,17 +173,17 @@ func (loop *Device) attachLoop(image *os.File, mode int, number *int) error {
 			return fmt.Errorf("failed to set close-on-exec on loop device %s: %s", path, err.Error())
 		}
 
-		if _, _, err := syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopFd), CmdSetStatus64, uintptr(unsafe.Pointer(loop.Info))); err != 0 {
+		if err := unix.IoctlLoopSetStatus64(loopFd, loop.Info); err != nil {
 			// If we hit an error then dissociate our image from the loop device
-			syscall.Syscall(syscall.SYS_IOCTL, uintptr(loopFd), CmdClrFd, 0)
+			unix.IoctlSetInt(loopFd, unix.LOOP_CLR_FD, 0)
 			// EAGAIN and EBUSY will likely clear themselves... so track we hit one and keep trying
-			if err == syscall.EAGAIN || err == syscall.EBUSY {
+			if err == unix.EAGAIN || err == unix.EBUSY {
 				syscall.Close(loopFd)
 				sylog.Debugf("transient error %v for loop device %d, continuing", err, device)
 				transientError = err
 				continue
 			}
-			return fmt.Errorf("failed to set loop flags on loop device: %s", syscall.Errno(err))
+			return fmt.Errorf("failed to set loop flags on loop device: %s", err)
 		}
 
 		loop.fd = new(int)
@@ -344,17 +289,16 @@ func (loop *Device) Close() error {
 }
 
 // GetStatusFromFd gets info status about an opened loop device
-func GetStatusFromFd(fd uintptr) (*Info64, error) {
-	info := &Info64{}
-	_, _, err := syscall.Syscall(syscall.SYS_IOCTL, fd, CmdGetStatus64, uintptr(unsafe.Pointer(info)))
-	if err != syscall.ENXIO && err != 0 {
-		return nil, fmt.Errorf("failed to get loop flags for loop device: %s", err.Error())
+func GetStatusFromFd(fd uintptr) (*unix.LoopInfo64, error) {
+	info, err := unix.IoctlLoopGetStatus64(int(fd))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get loop flags for loop device: %s", err)
 	}
 	return info, nil
 }
 
 // GetStatusFromPath gets info status about a loop device from path
-func GetStatusFromPath(path string) (*Info64, error) {
+func GetStatusFromPath(path string) (*unix.LoopInfo64, error) {
 	loop, err := os.Open(path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open loop device %s: %s", path, err)

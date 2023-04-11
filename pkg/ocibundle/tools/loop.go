@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/pkg/util/loop"
+	"golang.org/x/sys/unix"
 )
 
 // CreateLoop associates a file to loop device and returns
@@ -19,10 +20,10 @@ func CreateLoop(file *os.File, offset, size uint64) (string, io.Closer, error) {
 	loopDev := &loop.Device{
 		MaxLoopDevices: loop.GetMaxLoopDevices(),
 		Shared:         true,
-		Info: &loop.Info64{
-			SizeLimit: size,
+		Info: &unix.LoopInfo64{
+			Sizelimit: size,
 			Offset:    offset,
-			Flags:     loop.FlagsAutoClear | loop.FlagsReadOnly,
+			Flags:     unix.LO_FLAGS_AUTOCLEAR | unix.LO_FLAGS_READ_ONLY,
 		},
 	}
 	idx := 0
