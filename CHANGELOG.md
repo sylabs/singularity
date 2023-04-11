@@ -12,6 +12,8 @@
 - Always request inner userns in `--oci` mode without `--fakeroot`, so that
   inner id mapping is applied correctly.
 - Use correct target uid/gid for inner id mappings in `--oci` mode.
+- Avoid `runc` cgroup creation error when using `--oci` from a root-owned cgroup
+  (e.g. ssh login session scope).
 
 ## 3.11.1 \[2023-03-14\]
 
