@@ -103,11 +103,9 @@ func (l *Launcher) getProcessCwd() (dir string, err error) {
 // userns from which the OCI runtime is launched.
 //
 //	e.g. host 1001 -> fakeroot userns 0 -> container targetUID
-func (l *Launcher) getReverseUserMaps(targetUID, targetGID uint32) (uidMap, gidMap []specs.LinuxIDMapping, err error) {
-	uid := uint32(os.Getuid())
-	gid := uint32(os.Getgid())
+func getReverseUserMaps(hostUID, targetUID, targetGID uint32) (uidMap, gidMap []specs.LinuxIDMapping, err error) {
 	// Get user's configured subuid & subgid ranges
-	subuidRange, err := fakeroot.GetIDRange(fakeroot.SubUIDFile, uid)
+	subuidRange, err := fakeroot.GetIDRange(fakeroot.SubUIDFile, hostUID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -115,7 +113,7 @@ func (l *Launcher) getReverseUserMaps(targetUID, targetGID uint32) (uidMap, gidM
 	if subuidRange.Size < 65536 {
 		return nil, nil, fmt.Errorf("subuid range size (%d) must be at least 65536", subuidRange.Size)
 	}
-	subgidRange, err := fakeroot.GetIDRange(fakeroot.SubGIDFile, uid)
+	subgidRange, err := fakeroot.GetIDRange(fakeroot.SubGIDFile, hostUID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -123,22 +121,27 @@ func (l *Launcher) getReverseUserMaps(targetUID, targetGID uint32) (uidMap, gidM
 		return nil, nil, fmt.Errorf("subuid range size (%d) must be at least 65536", subgidRange.Size)
 	}
 
-	if uid < subuidRange.Size {
+	uidMap, gidMap = reverseMapByRange(targetUID, targetGID, *subuidRange, *subgidRange)
+	return uidMap, gidMap, nil
+}
+
+func reverseMapByRange(targetUID, targetGID uint32, subuidRange, subgidRange specs.LinuxIDMapping) (uidMap, gidMap []specs.LinuxIDMapping) {
+	if targetUID < subuidRange.Size {
 		uidMap = []specs.LinuxIDMapping{
 			{
 				ContainerID: 0,
 				HostID:      1,
-				Size:        uid,
+				Size:        targetUID,
 			},
 			{
-				ContainerID: uid,
+				ContainerID: targetUID,
 				HostID:      0,
 				Size:        1,
 			},
 			{
-				ContainerID: uid + 1,
-				HostID:      uid + 1,
-				Size:        subuidRange.Size - uid,
+				ContainerID: targetUID + 1,
+				HostID:      targetUID + 1,
+				Size:        subuidRange.Size - targetUID,
 			},
 		}
 	} else {
@@ -149,29 +152,29 @@ func (l *Launcher) getReverseUserMaps(targetUID, targetGID uint32) (uidMap, gidM
 				Size:        subuidRange.Size,
 			},
 			{
-				ContainerID: uid,
+				ContainerID: targetUID,
 				HostID:      0,
 				Size:        1,
 			},
 		}
 	}
 
-	if gid < subgidRange.Size {
+	if targetGID < subgidRange.Size {
 		gidMap = []specs.LinuxIDMapping{
 			{
 				ContainerID: 0,
 				HostID:      1,
-				Size:        gid,
+				Size:        targetGID,
 			},
 			{
-				ContainerID: gid,
+				ContainerID: targetGID,
 				HostID:      0,
 				Size:        1,
 			},
 			{
-				ContainerID: gid + 1,
-				HostID:      gid + 1,
-				Size:        subgidRange.Size - gid,
+				ContainerID: targetGID + 1,
+				HostID:      targetGID + 1,
+				Size:        subgidRange.Size - targetGID,
 			},
 		}
 	} else {
@@ -182,14 +185,14 @@ func (l *Launcher) getReverseUserMaps(targetUID, targetGID uint32) (uidMap, gidM
 				Size:        subgidRange.Size,
 			},
 			{
-				ContainerID: gid,
+				ContainerID: targetGID,
 				HostID:      0,
 				Size:        1,
 			},
 		}
 	}
 
-	return uidMap, gidMap, nil
+	return uidMap, gidMap
 }
 
 // getProcessEnv combines the image config ENV with the ENV requested at runtime.

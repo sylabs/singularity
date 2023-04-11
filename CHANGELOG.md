@@ -50,6 +50,7 @@
   inner id mapping is applied correctly.
 - Use `/dev/loop-control` for loop device creation, to avoid issues with recent
   kernel patch where `max_loop` is not set.
+- Use correct target uid/gid for inner id mappings in `--oci` mode.
 
 ## 3.11.1 \[2023-03-14\]
 
