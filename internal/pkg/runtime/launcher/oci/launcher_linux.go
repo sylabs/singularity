@@ -358,6 +358,11 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		return fmt.Errorf("launcher SysContext must be set for OCI image handling")
 	}
 
+	// If we need to, enter a new cgroup to workaround an issue with crun container cgroup creation (#1538).
+	if err := l.crunNestCgroup(); err != nil {
+		return fmt.Errorf("while applying crun cgroup workaround: %w", err)
+	}
+
 	bundleDir, err := os.MkdirTemp("", "oci-bundle")
 	if err != nil {
 		return nil
@@ -437,6 +442,38 @@ func (l *Launcher) getCgroup() (path string, resources *specs.LinuxResources, er
 		return "", nil, err
 	}
 	return path, resources, nil
+}
+
+// crunNestCgroup will check whether we are using crun, and enter a cgroup if running as a non-root user.
+// This is required to satisfy a common user-owned ancestor cgroup requirement on e.g. bare ssh logins.
+// See: https://github.com/sylabs/singularity/issues/1538
+func (l *Launcher) crunNestCgroup() error {
+	r, err := runtime()
+	if err != nil {
+		return err
+	}
+
+	// No workaround required for runc.
+	if filepath.Base(r) == "runc" {
+		return nil
+	}
+
+	// No workaround required if we are run as root.
+	if os.Getuid() == 0 {
+		return nil
+	}
+
+	// We are running crun as a user. Enter a cgroup now.
+	pid := os.Getpid()
+	sylog.Debugf("crun workaround - adding process %d to sibling cgroup", pid)
+	manager, err := cgroups.NewManagerWithSpec(&specs.LinuxResources{}, pid, "", l.singularityConf.SystemdCgroups)
+	if err != nil {
+		return fmt.Errorf("couldn't create cgroup manager: %w", err)
+	}
+	cgPath, _ := manager.GetCgroupRelPath()
+	sylog.Debugf("In sibling cgroup: %s", cgPath)
+
+	return nil
 }
 
 func mergeMap(a map[string]string, b map[string]string) map[string]string {
