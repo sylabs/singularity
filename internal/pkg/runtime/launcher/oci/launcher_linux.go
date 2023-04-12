@@ -12,6 +12,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -123,9 +124,6 @@ func checkOpts(lo launcher.Options) error {
 
 	if len(lo.NetworkArgs) > 0 {
 		badOpt = append(badOpt, "NetworkArgs")
-	}
-	if lo.DNS != "" {
-		badOpt = append(badOpt, "DNS")
 	}
 
 	if lo.AddCaps != "" {
@@ -308,6 +306,11 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 		return err
 	}
 
+	// Prepare DNS settings for the container.
+	if err := l.prepareResolvConf(tools.RootFs(b.Path()).Path()); err != nil {
+		return err
+	}
+
 	// If we are entering as root, or a USER defined in the container, then passwd/group
 	// information should be present already.
 	if targetUID == 0 || containerUser {
@@ -317,6 +320,7 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 	if err := l.updatePasswdGroup(tools.RootFs(b.Path()).Path(), targetUID, targetGID); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -342,6 +346,36 @@ func (l *Launcher) updatePasswdGroup(rootfs string, uid, gid uint32) error {
 		sylog.Warningf("%s", err)
 	} else if err := os.WriteFile(containerGroup, content, 0o755); err != nil {
 		return fmt.Errorf("while writing passwd file: %w", err)
+	}
+
+	return nil
+}
+
+func (l *Launcher) prepareResolvConf(rootfs string) error {
+	hostResolvConfPath := "/etc/resolv.conf"
+	containerResolvConfPath := filepath.Join(rootfs, "etc", "resolv.conf")
+
+	var resolvConfData []byte
+	var err error
+	if len(l.cfg.DNS) > 0 {
+		dns := strings.Replace(l.cfg.DNS, " ", "", -1)
+		ips := strings.Split(dns, ",")
+		for _, ip := range ips {
+			if net.ParseIP(ip) == nil {
+				return fmt.Errorf("DNS nameserver %v is not a valid IP address", ip)
+			}
+			line := fmt.Sprintf("nameserver %s\n", ip)
+			resolvConfData = append(resolvConfData, line...)
+		}
+	} else {
+		resolvConfData, err = os.ReadFile(hostResolvConfPath)
+		if err != nil {
+			return fmt.Errorf("could not read host's resolv.conf file: %w", err)
+		}
+	}
+
+	if err := os.WriteFile(containerResolvConfPath, resolvConfData, 0o755); err != nil {
+		return fmt.Errorf("while writing container's resolv.conf file: %v", err)
 	}
 
 	return nil
