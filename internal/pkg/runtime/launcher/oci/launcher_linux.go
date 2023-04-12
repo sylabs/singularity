@@ -353,6 +353,7 @@ func (l *Launcher) updatePasswdGroup(rootfs string, uid, gid uint32) error {
 
 func (l *Launcher) prepareResolvConf(rootfs string) error {
 	hostResolvConfPath := "/etc/resolv.conf"
+	containerEtc := filepath.Join(rootfs, "etc")
 	containerResolvConfPath := filepath.Join(rootfs, "etc", "resolv.conf")
 
 	var resolvConfData []byte
@@ -372,6 +373,12 @@ func (l *Launcher) prepareResolvConf(rootfs string) error {
 		if err != nil {
 			return fmt.Errorf("could not read host's resolv.conf file: %w", err)
 		}
+	}
+
+	stat, err := os.Stat(containerEtc)
+	if os.IsNotExist(err) || !stat.IsDir() {
+		sylog.Warningf("container does not contain an /etc directory; skipping resolve.conf configuration")
+		return nil
 	}
 
 	if err := os.WriteFile(containerResolvConfPath, resolvConfData, 0o755); err != nil {
