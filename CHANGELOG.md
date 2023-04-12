@@ -16,6 +16,10 @@
   (e.g. `--home /home/user:/myhomedir`) will result in the first location on the
   host being bind-mounted as the second location in-container, and set as
   the in-container user's home dir.
+- OCI mode now handles `--dns` and `resolv.conf` on par with native mode: the
+  `--dns` flag can be used to pass a comma-separated list of DNS servers that
+  will be used in the container; if this flag is not used, the container will
+  use the same `resolv.conf` settings as the host.
 
 ### Bug Fixes
 
