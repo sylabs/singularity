@@ -18,6 +18,9 @@
 - Bind mounts are now performed in the order of their occurrence on the command
   line, or within the value of the `SINGULARITY_BIND` environment variable.
   (Previously, image-mounts were always performed first, regardless of order.)
+- Add `xino=on` mount option for writable kernel overlay mount points to fix
+  inode numbers consistency after kernel cache flush (not applicable to
+  fuse-overlayfs).
 
 ### New Features & Functionality
 
