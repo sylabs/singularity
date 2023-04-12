@@ -7,6 +7,7 @@ package docker
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -194,5 +195,64 @@ func (c ctx) issue1286(t *testing.T) {
 				e2e.ExpectOutput(e2e.ContainMatch, "Hello from Docker!"),
 			),
 		)
+	}
+}
+
+// https://github.com/sylabs/singularity/issues/1528
+// Check that host's TERM value gets passed to OCI container.
+func (c ctx) issue1528(t *testing.T) {
+	e2e.EnsureOCIArchive(t, c.env)
+
+	imageRef := "oci-archive:" + c.env.OCIArchivePath
+
+	_, wasHostTermSet := os.LookupEnv("TERM")
+	if !wasHostTermSet {
+		if err := os.Setenv("TERM", "xterm"); err != nil {
+			t.Errorf("could not set TERM environment variable on host")
+		}
+		defer os.Unsetenv("TERM")
+	}
+
+	singEnvTermPrevious, wasHostSingEnvTermSet := os.LookupEnv("SINGULARITYENV_TERM")
+	if wasHostSingEnvTermSet {
+		if err := os.Unsetenv("SINGULARITYENV_TERM"); err != nil {
+			t.Errorf("could not unset SINGULARITYENV_TERM environment variable on host")
+		}
+		defer os.Setenv("SINGULARITYENV_TERM", singEnvTermPrevious)
+	} else {
+		defer os.Unsetenv("SINGULARITYENV_TERM")
+	}
+
+	envTerm := os.Getenv("TERM")
+	wantTermString := fmt.Sprintf("TERM=%s\n", envTerm)
+	for _, profile := range e2e.OCIProfiles {
+		t.Run(profile.String(), func(t *testing.T) {
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest("issue1528"),
+				e2e.WithProfile(profile),
+				e2e.WithCommand("exec"),
+				e2e.WithArgs(imageRef, "env"),
+				e2e.ExpectExit(0, e2e.ExpectOutput(e2e.ContainMatch, wantTermString)),
+			)
+		})
+	}
+
+	singEnvTerm := envTerm + "testsuffix"
+	if err := os.Setenv("SINGULARITYENV_TERM", singEnvTerm); err != nil {
+		t.Errorf("could not set SINGULARITYENV_TERM environment variable on host")
+	}
+	wantTermString = fmt.Sprintf("TERM=%s\n", singEnvTerm)
+	for _, profile := range e2e.OCIProfiles {
+		t.Run(profile.String(), func(t *testing.T) {
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest("issue1528override"),
+				e2e.WithProfile(profile),
+				e2e.WithCommand("exec"),
+				e2e.WithArgs(imageRef, "env"),
+				e2e.ExpectExit(0, e2e.ExpectOutput(e2e.ContainMatch, wantTermString)),
+			)
+		})
 	}
 }
