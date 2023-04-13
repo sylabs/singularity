@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
 func TestSingularityEnvMap(t *testing.T) {
@@ -366,6 +367,65 @@ func TestGetProcessEnv(t *testing.T) {
 
 			if !reflect.DeepEqual(env, tt.wantEnv) {
 				t.Errorf("want: %v, got: %v", tt.wantEnv, env)
+			}
+		})
+	}
+}
+
+func TestLauncher_reverseMapByRange(t *testing.T) {
+	tests := []struct {
+		name       string
+		targetUID  uint32
+		targetGID  uint32
+		subUIDMap  specs.LinuxIDMapping
+		subGIDMap  specs.LinuxIDMapping
+		wantUIDMap []specs.LinuxIDMapping
+		wantGIDMap []specs.LinuxIDMapping
+		wantErr    bool
+	}{
+		{
+			// TargetID is smaller than size of subuid/subgid map.
+			name:      "LowTargetID",
+			targetUID: 1000,
+			targetGID: 2000,
+			subUIDMap: specs.LinuxIDMapping{HostID: 1000, ContainerID: 100000, Size: 65536},
+			subGIDMap: specs.LinuxIDMapping{HostID: 2000, ContainerID: 200000, Size: 65536},
+			wantUIDMap: []specs.LinuxIDMapping{
+				{ContainerID: 0, HostID: 1, Size: 1000},
+				{ContainerID: 1000, HostID: 0, Size: 1},
+				{ContainerID: 1001, HostID: 1001, Size: 64536},
+			},
+			wantGIDMap: []specs.LinuxIDMapping{
+				{ContainerID: 0, HostID: 1, Size: 2000},
+				{ContainerID: 2000, HostID: 0, Size: 1},
+				{ContainerID: 2001, HostID: 2001, Size: 63536},
+			},
+		},
+		{
+			// TargetID is higher than size of subuid/subgid map.
+			name:      "HighTargetID",
+			targetUID: 70000,
+			targetGID: 80000,
+			subUIDMap: specs.LinuxIDMapping{HostID: 1000, ContainerID: 100000, Size: 65536},
+			subGIDMap: specs.LinuxIDMapping{HostID: 2000, ContainerID: 200000, Size: 65536},
+			wantUIDMap: []specs.LinuxIDMapping{
+				{ContainerID: 0, HostID: 1, Size: 65536},
+				{ContainerID: 70000, HostID: 0, Size: 1},
+			},
+			wantGIDMap: []specs.LinuxIDMapping{
+				{ContainerID: 0, HostID: 1, Size: 65536},
+				{ContainerID: 80000, HostID: 0, Size: 1},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotUIDMap, gotGIDMap := reverseMapByRange(tt.targetUID, tt.targetGID, tt.subUIDMap, tt.subGIDMap)
+			if !reflect.DeepEqual(gotUIDMap, tt.wantUIDMap) {
+				t.Errorf("Launcher.getReverseUserMaps() gotUidMap = %v, want %v", gotUIDMap, tt.wantUIDMap)
+			}
+			if !reflect.DeepEqual(gotGIDMap, tt.wantGIDMap) {
+				t.Errorf("Launcher.getReverseUserMaps() gotGidMap = %v, want %v", gotGIDMap, tt.wantGIDMap)
 			}
 		})
 	}
