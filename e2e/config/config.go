@@ -831,5 +831,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"config file":               c.configFile,                  // test --config file option
 		"config global":             np(c.configGlobal),            // test various global configuration
 		"config global combination": np(c.configGlobalCombination), // test various global configuration with combination
+		"oci config global":         np(c.ociConfigGlobal),         // test various global configuration for OCI mode
 	}
 }
