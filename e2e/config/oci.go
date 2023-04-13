@@ -67,9 +67,11 @@ func (c configTests) ociConfigGlobal(t *testing.T) {
 		// },
 		{
 			name: "ConfigPasswdNo",
-			argv: []string{archiveRef, "grep",
+			argv: []string{
+				archiveRef, "grep",
 				fmt.Sprintf("%s:x:%d", e2e.OCIUserProfile.ContainerUser(t).Name, e2e.OCIUserProfile.ContainerUser(t).UID),
-				"/etc/passwd"},
+				"/etc/passwd",
+			},
 			profile:        e2e.OCIUserProfile,
 			directive:      "config passwd",
 			directiveValue: "no",
@@ -77,9 +79,11 @@ func (c configTests) ociConfigGlobal(t *testing.T) {
 		},
 		{
 			name: "ConfigPasswdYes",
-			argv: []string{archiveRef, "grep",
+			argv: []string{
+				archiveRef, "grep",
 				fmt.Sprintf("%s:x:%d", e2e.OCIUserProfile.ContainerUser(t).Name, e2e.OCIUserProfile.ContainerUser(t).UID),
-				"/etc/passwd"},
+				"/etc/passwd",
+			},
 			profile:        e2e.OCIUserProfile,
 			directive:      "config passwd",
 			directiveValue: "yes",
@@ -87,9 +91,11 @@ func (c configTests) ociConfigGlobal(t *testing.T) {
 		},
 		{
 			name: "ConfigGroupNo",
-			argv: []string{archiveRef, "grep",
+			argv: []string{
+				archiveRef, "grep",
 				fmt.Sprintf("x:%d:%s", e2e.OCIUserProfile.ContainerUser(t).GID, e2e.OCIUserProfile.ContainerUser(t).Name),
-				"/etc/group"},
+				"/etc/group",
+			},
 			profile:        e2e.OCIUserProfile,
 			directive:      "config group",
 			directiveValue: "no",
@@ -97,30 +103,33 @@ func (c configTests) ociConfigGlobal(t *testing.T) {
 		},
 		{
 			name: "ConfigGroupYes",
-			argv: []string{archiveRef, "grep",
+			argv: []string{
+				archiveRef, "grep",
 				fmt.Sprintf("x:%d:%s", e2e.OCIUserProfile.ContainerUser(t).GID, e2e.OCIUserProfile.ContainerUser(t).Name),
-				"/etc/group"},
+				"/etc/group",
+			},
 			profile:        e2e.OCIUserProfile,
 			directive:      "config group",
 			directiveValue: "yes",
 			exit:           0,
 		},
-		// {
-		// 	name:           "ConfigResolvConfNo",
-		// 	argv:           []string{archiveRef, "grep", "/etc/resolv.conf.*- tmpfs", "/proc/self/mountinfo"},
-		// 	profile:        e2e.OCIUserProfile,
-		// 	directive:      "config resolv_conf",
-		// 	directiveValue: "no",
-		// 	exit:           1,
-		// },
-		// {
-		// 	name:           "ConfigResolvConfYes",
-		// 	argv:           []string{archiveRef, "grep", "/etc/resolv.conf.*- tmpfs", "/proc/self/mountinfo"},
-		// 	profile:        e2e.OCIUserProfile,
-		// 	directive:      "config resolv_conf",
-		// 	directiveValue: "yes",
-		// 	exit:           0,
-		// },
+		// Test container doesn't have an /etc/resolv.conf, so presence check is okay here.
+		{
+			name:           "ConfigResolvConfNo",
+			argv:           []string{archiveRef, "test", "-f", "/etc/resolv.conf"},
+			profile:        e2e.OCIUserProfile,
+			directive:      "config resolv_conf",
+			directiveValue: "no",
+			exit:           1,
+		},
+		{
+			name:           "ConfigResolvConfYes",
+			argv:           []string{archiveRef, "test", "-f", "/etc/resolv.conf"},
+			profile:        e2e.OCIUserProfile,
+			directive:      "config resolv_conf",
+			directiveValue: "yes",
+			exit:           0,
+		},
 		{
 			name:           "MountProcNo",
 			argv:           []string{archiveRef, "test", "-d", "/proc/self"},
@@ -154,7 +163,7 @@ func (c configTests) ociConfigGlobal(t *testing.T) {
 			exit:           0,
 		},
 		//
-		// mount dev is not currently honoured. We are mimicking --compat in the
+		// mount dev is not currently honored. We are mimicking --compat in the
 		// native runtime, which implies `minimal` here. Using `no` isn't an
 		// option, as the OCI runtime spec requires certain devices:
 		// https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#default-devices
@@ -229,7 +238,7 @@ func (c configTests) ociConfigGlobal(t *testing.T) {
 		},
 		//
 		// bind path isn't supported at present because we are mimicking
-		// --compat behaviour in the native runtime. However, we should revisit
+		// --compat behavior in the native runtime. However, we should revisit
 		// what makes most sense for users here before 4.0.
 		//
 		// {
