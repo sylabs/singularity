@@ -81,9 +81,6 @@ func checkOpts(lo launcher.Options) error {
 	if len(lo.OverlayPaths) > 0 {
 		badOpt = append(badOpt, "OverlayPaths")
 	}
-	if len(lo.ScratchDirs) > 0 {
-		badOpt = append(badOpt, "ScratchDirs")
-	}
 	if lo.WorkDir != "" {
 		badOpt = append(badOpt, "WorkDir")
 	}
