@@ -27,6 +27,13 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, imag
 	// Assemble the runtime & user-requested environment, which will be merged
 	// with the image ENV and set in the container at runtime.
 	rtEnv := defaultEnv(image, bundle)
+
+	// Propagate TERM from host. Doing this here means it can be overridden by SINGULARITYENV_TERM.
+	hostTerm, isHostTermSet := os.LookupEnv("TERM")
+	if isHostTermSet {
+		rtEnv["TERM"] = hostTerm
+	}
+
 	// SINGULARITYENV_ has lowest priority
 	rtEnv = mergeMap(rtEnv, singularityEnvMap())
 	// --env-file can override SINGULARITYENV_
