@@ -61,6 +61,8 @@
   overridden by setting `SINGULARITYENV_TERM` on host.
 - Honour `config passwd` and `config group` directives from `singularity.conf`
   in `--oci` mode.
+- Honour `mount proc` / `mount sys` / `mount tmp` / `mount home` directives from
+  `singularity.conf` in `--oci` mode.
 
 ## 3.11.1 \[2023-03-14\]
 
