@@ -364,6 +364,11 @@ func (l *Launcher) prepareResolvConf(rootfs string) error {
 	containerEtc := filepath.Join(rootfs, "etc")
 	containerResolvConfPath := filepath.Join(rootfs, "etc", "resolv.conf")
 
+	if !l.singularityConf.ConfigResolvConf {
+		sylog.Debugf("Skipping update of %s due to singularity.conf", containerResolvConfPath)
+		return nil
+	}
+
 	var resolvConfData []byte
 	var err error
 	if len(l.cfg.DNS) > 0 {
