@@ -6,6 +6,7 @@
 
 - OCI mode now supports `--hostname` (requires UTS namespace, therefore this
   flag will infer `--uts` if running in OCI mode).
+- Support `--pwd` in OCI mode.
 
 ### Bug Fixes
 
