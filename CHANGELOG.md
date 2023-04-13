@@ -9,6 +9,8 @@
   SingularityCE will still prefer `crun` if it has been installed.
 - Use `/dev/loop-control` for loop device creation, to avoid issues with recent
   kernel patch where `max_loop` is not set.
+- Always request inner userns in `--oci` mode without `--fakeroot`, so that
+  inner id mapping is applied correctly.
 
 ## 3.11.1 \[2023-03-14\]
 
