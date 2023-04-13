@@ -19,6 +19,8 @@
 - Use correct target uid/gid for inner id mappings in `--oci` mode.
 - Avoid `runc` cgroup creation error when using `--oci` from a root-owned cgroup
   (e.g. ssh login session scope).
+- Pass host's `TERM` environment variable to container in OCI mode. Can be
+  overridden by setting `SINGULARITYENV_TERM` on host.
 
 ## 3.11.1 \[2023-03-14\]
 
