@@ -172,29 +172,61 @@ func (l *Launcher) addSysMount(mounts *[]specs.Mount) {
 // emulating `--compat` / `--containall`, so the user must specifically bind in
 // their home directory from the host for it to be available.
 func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
-	if l.cfg.Fakeroot {
-		*mounts = append(*mounts,
-			specs.Mount{
-				Destination: "/root",
-				Type:        "tmpfs",
-				Source:      "tmpfs",
-				Options: []string{
-					"nosuid",
-					"relatime",
-					"mode=755",
-					fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
-				},
-			})
-		return nil
-	}
-
+	// Get the host user's data
 	pw, err := user.CurrentOriginal()
 	if err != nil {
 		return err
 	}
+
+	if l.cfg.CustomHome {
+		// Handle any user request to override the home directory source/dest
+		homeSlice := strings.Split(l.cfg.HomeDir, ":")
+		if len(homeSlice) < 1 || len(homeSlice) > 2 {
+			return fmt.Errorf("home argument has incorrect number of elements: %v", homeSlice)
+		}
+		homeSrc := homeSlice[0]
+		l.cfg.HomeDir = homeSrc
+
+		// User requested more than just a custom home dir; they want to bind-mount a directory in the host to this custom home dir.
+		// This means the home dir, as viewed from inside the container, is actually the second member of the ":"-separated slice. The first member is actually just the source portion of the requested bind-mount.
+		if len(homeSlice) > 1 {
+			homeDest := homeSlice[1]
+			l.cfg.HomeDir = homeDest
+
+			// Since the home dir is a bind-mount in this case, we don't have to mount a tmpfs directory for the in-container home dir, and we can just do the bind-mount & return.
+			return addBindMount(mounts, bind.Path{
+				Source:      homeSrc,
+				Destination: homeDest,
+			})
+		}
+	} else {
+		// If we're running in fake-root mode (and we haven't requested a custom home dir), we do need to create a tmpfs mount for the home dir, but it's a special case (because of its location & permissions), so we handle that here & return.
+		if l.cfg.Fakeroot {
+			l.cfg.HomeDir = "/root"
+			*mounts = append(*mounts,
+				specs.Mount{
+					Destination: "/root",
+					Type:        "tmpfs",
+					Source:      "tmpfs",
+					Options: []string{
+						"nosuid",
+						"relatime",
+						"mode=755",
+						fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
+					},
+				})
+
+			return nil
+		}
+
+		// No fakeroot and no custom home dir - so the in-container home dir will be named the same as the host user's home dir. (Though note that it'll still be a tmpfs mount! It'll get mounted by the catch-all mount append, below.)
+		l.cfg.HomeDir = pw.Dir
+	}
+
+	// If we've not hit a special case (bind-mounted custom home dir, or fakeroot), then create a tmpfs mount as a home dir in the requested location (whether it's custom or not; by this point, l.cfg.HomeDir will reflect the right value).
 	*mounts = append(*mounts,
 		specs.Mount{
-			Destination: pw.Dir,
+			Destination: l.cfg.HomeDir,
 			Type:        "tmpfs",
 			Source:      "tmpfs",
 			Options: []string{
@@ -206,6 +238,7 @@ func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
 				fmt.Sprintf("gid=%d", pw.GID),
 			},
 		})
+
 	return nil
 }
 

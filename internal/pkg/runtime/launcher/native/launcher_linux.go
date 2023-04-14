@@ -656,8 +656,8 @@ func (l *Launcher) setHome() error {
 
 	// Handle any user request to override the home directory source/dest
 	homeSlice := strings.Split(l.cfg.HomeDir, ":")
-	if len(homeSlice) > 2 || len(homeSlice) == 0 {
-		return fmt.Errorf("home argument has incorrect number of elements: %v", len(homeSlice))
+	if len(homeSlice) < 1 || len(homeSlice) > 2 {
+		return fmt.Errorf("home argument has incorrect number of elements: %v", homeSlice)
 	}
 	l.engineConfig.SetHomeSource(homeSlice[0])
 	if len(homeSlice) == 1 {

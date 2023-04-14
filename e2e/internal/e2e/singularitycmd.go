@@ -104,7 +104,7 @@ func (r *SingularityCmdResult) expectMatch(mt MatchType, stream streamType, patt
 		// get rid of the trailing newline
 		if strings.TrimSuffix(output, "\n") != pattern {
 			return errors.Errorf(
-				"Command %q:\nExpect %s stream exact match:\n%s\nCommand %s output:\n%s",
+				"Command %q:\nExpect %s stream exact match:\n%s\nCommand %s stream:\n%s",
 				r.FullCmd, streamName, pattern, streamName, output,
 			)
 		}
@@ -118,7 +118,7 @@ func (r *SingularityCmdResult) expectMatch(mt MatchType, stream streamType, patt
 	case UnwantedExactMatch:
 		if strings.TrimSuffix(output, "\n") == pattern {
 			return errors.Errorf(
-				"Command %q:\nExpect %s stream not matching:\n%s\nCommand %s output:\n%s",
+				"Command %q:\nExpect %s stream not matching:\n%s\nCommand %s stream:\n%s",
 				r.FullCmd, streamName, pattern, streamName, output,
 			)
 		}
@@ -132,7 +132,7 @@ func (r *SingularityCmdResult) expectMatch(mt MatchType, stream streamType, patt
 		}
 		if !matched {
 			return errors.Errorf(
-				"Command %q:\nExpect %s stream match regular expression:\n%s\nCommand %s output:\n%s",
+				"Command %q:\nExpect %s stream match regular expression:\n%s\nCommand %s stream:\n%s",
 				r.FullCmd, streamName, pattern, streamName, output,
 			)
 		}
