@@ -390,7 +390,7 @@ func (l *Launcher) prepareResolvConf(rootfs string) error {
 
 	stat, err := os.Stat(containerEtc)
 	if os.IsNotExist(err) || !stat.IsDir() {
-		sylog.Warningf("container does not contain an /etc directory; skipping resolve.conf configuration")
+		sylog.Warningf("container does not contain an /etc directory; skipping resolv.conf configuration")
 		return nil
 	}
 
