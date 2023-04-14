@@ -16,7 +16,7 @@ import (
 
 	"github.com/container-orchestrated-devices/container-device-interface/pkg/cdi"
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/samber/lo"
+	"github.com/sylabs/singularity/pkg/util/slice"
 )
 
 var specDirs = []string{filepath.Join("..", "..", "..", "..", "..", "test", "cdi")}
@@ -241,19 +241,10 @@ func Test_addCDIDevice(t *testing.T) {
 				}
 			}
 
-			envMissing := hashingListSubtract(tt.wantEnv, spec.Process.Env)
+			envMissing := slice.Subtract(tt.wantEnv, spec.Process.Env)
 			if len(envMissing) > 0 {
 				t.Errorf("addCDIDevices() mismatched environment variables; expected, but did not find, the following environment variables: %v", envMissing)
 			}
 		})
 	}
-}
-
-// hashingListSubtract is a utility-function for subtracting a list from another list, using map's internal hashing function to do this more efficiently than lo.Difference or lo.Without (which only assume comparable, and thus run in quadratic time).
-func hashingListSubtract[T comparable](toSubstractFrom []T, toSubstract []T) []T {
-	subtractionMap := lo.FromEntries(lo.Map(toSubstractFrom, func(item T, _ int) lo.Entry[T, bool] {
-		return lo.Entry[T, bool]{Key: item, Value: true}
-	}))
-
-	return lo.Keys(lo.OmitByKeys(subtractionMap, toSubstract))
 }
