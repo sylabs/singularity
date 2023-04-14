@@ -5,6 +5,8 @@
 
 package slice
 
+import "github.com/samber/lo"
+
 // ContainsString returns true if string slice s contains match
 func ContainsString(s []string, match string) bool {
 	for _, a := range s {
@@ -35,4 +37,18 @@ func ContainsInt(s []int, match int) bool {
 		}
 	}
 	return false
+}
+
+// Subtract removes items in slice b from slice a, returning the result.
+// Implemented using a map for greater efficiency than lo.Difference / lo.Without, when operating on large slices.
+func Subtract[T comparable](a []T, b []T) []T {
+	subtractionMap := lo.FromEntries(lo.Map(a, func(item T, _ int) lo.Entry[T, bool] {
+		return lo.Entry[T, bool]{Key: item, Value: true}
+	}))
+	subtractionMap = lo.OmitByKeys(subtractionMap, b)
+
+	return lo.Filter(a, func(x T, _ int) bool {
+		_, ok := subtractionMap[x]
+		return ok
+	})
 }

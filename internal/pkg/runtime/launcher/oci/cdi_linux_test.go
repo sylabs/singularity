@@ -16,7 +16,7 @@ import (
 
 	"github.com/container-orchestrated-devices/container-device-interface/pkg/cdi"
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/util"
+	"github.com/sylabs/singularity/pkg/util/slice"
 )
 
 var specDirs = []string{filepath.Join("..", "..", "..", "..", "..", "test", "cdi")}
@@ -241,7 +241,7 @@ func Test_addCDIDevice(t *testing.T) {
 				}
 			}
 
-			envMissing := util.HashingListSubtract(tt.wantEnv, spec.Process.Env)
+			envMissing := slice.Subtract(tt.wantEnv, spec.Process.Env)
 			if len(envMissing) > 0 {
 				t.Errorf("addCDIDevices() mismatched environment variables; expected, but did not find, the following environment variables: %v", envMissing)
 			}

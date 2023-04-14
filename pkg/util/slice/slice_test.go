@@ -5,7 +5,13 @@
 
 package slice
 
-import "testing"
+import (
+	"fmt"
+	"reflect"
+	"testing"
+
+	"github.com/samber/lo"
+)
 
 func TestContainsString(t *testing.T) {
 	type args struct {
@@ -182,6 +188,98 @@ func TestContainsInt(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := ContainsInt(tt.args.s, tt.args.match); got != tt.want {
 				t.Errorf("ContainsInt() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSubtract(t *testing.T) {
+	type args[T any] struct {
+		a    []T
+		b    []T
+		want []T
+	}
+	intTests := []struct {
+		name string
+		args args[int]
+	}{
+		{
+			name: "Identical",
+			args: args[int]{
+				a:    []int{3, 9, 5, 7, 2, 1, 0, 4},
+				b:    []int{3, 9, 5, 7, 2, 1, 0, 4},
+				want: []int{},
+			},
+		},
+		{
+			name: "EmptyA",
+			args: args[int]{
+				a:    []int{},
+				b:    []int{3, 9, 5, 7, 2, 1, 0, 4},
+				want: []int{},
+			},
+		},
+		{
+			name: "EmptyB",
+			args: args[int]{
+				a:    []int{3, 9, 5, 7, 2, 1, 0, 4},
+				b:    []int{},
+				want: []int{3, 9, 5, 7, 2, 1, 0, 4},
+			},
+		},
+		{
+			name: "EmptyBoth",
+			args: args[int]{
+				a:    []int{},
+				b:    []int{},
+				want: []int{},
+			},
+		},
+		{
+			name: "AsupersetofB",
+			args: args[int]{
+				a:    []int{3, 9, 5, 7, 2, 1, 0, 4},
+				b:    []int{3, 9, 7, 0, 4},
+				want: []int{5, 2, 1},
+			},
+		},
+		{
+			name: "AsubsetofB",
+			args: args[int]{
+				a:    []int{5, 2, 1},
+				b:    []int{5, 7, 2, 1, 0, 4},
+				want: []int{},
+			},
+		},
+		{
+			name: "Intersection",
+			args: args[int]{
+				a:    []int{3, 5, 2, 0},
+				b:    []int{3, 9, 7, 2, 4},
+				want: []int{5, 0},
+			},
+		},
+	}
+
+	convertor := func(x int, index int) string {
+		return fmt.Sprintf("Have an int whose value is %#v, why don't you", x)
+	}
+
+	for _, tt := range intTests {
+		t.Run("Int"+tt.name, func(t *testing.T) {
+			if got := Subtract(tt.args.a, tt.args.b); !reflect.DeepEqual(got, tt.args.want) {
+				t.Errorf("Subtract(%#v, %#v) = %#v, want %#v", tt.args.a, tt.args.b, got, tt.args.want)
+			}
+		})
+
+		strArgs := args[string]{
+			a:    lo.Map(tt.args.a, convertor),
+			b:    lo.Map(tt.args.b, convertor),
+			want: lo.Map(tt.args.want, convertor),
+		}
+		t.Run("String"+tt.name, func(t *testing.T) {
+			if got := Subtract(strArgs.a, strArgs.b); !reflect.DeepEqual(got, strArgs.want) {
+				t.Errorf("Subtract(%#v, %#v) = %#v, want %#v", strArgs.a, strArgs.b, got, strArgs.want)
 			}
 		})
 	}
