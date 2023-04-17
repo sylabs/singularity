@@ -382,3 +382,25 @@ workflows:
               only:
                 - main
                 - /release-.*/
+
+  tagged-release:
+    jobs:
+      - build-rpm:
+          matrix:
+            parameters:
+              e: ["centos7", "almalinux8", "almalinux9"]
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*(-.*)*/
+
+      - build-deb:
+          matrix:
+            parameters:
+              e: ["ubuntu1804", "ubuntu2004", "ubuntu2204"]
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*(-.*)*/
