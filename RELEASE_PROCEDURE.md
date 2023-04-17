@@ -46,7 +46,6 @@ for the current stable major.minor version of SingularityCE.
 1. After all PRs are merged, apply an annotated tag to the HEAD of the release
    branch via `git tag -a -m "SingularityCE v3.11.2" v3.11.2`.
 1. Push the tag to the GitHub repository via `git push upstream v3.11.2`.
-1. (Re-)trigger the CI workflow against the tag.
 1. Download the rpm and deb packages, which are generated as CI job artifacts,
    from the CircleCI workflow for the tag.
 1. Create a tarball locally, via `git clean -fdx && mconfig -v && make dist`.
@@ -111,7 +110,6 @@ begins by branching, and then issuing, a release candidate for broader testing.
 1. Apply an annotated tag via
    `git tag -a -m "SingularityCE v3.11.0 Release Candidate 1" v3.11.0-rc.1`.
 1. Push the tag via `git push upstream v3.11.0-rc.1`.
-1. (Re-)trigger the CI workflow against the tag.
 1. Download the rpm and deb packages, which are generated as CI job artifacts,
    from the CircleCI workflow for the tag.
 1. Create a tarball locally, via `git clean -fdx && mconfig -v && make dist`.
@@ -141,7 +139,6 @@ release of a new major or minor version. Each new RC follows step 5 and above.
    release branch, so that they reflect the version to be released.
 1. Apply an annotated tag via `git tag -a -m "SingularityCE v3.12.0" v3.12.0`.
 1. Push the tag via `git push upstream v3.12.0`.
-1. (Re-)trigger the CI workflow against the tag.
 1. Download the rpm and deb packages, which are generated as CI job artifacts,
    from the CircleCI workflow for the tag.
 1. Create a tarball locally, via `git clean -fdx && mconfig -v && make dist`.
