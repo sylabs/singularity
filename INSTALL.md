@@ -24,7 +24,9 @@ sudo apt-get install -y \
     squashfs-tools \
     cryptsetup \
     crun \
-    uidmap
+    uidmap \
+    git \
+    wget
 ```
 
 On Ubuntu 18.04:
@@ -41,7 +43,9 @@ sudo apt-get install -y \
     squashfs-tools \
     cryptsetup \
     runc \
-    uidmap
+    uidmap \
+    git \
+    wget
 ```
 
 On CentOS/RHEL 8 and above:
