@@ -67,6 +67,7 @@ The following have contributed code and/or documentation to this repository.
 - Krishna Muriki <kmuriki@lbl.gov>
 - Kumar Sukhani <kumarsukhani@gmail.com>
 - Kundan Kumar <iamkundankumar28@gmail.com>
+- Lars Quentin <lars@lquenti.de>
 - Maciej Sieczka <msieczka@sieczka.org>
 - Marcelo Magallon <marcelo@sylabs.io>
 - Mark Egan-Fuller <markeganfuller@googlemail.com>
