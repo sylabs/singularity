@@ -24,7 +24,9 @@ sudo apt-get install -y \
     squashfs-tools \
     cryptsetup \
     crun \
-    uidmap
+    uidmap \
+    git \
+    wget
 ```
 
 On Ubuntu 18.04:
@@ -41,7 +43,9 @@ sudo apt-get install -y \
     squashfs-tools \
     cryptsetup \
     runc \
-    uidmap
+    uidmap \
+    git \
+    wget
 ```
 
 On CentOS/RHEL 8 and above:
@@ -55,7 +59,9 @@ sudo yum install -y \
     glib2-devel \
     squashfs-tools \
     cryptsetup \
-    crun
+    crun \
+    git \
+    wget
 ```
 
 On CentOS/RHEL 7:
@@ -69,7 +75,9 @@ sudo yum install -y \
     glib2-devel \
     squashfs-tools \
     cryptsetup \
-    runc
+    runc \
+    git \
+    wget
 ```
 
 _Note - `crun` / `runc` can be omitted if you will not use the `singularity oci`
