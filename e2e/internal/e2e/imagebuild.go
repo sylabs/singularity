@@ -54,6 +54,7 @@ type AppDetail struct {
 	Files   []FilePair
 	Install []string
 	Run     []string
+	Start   []string
 	Test    []string
 }
 

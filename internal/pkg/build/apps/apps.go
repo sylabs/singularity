@@ -33,6 +33,7 @@ const (
 	sectionTest    = "apptest"
 	sectionHelp    = "apphelp"
 	sectionRun     = "apprun"
+	sectionStart   = "appstart"
 	sectionLabels  = "applabels"
 )
 
@@ -43,6 +44,7 @@ var sections = map[string]bool{
 	sectionTest:    true,
 	sectionHelp:    true,
 	sectionRun:     true,
+	sectionStart:   true,
 	sectionLabels:  true,
 }
 
@@ -50,7 +52,7 @@ var reg = regexp.MustCompile(`[^a-zA-Z0-9_]`)
 
 const (
 	globalEnv94Base = `## App Global Exports For: %[1]s
-	
+
 SCIF_APPDATA_%[1]s=/scif/data/%[1]s
 SCIF_APPMETA_%[1]s=/scif/apps/%[1]s/scif
 SCIF_APPROOT_%[1]s=/scif/apps/%[1]s
@@ -66,7 +68,8 @@ export SCIF_APPDATA_%[1]s SCIF_APPMETA_%[1]s SCIF_APPROOT_%[1]s SCIF_APPBIN_%[1]
 `
 	globalEnv94AppRun = `export SCIF_APPRUN_%[1]s="/scif/apps/%[1]s/scif/runscript"
 `
-
+	globalEnv94AppStart = `export SCIF_APPSTART_%[1]s="/scif/apps/%[1]s/scif/startscript"
+`
 	scifEnv01Base = `#!/bin/sh
 
 SCIF_APPNAME=%[1]s
@@ -80,6 +83,11 @@ export SCIF_APPDATA SCIF_APPNAME SCIF_APPROOT SCIF_APPMETA SCIF_APPINPUT SCIF_AP
 `
 
 	scifRunscriptBase = `#!/bin/sh
+
+%s
+`
+
+	scifStartscriptBase = `#!/bin/sh
 
 %s
 `
@@ -108,6 +116,7 @@ type App struct {
 	Test    string
 	Help    string
 	Run     string
+	Start   string
 	Labels  string
 }
 
@@ -152,6 +161,8 @@ func (pl *BuildApp) HandleSection(ident, section string) {
 		app.Help = section
 	case sectionRun:
 		app.Run = section
+	case sectionStart:
+		app.Start = section
 	case sectionLabels:
 		app.Labels = section
 	default:
@@ -220,6 +231,10 @@ func (pl *BuildApp) createAllApps(b *types.Bundle) error {
 		}
 
 		if err := writeRunscriptFile(b, app); err != nil {
+			return err
+		}
+
+		if err := writeStartscriptFile(b, app); err != nil {
 			return err
 		}
 
@@ -304,6 +319,10 @@ func globalAppEnv(b *types.Bundle, a *App) string {
 		content += fmt.Sprintf(globalEnv94AppRun, name)
 	}
 
+	if _, err := os.Stat(filepath.Join(appMeta(b, a), "/startscript")); err == nil {
+		content += fmt.Sprintf(globalEnv94AppStart, name)
+	}
+
 	return content
 }
 
@@ -315,6 +334,16 @@ func writeRunscriptFile(b *types.Bundle, a *App) error {
 
 	content := fmt.Sprintf(scifRunscriptBase, a.Run)
 	return os.WriteFile(filepath.Join(appMeta(b, a), "/runscript"), []byte(content), 0o755)
+}
+
+// %appstart
+func writeStartscriptFile(b *types.Bundle, a *App) error {
+	if a.Start == "" {
+		return nil
+	}
+
+	content := fmt.Sprintf(scifStartscriptBase, a.Start)
+	return os.WriteFile(filepath.Join(appMeta(b, a), "/startscript"), []byte(content), 0o755)
 }
 
 // %apptest
