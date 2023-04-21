@@ -27,6 +27,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
 	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ocibundle/native"
@@ -424,7 +425,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	}
 	defer func() {
 		sylog.Debugf("Removing OCI bundle at: %s", bundleDir)
-		if err := os.RemoveAll(bundleDir); err != nil {
+		if err := fs.ForceRemoveAll(bundleDir); err != nil {
 			sylog.Errorf("Couldn't remove OCI bundle %s: %v", bundleDir, err)
 		}
 	}()

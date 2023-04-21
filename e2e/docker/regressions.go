@@ -8,6 +8,7 @@ package docker
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -254,5 +255,36 @@ func (c ctx) issue1528(t *testing.T) {
 				e2e.ExpectExit(0, e2e.ExpectOutput(e2e.ContainMatch, wantTermString)),
 			)
 		})
+	}
+}
+
+// https://github.com/sylabs/singularity/issues/1586
+// In OCI mode, ensure that nothing is left in TMPDIR from a docker:// image with restrictive file permissions.
+func (c ctx) issue1586(t *testing.T) {
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue1586-", "")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup(t)
+		}
+	})
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.OCIUserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("docker://almalinux:9.1-minimal-20230407", "/bin/true"),
+		e2e.WithEnv(append(os.Environ(), "TMPDIR="+tmpDir)),
+		e2e.ExpectExit(0,
+			e2e.ExpectError(e2e.UnwantedContainMatch, "permission denied"),
+		),
+	)
+
+	d, err := os.Open(tmpDir)
+	if err != nil {
+		t.Errorf("Couldn't open TMPDIR %s: %v", tmpDir, err)
+	}
+	defer d.Close()
+	if _, err = d.Readdir(1); err != io.EOF {
+		t.Errorf("TMPDIR is not empty after singularity exited")
 	}
 }
