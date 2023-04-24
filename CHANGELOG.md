@@ -39,6 +39,8 @@
   in `--oci` mode.
 - Honour `mount proc` / `mount sys` / `mount tmp` / `mount home` directives from
   `singularity.conf` in `--oci` mode.
+- Corrected `singularity.conf` comment, to refer to correct file as source
+  of default capabilities when `root default capabilities = file`.
 
 ## 3.11.1 \[2023-03-14\]
 
