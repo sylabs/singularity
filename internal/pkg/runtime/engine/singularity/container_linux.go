@@ -106,6 +106,16 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}
 
+	// Authorize permitted kernel mounts
+	if engine.EngineConfig.File.AllowKernelSquashfs {
+		mount.AuthorizeImageFS("squashfs")
+	}
+	if engine.EngineConfig.File.AllowKernelExtfs {
+		mount.AuthorizeImageFS("ext3")
+	}
+	// encryptfs isn't a real kernel fs - it's an internal marker of a LUKS2 encrypted squashfs
+	mount.AuthorizeImageFS("encryptfs")
+
 	c := &container{
 		engine:        engine,
 		rpcOps:        rpcOps,

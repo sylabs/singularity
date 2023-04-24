@@ -21,6 +21,16 @@ func TestImage(t *testing.T) {
 
 	points := &Points{}
 
+	if err := points.AddImage(RootfsTag, "/fake", "/ext3", "ext3", 0, 0, 10, nil); err == nil {
+		t.Errorf("ext3 image mount succeeded. Should fail before it is authorized.")
+	}
+	if err := points.AddImage(RootfsTag, "/fake", "/squash", "squashfs", 0, 0, 10, nil); err == nil {
+		t.Errorf("squashfs image mount succeeded. Should fail before it is authorized.")
+	}
+
+	AuthorizeImageFS("ext3")
+	AuthorizeImageFS("squashfs")
+
 	if err := points.AddImage(RootfsTag, "", "/fake", "ext3", 0, 0, 10, nil); err == nil {
 		t.Errorf("should have failed with empty source")
 	}
