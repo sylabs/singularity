@@ -141,11 +141,9 @@ var authorizedTags = map[AuthorizedTag]struct {
 	FinalTag:     {true, 16},
 }
 
-var authorizedImage = map[string]fsContext{
-	"encryptfs": {true},
-	"ext3":      {true},
-	"squashfs":  {true},
-}
+// authorizedImage holds fs types that are authorized for use in loopback image mounts.
+// Nothing is allowed by default. Use AuthorizeImageFS to add.
+var authorizedImage = map[string]fsContext{}
 
 var authorizedFS = map[string]fsContext{
 	"overlay": {true},
@@ -615,7 +613,7 @@ func (p *Points) AddImage(tag AuthorizedTag, source string, dest string, fstype 
 		return fmt.Errorf("ms_bind, ms_rec or ms_remount are not valid flags for image mount points")
 	}
 	if _, ok := authorizedImage[fstype]; !ok {
-		return fmt.Errorf("mount %s image is not authorized", fstype)
+		return fmt.Errorf("%s image mounts are not authorized", fstype)
 	}
 	if sizelimit == 0 {
 		return fmt.Errorf("invalid image size, zero length")
@@ -777,4 +775,10 @@ func (p *Points) SetContext(context string) error {
 // GetContext returns SELinux mount context
 func (p *Points) GetContext() string {
 	return p.context
+}
+
+// AuthorizeImageFS adds the specified filesystem from the authorizedImage list.
+// This means a loopback mount can then be performed from an image file with this filesystem.
+func AuthorizeImageFS(fs string) {
+	authorizedImage[fs] = fsContext{true}
 }
