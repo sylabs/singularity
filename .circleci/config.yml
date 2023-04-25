@@ -30,9 +30,6 @@ executors:
   almalinux9:
     docker:
       - image: almalinux:9
-  ubuntu1804:
-    docker:
-      - image: ubuntu:18.04
   ubuntu2004:
     docker:
       - image: ubuntu:20.04
@@ -376,7 +373,7 @@ workflows:
       - build-deb:
           matrix:
             parameters:
-              e: ["ubuntu1804", "ubuntu2004", "ubuntu2204"]
+              e: ["ubuntu2004", "ubuntu2204"]
           filters:
             branches:
               only:
@@ -398,7 +395,7 @@ workflows:
       - build-deb:
           matrix:
             parameters:
-              e: ["ubuntu1804", "ubuntu2004", "ubuntu2204"]
+              e: ["ubuntu2004", "ubuntu2204"]
           filters:
             branches:
               ignore: /.*/
