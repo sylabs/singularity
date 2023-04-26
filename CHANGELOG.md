@@ -44,6 +44,12 @@
   `--dns` flag can be used to pass a comma-separated list of DNS servers that
   will be used in the container; if this flag is not used, the container will
   use the same `resolv.conf` settings as the host.
+- Added `allow kernel squashfs` directive to `singularity.conf`. Defaults to
+  `yes`. When set to no, Singularity will not mount squashfs filesystems using
+  the kernel squashfs driver.
+- Added `allow kernel extfs` directive to `singularity.conf`. Defaults to `yes`.
+  When set to no, Singularity will not mount extfs filesystems using the kernel
+  extfs driver.
 
 ### Bug Fixes
 

@@ -20,14 +20,16 @@ import (
 )
 
 type configTests struct {
-	env            e2e.TestEnv
-	sifImage       string
-	encryptedImage string
-	squashfsImage  string
-	ext3Image      string
-	sandboxImage   string
-	pemPublic      string
-	pemPrivate     string
+	env              e2e.TestEnv
+	sifImage         string
+	encryptedImage   string
+	squashfsImage    string
+	ext3Image        string
+	sandboxImage     string
+	ext3OverlayImage string
+	sifOverlayImage  string
+	pemPublic        string
+	pemPrivate       string
 }
 
 // prepImages creates containers covering all image formats to test the
@@ -90,6 +92,31 @@ func (c *configTests) prepImages(t *testing.T) (cleanup func(t *testing.T)) {
 			t.Fatalf("Error creating squashfs image: %v: %s", err, out)
 		}
 	})
+
+	// An extfs writable overlay (standalone)
+	c.ext3OverlayImage = filepath.Join(tmpDir, "overlay.img")
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("PrepareExt3Overlay"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("overlay"),
+		e2e.WithArgs("create", "--size", "64", c.ext3OverlayImage),
+		e2e.ExpectExit(0),
+	)
+
+	// A SIF with embedded writable overlay (embedded ext3)
+	c.sifOverlayImage = filepath.Join(tmpDir, "overlay.sif")
+	if err := fs.CopyFile(c.sifImage, c.sifOverlayImage, 0o755); err != nil {
+		t.Fatalf("Error copying %q to %q: %v", c.sifImage, c.sifOverlayImage, err)
+	}
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("PrepareSIFOverlay"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("overlay"),
+		e2e.WithArgs("create", "--size", "64", c.sifOverlayImage),
+		e2e.ExpectExit(0),
+	)
 
 	return cleanup
 }
@@ -479,6 +506,142 @@ func (c configTests) configGlobal(t *testing.T) {
 			argv:           []string{c.sandboxImage, "true"},
 			profile:        e2e.UserProfile,
 			directive:      "allow container dir",
+			directiveValue: "yes",
+			exit:           0,
+		},
+		// Standalone squashfs rootfs
+		{
+			name:           "AllowKernelSquashfsNo_Container",
+			argv:           []string{c.squashfsImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel squashfs",
+			directiveValue: "no",
+			exit:           255,
+		},
+		{
+			name:           "AllowKernelSquashfsYes_Container",
+			argv:           []string{c.squashfsImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel squashfs",
+			directiveValue: "yes",
+			exit:           0,
+		},
+		// Standalone ext3 rootfs
+		{
+			name:           "AllowKernelExtfsNo_Container",
+			argv:           []string{c.ext3Image, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel extfs",
+			directiveValue: "no",
+			exit:           255,
+		},
+		{
+			name:           "AllowKernelExtfsYes_Container",
+			argv:           []string{c.ext3Image, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel extfs",
+			directiveValue: "yes",
+			exit:           0,
+		},
+		// Standalone squashfs as an overlay
+		{
+			name:           "AllowKernelSquashfsNo_Overlay",
+			argv:           []string{"--overlay", c.squashfsImage, c.sandboxImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel squashfs",
+			directiveValue: "no",
+			exit:           255,
+		},
+		{
+			name:           "AllowKernelSquashfsYes_Overlay",
+			argv:           []string{"--overlay", c.squashfsImage, c.sandboxImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel squashfs",
+			directiveValue: "yes",
+			exit:           0,
+		},
+		// Standalone ext3 as an overlay
+		{
+			name:           "AllowKernelExtfsNo_Overlay",
+			argv:           []string{"--overlay", c.ext3OverlayImage, c.sandboxImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel extfs",
+			directiveValue: "no",
+			exit:           255,
+		},
+		{
+			name:           "AllowKernelExtfsYes_Overlay",
+			argv:           []string{"--overlay", c.ext3OverlayImage, c.sandboxImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel extfs",
+			directiveValue: "yes",
+			exit:           0,
+		},
+		// Standalone squashfs as an image bind
+		{
+			name:           "AllowKernelSquashfsNo_Bind",
+			argv:           []string{"--bind", fmt.Sprintf("%s:/image-bind:image-src=/", c.squashfsImage), c.sandboxImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel squashfs",
+			directiveValue: "no",
+			exit:           255,
+		},
+		{
+			name:           "AllowKernelSquashfsYes_Bind",
+			argv:           []string{"--bind", fmt.Sprintf("%s:/image-bind:image-src=/", c.squashfsImage), c.sandboxImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel squashfs",
+			directiveValue: "yes",
+			exit:           0,
+		},
+		// Standalone ext3 as an image bind
+		{
+			name:           "AllowKernelExtfsNo_Bind",
+			argv:           []string{"--bind", fmt.Sprintf("%s:/image-bind:image-src=/", c.ext3Image), c.sandboxImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel extfs",
+			directiveValue: "no",
+			exit:           255,
+		},
+		{
+			name:           "AllowKernelExtfsYes_Bind",
+			argv:           []string{"--bind", fmt.Sprintf("%s:/image-bind:image-src=/", c.ext3Image), c.sandboxImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel extfs",
+			directiveValue: "yes",
+			exit:           0,
+		},
+		// squashFS rootfs in SIF
+		{
+			name:           "AllowKernelSquashfsNo_SIF",
+			argv:           []string{c.sifImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel squashfs",
+			directiveValue: "no",
+			exit:           255,
+		},
+		{
+			name:           "AllowKernelSquashfsYes_SIF",
+			argv:           []string{c.sifImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel squashfs",
+			directiveValue: "yes",
+			exit:           0,
+		},
+		// ext3 writable overlay in SIF
+		{
+			name:           "AllowKernelExtfsNo_SIF",
+			argv:           []string{c.sifOverlayImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel extfs",
+			directiveValue: "no",
+			exit:           255,
+		},
+		{
+			name:           "AllowKernelExtfsYes_SIF",
+			argv:           []string{c.sifOverlayImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "allow kernel extfs",
 			directiveValue: "yes",
 			exit:           0,
 		},
