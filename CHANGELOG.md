@@ -29,6 +29,11 @@
 - The `remote status` command will now print the username, realname, and email
   of the logged-in user, if available.
 
+## Bug Fixes
+
+- Ensure the `allow kernel squashfs` directive in `singularity.conf` applies to
+  encrypted squashfs filesystems in a SIF.
+
 ## 3.11.2 \[2023-04-27\]
 
 ### New Features & Functionality
