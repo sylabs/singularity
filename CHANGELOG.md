@@ -28,11 +28,16 @@
   `--fakeroot`, for example).
 - The `remote status` command will now print the username, realname, and email
   of the logged-in user, if available.
+
+## 3.11.2 \[2023-04-27\]
+
+### New Features & Functionality
+
 - OCI mode now supports `--hostname` (requires UTS namespace, therefore this
   flag will infer `--uts`).
-- Support `--pwd` in OCI mode.
 - OCI mode now supports `--scratch` (shorthand: `-S`) to mount a tmpfs scratch
   directory in the container.
+- Support `--pwd` in OCI mode.
 - OCI mode now supports `--home`. Supplying a single location (e.g.
   `--home /myhomedir`) will result in a new tmpfs directory being created at the
   specified location inside the container, and that dir being set as the
@@ -56,10 +61,10 @@
 - Require `runc` in RPM packages built on SLES, not `crun`, because `crun` is
   part of the Package Hub community repository that may not be enabled.
   SingularityCE will still prefer `crun` if it has been installed.
-- Always request inner userns in `--oci` mode without `--fakeroot`, so that
-  inner id mapping is applied correctly.
 - Use `/dev/loop-control` for loop device creation, to avoid issues with recent
   kernel patch where `max_loop` is not set.
+- Always request inner userns in `--oci` mode without `--fakeroot`, so that
+  inner id mapping is applied correctly.
 - Use correct target uid/gid for inner id mappings in `--oci` mode.
 - Avoid `runc` cgroup creation error when using `--oci` from a root-owned cgroup
   (e.g. ssh login session scope).
