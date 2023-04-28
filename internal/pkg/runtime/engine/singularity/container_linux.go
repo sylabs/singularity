@@ -106,6 +106,15 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}
 
+	// Authorize permitted kernel mounts
+	if engine.EngineConfig.File.AllowKernelSquashfs {
+		mount.AuthorizeImageFS("squashfs")
+		mount.AuthorizeImageFS("encrypted_squashfs")
+	}
+	if engine.EngineConfig.File.AllowKernelExtfs {
+		mount.AuthorizeImageFS("ext3")
+	}
+
 	c := &container{
 		engine:        engine,
 		rpcOps:        rpcOps,
@@ -734,7 +743,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 
 	mountType := mnt.Type
 
-	if mountType == "encryptfs" {
+	if mountType == "encrypted_squashfs" {
 		key, err = mount.GetKey(mnt.InternalOptions)
 		if err != nil {
 			return err
@@ -779,7 +788,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 
 	sylog.Debugf("Mounting loop device %s to %s of type %s\n", path, mnt.Destination, mnt.Type)
 
-	if mountType == "encryptfs" {
+	if mountType == "encrypted_squashfs" {
 		// pass the master processus ID only if a container IPC
 		// namespace was requested because cryptsetup requires
 		// to run in the host IPC namespace
@@ -796,7 +805,6 @@ func (c *container) mountImage(mnt *mount.Point) error {
 
 		path = cryptDev
 
-		// Currently we only support encrypted squashfs file system
 		mountType = "squashfs"
 	}
 
@@ -850,7 +858,7 @@ func (c *container) addRootfsMount(system *mount.System) error {
 	case image.EXT3:
 		mountType = "ext3"
 	case image.ENCRYPTSQUASHFS:
-		mountType = "encryptfs"
+		mountType = "encrypted_squashfs"
 		key = c.engine.EngineConfig.GetEncryptionKey()
 	case image.SANDBOX:
 		sylog.Debugf("Mounting directory rootfs: %v\n", rootfs)

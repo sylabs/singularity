@@ -42,6 +42,8 @@ type File struct {
 	AllowContainerSquashfs  bool     `default:"yes" authorized:"yes,no" directive:"allow container squashfs"`
 	AllowContainerExtfs     bool     `default:"yes" authorized:"yes,no" directive:"allow container extfs"`
 	AllowContainerDir       bool     `default:"yes" authorized:"yes,no" directive:"allow container dir"`
+	AllowKernelSquashfs     bool     `default:"yes" authorized:"yes,no" directive:"allow kernel squashfs"`
+	AllowKernelExtfs        bool     `default:"yes" authorized:"yes,no" directive:"allow kernel extfs"`
 	AlwaysUseNv             bool     `default:"no" authorized:"yes,no" directive:"always use nv"`
 	UseNvCCLI               bool     `default:"no" authorized:"yes,no" directive:"use nvidia-container-cli"`
 	AlwaysUseRocm           bool     `default:"no" authorized:"yes,no" directive:"always use rocm"`
@@ -284,6 +286,20 @@ allow container encrypted = {{ if eq .AllowContainerEncrypted true }}yes{{ else 
 allow container squashfs = {{ if eq .AllowContainerSquashfs true }}yes{{ else }}no{{ end }}
 allow container extfs = {{ if eq .AllowContainerExtfs true }}yes{{ else }}no{{ end }}
 allow container dir = {{ if eq .AllowContainerDir true }}yes{{ else }}no{{ end }}
+
+# ALLOW KERNEL SQUASHFS: [BOOL]
+# DEFAULT: yes
+# If set to no, Singularity will not perform any kernel mounts of squashfs filesystems.
+# This affects both stand-alone image files and filesystems embedded in a SIF file.
+# Applicable to setuid mode only.
+allow kernel squashfs = {{ if eq .AllowKernelSquashfs true }}yes{{ else }}no{{ end }}
+
+# ALLOW KERNEL EXTFS: [BOOL]
+# DEFAULT: yes
+# If set to no, Singularity will not perform any kernel mounts of extfs filesystems.
+# This affects both stand-alone image files and filesystems embedded in a SIF file.
+# Applicable to setuid mode only.
+allow kernel extfs = {{ if eq .AllowKernelExtfs true }}yes{{ else }}no{{ end }}
 
 # ALLOW NET USERS: [STRING]
 # DEFAULT: NULL
