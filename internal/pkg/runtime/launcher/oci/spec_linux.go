@@ -35,8 +35,8 @@ func minimalSpec() specs.Spec {
 	}
 	config.Root = &specs.Root{
 		Path: "rootfs",
-		// TODO - support writable-tmpfs / writable
-		Readonly: true,
+		// TODO - support read-only. At present we always have a writable tmpfs overlay, like native runtime --compat.
+		Readonly: false,
 	}
 	config.Process = &specs.Process{
 		Terminal: true,

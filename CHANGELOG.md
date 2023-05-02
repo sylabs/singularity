@@ -2,6 +2,12 @@
 
 ## Changes Since Last Release
 
+### Changed defaults / behaviours
+
+- `--oci` mode now provides a writable container by default, using a tmpfs
+  overlay. This improves parity with `--compat` mode in the native runtime, as
+  `--compat` enables `--writable-tmpfs`.
+
 ## Bug Fixes
 
 - Ensure the `allow kernel squashfs` directive in `singularity.conf` applies to
