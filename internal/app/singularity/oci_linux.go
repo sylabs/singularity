@@ -42,6 +42,15 @@ func OciRun(ctx context.Context, containerID string, args *OciArgs) error {
 	return oci.Run(ctx, containerID, args.BundlePath, args.PidFile, systemdCgroups)
 }
 
+// OciRun runs a container via the OCI runtime, wrapped with prep / cleanup steps.
+func OciRunWrapped(ctx context.Context, containerID string, args *OciArgs) error {
+	systemdCgroups, err := systemdCgroups()
+	if err != nil {
+		return err
+	}
+	return oci.RunWrapped(ctx, containerID, args.BundlePath, args.PidFile, systemdCgroups)
+}
+
 // OciCreate creates a container from an OCI bundle
 func OciCreate(containerID string, args *OciArgs) error {
 	systemdCgroups, err := systemdCgroups()
