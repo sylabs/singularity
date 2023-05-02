@@ -29,25 +29,6 @@ sudo apt-get install -y \
     wget
 ```
 
-On Ubuntu 18.04:
-
-```sh
-# Ensure repositories are up-to-date
-sudo apt-get update
-# Install debian packages for dependencies
-sudo apt-get install -y \
-    build-essential \
-    libseccomp-dev \
-    libglib2.0-dev \
-    pkg-config \
-    squashfs-tools \
-    cryptsetup \
-    runc \
-    uidmap \
-    git \
-    wget
-```
-
 On CentOS/RHEL 8 and above:
 
 ```sh
