@@ -8,6 +8,9 @@
   `/var/singularity`) to store local state files.
 - `--cwd` is now the preferred form of the flag for setting the container's
   working directory, though `--pwd` is still supported for compatibility.
+- `--oci` mode now provides a writable container by default, using a tmpfs
+  overlay. This improves parity with `--compat` mode in the native runtime, as
+  `--compat` enables `--writable-tmpfs`.
 
 ### New Features & Functionality
 

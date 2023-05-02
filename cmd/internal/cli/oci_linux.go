@@ -107,6 +107,7 @@ func init() {
 		cmdManager.RegisterSubCmd(OciCmd, OciStartCmd)
 		cmdManager.RegisterSubCmd(OciCmd, OciCreateCmd)
 		cmdManager.RegisterSubCmd(OciCmd, OciRunCmd)
+		cmdManager.RegisterSubCmd(OciCmd, OciRunWrappedCmd)
 		cmdManager.RegisterSubCmd(OciCmd, OciDeleteCmd)
 		cmdManager.RegisterSubCmd(OciCmd, OciKillCmd)
 		cmdManager.RegisterSubCmd(OciCmd, OciStateCmd)
@@ -118,7 +119,7 @@ func init() {
 		cmdManager.RegisterSubCmd(OciCmd, OciMountCmd)
 		cmdManager.RegisterSubCmd(OciCmd, OciUmountCmd)
 
-		cmdManager.SetCmdGroup("create_run", OciCreateCmd, OciRunCmd)
+		cmdManager.SetCmdGroup("create_run", OciCreateCmd, OciRunCmd, OciRunWrappedCmd)
 		createRunCmd := cmdManager.GetCmdGroup("create_run")
 
 		cmdManager.RegisterFlagForCmd(&ociBundleFlag, createRunCmd...)
@@ -165,6 +166,25 @@ var OciRunCmd = &cobra.Command{
 	Short:   docs.OciRunShort,
 	Long:    docs.OciRunLong,
 	Example: docs.OciRunExample,
+}
+
+// OciRunWrappedCmd is for internal OCI launcher use.
+// Executes an oci run, wrapped with preparation / cleanup code.
+var OciRunWrappedCmd = &cobra.Command{
+	Args:                  cobra.ExactArgs(1),
+	DisableFlagsInUseLine: true,
+	PreRun:                CheckRoot,
+	Run: func(cmd *cobra.Command, args []string) {
+		if err := singularity.OciRunWrapped(cmd.Context(), args[0], &ociArgs); err != nil {
+			var exitErr *exec.ExitError
+			if errors.As(err, &exitErr) {
+				os.Exit(exitErr.ExitCode())
+			}
+			sylog.Fatalf("%s", err)
+		}
+	},
+	Use:    docs.OciRunWrappedUse,
+	Hidden: true,
 }
 
 // OciStartCmd represents oci start command.
