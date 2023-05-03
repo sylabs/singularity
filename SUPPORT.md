@@ -56,7 +56,7 @@ website](https://sylabs.io/singularity/).
 Note that the Slack is hosted under a free plan, with limited retention of
 conversation history. Please use [GitHub
 Discussions](https://github.com/sylabs/singularity/discussions) when a
-searchable permanent archive would beneficial.
+searchable permanent archive would be beneficial.
 
 ## Github Issues
 
