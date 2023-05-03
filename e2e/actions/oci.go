@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 	"text/template"
 
@@ -914,5 +915,62 @@ func (c actionTests) actionOciIDMaps(t *testing.T) {
 				}),
 			)
 		})
+	}
+}
+
+// actionOCICompat checks that the --oci mode has the behavior that the native mode gains from the --compat flag.
+// Must be run in sequential section as it modifies host process umask.
+func (c actionTests) actionOciCompat(t *testing.T) {
+	e2e.EnsureOCIArchive(t, c.env)
+	imageRef := "oci-archive:" + c.env.OCIArchivePath
+
+	type test struct {
+		name     string
+		args     []string
+		exitCode int
+		expect   e2e.SingularityCmdResultOp
+	}
+
+	tests := []test{
+		{
+			name:     "containall",
+			args:     []string{imageRef, "sh", "-c", "ls -lah $HOME"},
+			exitCode: 0,
+			expect:   e2e.ExpectOutput(e2e.ContainMatch, "total 0"),
+		},
+		{
+			name:     "writable-tmpfs",
+			args:     []string{imageRef, "sh", "-c", "touch /test"},
+			exitCode: 0,
+		},
+		{
+			name:     "no-init",
+			args:     []string{imageRef, "sh", "-c", "ps"},
+			exitCode: 0,
+			expect:   e2e.ExpectOutput(e2e.UnwantedContainMatch, "sinit"),
+		},
+		{
+			name:     "no-umask",
+			args:     []string{imageRef, "sh", "-c", "umask"},
+			exitCode: 0,
+			expect:   e2e.ExpectOutput(e2e.ContainMatch, "0022"),
+		},
+	}
+
+	oldUmask := syscall.Umask(0)
+	defer syscall.Umask(oldUmask)
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(
+				tt.exitCode,
+				tt.expect,
+			),
+		)
 	}
 }

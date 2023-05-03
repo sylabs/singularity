@@ -19,8 +19,10 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/util/starter"
+	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 // Delete deletes container resources
@@ -219,8 +221,27 @@ func Run(ctx context.Context, containerID, bundlePath, pidFile string, systemdCg
 	return cmd.Run()
 }
 
-// RunNS reexecs singularity in a user namespace, with supplied uid/gid mapping, calling oci run.
-func RunNS(ctx context.Context, containerID, bundlePath, pidFile string) error {
+// RunWrapped runs a container via the OCI runtime, wrapped with prep / cleanup steps.
+func RunWrapped(ctx context.Context, containerID, bundlePath, pidFile string, systemdCgroups bool) error {
+	// TODO: --oci mode always emulating --compat, which uses --writable-tmpfs.
+	//       Provide a way of disabling this, for a read only rootfs.
+	if err := prepareWriteableTmpfs(bundlePath); err != nil {
+		return err
+	}
+
+	err := Run(ctx, containerID, bundlePath, pidFile, systemdCgroups)
+
+	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
+	if err := cleanupWritableTmpfs(bundlePath); err != nil {
+		sylog.Errorf("While cleaning up writable tmpfs: %v", err)
+	}
+
+	// Return any error from the actual container payload - preserve exit code.
+	return err
+}
+
+// RunWrappedNS reexecs singularity in a user namespace, with supplied uid/gid mapping, calling oci run.
+func RunWrappedNS(ctx context.Context, containerID, bundlePath, pidFile string) error {
 	absBundle, err := filepath.Abs(bundlePath)
 	if err != nil {
 		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
@@ -233,7 +254,7 @@ func RunNS(ctx context.Context, containerID, bundlePath, pidFile string) error {
 	args := []string{
 		filepath.Join(buildcfg.BINDIR, "singularity"),
 		"oci",
-		"run",
+		"run-wrapped",
 		"-b", absBundle,
 		containerID,
 	}
@@ -341,4 +362,18 @@ func Update(containerID, cgFile string, systemdCgroups bool) error {
 	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
+}
+
+func prepareWriteableTmpfs(bundleDir string) error {
+	sylog.Debugf("Configuring writable tmpfs overlay for %s", bundleDir)
+	c := singularityconf.GetCurrentConfig()
+	if c == nil {
+		return fmt.Errorf("singularity configuration is not initialized")
+	}
+	return tools.CreateOverlayTmpfs(bundleDir, int(c.SessiondirMaxSize))
+}
+
+func cleanupWritableTmpfs(bundleDir string) error {
+	sylog.Debugf("Cleaning up writable tmpfs overlay for %s", bundleDir)
+	return tools.DeleteOverlay(bundleDir)
 }

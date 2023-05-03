@@ -15,6 +15,9 @@
   regardless of the value passed to `--home`). With this change, both value of
   `HOME` and the contents of `/etc/passwd` in the container will reflect the
   value passed to `--home`.
+- `--oci` mode now provides a writable container by default, using a tmpfs
+  overlay. This improves parity with `--compat` mode in the native runtime, as
+  `--compat` enables `--writable-tmpfs`.
 
 ### New Features & Functionality
 
