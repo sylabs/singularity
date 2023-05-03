@@ -1,38 +1,79 @@
 # SingularityCE Support
 
 SingularityCE is a community focused open source project. We maintain
-documentation, which everyone is welcome and encourage to contribute to. We have
-a number of spaces in which questions can be asked, and problems reported.
+[documentation](#documentation), which everyone is welcomed and encouraged to
+contribute to. We have a number of spaces, maintained by the project, in which
+questions can be asked and problems reported.
+
+- [GitHub Discussions](#github-discussions) - Usage questions, discussions, and announcements.
+- [Google Group / Mailing List](#google-group--mailing-list)  - Usage questions,
+  discussions, and announcements.
+- [Slack](#slack) - Real time chat.
+- [GitHub Issues](#github-issues) - Bug reports & feature requests.
+- [Community Calls](#community-calls) - Development updates and discussion.
 
 ## Documentation
 
-If you haven't already, read our [documentation](https://www.sylabs.io/docs/).
-These docs cover common use cases, and are often helpful to browse before
-submitting an issue or asking a question to the community.
+If you haven't already, please read our
+[documentation](https://www.sylabs.io/docs/). The user and admin focused docs
+cover common use cases, and are often helpful to browse before submitting an
+issue or asking a question to the community.
 
-The documentation is under an open source license, and we encourage everyone to
-contribute via the GitHub repositories.
+The documentation is released under an open source license, and we encourage
+contributions via the GitHub repositories:
 
-- [singularity-admindocs](https://github.com/sylabs/singularity-admindocs) and
+- [singularity-admindocs](https://github.com/sylabs/singularity-admindocs)
 - [singularity-userdocs](https://github.com/sylabs/singularity-userdocs)
-  repositories.
 
-## Github
+## GitHub Discussions
+
+[GitHub Discussions](https://github.com/sylabs/singularity/discussions) on the
+SingularityCE repository provides a convenient place to reach the user and
+developer community, and:
+
+- Ask usage questions.
+- Suggest, discuss, and develop ideas for new features.
+- Provide input into the SingularityCE development roadmap.
+- Keep up-to-date with releases and community calls.
+
+As a searchable and permanent archive of questions and discussion, we encourage
+you to use GitHub discussions to reach the broadest audience of SingularityCE
+users and developers.
+
+## Google Group / Mailing List
+
+If you prefer a more traditional mailing list for announcements and discussions,
+you can subscribe to the low volume [Google
+Group](https://groups.google.com/g/singularity-ce).
+
+## Slack
+
+For real time conversation with the community, you can join our Slack -
+[singularityce.slack.com](https://singularityce.slack.com/). An up-to-date
+direct invite link can be found at the [Sylabs
+website](https://sylabs.io/singularity/).
+
+Note that the Slack is hosted under a free plan, with limited retention of
+conversation history. Please use [GitHub
+Discussions](https://github.com/sylabs/singularity/discussions) when a
+searchable permanent archive would be beneficial.
+
+## Github Issues
 
 For bugs, feature requests, and other technical issues we recommend opening a
 new issue on the Github issues boards.
 
 - [SingularityCE Issues](https://github.com/sylabs/singularity/issues): is
-  recommended for most issues with the SingularityiCE software itself.
+  recommended for most issues with the SingularityCE software itself.
 - [User Documentation](https://github.com/sylabs/singularity-userdocs/issues)
   questions, feedback, and suggestions should go here.
 - [Admin Documentation](https://github.com/sylabs/singularity-admindocs/issues)
   questions, feedback, and suggestions should go here.
 
 Note that usage questions, or problems related to running a specific piece of
-software in a container, are best asked on the Google Group, or Slack channel.
-Questions in these venues will be seen by a greater number of users, who may
-already know the answer!
+software in a container, are best asked on GitHub Discussions, the Google Group,
+or in the Slack channel. Questions in these venues will be seen by a greater
+number of users, who may already know the answer!
 
 ### How should I create an issue?
 
@@ -88,26 +129,12 @@ review some of these reasons, along with strategies for managing them:
    imperfect or incomplete, can often provided the momentum needed to get a fix
    or enhancement rolling.
 
-## Google Group
-
-You can reach the community quickly by way of joining our
-[Google Group](https://groups.google.com/g/singularity-ce).
-
-## Slack
-
-For real time conversation with the community, you can join our Slack at
-[https://singularityce.slack.com/](https://singularityce.slack.com/). Ping the
-Google Group or one of the admins here to request to be added.
-
 ## Community Calls
 
 Regular community calls are held for the project, on the first Thursday of each
 month, via Zoom. These calls are an excellent place to raise feature suggestions
 or kick-off discussion about something you'd like to see in SingularityCE.
-Meeting details are posted in our [SingularityCE Community
-Repository](https://github.com/sylabs/singularityce-community), and recordings
-at the [Sylabs YouTube
+Meeting details are posted in [GitHub
+Discussions](https://github.com/sylabs/singularity/discussions/categories/community-call),
+and recordings at the [Sylabs YouTube
 Channel](https://www.youtube.com/channel/UCsxpqAJKGJBMEFHFr-5VL2w).
-
-Is there something missing here you'd like to see? Please
-[let us know](https://github.com/sylabs/singularity/issues).
