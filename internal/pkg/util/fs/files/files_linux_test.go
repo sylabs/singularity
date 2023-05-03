@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -38,35 +38,6 @@ func TestGroup(t *testing.T) {
 	f.Close()
 
 	_, err = Group(emptyGroup, uid, gids)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestPasswd(t *testing.T) {
-	test.DropPrivilege(t)
-	defer test.ResetPrivilege(t)
-
-	uid := os.Getuid()
-
-	_, err := Passwd("/fake", "/fake", uid)
-	if err == nil {
-		t.Errorf("should have failed with bad passwd file")
-	}
-	_, err = Passwd("/etc/passwd", "/home", uid)
-	if err != nil {
-		t.Errorf("should have passed with correct passwd file")
-	}
-	// with an empty file
-	f, err := os.CreateTemp("", "empty-passwd-")
-	if err != nil {
-		t.Error(err)
-	}
-	emptyPasswd := f.Name()
-	defer os.Remove(emptyPasswd)
-	f.Close()
-
-	_, err = Passwd(emptyPasswd, "/home", uid)
 	if err != nil {
 		t.Error(err)
 	}
