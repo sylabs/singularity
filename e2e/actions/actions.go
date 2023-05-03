@@ -290,6 +290,14 @@ func (c actionTests) actionExec(t *testing.T) {
 				e2e.ExpectOutput(e2e.RegexMatch, `^(\s*)Server:(\s+)(1\.1\.1\.1)(\s*)\n`),
 			},
 		},
+		{
+			name: "CustomHomePreservesRootShell",
+			argv: []string{"--home", "/tmp", c.env.ImagePath, "cat", "/etc/passwd"},
+			exit: 0,
+			wantOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.RegexMatch, `^root:x:0:0:root:[^:]*:/bin/ash\n`),
+			},
+		},
 	}
 
 	for _, tt := range tests {
