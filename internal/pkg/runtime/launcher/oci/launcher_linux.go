@@ -77,7 +77,7 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "Writable")
 	}
 	if lo.WritableTmpfs {
-		badOpt = append(badOpt, "WritableTmpfs")
+		sylog.Infof("--oci mode uses --writable-tmpfs by default")
 	}
 	if len(lo.OverlayPaths) > 0 {
 		badOpt = append(badOpt, "OverlayPaths")
@@ -461,12 +461,12 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	}
 
 	if os.Getuid() == 0 {
-		// Direct execution of runc/crun run.
-		err = Run(ctx, id.String(), b.Path(), "", l.singularityConf.SystemdCgroups)
+		// Execution of runc/crun run, wrapped with prep / cleanup.
+		err = RunWrapped(ctx, id.String(), b.Path(), "", l.singularityConf.SystemdCgroups)
 	} else {
 		// Reexec singularity oci run in a userns with mappings.
 		// Note - the oci run command will pull out the SystemdCgroups setting from config.
-		err = RunNS(ctx, id.String(), b.Path(), "")
+		err = RunWrappedNS(ctx, id.String(), b.Path(), "")
 	}
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
