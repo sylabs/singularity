@@ -7,7 +7,7 @@ will be working in an up-to-date local clone of the GitHub repository, where the
 
 There are two different release procedures:
 
-* A new patch release, e.g. releasing 3.11.2 when the current release is 3.11.1,
+* A new patch release, e.g. releasing 3.11.3 when the current release is 3.11.2,
   follows a short procedure that can be completed within a day.
 * A new major or minor version, e.g. releasing 3.12.0 when the current release
   is 3.11.1, requires a longer procedure that takes a minimum of 2 weeks. This
@@ -42,10 +42,11 @@ for the current stable major.minor version of SingularityCE.
    used to build our release packages. Update if necessary via a PR against the
    release branch.
 1. Modify the `README.md`, `INSTALL.md`, `CHANGELOG.md` via PR against the
-   release branch, so that they reflect the version to be released.
+   release branch, so that they reflect the version to be released. Also modify
+   Go version mentioned in `INSTALL.md`, if that has changed since last release.
 1. After all PRs are merged, apply an annotated tag to the HEAD of the release
-   branch via `git tag -a -m "SingularityCE v3.11.2" v3.11.2`.
-1. Push the tag to the GitHub repository via `git push upstream v3.11.2`.
+   branch via `git tag -a -m "SingularityCE v3.11.3" v3.11.3`.
+1. Push the tag to the GitHub repository via `git push upstream v3.11.3`.
 1. Download the rpm and deb packages, which are generated as CI job artifacts,
    from the CircleCI workflow for the tag.
 1. Create a tarball locally, via
@@ -107,7 +108,8 @@ begins by branching, and then issuing, a release candidate for broader testing.
    release branch.
 1. Modify the `README.md`, `INSTALL.md`, `CHANGELOG.md` via PR against the
    release branch, so that they reflect the release candidate version to be
-   issued.
+   issued. Also modify Go version mentioned in `INSTALL.md`, if that has changed
+   since last release.
 1. Apply an annotated tag via
    `git tag -a -m "SingularityCE v3.11.0 Release Candidate 1" v3.11.0-rc.1`.
 1. Push the tag via `git push upstream v3.11.0-rc.1`.
@@ -137,7 +139,8 @@ release of a new major or minor version. Each new RC follows step 5 and above.
 1. Ensure the user and admin documentation has been deployed to the sylabs.io
    website.
 1. Modify the `README.md`, `INSTALL.md`, `CHANGELOG.md` via PR against the
-   release branch, so that they reflect the version to be released.
+   release branch, so that they reflect the version to be released. Also modify
+   Go version mentioned in `INSTALL.md`, if that has changed since last release.
 1. Apply an annotated tag via `git tag -a -m "SingularityCE v3.12.0" v3.12.0`.
 1. Push the tag via `git push upstream v3.12.0`.
 1. Download the rpm and deb packages, which are generated as CI job artifacts,
