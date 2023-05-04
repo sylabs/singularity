@@ -7,7 +7,7 @@ will be working in an up-to-date local clone of the GitHub repository, where the
 
 There are two different release procedures:
 
-* A new patch release, e.g. releasing 3.11.2 when the current release is 3.11.1,
+* A new patch release, e.g. releasing 3.11.3 when the current release is 3.11.2,
   follows a short procedure that can be completed within a day.
 * A new major or minor version, e.g. releasing 3.12.0 when the current release
   is 3.11.1, requires a longer procedure that takes a minimum of 2 weeks. This
@@ -44,8 +44,8 @@ for the current stable major.minor version of SingularityCE.
 1. Modify the `README.md`, `INSTALL.md`, `CHANGELOG.md` via PR against the
    release branch, so that they reflect the version to be released.
 1. After all PRs are merged, apply an annotated tag to the HEAD of the release
-   branch via `git tag -a -m "SingularityCE v3.11.2" v3.11.2`.
-1. Push the tag to the GitHub repository via `git push upstream v3.11.2`.
+   branch via `git tag -a -m "SingularityCE v3.11.3" v3.11.3`.
+1. Push the tag to the GitHub repository via `git push upstream v3.11.3`.
 1. Download the rpm and deb packages, which are generated as CI job artifacts,
    from the CircleCI workflow for the tag.
 1. Create a tarball locally, via
