@@ -115,7 +115,8 @@ begins by branching, and then issuing, a release candidate for broader testing.
 1. Push the tag via `git push upstream v3.11.0-rc.1`.
 1. Download the rpm and deb packages, which are generated as CI job artifacts,
    from the CircleCI workflow for the tag.
-1. Create a tarball locally, via `git clean -fdx && mconfig -v && make dist`.
+1. Create a tarball locally, via
+   `git clean -fdx && ./mconfig -v && make -C builddir dist`.
 1. Test intallation locally from the tarball.
 1. Compute the sha256sums of the tarball and packages, e.g. by collecting them
    in a single directory and running `sha256sum * > sha256sums`.
@@ -145,7 +146,8 @@ release of a new major or minor version. Each new RC follows step 5 and above.
 1. Push the tag via `git push upstream v3.12.0`.
 1. Download the rpm and deb packages, which are generated as CI job artifacts,
    from the CircleCI workflow for the tag.
-1. Create a tarball locally, via `git clean -fdx && mconfig -v && make dist`.
+1. Create a tarball locally, via
+   `git clean -fdx && ./mconfig -v && make -C builddir dist`.
 1. Test intallation locally from the tarball.
 1. Compute the sha256sums of the tarball and packages, e.g. by collecting them
    in a single directory and running `sha256sum * > sha256sums`.
