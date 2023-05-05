@@ -15,9 +15,6 @@
   regardless of the value passed to `--home`). With this change, both value of
   `HOME` and the contents of `/etc/passwd` in the container will reflect the
   value passed to `--home`.
-- `--oci` mode now provides a writable container by default, using a tmpfs
-  overlay. This improves parity with `--compat` mode in the native runtime, as
-  `--compat` enables `--writable-tmpfs`.
 
 ### New Features & Functionality
 
@@ -39,7 +36,15 @@
 - The `remote status` command will now print the username, realname, and email
   of the logged-in user, if available.
 
-## Bug Fixes
+## 3.11.3 \[2023-05-04\]
+
+### Changed defaults / behaviours
+
+- `--oci` mode now provides a writable container by default, using a tmpfs
+  overlay. This improves parity with `--compat` mode in the native runtime, as
+  `--compat` enables `--writable-tmpfs`.
+
+### Bug Fixes
 
 - Ensure the `allow kernel squashfs` directive in `singularity.conf` applies to
   encrypted squashfs filesystems in a SIF.
