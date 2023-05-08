@@ -221,15 +221,15 @@ func Run(ctx context.Context, containerID, bundlePath, pidFile string, systemdCg
 	return cmd.Run()
 }
 
-// RunWrapped runs a container via the OCI runtime, wrapped with prep / cleanup steps.
-func RunWrapped(ctx context.Context, containerID, bundlePath, pidFile string, systemdCgroups bool) error {
+// WrapWithWriteableTmpFs runs a function wrapped with prep / cleanup steps for a writeable tmpfs.
+func WrapWithWriteableTmpFs(f func() error, bundlePath string) error {
 	// TODO: --oci mode always emulating --compat, which uses --writable-tmpfs.
 	//       Provide a way of disabling this, for a read only rootfs.
 	if err := prepareWriteableTmpfs(bundlePath); err != nil {
 		return err
 	}
 
-	err := Run(ctx, containerID, bundlePath, pidFile, systemdCgroups)
+	err := f()
 
 	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
 	if err := cleanupWritableTmpfs(bundlePath); err != nil {
@@ -240,15 +240,25 @@ func RunWrapped(ctx context.Context, containerID, bundlePath, pidFile string, sy
 	return err
 }
 
+// WrapWithOverlays runs a function wrapped with prep / cleanup steps for overlays.
+func WrapWithOverlays(f func() error, bundlePath string, overlayPaths []string) error {
+	for _, p := range overlayPaths {
+		if err := tools.CreateOverlayByPath(bundlePath, p); err != nil {
+			return err
+		}
+	}
+
+	err := f()
+
+	// Return any error from the actual container payload - preserve exit code.
+	return err
+}
+
 // RunWrappedNS reexecs singularity in a user namespace, with supplied uid/gid mapping, calling oci run.
-func RunWrappedNS(ctx context.Context, containerID, bundlePath, pidFile string) error {
+func RunWrappedNS(ctx context.Context, containerID, bundlePath string, overlayPaths []string) error {
 	absBundle, err := filepath.Abs(bundlePath)
 	if err != nil {
 		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
-	}
-
-	if err := os.Chdir(absBundle); err != nil {
-		return fmt.Errorf("failed to change directory to %s: %s", absBundle, err)
 	}
 
 	args := []string{
@@ -256,10 +266,19 @@ func RunWrappedNS(ctx context.Context, containerID, bundlePath, pidFile string) 
 		"oci",
 		"run-wrapped",
 		"-b", absBundle,
-		containerID,
 	}
-	if pidFile != "" {
-		args = append(args, "--pid-file="+pidFile)
+	for _, p := range overlayPaths {
+		absPath, err := filepath.Abs(p)
+		if err != nil {
+			return fmt.Errorf("%w: could not convert %#v to absolute path", err, p)
+		}
+
+		args = append(args, "--overlay", absPath)
+	}
+	args = append(args, containerID)
+
+	if err := os.Chdir(absBundle); err != nil {
+		return fmt.Errorf("failed to change directory to %s: %s", absBundle, err)
 	}
 
 	sylog.Debugf("Calling fakeroot engine to execute %q", strings.Join(args, " "))

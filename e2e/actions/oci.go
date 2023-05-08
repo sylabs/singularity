@@ -974,3 +974,54 @@ func (c actionTests) actionOciCompat(t *testing.T) {
 		)
 	}
 }
+
+// actionOciOverlay checks that --overlay functions correctly in OCI mode.
+func (c actionTests) actionOciOverlay(t *testing.T) {
+	e2e.EnsureOCIArchive(t, c.env)
+	imageRef := "oci-archive:" + c.env.OCIArchivePath
+
+	// Create a temporary directory
+	testDir, err := fs.MakeTmpDir(c.env.TestDir, "overlaytestdir", 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.RemoveAll(testDir)
+		}
+	})
+
+	type test struct {
+		name     string
+		args     []string
+		exitCode int
+		expect   e2e.SingularityCmdResultOp
+	}
+
+	tests := []test{
+		{
+			name:     "NewOverlayDir",
+			args:     []string{"--overlay", filepath.Join(testDir, "my_overlay_dir"), imageRef, "sh", "-c", "echo my_test_string > /my_test_file"},
+			exitCode: 0,
+		},
+		{
+			name:     "ExistOverlayDir",
+			args:     []string{"--overlay", filepath.Join(testDir, "my_overlay_dir"), imageRef, "cat", "/my_test_file"},
+			exitCode: 0,
+			expect:   e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+		},
+	}
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(
+				tt.exitCode,
+				tt.expect,
+			),
+		)
+	}
+}

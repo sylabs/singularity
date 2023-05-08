@@ -33,6 +33,18 @@ var ociBundleFlag = cmdline.Flag{
 	EnvKeys:      []string{"BUNDLE"},
 }
 
+// -o|--overlay
+var ociOverlayFlag = cmdline.Flag{
+	ID:           "ociOverlayFlag",
+	Value:        &ociArgs.OverlayPath,
+	DefaultValue: "",
+	Name:         "overlay",
+	ShortHand:    "o",
+	Usage:        "specify an overlay dir to use in lieu of a writeable tmpfs",
+	EnvKeys:      []string{"OVERLAY"},
+	Tag:          "<path>",
+}
+
 // -l|--log-path
 var ociLogPathFlag = cmdline.Flag{
 	ID:           "ociLogPathFlag",
@@ -123,6 +135,7 @@ func init() {
 		createRunCmd := cmdManager.GetCmdGroup("create_run")
 
 		cmdManager.RegisterFlagForCmd(&ociBundleFlag, createRunCmd...)
+		cmdManager.RegisterFlagForCmd(&ociOverlayFlag, OciRunWrappedCmd)
 		cmdManager.RegisterFlagForCmd(&ociLogPathFlag, createRunCmd...)
 		cmdManager.RegisterFlagForCmd(&ociLogFormatFlag, createRunCmd...)
 		cmdManager.RegisterFlagForCmd(&ociPidFileFlag, createRunCmd...)
