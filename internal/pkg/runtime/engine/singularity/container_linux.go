@@ -1,4 +1,6 @@
 // Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -83,6 +85,7 @@ type container struct {
 	skippedMount  []string
 	suidFlag      uintptr
 	devSourcePath string
+	imageBind     map[string]string
 }
 
 //nolint:maintidx
@@ -122,6 +125,7 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		mountInfoPath: fmt.Sprintf("/proc/%d/mountinfo", pid),
 		skippedMount:  make([]string, 0),
 		suidFlag:      syscall.MS_NOSUID,
+		imageBind:     make(map[string]string),
 	}
 
 	cwd := engine.EngineConfig.GetCwd()
@@ -1204,9 +1208,9 @@ func (c *container) addImageBindMount(system *mount.System) error {
 				return nil
 			})
 
-			if err := system.Points.AddBind(mount.UserbindsTag, src, destination, syscall.MS_BIND); err != nil {
-				return fmt.Errorf("while adding data bind %s -> %s: %s", src, destination, err)
-			}
+			// to honor bind ordering specified by the users
+			// we add bind mount later in addUserbindsMount
+			c.imageBind[destination] = src
 		}
 	}
 
@@ -1760,8 +1764,14 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 	defaultFlags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 
 	for _, b := range c.engine.EngineConfig.GetBindPath() {
-		// ignore image bind
+		// data image bind
 		if b.ID() != "" || b.ImageSrc() != "" {
+			source, ok := c.imageBind[b.Destination]
+			if ok {
+				if err := system.Points.AddBind(mount.UserbindsTag, source, b.Destination, syscall.MS_BIND); err != nil {
+					return fmt.Errorf("while adding data bind %s -> %s: %s", source, b.Destination, err)
+				}
+			}
 			continue
 		}
 
