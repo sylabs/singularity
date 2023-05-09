@@ -9,61 +9,73 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 )
+
+type OverlaySet struct {
+	ReadonlyLocs []string
+	WritableLoc  string
+}
 
 // CreateOverlay creates a writable overlay based on a directory inside the OCI bundle.
 func CreateOverlay(bundlePath string) error {
 	oldumask := syscall.Umask(0)
 	defer syscall.Umask(oldumask)
 
-	overlayPath := filepath.Join(bundlePath, "overlay")
+	overlayDir := filepath.Join(bundlePath, "overlay")
 	var err error
-	if err = os.Mkdir(overlayPath, 0o700); err != nil {
-		return fmt.Errorf("failed to create %s: %s", overlayPath, err)
+	if err = ensureOverlayDir(overlayDir, true, 0o700); err != nil {
+		return fmt.Errorf("failed to create %s: %s", overlayDir, err)
 	}
 	// delete overlay directory in case of error
 	defer func() {
 		if err != nil {
-			os.RemoveAll(overlayPath)
+			os.RemoveAll(overlayDir)
 		}
 	}()
 
-	return CreateOverlayByPath(bundlePath, overlayPath)
+	return MountOverlay(bundlePath, OverlaySet{WritableLoc: overlayDir})
 }
 
-// CreateOverlayByPath creates a writable overlay based on a directory whose path is specified in the second argument.
-func CreateOverlayByPath(bundlePath string, overlayPath string) error {
+func MountOverlay(bundlePath string, ovs OverlaySet) error {
 	var err error
 
-	_, err = os.Stat(overlayPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			err := os.Mkdir(overlayPath, 0o755)
-			if err != nil {
-				return fmt.Errorf("failed to create %s: %s", overlayPath, err)
-			}
-		} else {
+	locsToBind := ovs.ReadonlyLocs
+	if len(ovs.WritableLoc) > 0 {
+		// Check if writable overlay dir already exists; if it doesn't, try to create it.
+		if err = ensureOverlayDir(ovs.WritableLoc, true, 0o755); err != nil {
 			return err
 		}
+
+		locsToBind = append(locsToBind, ovs.WritableLoc)
 	}
 
-	err = syscall.Mount(overlayPath, overlayPath, "", syscall.MS_BIND, "")
-	if err != nil {
-		return fmt.Errorf("failed to bind %s: %s", overlayPath, err)
-	}
-	// best effort to cleanup mount
-	defer func() {
-		if err != nil {
-			syscall.Unmount(overlayPath, syscall.MNT_DETACH)
+	// Try to do initial bind-mounts
+	for _, d := range locsToBind {
+		if err = ensureOverlayDir(d, false, 0); err != nil {
+			return fmt.Errorf("error accessing directory %s: %s", d, err)
 		}
-	}()
 
-	if err = syscall.Mount("", overlayPath, "", syscall.MS_REMOUNT|syscall.MS_BIND, ""); err != nil {
-		return fmt.Errorf("failed to remount %s: %s", overlayPath, err)
+		if err = syscall.Mount(d, d, "", syscall.MS_BIND, ""); err != nil {
+			return fmt.Errorf("failed to bind %s: %s", d, err)
+		}
+
+		// best effort to cleanup mount
+		defer func() {
+			if err != nil {
+				syscall.Unmount(d, syscall.MNT_DETACH)
+			}
+		}()
+
+		// Try to perform remount
+		if err = syscall.Mount("", d, "", syscall.MS_REMOUNT|syscall.MS_BIND, ""); err != nil {
+			return fmt.Errorf("failed to remount %s: %s", d, err)
+		}
 	}
 
-	err = prepareOverlay(bundlePath, overlayPath)
+	// Prepare internal structure of overlay dir
+	err = prepareOverlay(bundlePath, ovs)
 	return err
 }
 
@@ -75,7 +87,7 @@ func CreateOverlayTmpfs(bundlePath string, sizeMiB int) error {
 	defer syscall.Umask(oldumask)
 
 	overlayDir := filepath.Join(bundlePath, "overlay")
-	if err = os.Mkdir(overlayDir, 0o700); err != nil {
+	if err = ensureOverlayDir(overlayDir, true, 0o700); err != nil {
 		return fmt.Errorf("failed to create %s: %s", overlayDir, err)
 	}
 	// delete overlay directory in case of error
@@ -97,44 +109,64 @@ func CreateOverlayTmpfs(bundlePath string, sizeMiB int) error {
 		}
 	}()
 
-	err = prepareOverlay(bundlePath, overlayDir)
+	err = prepareOverlay(bundlePath, OverlaySet{WritableLoc: overlayDir})
 	return err
 }
 
-func prepareOverlay(bundlePath, overlayDir string) error {
+// ensureOverlayDir checks if a directory already exists; if it doesn't, and writable is true, it attempts to create it with the specified permissions.
+func ensureOverlayDir(dir string, createIfMissing bool, createPerm os.FileMode) error {
+	_, err := os.Stat(dir)
+	if dir == "" {
+		panic("ensureOverlayDir on empty dir")
+	}
+
+	if err == nil {
+		return nil
+	}
+
+	if !os.IsNotExist(err) {
+		return err
+	}
+
+	if !createIfMissing {
+		return fmt.Errorf("missing overlay dir %#v", dir)
+	}
+
+	// Create the requested dir
+	if err := os.Mkdir(dir, createPerm); err != nil {
+		return fmt.Errorf("failed to create %#v: %s", dir, err)
+	}
+
+	return nil
+}
+
+func prepareOverlay(bundlePath string, ovs OverlaySet) error {
 	var err error
 
-	upperDir := filepath.Join(overlayDir, "upper")
-	_, err = os.Stat(upperDir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			err := os.Mkdir(upperDir, 0o755)
-			if err != nil {
-				return fmt.Errorf("failed to create %s: %s", upperDir, err)
-			}
-		} else {
-			return err
-		}
-	}
-
-	workDir := filepath.Join(overlayDir, "work")
-	_, err = os.Stat(workDir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			err := os.Mkdir(workDir, 0o700)
-			if err != nil {
-				return fmt.Errorf("failed to create %s: %s", workDir, err)
-			}
-		} else {
-			return err
-		}
-	}
-
 	rootFsDir := RootFs(bundlePath).Path()
+	lowerDirJoined := strings.Join(append(ovs.ReadonlyLocs, rootFsDir), ":")
 
-	options := fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", rootFsDir, upperDir, workDir)
+	// Prepare options string for mount
+	var options string
+	if len(ovs.WritableLoc) > 0 {
+		upperDir := filepath.Join(ovs.WritableLoc, "upper")
+		if err = ensureOverlayDir(upperDir, true, 0o755); err != nil {
+			return err
+		}
+
+		workDir := filepath.Join(ovs.WritableLoc, "work")
+		if err = ensureOverlayDir(workDir, true, 0o700); err != nil {
+			return err
+		}
+
+		options = fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", lowerDirJoined, upperDir, workDir)
+	} else {
+		options = fmt.Sprintf("lowerdir=%s", lowerDirJoined)
+	}
+
+	// Try to perform actual mount
 	if err := syscall.Mount("overlay", rootFsDir, "overlay", 0, options); err != nil {
-		return fmt.Errorf("failed to mount %s: %s", overlayDir, err)
+		return fmt.Errorf("failed to mount %s: %s", rootFsDir, err)
 	}
 
 	return nil
@@ -142,17 +174,27 @@ func prepareOverlay(bundlePath, overlayDir string) error {
 
 // DeleteOverlay deletes overlay
 func DeleteOverlay(bundlePath string) error {
-	overlayDir := filepath.Join(bundlePath, "overlay")
-	rootFsDir := RootFs(bundlePath).Path()
-
-	if err := syscall.Unmount(rootFsDir, syscall.MNT_DETACH); err != nil {
-		return fmt.Errorf("failed to unmount %s: %s", rootFsDir, err)
+	if err := UnmountRootFSOverlay(bundlePath); err != nil {
+		return err
 	}
+
+	overlayDir := filepath.Join(bundlePath, "overlay")
 	if err := syscall.Unmount(overlayDir, syscall.MNT_DETACH); err != nil {
 		return fmt.Errorf("failed to unmount %s: %s", overlayDir, err)
 	}
 	if err := os.RemoveAll(overlayDir); err != nil {
 		return fmt.Errorf("failed to remove %s: %s", overlayDir, err)
 	}
+	return nil
+}
+
+// UnmountRootFSOverlay umounts a rootfs overlay
+func UnmountRootFSOverlay(bundlePath string) error {
+	rootFsDir := RootFs(bundlePath).Path()
+
+	if err := syscall.Unmount(rootFsDir, syscall.MNT_DETACH); err != nil {
+		return fmt.Errorf("failed to unmount %s: %s", rootFsDir, err)
+	}
+
 	return nil
 }

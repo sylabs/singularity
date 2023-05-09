@@ -470,22 +470,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 
 	if os.Getuid() == 0 {
 		// Execution of runc/crun run, wrapped with prep / cleanup.
-		if len(l.cfg.OverlayPaths) > 0 {
-			err = WrapWithOverlays(
-				func() error {
-					return Run(ctx, id.String(), b.Path(), "", l.singularityConf.SystemdCgroups)
-				},
-				b.Path(),
-				l.cfg.OverlayPaths,
-			)
-		} else {
-			err = WrapWithWriteableTmpFs(
-				func() error {
-					return Run(ctx, id.String(), b.Path(), "", l.singularityConf.SystemdCgroups)
-				},
-				b.Path(),
-			)
-		}
+		err = l.RunWithOverlays(ctx, id.String(), b.Path())
 	} else {
 		// Reexec singularity oci run in a userns with mappings.
 		// Note - the oci run command will pull out the SystemdCgroups setting from config.
@@ -496,6 +481,18 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		os.Exit(exitErr.ExitCode())
 	}
 	return err
+}
+
+func (l *Launcher) RunWithOverlays(ctx context.Context, containerID, bundleDir string) error {
+	runFunc := func() error {
+		return Run(ctx, containerID, bundleDir, "", l.singularityConf.SystemdCgroups)
+	}
+
+	if len(l.cfg.OverlayPaths) > 0 {
+		return WrapWithOverlays(runFunc, bundleDir, l.cfg.OverlayPaths)
+	}
+
+	return WrapWithWritableTmpFs(runFunc, bundleDir)
 }
 
 // getCgroup will return a cgroup path and resources for the runtime to create.

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -19,10 +19,8 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/internal/pkg/util/starter"
-	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
 // Delete deletes container resources
@@ -182,12 +180,12 @@ func Resume(containerID string, systemdCgroups bool) error {
 }
 
 // Run runs a container (equivalent to create/start/delete)
-func Run(ctx context.Context, containerID, bundlePath, pidFile string, systemdCgroups bool) error {
+func Run(ctx context.Context, containerID, bundleDir, pidFile string, systemdCgroups bool) error {
 	runtimeBin, err := runtime()
 	if err != nil {
 		return err
 	}
-	absBundle, err := filepath.Abs(bundlePath)
+	absBundle, err := filepath.Abs(bundleDir)
 	if err != nil {
 		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
 	}
@@ -221,42 +219,9 @@ func Run(ctx context.Context, containerID, bundlePath, pidFile string, systemdCg
 	return cmd.Run()
 }
 
-// WrapWithWriteableTmpFs runs a function wrapped with prep / cleanup steps for a writeable tmpfs.
-func WrapWithWriteableTmpFs(f func() error, bundlePath string) error {
-	// TODO: --oci mode always emulating --compat, which uses --writable-tmpfs.
-	//       Provide a way of disabling this, for a read only rootfs.
-	if err := prepareWriteableTmpfs(bundlePath); err != nil {
-		return err
-	}
-
-	err := f()
-
-	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
-	if err := cleanupWritableTmpfs(bundlePath); err != nil {
-		sylog.Errorf("While cleaning up writable tmpfs: %v", err)
-	}
-
-	// Return any error from the actual container payload - preserve exit code.
-	return err
-}
-
-// WrapWithOverlays runs a function wrapped with prep / cleanup steps for overlays.
-func WrapWithOverlays(f func() error, bundlePath string, overlayPaths []string) error {
-	for _, p := range overlayPaths {
-		if err := tools.CreateOverlayByPath(bundlePath, p); err != nil {
-			return err
-		}
-	}
-
-	err := f()
-
-	// Return any error from the actual container payload - preserve exit code.
-	return err
-}
-
 // RunWrappedNS reexecs singularity in a user namespace, with supplied uid/gid mapping, calling oci run.
-func RunWrappedNS(ctx context.Context, containerID, bundlePath string, overlayPaths []string) error {
-	absBundle, err := filepath.Abs(bundlePath)
+func RunWrappedNS(ctx context.Context, containerID, bundleDir string, overlayPaths []string) error {
+	absBundle, err := filepath.Abs(bundleDir)
 	if err != nil {
 		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
 	}
@@ -268,7 +233,7 @@ func RunWrappedNS(ctx context.Context, containerID, bundlePath string, overlayPa
 		"-b", absBundle,
 	}
 	for _, p := range overlayPaths {
-		absPath, err := filepath.Abs(p)
+		absPath, err := absolutifyOverlay(p)
 		if err != nil {
 			return fmt.Errorf("%w: could not convert %#v to absolute path", err, p)
 		}
@@ -381,18 +346,4 @@ func Update(containerID, cgFile string, systemdCgroups bool) error {
 	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
-}
-
-func prepareWriteableTmpfs(bundleDir string) error {
-	sylog.Debugf("Configuring writable tmpfs overlay for %s", bundleDir)
-	c := singularityconf.GetCurrentConfig()
-	if c == nil {
-		return fmt.Errorf("singularity configuration is not initialized")
-	}
-	return tools.CreateOverlayTmpfs(bundleDir, int(c.SessiondirMaxSize))
-}
-
-func cleanupWritableTmpfs(bundleDir string) error {
-	sylog.Debugf("Cleaning up writable tmpfs overlay for %s", bundleDir)
-	return tools.DeleteOverlay(bundleDir)
 }

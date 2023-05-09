@@ -241,7 +241,7 @@ func (c actionTests) actionOciExec(t *testing.T) {
 			argv: []string{"--home", "/tmp", imageRef, "cat", "/etc/passwd"},
 			exit: 0,
 			wantOutputs: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.RegexMatch, `^root:x:0:0:root:[^:]*:/bin/sh\n`),
+				e2e.ExpectOutput(e2e.RegexMatch, `^root:x:0:0:root:[^:]*:/bin/ash\n`),
 			},
 		},
 	}
@@ -811,7 +811,7 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 
 					// Generate the command to be executed in the container
 					// Start by printing all environment variables, to test using e2e.ContainMatch conditions later
-					execCmd := "/bin/env"
+					execCmd := "/usr/bin/env"
 
 					// Add commands to test the presence of mapped devices.
 					for _, d := range tt.DeviceNodes {
@@ -980,48 +980,92 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 	e2e.EnsureOCIArchive(t, c.env)
 	imageRef := "oci-archive:" + c.env.OCIArchivePath
 
-	// Create a temporary directory
-	testDir, err := fs.MakeTmpDir(c.env.TestDir, "overlaytestdir", 0o755)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if !t.Failed() {
-			os.RemoveAll(testDir)
+	for _, profile := range []e2e.Profile{e2e.OCIRootProfile, e2e.OCIFakerootProfile} {
+		testDir, err := fs.MakeTmpDir(c.env.TestDir, "overlaytestdir", 0o755)
+		if err != nil {
+			t.Fatal(err)
 		}
-	})
+		t.Cleanup(func() {
+			if !t.Failed() {
+				os.RemoveAll(testDir)
+			}
+		})
 
-	type test struct {
-		name     string
-		args     []string
-		exitCode int
-		expect   e2e.SingularityCmdResultOp
-	}
+		// Create a few read-only overlay subdirs under testDir
+		for i := 0; i < 3; i++ {
+			dirName := fmt.Sprintf("my_ro_ol_dir%d", i)
+			fullPath := filepath.Join(testDir, dirName)
+			if err = os.Mkdir(fullPath, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				if !t.Failed() {
+					os.RemoveAll(fullPath)
+				}
+			})
+			if err = os.WriteFile(
+				filepath.Join(fullPath, fmt.Sprintf("testfile.%d", i)),
+				[]byte(fmt.Sprintf("test_string_%d\n", i)),
+				0o644); err != nil {
+				t.Fatal(err)
+			}
+			if err = os.WriteFile(
+				filepath.Join(fullPath, "maskable_testfile"),
+				[]byte(fmt.Sprintf("maskable_string_%d\n", i)),
+				0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
 
-	tests := []test{
-		{
-			name:     "NewOverlayDir",
-			args:     []string{"--overlay", filepath.Join(testDir, "my_overlay_dir"), imageRef, "sh", "-c", "echo my_test_string > /my_test_file"},
-			exitCode: 0,
-		},
-		{
-			name:     "ExistOverlayDir",
-			args:     []string{"--overlay", filepath.Join(testDir, "my_overlay_dir"), imageRef, "cat", "/my_test_file"},
-			exitCode: 0,
-			expect:   e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
-		},
-	}
-	for _, tt := range tests {
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.OCIUserProfile),
-			e2e.WithCommand("exec"),
-			e2e.WithArgs(tt.args...),
-			e2e.ExpectExit(
-				tt.exitCode,
-				tt.expect,
-			),
-		)
+		tests := []struct {
+			name        string
+			args        []string
+			exitCode    int
+			wantOutputs []e2e.SingularityCmdResultOp
+		}{
+			{
+				name:     "NewWritable",
+				args:     []string{"--overlay", filepath.Join(testDir, "my_rw_ol_dir"), imageRef, "sh", "-c", "echo my_test_string > /my_test_file"},
+				exitCode: 0,
+			},
+			{
+				name:     "ExistWritable",
+				args:     []string{"--overlay", filepath.Join(testDir, "my_rw_ol_dir"), imageRef, "cat", "/my_test_file"},
+				exitCode: 0,
+				wantOutputs: []e2e.SingularityCmdResultOp{
+					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+				},
+			},
+			{
+				name:     "NonExistReadonly",
+				args:     []string{"--overlay", filepath.Join(testDir, "my_ro_ol_dir_nonexistent:ro"), imageRef, "echo", "hi"},
+				exitCode: 255,
+			},
+			{
+				name:     "SeveralReadonly",
+				args:     []string{"--overlay", filepath.Join(testDir, "my_ro_ol_dir2:ro"), "--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"), imageRef, "cat", "/testfile.1", "/maskable_testfile"},
+				exitCode: 0,
+				wantOutputs: []e2e.SingularityCmdResultOp{
+					e2e.ExpectOutput(e2e.ContainMatch, "test_string_1"),
+					e2e.ExpectOutput(e2e.ContainMatch, "maskable_string_2"),
+				},
+			},
+		}
+
+		t.Run(profile.String(), func(t *testing.T) {
+			for _, tt := range tests {
+				c.env.RunSingularity(
+					t,
+					e2e.AsSubtest(tt.name),
+					e2e.WithProfile(profile),
+					e2e.WithCommand("exec"),
+					e2e.WithArgs(tt.args...),
+					e2e.ExpectExit(
+						tt.exitCode,
+						tt.wantOutputs...,
+					),
+				)
+			}
+		})
 	}
 }
