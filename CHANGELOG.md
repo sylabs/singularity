@@ -15,11 +15,9 @@
   regardless of the value passed to `--home`). With this change, both value of
   `HOME` and the contents of `/etc/passwd` in the container will reflect the
   value passed to `--home`.
-- Bind mounts are now performed in the order of their occurrence in the
-  comma-separated list given to the `-B`/`--bind` flag, or given as the value of
-  the `SINGULARITY_BIND` environment variable. (Previously, image-mounts were
-  always performed first, regardless of the order of items in the
-  comma-separated list.)
+- Bind mounts are now performed in the order of their occurrence on the command
+  line, or within the value of the `SINGULARITY_BIND` environment variable.
+  (Previously, image-mounts were always performed first, regardless of order.)
 
 ### New Features & Functionality
 
