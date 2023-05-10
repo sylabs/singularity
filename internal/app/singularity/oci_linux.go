@@ -50,15 +50,7 @@ func OciRunWrapped(ctx context.Context, containerID string, args *OciArgs) error
 		return err
 	}
 
-	runFunc := func() error {
-		return oci.Run(ctx, containerID, args.BundlePath, args.PidFile, systemdCgroups)
-	}
-
-	if len(args.OverlayPaths) > 0 {
-		return oci.WrapWithOverlays(runFunc, args.BundlePath, args.OverlayPaths)
-	}
-
-	return oci.WrapWithWritableTmpFs(runFunc, args.BundlePath)
+	return oci.RunWrapped(ctx, containerID, args.BundlePath, args.PidFile, args.OverlayPaths, systemdCgroups)
 }
 
 // OciCreate creates a container from an OCI bundle

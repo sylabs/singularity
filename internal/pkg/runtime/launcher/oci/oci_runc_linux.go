@@ -180,12 +180,12 @@ func Resume(containerID string, systemdCgroups bool) error {
 }
 
 // Run runs a container (equivalent to create/start/delete)
-func Run(ctx context.Context, containerID, bundleDir, pidFile string, systemdCgroups bool) error {
+func Run(ctx context.Context, containerID, bundlePath, pidFile string, systemdCgroups bool) error {
 	runtimeBin, err := runtime()
 	if err != nil {
 		return err
 	}
-	absBundle, err := filepath.Abs(bundleDir)
+	absBundle, err := filepath.Abs(bundlePath)
 	if err != nil {
 		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
 	}
@@ -219,9 +219,22 @@ func Run(ctx context.Context, containerID, bundleDir, pidFile string, systemdCgr
 	return cmd.Run()
 }
 
+// RunWrapped runs a container via the OCI runtime, wrapped with prep / cleanup steps.
+func RunWrapped(ctx context.Context, containerID, bundlePath, pidFile string, overlayPaths []string, systemdCgroups bool) error {
+	runFunc := func() error {
+		return Run(ctx, containerID, bundlePath, "", systemdCgroups)
+	}
+
+	if len(overlayPaths) > 0 {
+		return WrapWithOverlays(runFunc, bundlePath, overlayPaths)
+	}
+
+	return WrapWithWritableTmpFs(runFunc, bundlePath)
+}
+
 // RunWrappedNS reexecs singularity in a user namespace, with supplied uid/gid mapping, calling oci run.
-func RunWrappedNS(ctx context.Context, containerID, bundleDir string, overlayPaths []string) error {
-	absBundle, err := filepath.Abs(bundleDir)
+func RunWrappedNS(ctx context.Context, containerID, bundlePath string, overlayPaths []string) error {
+	absBundle, err := filepath.Abs(bundlePath)
 	if err != nil {
 		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
 	}
