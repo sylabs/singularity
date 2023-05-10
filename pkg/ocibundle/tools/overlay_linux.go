@@ -207,8 +207,8 @@ func performOverlayMount(rootFsDir, options string) error {
 // ensureOverlayDir checks if a directory already exists; if it doesn't, and writable is true, it attempts to create it with the specified permissions.
 func ensureOverlayDir(dir string, createIfMissing bool, createPerm os.FileMode) error {
 	_, err := os.Stat(dir)
-	if dir == "" {
-		panic("ensureOverlayDir on empty dir")
+	if len(dir) == 0 {
+		return fmt.Errorf("internal error: ensureOverlayDir() called with empty dir name")
 	}
 
 	if err == nil {
