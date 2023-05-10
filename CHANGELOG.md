@@ -42,6 +42,8 @@
   filesystem to persist across runs of the OCI container. If specified dir does
   not exist, Singularity will attempt to create it. Multiple overlays can be
   specified, but all but one must be read-only (`--overlay <dir>:ro`).
+- The `tap` CNI plugin, new to github.com/containernetworking/plugins v1.3.0,
+  is now provided.
 
 ## 3.11.3 \[2023-05-04\]
 
