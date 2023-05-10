@@ -2,6 +2,11 @@
 
 ## Changes Since Last Release
 
+### New Features & Functionality
+
+- The `tap` CNI plugin, new to github.com/containernetworking/plugins v1.3.0,
+  is now provided.
+
 ### Bug Fixes
 
 - In `--oci` mode, do not attempt to use unprivileged overlay on systems that do
