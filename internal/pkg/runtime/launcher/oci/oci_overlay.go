@@ -19,15 +19,16 @@ import (
 func WrapWithWritableTmpFs(f func() error, bundleDir string) error {
 	// TODO: --oci mode always emulating --compat, which uses --writable-tmpfs.
 	//       Provide a way of disabling this, for a read only rootfs.
-	if err := prepareWritableTmpfs(bundleDir); err != nil {
+	overlayDir, err := prepareWritableTmpfs(bundleDir)
+	if err != nil {
 		return err
 	}
 
-	err := f()
+	err = f()
 
 	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
-	if err := cleanupWritableTmpfs(bundleDir); err != nil {
-		sylog.Errorf("While cleaning up writable tmpfs: %v", err)
+	if cleanupErr := cleanupWritableTmpfs(bundleDir, overlayDir); cleanupErr != nil {
+		sylog.Errorf("While cleaning up writable tmpfs: %v", cleanupErr)
 	}
 
 	// Return any error from the actual container payload - preserve exit code.
@@ -59,37 +60,39 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 		}
 	}
 
-	if err := tools.MountOverlay(bundleDir, ovs); err != nil {
+	rootFsDir := tools.RootFs(bundleDir).Path()
+	err := tools.ApplyOverlay(rootFsDir, ovs)
+	if err != nil {
 		return err
 	}
 
-	err := f()
+	err = f()
 
 	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
-	if err := tools.UnmountRootFSOverlay(bundleDir); err != nil {
-		sylog.Errorf("While unmounting rootfs overlay: %v", err)
+	if cleanupErr := tools.UnmountOverlay(rootFsDir); cleanupErr != nil {
+		sylog.Errorf("While unmounting rootfs overlay: %v", cleanupErr)
 	}
 
 	// Return any error from the actual container payload - preserve exit code.
 	return err
 }
 
-func prepareWritableTmpfs(bundleDir string) error {
+func prepareWritableTmpfs(bundleDir string) (string, error) {
 	sylog.Debugf("Configuring writable tmpfs overlay for %s", bundleDir)
 	c := singularityconf.GetCurrentConfig()
 	if c == nil {
-		return fmt.Errorf("singularity configuration is not initialized")
+		return "", fmt.Errorf("singularity configuration is not initialized")
 	}
 	return tools.CreateOverlayTmpfs(bundleDir, int(c.SessiondirMaxSize))
 }
 
-func cleanupWritableTmpfs(bundleDir string) error {
+func cleanupWritableTmpfs(bundleDir, overlayDir string) error {
 	sylog.Debugf("Cleaning up writable tmpfs overlay for %s", bundleDir)
-	return tools.DeleteOverlay(bundleDir)
+	return tools.DeleteOverlayTmpfs(bundleDir, overlayDir)
 }
 
-// absolutifyOverlay takes an overlay description string (a path, optionally followed by a colon with an option string, like ":ro" or ":rw"), and replaces any relative path in the description string with an absolute one.
-func absolutifyOverlay(desc string) (string, error) {
+// absOverlay takes an overlay description string (a path, optionally followed by a colon with an option string, like ":ro" or ":rw"), and replaces any relative path in the description string with an absolute one.
+func absOverlay(desc string) (string, error) {
 	splitted := strings.SplitN(desc, ":", 2)
 	barePath := splitted[0]
 	absBarePath, err := filepath.Abs(barePath)

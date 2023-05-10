@@ -246,9 +246,9 @@ func RunWrappedNS(ctx context.Context, containerID, bundlePath string, overlayPa
 		"-b", absBundle,
 	}
 	for _, p := range overlayPaths {
-		absPath, err := absolutifyOverlay(p)
+		absPath, err := absOverlay(p)
 		if err != nil {
-			return fmt.Errorf("%w: could not convert %#v to absolute path", err, p)
+			return fmt.Errorf("could not convert %q to absolute path: %w", p, err)
 		}
 
 		args = append(args, "--overlay", absPath)
