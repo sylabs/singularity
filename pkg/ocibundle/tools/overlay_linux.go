@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // OverlaySet represents a set of overlay directories which will be overlain on
@@ -49,6 +51,7 @@ func CreateOverlay(bundlePath string) error {
 	// delete overlay directory in case of error
 	defer func() {
 		if err != nil {
+			sylog.Debugf("Encountered error in CreateOverlay; attempting to remove overlayDir %q", overlayDir)
 			os.RemoveAll(overlayDir)
 		}
 	}()
@@ -64,7 +67,12 @@ func CreateOverlay(bundlePath string) error {
 func DeleteOverlay(bundlePath string) error {
 	overlayDir := filepath.Join(bundlePath, "overlay")
 	rootFsDir := RootFs(bundlePath).Path()
-	return unmountAndDeleteOverlay(rootFsDir, overlayDir)
+
+	if err := detachMount(rootFsDir); err != nil {
+		return err
+	}
+
+	return detachAndDelete(overlayDir)
 }
 
 // CreateOverlay creates a writable overlay using tmpfs.
@@ -82,6 +90,7 @@ func CreateOverlayTmpfs(bundlePath string, sizeMiB int) (string, error) {
 	// delete overlay directory in case of error
 	defer func() {
 		if err != nil {
+			sylog.Debugf("Encountered error in CreateOverlay; attempting to remove overlayDir %q", overlayDir)
 			os.RemoveAll(overlayDir)
 		}
 	}()
@@ -94,6 +103,7 @@ func CreateOverlayTmpfs(bundlePath string, sizeMiB int) (string, error) {
 	// best effort to cleanup mount
 	defer func() {
 		if err != nil {
+			sylog.Debugf("Encountered error in CreateOverlayTmpfs; attempting to detach overlayDir %q", overlayDir)
 			syscall.Unmount(overlayDir, syscall.MNT_DETACH)
 		}
 	}()
@@ -112,7 +122,18 @@ func CreateOverlayTmpfs(bundlePath string, sizeMiB int) (string, error) {
 // DeleteOverlayTmpfs deletes an overlay previously created using tmpfs.
 func DeleteOverlayTmpfs(bundlePath, overlayDir string) error {
 	rootFsDir := RootFs(bundlePath).Path()
-	return unmountAndDeleteOverlay(rootFsDir, overlayDir)
+
+	if err := detachMount(rootFsDir); err != nil {
+		return err
+	}
+
+	// Because CreateOverlayTmpfs() mounts the tmpfs on overlayDir, and then
+	// calls ApplyOverlay(), there needs to be an extra unmount in the this case
+	if err := detachMount(overlayDir); err != nil {
+		return err
+	}
+
+	return detachAndDelete(overlayDir)
 }
 
 // ApplyOverlay prepares and mounts the specified overlay
@@ -138,19 +159,17 @@ func ApplyOverlay(rootFsDir string, ovs OverlaySet) error {
 
 // UnmountOverlay umounts an overlay
 func UnmountOverlay(rootFsDir string) error {
-	if err := syscall.Unmount(rootFsDir, syscall.MNT_DETACH); err != nil {
-		return fmt.Errorf("failed to unmount %s: %s", rootFsDir, err)
-	}
-
-	return nil
+	return detachMount(rootFsDir)
 }
 
 // prepareWritableOverlay ensures that the upper and work subdirs of a writable
 // overlay dir exist, and if not, creates them.
 func prepareWritableOverlay(dir string) error {
+	sylog.Debugf("Ensuring %q exists", upperSubdirOf(dir))
 	if err := ensureOverlayDir(upperSubdirOf(dir), true, 0o755); err != nil {
 		return fmt.Errorf("err encountered while preparing upper subdir of overlay dir %q: %w", upperSubdirOf(dir), err)
 	}
+	sylog.Debugf("Ensuring %q exists", workSubdirOf(dir))
 	if err := ensureOverlayDir(workSubdirOf(dir), true, 0o700); err != nil {
 		return fmt.Errorf("err encountered while preparing work subdir of overlay dir %q: %w", workSubdirOf(dir), err)
 	}
@@ -182,6 +201,7 @@ func performIdentityMounts(ovs OverlaySet) error {
 			return fmt.Errorf("error accessing directory %s: %s", d, err)
 		}
 
+		sylog.Debugf("Performing identity bind-mount of %q", d)
 		if err = syscall.Mount(d, d, "", syscall.MS_BIND, ""); err != nil {
 			return fmt.Errorf("failed to bind %s: %s", d, err)
 		}
@@ -189,11 +209,13 @@ func performIdentityMounts(ovs OverlaySet) error {
 		// best effort to cleanup mount
 		defer func() {
 			if err != nil {
+				sylog.Debugf("Encountered error with current OverlaySet; attempting to unmount %q", d)
 				syscall.Unmount(d, syscall.MNT_DETACH)
 			}
 		}()
 
 		// Try to perform remount
+		sylog.Debugf("Performing remount of %q", d)
 		if err = syscall.Mount("", d, "", syscall.MS_REMOUNT|syscall.MS_BIND, ""); err != nil {
 			return fmt.Errorf("failed to remount %s: %s", d, err)
 		}
@@ -217,6 +239,7 @@ func overlayOptions(rootFsDir string, ovs OverlaySet) string {
 // performOverlayMount mounts an overlay atop a given rootfs directory
 func performOverlayMount(rootFsDir, options string) error {
 	// Try to perform actual mount
+	sylog.Debugf("Mounting overlay with rootFsDir %q, options: %q", rootFsDir, options)
 	if err := syscall.Mount("overlay", rootFsDir, "overlay", 0, options); err != nil {
 		return fmt.Errorf("failed to mount %s: %s", rootFsDir, err)
 	}
@@ -261,18 +284,23 @@ func workSubdirOf(overlayDir string) string {
 	return filepath.Join(overlayDir, "work")
 }
 
-// unmountAndDeleteOverlay unmounts and deletes a previously-created overlay.
-func unmountAndDeleteOverlay(rootFsDir, overlayDir string) error {
-	if err := UnmountOverlay(rootFsDir); err != nil {
-		return err
-	}
-
+func detachAndDelete(overlayDir string) error {
+	sylog.Debugf("Detaching overlayDir %q", overlayDir)
 	if err := syscall.Unmount(overlayDir, syscall.MNT_DETACH); err != nil {
 		return fmt.Errorf("failed to unmount %s: %s", overlayDir, err)
 	}
 
+	sylog.Debugf("Removing overlayDir %q", overlayDir)
 	if err := os.RemoveAll(overlayDir); err != nil {
 		return fmt.Errorf("failed to remove %s: %s", overlayDir, err)
+	}
+	return nil
+}
+
+func detachMount(dir string) error {
+	sylog.Debugf("Calling syscall.Unmount() to detach %q", dir)
+	if err := syscall.Unmount(dir, syscall.MNT_DETACH); err != nil {
+		return fmt.Errorf("failed to detach %s: %s", dir, err)
 	}
 
 	return nil

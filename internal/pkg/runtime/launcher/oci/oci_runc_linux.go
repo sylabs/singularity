@@ -222,7 +222,7 @@ func Run(ctx context.Context, containerID, bundlePath, pidFile string, systemdCg
 // RunWrapped runs a container via the OCI runtime, wrapped with prep / cleanup steps.
 func RunWrapped(ctx context.Context, containerID, bundlePath, pidFile string, overlayPaths []string, systemdCgroups bool) error {
 	runFunc := func() error {
-		return Run(ctx, containerID, bundlePath, "", systemdCgroups)
+		return Run(ctx, containerID, bundlePath, pidFile, systemdCgroups)
 	}
 
 	if len(overlayPaths) > 0 {
