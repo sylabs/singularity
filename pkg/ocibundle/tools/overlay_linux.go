@@ -13,16 +13,30 @@ import (
 	"syscall"
 )
 
-// OverlaySet represents a set of overlay directories which will be overlain on top of some filesystem mount point. The actual mount point atop which these directories will be overlain is not specified in the OverlaySet; it is left implicit, to be chosen by whichever function consumes an OverlaySet. An OverlaySet contains two types of directories: zero or more directories which will be mounted as read-only overlays atop the (implicit) mount point, and one directory which will be mounted as a writable overlay atop all the rest. An empty WritableLoc field indicates that no writable overlay is to be mounted.
+// OverlaySet represents a set of overlay directories which will be overlain on
+// top of some filesystem mount point. The actual mount point atop which these
+// directories will be overlain is not specified in the OverlaySet; it is left
+// implicit, to be chosen by whichever function consumes an OverlaySet. An
+// OverlaySet contains two types of directories: zero or more directories which
+// will be mounted as read-only overlays atop the (implicit) mount point, and
+// one directory which will be mounted as a writable overlay atop all the rest.
+// An empty WritableLoc field indicates that no writable overlay is to be
+// mounted.
 type OverlaySet struct {
-	// List of directories to be mounted as read-only overlays. The mount point atop which these will be mounted is left implicit, to be chosen by whichever function consumes the OverlaySet.
+	// ReadonlyLocs is a list of directories to be mounted as read-only
+	// overlays. The mount point atop which these will be mounted is left
+	// implicit, to be chosen by whichever function consumes the OverlaySet.
 	ReadonlyLocs []string
 
-	// Directory to be mounted as a writable overlay. The mount point atop which this will be mounted is left implicit, to be chosen by whichever function consumes the OverlaySet. Empty value indicates no writable overlay is to be mounted.
+	// WritableLoc is the directory to be mounted as a writable overlay. The
+	// mount point atop which this will be mounted is left implicit, to be
+	// chosen by whichever function consumes the OverlaySet. Empty value
+	// indicates no writable overlay is to be mounted.
 	WritableLoc string
 }
 
-// CreateOverlay creates a writable overlay using a directory inside the OCI bundle.
+// CreateOverlay creates a writable overlay using a directory inside the OCI
+// bundle.
 func CreateOverlay(bundlePath string) error {
 	oldumask := syscall.Umask(0)
 	defer syscall.Umask(oldumask)
@@ -45,7 +59,8 @@ func CreateOverlay(bundlePath string) error {
 	)
 }
 
-// DeleteOverlay deletes an overlay previously created using a directory inside the OCI bundle.
+// DeleteOverlay deletes an overlay previously created using a directory inside
+// the OCI bundle.
 func DeleteOverlay(bundlePath string) error {
 	overlayDir := filepath.Join(bundlePath, "overlay")
 	rootFsDir := RootFs(bundlePath).Path()
@@ -130,7 +145,8 @@ func UnmountOverlay(rootFsDir string) error {
 	return nil
 }
 
-// prepareWritableOverlay ensures that the upper and work subdirs of a writable overlay dir exist, and if not, creates them.
+// prepareWritableOverlay ensures that the upper and work subdirs of a writable
+// overlay dir exist, and if not, creates them.
 func prepareWritableOverlay(dir string) error {
 	if err := ensureOverlayDir(upperSubdirOf(dir), true, 0o755); err != nil {
 		return fmt.Errorf("err encountered while preparing upper subdir of overlay dir %q: %w", upperSubdirOf(dir), err)
@@ -142,13 +158,17 @@ func prepareWritableOverlay(dir string) error {
 	return nil
 }
 
-// performIdentityMounts performs the preparator identity mounts of overlay dirs, typically carried out prior to the actual overlay mount where these dirs are used as lowerdir or upperdir arguments.
+// performIdentityMounts creates the writable OverlaySet directory if it does
+// not exist, and performs a bind mount & remount of every OverlaySet dir onto
+// itself. The pattern of bind mount followed by remount allows application of
+// more restrictive mount flags than are in force on the underlying filesystem.
 func performIdentityMounts(ovs OverlaySet) error {
 	var err error
 
 	locsToBind := ovs.ReadonlyLocs
 	if len(ovs.WritableLoc) > 0 {
-		// Check if writable overlay dir already exists; if it doesn't, try to create it.
+		// Check if writable overlay dir already exists; if it doesn't, try to
+		// create it.
 		if err = ensureOverlayDir(ovs.WritableLoc, true, 0o755); err != nil {
 			return err
 		}
@@ -204,13 +224,15 @@ func performOverlayMount(rootFsDir, options string) error {
 	return nil
 }
 
-// ensureOverlayDir checks if a directory already exists; if it doesn't, and writable is true, it attempts to create it with the specified permissions.
+// ensureOverlayDir checks if a directory already exists; if it doesn't, and
+// createIfMissing is true, it attempts to create it with the specified
+// permissions.
 func ensureOverlayDir(dir string, createIfMissing bool, createPerm os.FileMode) error {
-	_, err := os.Stat(dir)
 	if len(dir) == 0 {
 		return fmt.Errorf("internal error: ensureOverlayDir() called with empty dir name")
 	}
 
+	_, err := os.Stat(dir)
 	if err == nil {
 		return nil
 	}
@@ -220,12 +242,12 @@ func ensureOverlayDir(dir string, createIfMissing bool, createPerm os.FileMode) 
 	}
 
 	if !createIfMissing {
-		return fmt.Errorf("missing overlay dir %#v", dir)
+		return fmt.Errorf("missing overlay dir %q", dir)
 	}
 
 	// Create the requested dir
 	if err := os.Mkdir(dir, createPerm); err != nil {
-		return fmt.Errorf("failed to create %#v: %s", dir, err)
+		return fmt.Errorf("failed to create %q: %s", dir, err)
 	}
 
 	return nil
