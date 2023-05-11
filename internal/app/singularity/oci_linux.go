@@ -23,6 +23,7 @@ import (
 // OciArgs contains CLI arguments
 type OciArgs struct {
 	BundlePath   string
+	OverlayPaths []string
 	LogPath      string
 	LogFormat    string
 	PidFile      string
@@ -48,7 +49,8 @@ func OciRunWrapped(ctx context.Context, containerID string, args *OciArgs) error
 	if err != nil {
 		return err
 	}
-	return oci.RunWrapped(ctx, containerID, args.BundlePath, args.PidFile, systemdCgroups)
+
+	return oci.RunWrapped(ctx, containerID, args.BundlePath, args.PidFile, args.OverlayPaths, systemdCgroups)
 }
 
 // OciCreate creates a container from an OCI bundle

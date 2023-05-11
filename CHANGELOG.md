@@ -38,6 +38,10 @@
   `--fakeroot`, for example).
 - The `remote status` command will now print the username, realname, and email
   of the logged-in user, if available.
+- OCI-mode now supports `--overlay <dir>` flag, allowing writes to the
+  filesystem to persist across runs of the OCI container. If specified dir does
+  not exist, Singularity will attempt to create it. Multiple overlays can be
+  specified, but all but one must be read-only (`--overlay <dir>:ro`).
 
 ## 3.11.3 \[2023-05-04\]
 
