@@ -20,6 +20,7 @@ func WrapWithWritableTmpFs(f func() error, bundleDir string) error {
 	// TODO: --oci mode always emulating --compat, which uses --writable-tmpfs.
 	//       Provide a way of disabling this, for a read only rootfs.
 	overlayDir, err := prepareWritableTmpfs(bundleDir)
+	sylog.Debugf("Done with prepareWritableTmpfs; overlayDir is: %q", overlayDir)
 	if err != nil {
 		return err
 	}
@@ -66,10 +67,14 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 		return err
 	}
 
-	err = f()
+	if writableOverlayFound {
+		err = f()
+	} else {
+		err = WrapWithWritableTmpFs(f, bundleDir)
+	}
 
 	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
-	if cleanupErr := tools.UnmountOverlay(rootFsDir); cleanupErr != nil {
+	if cleanupErr := tools.UnmountOverlay(rootFsDir, ovs); cleanupErr != nil {
 		sylog.Errorf("While unmounting rootfs overlay: %v", cleanupErr)
 	}
 
