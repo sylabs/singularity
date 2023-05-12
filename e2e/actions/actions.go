@@ -2584,14 +2584,15 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		//
 		// OCI Runtime Mode
 		//
-		"ociRun":     c.actionOciRun,        // singularity run --oci
-		"ociExec":    c.actionOciExec,       // singularity exec --oci
-		"ociShell":   c.actionOciShell,      // singularity shell --oci
-		"ociNetwork": c.actionOciNetwork,    // singularity exec --oci --net
-		"ociBinds":   c.actionOciBinds,      // singularity exec --oci --bind / --mount
-		"ociCdi":     c.actionOciCdi,        // singularity exec --oci --cdi
-		"ociIDMaps":  c.actionOciIDMaps,     // check uid/gid mapping on host for --oci as user / --fakeroot
-		"ociCompat":  np(c.actionOciCompat), // --oci equivalence to native mode --compat
-		"ociOverlay": (c.actionOciOverlay),  // --overlay in OCI mode
+		"ociRun":             c.actionOciRun,                 // singularity run --oci
+		"ociExec":            c.actionOciExec,                // singularity exec --oci
+		"ociShell":           c.actionOciShell,               // singularity shell --oci
+		"ociNetwork":         c.actionOciNetwork,             // singularity exec --oci --net
+		"ociBinds":           c.actionOciBinds,               // singularity exec --oci --bind / --mount
+		"ociCdi":             c.actionOciCdi,                 // singularity exec --oci --cdi
+		"ociIDMaps":          c.actionOciIDMaps,              // check uid/gid mapping on host for --oci as user / --fakeroot
+		"ociCompat":          np(c.actionOciCompat),          // --oci equivalence to native mode --compat
+		"ociOverlay":         (c.actionOciOverlay),           // --overlay in OCI mode
+		"ociOverlayTeardown": np(c.actionOciOverlayTeardown), // proper overlay unmounting in OCI mode
 	}
 }
