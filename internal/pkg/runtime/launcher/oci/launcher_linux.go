@@ -27,6 +27,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/internal/pkg/util/fs/files"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/overlay"
 	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ocibundle/native"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
@@ -436,6 +437,16 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		return fmt.Errorf("while creating OCI spec: %w", err)
 	}
 
+	// If we have rootless overlay mounts, use a writable-tmpfs to match --compat in native mode.
+	// If not, on older kernels (EL7, SLES12), container will currently be read-only.
+	// TODO - workaround via fuse-overlayfs where available.
+	writableTmpfs := true
+	if err := overlay.CheckRootless(); err != nil {
+		sylog.Warningf("Container will not be writable: %s", err)
+		writableTmpfs = false
+		spec.Root.Readonly = true
+	}
+
 	// Create a bundle - obtain and extract the image.
 	b, err := native.New(
 		native.OptBundlePath(bundleDir),
@@ -462,11 +473,11 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 
 	if os.Getuid() == 0 {
 		// Execution of runc/crun run, wrapped with prep / cleanup.
-		err = RunWrapped(ctx, id.String(), b.Path(), "", l.singularityConf.SystemdCgroups)
+		err = RunWrapped(ctx, id.String(), b.Path(), "", l.singularityConf.SystemdCgroups, writableTmpfs)
 	} else {
 		// Reexec singularity oci run in a userns with mappings.
 		// Note - the oci run command will pull out the SystemdCgroups setting from config.
-		err = RunWrappedNS(ctx, id.String(), b.Path(), "")
+		err = RunWrappedNS(ctx, id.String(), b.Path(), "", writableTmpfs)
 	}
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {

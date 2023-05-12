@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
@@ -688,6 +689,7 @@ func (c actionTests) actionOciCompat(t *testing.T) {
 		name     string
 		args     []string
 		exitCode int
+		requires func(t *testing.T)
 		expect   e2e.SingularityCmdResultOp
 	}
 
@@ -702,6 +704,9 @@ func (c actionTests) actionOciCompat(t *testing.T) {
 			name:     "writable-tmpfs",
 			args:     []string{imageRef, "sh", "-c", "touch /test"},
 			exitCode: 0,
+			// 5.13 is the first mainline kernel to support unpriv overlay.
+			// It is backported to various distros, but not easy to identify those.
+			requires: func(t *testing.T) { require.Kernel(t, 5, 13) },
 		},
 		{
 			name:     "no-init",
@@ -724,6 +729,7 @@ func (c actionTests) actionOciCompat(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.PreRun(tt.requires),
 			e2e.WithProfile(e2e.OCIUserProfile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.args...),
