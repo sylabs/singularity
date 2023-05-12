@@ -22,15 +22,16 @@ import (
 
 // OciArgs contains CLI arguments
 type OciArgs struct {
-	BundlePath   string
-	LogPath      string
-	LogFormat    string
-	PidFile      string
-	FromFile     string
-	KillSignal   string
-	KillTimeout  uint32
-	EmptyProcess bool
-	ForceKill    bool
+	BundlePath    string
+	LogPath       string
+	LogFormat     string
+	PidFile       string
+	FromFile      string
+	KillSignal    string
+	KillTimeout   uint32
+	EmptyProcess  bool
+	ForceKill     bool
+	WritableTmpfs bool
 }
 
 // OciRun runs a container (equivalent to create/start/delete)
@@ -48,7 +49,7 @@ func OciRunWrapped(ctx context.Context, containerID string, args *OciArgs) error
 	if err != nil {
 		return err
 	}
-	return oci.RunWrapped(ctx, containerID, args.BundlePath, args.PidFile, systemdCgroups)
+	return oci.RunWrapped(ctx, containerID, args.BundlePath, args.PidFile, systemdCgroups, args.WritableTmpfs)
 }
 
 // OciCreate creates a container from an OCI bundle

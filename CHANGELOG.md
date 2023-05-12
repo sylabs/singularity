@@ -1,5 +1,12 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- In `--oci` mode, do not attempt to use unprivileged overlay on systems that do
+  not support it.
+
 ## 3.11.3 \[2023-05-04\]
 
 ### Changed defaults / behaviours
@@ -8,7 +15,7 @@
   overlay. This improves parity with `--compat` mode in the native runtime, as
   `--compat` enables `--writable-tmpfs`.
 
-## Bug Fixes
+### Bug Fixes
 
 - Ensure the `allow kernel squashfs` directive in `singularity.conf` applies to
   encrypted squashfs filesystems in a SIF.

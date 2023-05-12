@@ -101,6 +101,15 @@ var ociUpdateFromFileFlag = cmdline.Flag{
 	EnvKeys:      []string{"FROM_FILE"},
 }
 
+// --writable-tmpfs (run-wrapped internal option)
+var ociWritableTmpfs = cmdline.Flag{
+	ID:           "ociWritableTmpfs",
+	Value:        &ociArgs.WritableTmpfs,
+	DefaultValue: false,
+	Name:         "writable-tmpfs",
+	Usage:        "Enable writable-tmpfs for oci run-wrapped",
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(OciCmd)
@@ -129,6 +138,8 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&ociKillForceFlag, OciKillCmd)
 		cmdManager.RegisterFlagForCmd(&ociKillSignalFlag, OciKillCmd)
 		cmdManager.RegisterFlagForCmd(&ociUpdateFromFileFlag, OciUpdateCmd)
+
+		cmdManager.RegisterFlagForCmd(&ociWritableTmpfs, OciRunWrappedCmd)
 	})
 }
 

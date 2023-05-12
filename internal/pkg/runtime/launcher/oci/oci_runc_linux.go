@@ -222,18 +222,20 @@ func Run(ctx context.Context, containerID, bundlePath, pidFile string, systemdCg
 }
 
 // RunWrapped runs a container via the OCI runtime, wrapped with prep / cleanup steps.
-func RunWrapped(ctx context.Context, containerID, bundlePath, pidFile string, systemdCgroups bool) error {
-	// TODO: --oci mode always emulating --compat, which uses --writable-tmpfs.
-	//       Provide a way of disabling this, for a read only rootfs.
-	if err := prepareWriteableTmpfs(bundlePath); err != nil {
-		return err
+func RunWrapped(ctx context.Context, containerID, bundlePath, pidFile string, systemdCgroups, writableTmpfs bool) error {
+	if writableTmpfs {
+		if err := prepareWriteableTmpfs(bundlePath); err != nil {
+			return err
+		}
 	}
 
 	err := Run(ctx, containerID, bundlePath, pidFile, systemdCgroups)
 
-	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
-	if err := cleanupWritableTmpfs(bundlePath); err != nil {
-		sylog.Errorf("While cleaning up writable tmpfs: %v", err)
+	if writableTmpfs {
+		// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
+		if err := cleanupWritableTmpfs(bundlePath); err != nil {
+			sylog.Errorf("While cleaning up writable tmpfs: %v", err)
+		}
 	}
 
 	// Return any error from the actual container payload - preserve exit code.
@@ -241,7 +243,7 @@ func RunWrapped(ctx context.Context, containerID, bundlePath, pidFile string, sy
 }
 
 // RunWrappedNS reexecs singularity in a user namespace, with supplied uid/gid mapping, calling oci run.
-func RunWrappedNS(ctx context.Context, containerID, bundlePath, pidFile string) error {
+func RunWrappedNS(ctx context.Context, containerID, bundlePath, pidFile string, writableTmpfs bool) error {
 	absBundle, err := filepath.Abs(bundlePath)
 	if err != nil {
 		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
@@ -256,11 +258,14 @@ func RunWrappedNS(ctx context.Context, containerID, bundlePath, pidFile string) 
 		"oci",
 		"run-wrapped",
 		"-b", absBundle,
-		containerID,
 	}
 	if pidFile != "" {
 		args = append(args, "--pid-file="+pidFile)
 	}
+	if writableTmpfs {
+		args = append(args, "--writable-tmpfs")
+	}
+	args = append(args, containerID)
 
 	sylog.Debugf("Calling fakeroot engine to execute %q", strings.Join(args, " "))
 
