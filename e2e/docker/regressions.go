@@ -288,3 +288,26 @@ func (c ctx) issue1586(t *testing.T) {
 		t.Errorf("TMPDIR is not empty after singularity exited")
 	}
 }
+
+// https://github.com/sylabs/singularity/issues/1670
+// Check that runc/crun can add directories the rootfs before entering the
+// container, by running a container based on busybox that lacks, e.g., /proc
+func (c ctx) issue1670(t *testing.T) {
+	for _, profile := range e2e.OCIProfiles {
+		tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, fmt.Sprintf("issue1670-%s-", profile.String()), "")
+		t.Cleanup(func() {
+			if !t.Failed() {
+				cleanup(t)
+			}
+		})
+
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(profile.String()),
+			e2e.WithProfile(profile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs("--overlay", fmt.Sprintf("%s:ro", tmpDir), "docker://busybox", "echo", "hi"),
+			e2e.ExpectExit(0),
+		)
+	}
+}

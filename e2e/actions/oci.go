@@ -980,7 +980,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 	e2e.EnsureOCIArchive(t, c.env)
 	imageRef := "oci-archive:" + c.env.OCIArchivePath
 
-	for _, profile := range []e2e.Profile{e2e.OCIRootProfile, e2e.OCIFakerootProfile} {
+	for _, profile := range e2e.OCIProfiles {
 		testDir, err := fs.MakeTmpDir(c.env.TestDir, "overlaytestdir", 0o755)
 		if err != nil {
 			t.Fatal(err)
@@ -1040,6 +1040,11 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 				name:     "NonExistReadonly",
 				args:     []string{"--overlay", filepath.Join(testDir, "my_ro_ol_dir_nonexistent:ro"), imageRef, "echo", "hi"},
 				exitCode: 255,
+			},
+			{
+				name:     "ReadonlyAddsTmpfs",
+				args:     []string{"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"), imageRef, "sh", "-c", "echo this_should_disappear > /my_test_file"},
+				exitCode: 0,
 			},
 			{
 				name:     "SeveralReadonly",
