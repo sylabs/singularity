@@ -6,6 +6,7 @@
 package actions
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -19,6 +20,7 @@ import (
 	cdispecs "github.com/container-orchestrated-devices/container-device-interface/specs-go"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"gotest.tools/v3/assert"
 )
 
 func (c actionTests) actionOciRun(t *testing.T) {
@@ -1073,4 +1075,57 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 			}
 		})
 	}
+}
+
+// actionOciOverlayTeardown checks that OCI-mode overlays are correctly
+// unmounted even in root mode (i.e., when user namespaces are not involved).
+func (c actionTests) actionOciOverlayTeardown(t *testing.T) {
+	e2e.EnsureOCIArchive(t, c.env)
+	imageRef := "oci-archive:" + c.env.OCIArchivePath
+
+	const mountInfoPath string = "/proc/self/mountinfo"
+	numMountLinesPre, err := countLines(mountInfoPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "oci_overlay_teardown-", "")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup(t)
+		}
+	})
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.OCIRootProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--overlay", tmpDir+":ro", imageRef, "/bin/true"),
+		e2e.ExpectExit(0),
+	)
+
+	numMountLinesPost, err := countLines(mountInfoPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(
+		t, numMountLinesPost, numMountLinesPre,
+		"Number of mounts after running in OCI-mode with overlays (%d) does not match the number before the run (%d)", numMountLinesPost, numMountLinesPre)
+}
+
+func countLines(path string) (int, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return -1, err
+	}
+	defer file.Close()
+	scanner := bufio.NewScanner(file)
+	scanner.Split(bufio.ScanLines)
+	lines := 0
+	for scanner.Scan() {
+		lines++
+	}
+
+	return lines, nil
 }
