@@ -158,8 +158,12 @@ func ApplyOverlay(rootFsDir string, ovs OverlaySet) error {
 }
 
 // UnmountOverlay umounts an overlay
-func UnmountOverlay(rootFsDir string) error {
-	return detachMount(rootFsDir)
+func UnmountOverlay(rootFsDir string, ovs OverlaySet) error {
+	if err := detachMount(rootFsDir); err != nil {
+		return err
+	}
+
+	return detachIdentityMounts(ovs)
 }
 
 // prepareWritableOverlay ensures that the upper and work subdirs of a writable
@@ -222,6 +226,32 @@ func performIdentityMounts(ovs OverlaySet) error {
 	}
 
 	return err
+}
+
+// detachIdentityMounts detaches mounts created by the bind-mount & remount
+// pattern (as implemented in performIdentityMounts())
+func detachIdentityMounts(ovs OverlaySet) error {
+	locsToDetach := ovs.ReadonlyLocs
+	if len(ovs.WritableLoc) > 0 {
+		locsToDetach = append(locsToDetach, ovs.WritableLoc)
+	}
+
+	// Don't stop on the first error; try to clean up as much as possible, and
+	// then return the first error encountered.
+	errors := []error{}
+	for _, d := range locsToDetach {
+		err := detachMount(d)
+		if err != nil {
+			sylog.Errorf("Error encountered trying to detach identity mount %s: %s", d, err)
+			errors = append(errors, err)
+		}
+	}
+
+	if len(errors) > 0 {
+		return errors[0]
+	}
+
+	return nil
 }
 
 // overlayOptions creates the options string to be used in an overlay mount

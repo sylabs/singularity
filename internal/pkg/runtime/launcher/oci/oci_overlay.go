@@ -74,7 +74,7 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 	}
 
 	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
-	if cleanupErr := tools.UnmountOverlay(rootFsDir); cleanupErr != nil {
+	if cleanupErr := tools.UnmountOverlay(rootFsDir, ovs); cleanupErr != nil {
 		sylog.Errorf("While unmounting rootfs overlay: %v", cleanupErr)
 	}
 
