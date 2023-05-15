@@ -24,6 +24,7 @@ import (
 	_ "github.com/containernetworking/plugins/plugins/main/loopback"
 	_ "github.com/containernetworking/plugins/plugins/main/macvlan"
 	_ "github.com/containernetworking/plugins/plugins/main/ptp"
+	_ "github.com/containernetworking/plugins/plugins/main/tap"
 	_ "github.com/containernetworking/plugins/plugins/main/vlan"
 	_ "github.com/containernetworking/plugins/plugins/meta/bandwidth"
 	_ "github.com/containernetworking/plugins/plugins/meta/firewall"
