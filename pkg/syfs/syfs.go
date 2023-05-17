@@ -23,6 +23,7 @@ const (
 	RemoteCache    = "remote-cache"
 	DockerConfFile = "docker-config.json"
 	singularityDir = ".singularity"
+	configDirEnv   = "SINGULARITY_CONFIGDIR"
 )
 
 // cache contains the information for the current user
@@ -43,26 +44,25 @@ func ConfigDir() string {
 }
 
 func configDir() string {
-	configDir := os.Getenv("SINGULARITY_CONFIGDIR")
-	if configDir == "" {
-		sylog.Warningf("Environment variable SINGULARITY_CONFIGDIR is not set")
+	configDir := os.Getenv(configDirEnv)
+	if configDir != "" {
+		return configDir
+	}
+	sylog.Infof("Environment variable %s is not set", configDirEnv)
 
-		user, err := user.Current()
-		if err != nil {
-			sylog.Warningf("Could not lookup the current user's information: %s", err)
-
-			cwd, err := os.Getwd()
-			if err != nil {
-				sylog.Warningf("Could not get current working directory: %s", err)
-				return singularityDir
-			}
-
-			return filepath.Join(cwd, singularityDir)
-		}
-
+	user, err := user.Current()
+	if err == nil {
 		return filepath.Join(user.HomeDir, singularityDir)
 	}
-	return configDir
+	sylog.Warningf("Could not lookup the current user's information: %s", err)
+
+	cwd, err := os.Getwd()
+	if err == nil {
+		return filepath.Join(cwd, singularityDir)
+	}
+	sylog.Warningf("Could not get current working directory: %s", err)
+	
+	return singularityDir
 }
 
 func RemoteConf() string {
