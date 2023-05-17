@@ -43,7 +43,7 @@ require (
 	github.com/sylabs/scs-build-client v0.7.7
 	github.com/sylabs/scs-key-client v0.7.2
 	github.com/sylabs/scs-library-client v1.4.4
-	github.com/sylabs/sif/v2 v2.11.3
+	github.com/sylabs/sif/v2 v2.11.4
 	github.com/vbauerster/mpb/v8 v8.4.0
 	golang.org/x/crypto v0.9.0
 	golang.org/x/sys v0.8.0
@@ -70,7 +70,7 @@ require (
 	github.com/bugsnag/panicwrap v1.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cilium/ebpf v0.9.1 // indirect
-	github.com/cloudflare/circl v1.1.0 // indirect
+	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/container-orchestrated-devices/container-device-interface v0.5.4 // indirect
 	github.com/containers/libtrust v0.0.0-20230121012942-c1716e8a8d01 // indirect
 	github.com/containers/ocicrypt v1.1.7 // indirect
