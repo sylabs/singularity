@@ -46,7 +46,7 @@ func configDir() string {
 	configDir := os.Getenv("SINGULARITY_CONFIGDIR")
 	if configDir == "" {
 		sylog.Warningf("Environment variable SINGULARITY_CONFIGDIR is not set")
-		
+
 		user, err := user.Current()
 		if err != nil {
 			sylog.Warningf("Could not lookup the current user's information: %s", err)
