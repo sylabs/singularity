@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -120,6 +120,7 @@ func (c actionTests) actionOciExec(t *testing.T) {
 	tmpfile.Close()
 
 	basename := filepath.Base(tmpfile.Name())
+	tmpfilePath := filepath.Join("/tmp", basename)
 	homePath := filepath.Join("/home", basename)
 
 	tests := []struct {
@@ -205,6 +206,11 @@ func (c actionTests) actionOciExec(t *testing.T) {
 			wantOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.ExactMatch, "whats-in-an-oci-name"),
 			},
+		},
+		{
+			name: "Workdir",
+			argv: []string{"--workdir", testdata, imageRef, "test", "-f", tmpfilePath},
+			exit: 0,
 		},
 		{
 			name: "Pwd",
@@ -407,29 +413,10 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 	canaryDirMount := "type=bind,source=" + hostCanaryDir + ",destination=" + contCanaryDir
 
 	hostHomeDir := filepath.Join(workspace, "home")
+	hostWorkDir := filepath.Join(workspace, "workdir")
 
 	createWorkspaceDirs := func(t *testing.T) {
-		e2e.Privileged(func(t *testing.T) {
-			if err := os.RemoveAll(hostCanaryDir); err != nil && !os.IsNotExist(err) {
-				t.Fatalf("failed to delete canary_dir: %s", err)
-			}
-			if err := os.RemoveAll(hostHomeDir); err != nil && !os.IsNotExist(err) {
-				t.Fatalf("failed to delete workspace home: %s", err)
-			}
-		})(t)
-
-		if err := fs.Mkdir(hostCanaryDir, 0o777); err != nil {
-			t.Fatalf("failed to create canary_dir: %s", err)
-		}
-		if err := fs.Touch(hostCanaryFile); err != nil {
-			t.Fatalf("failed to create canary_file: %s", err)
-		}
-		if err := os.Chmod(hostCanaryFile, 0o777); err != nil {
-			t.Fatalf("failed to apply permissions on canary_file: %s", err)
-		}
-		if err := fs.Mkdir(hostHomeDir, 0o777); err != nil {
-			t.Fatalf("failed to create workspace home directory: %s", err)
-		}
+		workspaceDirsGenerator(t, hostCanaryDir, hostHomeDir, hostWorkDir, hostCanaryFile)
 	}
 
 	checkHostFn := func(path string, fn func(string) bool) func(*testing.T) {
@@ -440,9 +427,23 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 			if !fn(path) {
 				t.Errorf("%s not found on host", path)
 			}
-			if err := os.RemoveAll(path); err != nil {
-				t.Errorf("failed to delete %s: %s", path, err)
-			}
+			// This part needs to be in privileged mode because of the following
+			// case. Suppose X1 on the host is mounted as Y1 in-container; and
+			// you bind mount X2 on host to Y1/Z/Y2 in-container. This creates a
+			// situation where Y1/Z needs to be mkdir'd. Apparently, runc/crun
+			// mkdirs it with the uid and gid of the in-container user, leading
+			// to a dir whose owner & group on host are not those of the host
+			// user, but rather a uid and gid that's shifted according to the
+			// /etc/subuid and /etc/subgid specifications. That means that the
+			// host user can't then os.RemoveAll() the contents without root
+			// privileges.
+			// This scenario is precisely what arises with a test like
+			// WorkdirTmpBind, below.
+			e2e.Privileged(func(t *testing.T) {
+				if err := os.RemoveAll(path); err != nil {
+					t.Errorf("failed to delete %s: %s", path, err)
+				}
+			})(t)
 		}
 	}
 	checkHostFile := func(path string) func(*testing.T) {
@@ -557,6 +558,39 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 			exit:    0,
 		},
 		{
+			name: "WorkdirTmpBind",
+			args: []string{
+				"--workdir", hostWorkDir,
+				"--bind", hostCanaryDir + ":/tmp/canary/dir",
+				imageRef,
+				"test", "-f", "/tmp/canary/dir/file",
+			},
+			postRun: checkHostDir(filepath.Join(hostWorkDir, "tmp", "canary/dir")),
+			exit:    0,
+		},
+		{
+			name: "WorkdirVarTmpBind",
+			args: []string{
+				"--workdir", hostWorkDir,
+				"--bind", hostCanaryDir + ":/var/tmp/canary/dir",
+				imageRef,
+				"test", "-f", "/var/tmp/canary/dir/file",
+			},
+			postRun: checkHostDir(filepath.Join(hostWorkDir, "var_tmp", "canary/dir")),
+			exit:    0,
+		},
+		{
+			name: "WorkdirVarTmpBindWritable",
+			args: []string{
+				"--workdir", hostWorkDir,
+				"--bind", hostCanaryDir + ":/var/tmp/canary/dir",
+				imageRef,
+				"test", "-f", "/var/tmp/canary/dir/file",
+			},
+			postRun: checkHostDir(filepath.Join(hostWorkDir, "var_tmp", "canary/dir")),
+			exit:    0,
+		},
+		{
 			name: "IsScratchTmpfs",
 			args: []string{
 				"--scratch", "/name-of-a-scratch",
@@ -587,6 +621,18 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 				"test", "-f", "/scratch/dir/file",
 			},
 			exit: 0,
+		},
+		{
+			name: "ScratchWorkdirBind",
+			args: []string{
+				"--workdir", hostWorkDir,
+				"--scratch", "/scratch",
+				"--bind", hostCanaryDir + ":/scratch/dir",
+				imageRef,
+				"test", "-f", "/scratch/dir/file",
+			},
+			postRun: checkHostDir(filepath.Join(hostWorkDir, "scratch/scratch", "dir")),
+			exit:    0,
 		},
 		{
 			name: "CustomHomeOneToOne",

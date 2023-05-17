@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -1127,33 +1127,7 @@ func (c actionTests) actionBinds(t *testing.T) {
 	hostWorkDir := filepath.Join(workspace, "workdir")
 
 	createWorkspaceDirs := func(t *testing.T) {
-		e2e.Privileged(func(t *testing.T) {
-			if err := os.RemoveAll(hostCanaryDir); err != nil && !os.IsNotExist(err) {
-				t.Fatalf("failed to delete canary_dir: %s", err)
-			}
-			if err := os.RemoveAll(hostHomeDir); err != nil && !os.IsNotExist(err) {
-				t.Fatalf("failed to delete workspace home: %s", err)
-			}
-			if err := os.RemoveAll(hostWorkDir); err != nil && !os.IsNotExist(err) {
-				t.Fatalf("failed to delete workspace work: %s", err)
-			}
-		})(t)
-
-		if err := fs.Mkdir(hostCanaryDir, 0o777); err != nil {
-			t.Fatalf("failed to create canary_dir: %s", err)
-		}
-		if err := fs.Touch(hostCanaryFile); err != nil {
-			t.Fatalf("failed to create canary_file: %s", err)
-		}
-		if err := os.Chmod(hostCanaryFile, 0o777); err != nil {
-			t.Fatalf("failed to apply permissions on canary_file: %s", err)
-		}
-		if err := fs.Mkdir(hostHomeDir, 0o777); err != nil {
-			t.Fatalf("failed to create workspace home directory: %s", err)
-		}
-		if err := fs.Mkdir(hostWorkDir, 0o777); err != nil {
-			t.Fatalf("failed to create workspace work directory: %s", err)
-		}
+		workspaceDirsGenerator(t, hostCanaryDir, hostHomeDir, hostWorkDir, hostCanaryFile)
 	}
 
 	// convert test image to sandbox
