@@ -48,7 +48,6 @@ func configDir() string {
 	if configDir != "" {
 		return configDir
 	}
-	sylog.Infof("Environment variable %s is not set", configDirEnv)
 
 	user, err := user.Current()
 	if err == nil {
