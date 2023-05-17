@@ -44,6 +44,8 @@
   specified, but all but one must be read-only (`--overlay <dir>:ro`).
 - The `tap` CNI plugin, new to github.com/containernetworking/plugins v1.3.0,
   is now provided.
+- Added ability to set a custom config directory via the new
+  `SINGULARITY_CONFIGDIR` environment variable.
 
 ## 3.11.3 \[2023-05-04\]
 
