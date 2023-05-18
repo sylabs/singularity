@@ -259,16 +259,6 @@ func (c ctx) testSingularitySypgpDir(t *testing.T) {
 	}
 }
 
-func (c ctx) testSingularitySypgpDir(t *testing.T) {
-	c.env.RunSingularity(
-		t,
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("key"),
-		e2e.WithArgs("list"),
-		e2e.ExpectExit(0),
-	)
-}
-
 func (c ctx) testSingularityConfigDir(t *testing.T) {
 	// Test plan:
 	//
