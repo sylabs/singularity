@@ -263,10 +263,10 @@ func (c ctx) testSingularityConfigDir(t *testing.T) {
 	// Test plan:
 	//
 	// - create a temporary directory to be the configuration directory
-	// - set the SINGULARITY_CONFIGDIR environment variable
-	//   to that temporary directory
 	// - run 'singularity remote list' to create the remote.yaml
-	//   file inside the configuration directory
+	//   file inside the configuration directory, with the
+	//   SINGULARITY_CONFIGDIR environment variables set to that temporary
+	//   directory
 	// - assert that the file has been created
 	//
 	// If the file is in the temporary directory, it means
@@ -276,13 +276,13 @@ func (c ctx) testSingularityConfigDir(t *testing.T) {
 	configDir, cleanup := setupTemporaryDir(t, c.env.TestDir, "config-dir")
 	defer cleanup(t)
 
-	os.Setenv("SINGULARITY_CONFIGDIR", configDir)
-
+	environ := append(os.Environ(), fmt.Sprintf("SINGULARITY_CONFIGDIR=%s", configDir))
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("remote"),
 		e2e.WithArgs("list"),
+		e2e.WithEnv(environ),
 		e2e.ExpectExit(0),
 	)
 
