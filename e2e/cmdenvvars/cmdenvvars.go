@@ -270,11 +270,24 @@ func (c ctx) testSingularitySypgpDir(t *testing.T) {
 }
 
 func (c ctx) testSingularityConfigDir(t *testing.T) {
+	// Test plan:
+	//
+	// - create a temporary directory to be the configuration directory
+	// - set the SINGULARITY_CONFIGDIR environment variable
+	//   to that temporary directory
+	// - run 'singularity remote list' to create the remote.yaml
+	//   file inside the configuration directory
+	// - assert that the file has been created
+	//
+	// If the file is in the temporary directory, it means
+	// singularity followed the SINGULARITY_CONFIGDIR environment
+	// variable (checked in pkg/syfs) to set the configuration directory.
+
 	configDir, cleanup := setupTemporaryDir(t, c.env.TestDir, "config-dir")
 	defer cleanup(t)
-	
+
 	os.Setenv("SINGULARITY_CONFIGDIR", configDir)
-	
+
 	c.env.RunSingularity(
 		t,
 		e2e.WithProfile(e2e.UserProfile),
@@ -282,7 +295,7 @@ func (c ctx) testSingularityConfigDir(t *testing.T) {
 		e2e.WithArgs("list"),
 		e2e.ExpectExit(0),
 	)
-	
+
 	remotePath := filepath.Join(configDir, "remote.yaml")
 	if _, err := os.Stat(remotePath); os.IsNotExist(err) {
 		t.Fatalf("failed to find remote.yaml (expected: %s)", remotePath)
@@ -300,6 +313,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"SINGULARITY_CACHEDIR":      c.testSingularityCacheDir,
 		"singularity disable cache": c.testSingularityDisableCache,
 		"SINGULARITY_SYPGPDIR":      c.testSingularitySypgpDir,
-		"SINGULARITY_CONFIGDIR":     c.testSingularityConfigDir,
+		"config directory":          c.testSingularityConfigDir,
 	}
 }
