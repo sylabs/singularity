@@ -169,7 +169,7 @@ var actionWorkdirFlag = cmdline.Flag{
 	DefaultValue: "",
 	Name:         "workdir",
 	ShortHand:    "W",
-	Usage:        "working directory to be used for /tmp, /var/tmp and $HOME (if -c/--contain was also used)",
+	Usage:        "working directory to be used for /tmp and /var/tmp (if -c/--contain was also used)",
 	EnvKeys:      []string{"WORKDIR"},
 	Tag:          "<path>",
 }

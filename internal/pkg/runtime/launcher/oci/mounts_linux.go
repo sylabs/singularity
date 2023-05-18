@@ -16,6 +16,7 @@ import (
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/gpu"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -32,7 +33,9 @@ func (l *Launcher) getMounts() ([]specs.Mount, error) {
 	if err := l.addDevMounts(mounts); err != nil {
 		return nil, fmt.Errorf("while configuring devpts mount: %w", err)
 	}
-	l.addTmpMounts(mounts)
+	if err := l.addTmpMounts(mounts); err != nil {
+		return nil, fmt.Errorf("while configuring tmp mounts: %w", err)
+	}
 	if err := l.addHomeMount(mounts); err != nil {
 		return nil, fmt.Errorf("while configuring home mount: %w", err)
 	}
@@ -57,16 +60,73 @@ func (l *Launcher) getMounts() ([]specs.Mount, error) {
 }
 
 // addTmpMounts adds tmpfs mounts for /tmp and /var/tmp in the container.
-func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) {
+func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
+	const (
+		tmpDest    = "/tmp"
+		vartmpDest = "/var/tmp"
+	)
+
 	if !l.singularityConf.MountTmp {
 		sylog.Debugf("Skipping mount of /tmp due to singularity.conf")
-		return
+		return nil
 	}
 
+	if len(l.cfg.WorkDir) > 0 {
+		sylog.Debugf("WorkDir specification provided: %s", l.cfg.WorkDir)
+		const (
+			tmpSrcSubdir    = "tmp"
+			vartmpSrcSubdir = "var_tmp"
+		)
+
+		workdir, err := filepath.Abs(filepath.Clean(l.cfg.WorkDir))
+		if err != nil {
+			sylog.Warningf("Can't determine absolute path of workdir %s", l.cfg.WorkDir)
+		}
+
+		tmpSrc := filepath.Join(workdir, tmpSrcSubdir)
+		vartmpSrc := filepath.Join(workdir, vartmpSrcSubdir)
+
+		if err := fs.Mkdir(tmpSrc, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
+			return fmt.Errorf("failed to create %s: %s", tmpSrc, err)
+		}
+		if err := fs.Mkdir(vartmpSrc, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
+			return fmt.Errorf("failed to create %s: %s", vartmpSrc, err)
+		}
+
+		*mounts = append(*mounts,
+
+			specs.Mount{
+				Destination: tmpDest,
+				Type:        "none",
+				Source:      tmpSrc,
+				Options: []string{
+					"rbind",
+					"nosuid",
+					"relatime",
+					"mode=777",
+				},
+			},
+			specs.Mount{
+				Destination: vartmpDest,
+				Type:        "none",
+				Source:      vartmpSrc,
+				Options: []string{
+					"rbind",
+					"nosuid",
+					"relatime",
+					"mode=777",
+				},
+			},
+		)
+
+		return nil
+	}
+
+	sylog.Debugf(("No workdir specification provided. Proceeding with tmpfs mounts for /tmp and /var/tmp"))
 	*mounts = append(*mounts,
 
 		specs.Mount{
-			Destination: "/tmp",
+			Destination: tmpDest,
 			Type:        "tmpfs",
 			Source:      "tmpfs",
 			Options: []string{
@@ -77,7 +137,7 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) {
 			},
 		},
 		specs.Mount{
-			Destination: "/var/tmp",
+			Destination: vartmpDest,
 			Type:        "tmpfs",
 			Source:      "tmpfs",
 			Options: []string{
@@ -86,7 +146,10 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) {
 				"mode=777",
 				fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
 			},
-		})
+		},
+	)
+
+	return nil
 }
 
 // addDevMounts adds mounts to assemble a minimal /dev in the container.
@@ -264,20 +327,54 @@ func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
 
 // addScratchMounts adds tmpfs mounts for scratch directories in the container.
 func (l *Launcher) addScratchMounts(mounts *[]specs.Mount) error {
-	for _, s := range l.cfg.ScratchDirs {
-		*mounts = append(*mounts,
-			specs.Mount{
-				Destination: s,
-				Type:        "tmpfs",
-				Source:      "tmpfs",
-				Options: []string{
-					"nosuid",
-					"relatime",
-					"nodev",
-					fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
+	const scratchContainerDirName = "/scratch"
+
+	if len(l.cfg.WorkDir) > 0 {
+		workdir, err := filepath.Abs(filepath.Clean(l.cfg.WorkDir))
+		if err != nil {
+			sylog.Warningf("Can't determine absolute path of workdir %s", l.cfg.WorkDir)
+		}
+		scratchContainerDirPath := filepath.Join(workdir, scratchContainerDirName)
+		if err := fs.Mkdir(scratchContainerDirPath, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
+			return fmt.Errorf("failed to create %s: %s", scratchContainerDirPath, err)
+		}
+
+		for _, s := range l.cfg.ScratchDirs {
+			scratchDirPath := filepath.Join(scratchContainerDirPath, s)
+			if err := fs.Mkdir(scratchDirPath, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
+				return fmt.Errorf("failed to create %s: %s", scratchDirPath, err)
+			}
+
+			*mounts = append(*mounts,
+				specs.Mount{
+					Destination: s,
+					Type:        "",
+					Source:      scratchDirPath,
+					Options: []string{
+						"rbind",
+						"nosuid",
+						"relatime",
+						"nodev",
+					},
 				},
-			},
-		)
+			)
+		}
+	} else {
+		for _, s := range l.cfg.ScratchDirs {
+			*mounts = append(*mounts,
+				specs.Mount{
+					Destination: s,
+					Type:        "tmpfs",
+					Source:      "tmpfs",
+					Options: []string{
+						"nosuid",
+						"relatime",
+						"nodev",
+						fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
+					},
+				},
+			)
+		}
 	}
 
 	return nil
