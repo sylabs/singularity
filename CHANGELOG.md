@@ -6,6 +6,9 @@
 
 - The `tap` CNI plugin, new to github.com/containernetworking/plugins v1.3.0,
   is now provided.
+- Added `remote get-login-password` subcommand that allows the user to
+  retrieve a CLI token to interact with the OCI registry of a
+  Singularity Enterprise instance.
 
 ### Bug Fixes
 
