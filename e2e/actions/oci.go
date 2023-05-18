@@ -416,7 +416,7 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 	hostWorkDir := filepath.Join(workspace, "workdir")
 
 	createWorkspaceDirs := func(t *testing.T) {
-		workspaceDirsGenerator(t, hostCanaryDir, hostHomeDir, hostWorkDir, hostCanaryFile)
+		mkWorkspaceDirs(t, hostCanaryDir, hostHomeDir, hostWorkDir, hostCanaryFile)
 	}
 
 	checkHostFn := func(path string, fn func(string) bool) func(*testing.T) {
@@ -427,18 +427,12 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 			if !fn(path) {
 				t.Errorf("%s not found on host", path)
 			}
-			// This part needs to be in privileged mode because of the following
-			// case. Suppose X1 on the host is mounted as Y1 in-container; and
-			// you bind mount X2 on host to Y1/Z/Y2 in-container. This creates a
-			// situation where Y1/Z needs to be mkdir'd. Apparently, runc/crun
-			// mkdirs it with the uid and gid of the in-container user, leading
-			// to a dir whose owner & group on host are not those of the host
-			// user, but rather a uid and gid that's shifted according to the
-			// /etc/subuid and /etc/subgid specifications. That means that the
-			// host user can't then os.RemoveAll() the contents without root
-			// privileges.
-			// This scenario is precisely what arises with a test like
-			// WorkdirTmpBind, below.
+			// When a nested bind is performed under workdir, the bind
+			// destination will be created (if necessary) by runc/crun inside
+			// workdir on the host. The bind destination will be created with
+			// subuid:subgid ownership. This requires privilege, or a userns +
+			// id mapping, to remove. (Relevant to tests like WorkdirTmpBind,
+			// below.)
 			e2e.Privileged(func(t *testing.T) {
 				if err := os.RemoveAll(path); err != nil {
 					t.Errorf("failed to delete %s: %s", path, err)

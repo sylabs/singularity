@@ -13,7 +13,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 )
 
-func workspaceDirsGenerator(t *testing.T, hostCanaryDir, hostHomeDir, hostWorkDir, hostCanaryFile string) {
+func mkWorkspaceDirs(t *testing.T, hostCanaryDir, hostHomeDir, hostWorkDir, hostCanaryFile string) {
 	e2e.Privileged(func(t *testing.T) {
 		if err := os.RemoveAll(hostCanaryDir); err != nil && !os.IsNotExist(err) {
 			t.Fatalf("failed to delete canary_dir: %s", err)

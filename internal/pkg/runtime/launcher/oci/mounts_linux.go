@@ -330,7 +330,11 @@ func (l *Launcher) addScratchMounts(mounts *[]specs.Mount) error {
 	const scratchContainerDirName = "/scratch"
 
 	if len(l.cfg.WorkDir) > 0 {
-		scratchContainerDirPath := filepath.Join(l.cfg.WorkDir, scratchContainerDirName)
+		workdir, err := filepath.Abs(filepath.Clean(l.cfg.WorkDir))
+		if err != nil {
+			sylog.Warningf("Can't determine absolute path of workdir %s", l.cfg.WorkDir)
+		}
+		scratchContainerDirPath := filepath.Join(workdir, scratchContainerDirName)
 		if err := fs.Mkdir(scratchContainerDirPath, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
 			return fmt.Errorf("failed to create %s: %s", scratchContainerDirPath, err)
 		}

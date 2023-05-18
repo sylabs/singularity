@@ -1127,7 +1127,7 @@ func (c actionTests) actionBinds(t *testing.T) {
 	hostWorkDir := filepath.Join(workspace, "workdir")
 
 	createWorkspaceDirs := func(t *testing.T) {
-		workspaceDirsGenerator(t, hostCanaryDir, hostHomeDir, hostWorkDir, hostCanaryFile)
+		mkWorkspaceDirs(t, hostCanaryDir, hostHomeDir, hostWorkDir, hostCanaryFile)
 	}
 
 	// convert test image to sandbox
