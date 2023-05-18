@@ -44,6 +44,12 @@
   specified, but all but one must be read-only (`--overlay <dir>:ro`).
 - The `tap` CNI plugin, new to github.com/containernetworking/plugins v1.3.0,
   is now provided.
+- OCI-mode now supports the `--workdir <workdir>` option. If this option is
+  specified, `/tmp` and `/var/tmp` will be mapped, respectively, to
+  `<workdir>/tmp` and `<workdir>/var_tmp` on the host, rather than to tmpfs
+  storage. If `--scratch <scratchdir>` is used in conjunction with `--workdir`,
+  scratch directories will be mapped to subdirectories nested under
+  `<workdir>/scratch` on the host, rather than to tmpfs storage.
 - Added ability to set a custom config directory via the new
   `SINGULARITY_CONFIGDIR` environment variable.
 
