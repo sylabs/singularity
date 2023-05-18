@@ -259,6 +259,36 @@ func (c ctx) testSingularitySypgpDir(t *testing.T) {
 	}
 }
 
+func (c ctx) testSingularitySypgpDir(t *testing.T) {
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("key"),
+		e2e.WithArgs("list"),
+		e2e.ExpectExit(0),
+	)
+}
+
+func (c ctx) testSingularityConfigDir(t *testing.T) {
+	configDir, cleanup := setupTemporaryDir(t, c.env.TestDir, "config-dir")
+	defer cleanup(t)
+	
+	os.Setenv("SINGULARITY_CONFIGDIR", configDir)
+	
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("remote"),
+		e2e.WithArgs("list"),
+		e2e.ExpectExit(0),
+	)
+	
+	remotePath := filepath.Join(configDir, "remote.yaml")
+	if _, err := os.Stat(remotePath); os.IsNotExist(err) {
+		t.Fatalf("failed to find remote.yaml (expected: %s)", remotePath)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -270,5 +300,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"SINGULARITY_CACHEDIR":      c.testSingularityCacheDir,
 		"singularity disable cache": c.testSingularityDisableCache,
 		"SINGULARITY_SYPGPDIR":      c.testSingularitySypgpDir,
+		"SINGULARITY_CONFIGDIR":     c.testSingularityConfigDir,
 	}
 }
