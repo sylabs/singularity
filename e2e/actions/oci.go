@@ -1169,3 +1169,46 @@ func countLines(path string) (int, error) {
 
 	return lines, nil
 }
+
+// Make sure --workdir and --scratch work together nicely even when workdir is a
+// relative path. Test needs to be run in non-parallel mode, because it changes
+// the current working directory of the host.
+func (c actionTests) ociRelWorkdirScratch(t *testing.T) {
+	e2e.EnsureOCIArchive(t, c.env)
+	imageRef := "oci-archive:" + c.env.OCIArchivePath
+
+	testdir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "persistent-overlay-", "")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup(t)
+		}
+	})
+
+	const subdirName string = "mysubdir"
+	if err := os.Mkdir(filepath.Join(testdir, subdirName), 0o777); err != nil {
+		t.Fatalf("could not create subdirectory %q in %q: %s", subdirName, testdir, err)
+	}
+
+	// Change current working directory, with deferred undoing of change.
+	prevCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("could not get current working directory: %s", err)
+	}
+	defer os.Chdir(prevCwd)
+	if err = os.Chdir(testdir); err != nil {
+		t.Fatalf("could not change cwd to %q: %s", testdir, err)
+	}
+
+	profiles := e2e.OCIProfiles
+
+	for _, p := range profiles {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(p.String()),
+			e2e.WithProfile(p),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs("--workdir", "./"+subdirName, "--scratch", "/myscratch", imageRef, "true"),
+			e2e.ExpectExit(0),
+		)
+	}
+}
