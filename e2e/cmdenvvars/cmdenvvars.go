@@ -6,6 +6,7 @@
 package cmdenvvars
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
