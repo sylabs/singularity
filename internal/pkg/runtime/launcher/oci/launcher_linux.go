@@ -32,6 +32,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/rootless"
 	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ocibundle/native"
+	"github.com/sylabs/singularity/pkg/ocibundle/ocisif"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
@@ -361,8 +362,17 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 		return err
 	}
 
+	sessionDir := filepath.Join(b.Path(), "session")
+	if err := os.Mkdir(sessionDir, 0o755); err != nil {
+		return fmt.Errorf("while creating session directory: %w", err)
+	}
+	sessionEtcDir := filepath.Join(sessionDir, "etc")
+	if err := os.Mkdir(sessionEtcDir, 0o755); err != nil {
+		return fmt.Errorf("while creating session /etc directory: %w", err)
+	}
+
 	// Prepare DNS settings for the container.
-	if err := l.prepareResolvConf(tools.RootFs(b.Path()).Path()); err != nil {
+	if err := l.prepareResolvConf(sessionDir); err != nil {
 		return err
 	}
 
@@ -375,51 +385,52 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 		return nil
 	}
 
-	if err := l.updatePasswdGroup(tools.RootFs(b.Path()).Path(), targetUID, targetGID); err != nil {
+	if err := l.preparePasswdGroup(tools.RootFs(b.Path()).Path(), sessionDir, targetUID, targetGID); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (l *Launcher) updatePasswdGroup(rootfs string, uid, gid uint32) error {
-	containerPasswd := filepath.Join(rootfs, "etc", "passwd")
-	containerGroup := filepath.Join(rootfs, "etc", "group")
+func (l *Launcher) preparePasswdGroup(rootfs, session string, uid, gid uint32) error {
+	rootfsPasswd := filepath.Join(rootfs, "etc", "passwd")
+	rootfsGroup := filepath.Join(rootfs, "etc", "group")
+	sessionPasswd := filepath.Join(session, "etc", "passwd")
+	sessionGroup := filepath.Join(session, "etc", "group")
 
 	if l.singularityConf.ConfigPasswd {
-		sylog.Debugf("Updating passwd file: %s", containerPasswd)
-		content, err := files.Passwd(containerPasswd, l.homeDest, int(uid), nil)
+		sylog.Debugf("Creating session passwd file: %s", sessionPasswd)
+		content, err := files.Passwd(rootfsPasswd, l.cfg.HomeDir, int(uid), nil)
 		if err != nil {
 			sylog.Warningf("%s", err)
-		} else if err := os.WriteFile(containerPasswd, content, 0o755); err != nil {
+		} else if err := os.WriteFile(sessionPasswd, content, 0o755); err != nil {
 			return fmt.Errorf("while writing passwd file: %w", err)
 		}
 	} else {
-		sylog.Debugf("Skipping update of %s due to singularity.conf", containerPasswd)
+		sylog.Debugf("Skipping creation of %s due to singularity.conf", sessionPasswd)
 	}
 
 	if l.singularityConf.ConfigGroup {
-		sylog.Debugf("Updating group file: %s", containerGroup)
-		content, err := files.Group(containerGroup, int(uid), []int{int(gid)}, nil)
+		sylog.Debugf("Creating session group file: %s", sessionGroup)
+		content, err := files.Group(rootfsGroup, int(uid), []int{int(gid)}, nil)
 		if err != nil {
 			sylog.Warningf("%s", err)
-		} else if err := os.WriteFile(containerGroup, content, 0o755); err != nil {
+		} else if err := os.WriteFile(sessionGroup, content, 0o755); err != nil {
 			return fmt.Errorf("while writing passwd file: %w", err)
 		}
 	} else {
-		sylog.Debugf("Skipping update of %s due to singularity.conf", containerGroup)
+		sylog.Debugf("Skipping creation of %s due to singularity.conf", sessionGroup)
 	}
 
 	return nil
 }
 
-func (l *Launcher) prepareResolvConf(rootfs string) error {
+func (l *Launcher) prepareResolvConf(session string) error {
 	hostResolvConfPath := "/etc/resolv.conf"
-	containerEtc := filepath.Join(rootfs, "etc")
-	containerResolvConfPath := filepath.Join(rootfs, "etc", "resolv.conf")
+	sessionResolveConfPath := filepath.Join(session, "etc", "resolv.conf")
 
 	if !l.singularityConf.ConfigResolvConf {
-		sylog.Debugf("Skipping update of %s due to singularity.conf", containerResolvConfPath)
+		sylog.Debugf("Skipping creation of %s due to singularity.conf", sessionResolveConfPath)
 		return nil
 	}
 
@@ -442,13 +453,7 @@ func (l *Launcher) prepareResolvConf(rootfs string) error {
 		}
 	}
 
-	stat, err := os.Stat(containerEtc)
-	if os.IsNotExist(err) || !stat.IsDir() {
-		sylog.Warningf("container does not contain an /etc directory; skipping resolv.conf configuration")
-		return nil
-	}
-
-	if err := os.WriteFile(containerResolvConfPath, resolvConfData, 0o755); err != nil {
+	if err := os.WriteFile(sessionResolveConfPath, resolvConfData, 0o755); err != nil {
 		return fmt.Errorf("while writing container's resolv.conf file: %v", err)
 	}
 
@@ -466,19 +471,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		return fmt.Errorf("launcher SysContext must be set for OCI image handling")
 	}
 
-	bundleDir, err := os.MkdirTemp("", "oci-bundle")
-	if err != nil {
-		return nil
-	}
-	defer func() {
-		sylog.Debugf("Removing OCI bundle at: %s", bundleDir)
-		if err := fs.ForceRemoveAll(bundleDir); err != nil {
-			sylog.Errorf("Couldn't remove OCI bundle %s: %v", bundleDir, err)
-		}
-	}()
-
-	sylog.Debugf("Creating OCI bundle at: %s", bundleDir)
-
+	var err error
 	var imgCache *cache.Handle
 	if !l.cfg.CacheDisabled {
 		imgCache, err = cache.New(cache.Config{
@@ -495,16 +488,38 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		return fmt.Errorf("while creating OCI spec: %w", err)
 	}
 
-	// Create a bundle - obtain and extract the image.
-	b, err := native.New(
-		native.OptBundlePath(bundleDir),
-		native.OptImageRef(image),
-		native.OptSysCtx(l.cfg.SysContext),
-		native.OptImgCache(imgCache),
-	)
+	// Create a bundle - obtain and extract / mount the image.
+	bundleDir, err := os.MkdirTemp("", "oci-bundle")
+	if err != nil {
+		sylog.Debugf("Removing OCI bundle at: %s", bundleDir)
+		if err := fs.ForceRemoveAll(bundleDir); err != nil {
+			sylog.Errorf("Couldn't remove OCI bundle %s: %v", bundleDir, err)
+		}
+		return nil
+	}
+
+	sylog.Debugf("Creating OCI bundle at: %s", bundleDir)
+
+	var b ocibundle.Bundle
+
+	if strings.HasPrefix(image, "oci-sif:") {
+		b, err = ocisif.New(
+			ocisif.OptBundlePath(bundleDir),
+			ocisif.OptImageRef(image),
+			ocisif.OptSysCtx(l.cfg.SysContext),
+		)
+	} else {
+		b, err = native.New(
+			native.OptBundlePath(bundleDir),
+			native.OptImageRef(image),
+			native.OptSysCtx(l.cfg.SysContext),
+			native.OptImgCache(imgCache),
+		)
+	}
 	if err != nil {
 		return err
 	}
+
 	if err := b.Create(ctx, spec); err != nil {
 		return err
 	}
@@ -521,6 +536,15 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 
 	// Execution of runc/crun run, wrapped with prep / cleanup.
 	err = RunWrapped(ctx, id.String(), b.Path(), "", l.cfg.OverlayPaths, l.singularityConf.SystemdCgroups)
+
+	sessionDir := filepath.Join(bundleDir, "session")
+	if err := os.RemoveAll(sessionDir); err != nil {
+		sylog.Errorf("Couldn't remove session directory %q: %v", sessionDir, err)
+	}
+
+	if errCleanup := b.Delete(); errCleanup != nil {
+		sylog.Errorf("While cleaning up temporary bundle directory %q: %v", bundleDir, errCleanup)
+	}
 
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {

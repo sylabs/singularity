@@ -17,6 +17,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/internal/pkg/util/passwdfile"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
 // RootFs is the default root path for OCI bundle
@@ -92,6 +93,7 @@ func SaveBundleConfig(bundlePath string, g *generate.Generator) error {
 
 // DeleteBundle deletes bundle directory
 func DeleteBundle(bundlePath string) error {
+	sylog.Debugf("Deleting generic oci bundle at %s", bundlePath)
 	if err := os.RemoveAll(Volumes(bundlePath).Path()); err != nil {
 		return fmt.Errorf("failed to delete volumes directory: %s", err)
 	}

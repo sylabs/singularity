@@ -7,8 +7,10 @@ package oci
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/sylabs/singularity/internal/pkg/util/fs/overlay"
+	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
@@ -73,6 +75,33 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
 	if cleanupErr := s.Unmount(rootFsDir); cleanupErr != nil {
 		sylog.Errorf("While unmounting rootfs overlay: %v", cleanupErr)
+	}
+
+	// Return any error from the actual container payload - preserve exit code.
+	return err
+}
+
+// WrapWithSession runs a function wrapped with prep / cleanup steps for a session directory overlay.
+func WrapWithSessionOverlay(f func() error, bundleDir string) error {
+	s := overlay.Set{ReadonlyOverlays: []*overlay.Item{
+		{
+			SourcePath: filepath.Join(bundleDir, "session"),
+			Type:       image.SANDBOX,
+			Writable:   false,
+		},
+	}}
+
+	rootFsDir := tools.RootFs(bundleDir).Path()
+	err := s.Mount(rootFsDir)
+	if err != nil {
+		return err
+	}
+
+	err = f()
+
+	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
+	if cleanupErr := s.Unmount(rootFsDir); cleanupErr != nil {
+		sylog.Errorf("While unmounting rootfs session overlay: %v", cleanupErr)
 	}
 
 	// Return any error from the actual container payload - preserve exit code.

@@ -223,14 +223,15 @@ func RunWrapped(ctx context.Context, containerID, bundlePath, pidFile string, ov
 	}
 
 	runFunc := func() error {
-		return Run(ctx, containerID, absBundle, pidFile, systemdCgroups)
+		return Run(ctx, containerID, bundlePath, pidFile, systemdCgroups)
 	}
 
+	overlayFn := func() error { return WrapWithWritableTmpFs(runFunc, bundlePath) }
 	if len(overlayPaths) > 0 {
-		return WrapWithOverlays(runFunc, absBundle, overlayPaths)
+		overlayFn = func() error { return WrapWithOverlays(runFunc, bundlePath, overlayPaths) }
 	}
 
-	return WrapWithWritableTmpFs(runFunc, absBundle)
+	return WrapWithSessionOverlay(overlayFn, bundlePath)
 }
 
 // Start starts a previously created container

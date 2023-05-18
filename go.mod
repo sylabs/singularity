@@ -188,3 +188,5 @@ require (
 )
 
 replace oras.land/oras-go => github.com/sylabs/oras-go v1.2.4-0.20230628133146-a64659fc0454
+
+replace github.com/sylabs/sif/v2 => github.com/sylabs/sif/v2 v2.11.2-0.20230427143639-9639ce1461e7
