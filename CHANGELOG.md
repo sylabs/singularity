@@ -50,6 +50,8 @@
   storage. If `--scratch <scratchdir>` is used in conjunction with `--workdir`,
   scratch directories will be mapped to subdirectories nested under
   `<workdir>/scratch` on the host, rather than to tmpfs storage.
+- Added ability to set a custom config directory via the new
+  `SINGULARITY_CONFIGDIR` environment variable.
 
 ## 3.11.3 \[2023-05-04\]
 
