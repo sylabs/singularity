@@ -20,6 +20,9 @@
   files on the host that have permissions based on supplementary group
   membership. Note that supplementary groups are mapped to `nobody` in the
   container, and `chgrp`, `newgrp`, etc. cannot be used.
+- Added ability to set a custom user config directory (default
+  `$HOME/.singularity`) via the new `SINGULARITY_CONFIGDIR` environment
+  variable.
 
 ### Bug Fixes
 
