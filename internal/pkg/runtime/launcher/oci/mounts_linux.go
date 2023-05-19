@@ -80,7 +80,7 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
 
 		workdir, err := filepath.Abs(filepath.Clean(l.cfg.WorkDir))
 		if err != nil {
-			sylog.Warningf("Can't determine absolute path of workdir %s", l.cfg.WorkDir)
+			return fmt.Errorf("can't determine absolute path of workdir %s: %s", workdir, err)
 		}
 
 		tmpSrc := filepath.Join(workdir, tmpSrcSubdir)
@@ -332,7 +332,7 @@ func (l *Launcher) addScratchMounts(mounts *[]specs.Mount) error {
 	if len(l.cfg.WorkDir) > 0 {
 		workdir, err := filepath.Abs(filepath.Clean(l.cfg.WorkDir))
 		if err != nil {
-			sylog.Warningf("Can't determine absolute path of workdir %s", l.cfg.WorkDir)
+			return fmt.Errorf("can't determine absolute path of workdir %s: %s", workdir, err)
 		}
 		scratchContainerDirPath := filepath.Join(workdir, scratchContainerDirName)
 		if err := fs.Mkdir(scratchContainerDirPath, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {

@@ -53,6 +53,10 @@
 - Added ability to set a custom config directory via the new
   `SINGULARITY_CONFIGDIR` environment variable.
 
+### Bug Fixes
+
+- Fix interaction between `--workdir` when given relative path and `--scratch`.
+
 ## 3.11.3 \[2023-05-04\]
 
 ### Changed defaults / behaviours
