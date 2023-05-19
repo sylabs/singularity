@@ -111,4 +111,5 @@ The following have contributed code and/or documentation to this repository.
 - Yinuo Chen <ynchen2829@utexas.edu>
 - Onur Yılmaz <csonuryilmaz@gmail.com>
 - Pranathi Locula <locula@deshaw.com>
+- Filip Gorczyca <filip.gorczyca141@gmail.com>
 ```
