@@ -107,4 +107,5 @@ The following have contributed code and/or documentation to this repository.
 - Yaroslav Halchenko <debian@onerussian.com>
 - Onur Yılmaz <csonuryilmaz@gmail.com>
 - Pranathi Locula <locula@deshaw.com>
+- Filip Gorczyca <filip.gorczyca141@gmail.com>
 ```
