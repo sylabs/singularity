@@ -17,6 +17,7 @@
 - Fix dropped "n" characters on some platforms in definition file stored as part
   of SIF metadata.
 - Pass STDIN to `--oci` containers correctly, to fix piping input to a container.
+- Fix memory usage calculation during singularity compilation on RaspberryPi.
 
 ## 3.11.3 \[2023-05-04\]
 
