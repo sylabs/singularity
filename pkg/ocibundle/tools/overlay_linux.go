@@ -32,8 +32,8 @@ const (
 	OLKINDEXTFS
 )
 
-// OverlayItem represents information about an overlay (as specified, for
-// example, in a --overlay argument)
+// OverlayItem represents information about a single overlay item (as specified,
+// for example, in a single --overlay argument)
 type OverlayItem struct {
 	// Kind represents what kind of overlay this is
 	Kind OverlayKind
@@ -50,30 +50,11 @@ type OverlayItem struct {
 	DirToMount string
 }
 
-// prepareWritableOverlay ensures that the upper and work subdirs of a writable
-// overlay dir exist, and if not, creates them.
-func (overlay *OverlayItem) prepareWritableOverlay() error {
-	switch overlay.Kind {
-	case OLKINDDIR:
-		overlay.DirToMount = overlay.BarePath
-		if err := ensureOverlayDir(overlay.DirToMount, true, 0o755); err != nil {
-			return err
-		}
-		sylog.Debugf("Ensuring %q exists", overlay.Upper())
-		if err := ensureOverlayDir(overlay.Upper(), true, 0o755); err != nil {
-			return fmt.Errorf("err encountered while preparing upper subdir of overlay dir %q: %w", overlay.Upper(), err)
-		}
-		sylog.Debugf("Ensuring %q exists", overlay.Work())
-		if err := ensureOverlayDir(overlay.Work(), true, 0o700); err != nil {
-			return fmt.Errorf("err encountered while preparing work subdir of overlay dir %q: %w", overlay.Work(), err)
-		}
-	default:
-		return fmt.Errorf("internal error: unrecognized image type in prepareWritableOverlay() (kind: %v)", overlay.Kind)
-	}
-
-	return nil
-}
-
+// Mount performs the necessary steps to mount an individual OverlayItem. It
+// acts as a sort of multiplexer, calling the corresponding private method
+// depending on the type of overlay involved. Note that this method does not
+// mount the overlay itself (which may consist of a series of OverlayItems);
+// that happens in OverlaySet.Mount().
 func (overlay *OverlayItem) Mount() error {
 	switch overlay.Kind {
 	case OLKINDDIR:
@@ -85,6 +66,10 @@ func (overlay *OverlayItem) Mount() error {
 	}
 }
 
+// mountDir is the private method for mounting directory-based OverlayItems.
+// This involves bind-mounting followed by remounting of the directory onto
+// itself. This pattern of bind-mount followed by remount allows application of
+// more restrictive mount flags than are in force on the underlying filesystem.
 func (overlay *OverlayItem) mountDir() error {
 	var err error
 	if len(overlay.DirToMount) < 1 {
@@ -117,6 +102,7 @@ func (overlay *OverlayItem) mountDir() error {
 	return nil
 }
 
+// mountSquashfs is the private method for mounting squashfs-based OverlayItems.
 func (overlay *OverlayItem) mountSquashfs() error {
 	var err error
 	squashfuseCmd, err := bin.FindBin("squashfuse")
@@ -155,6 +141,11 @@ func (overlay *OverlayItem) mountSquashfs() error {
 	return nil
 }
 
+// Unmount performs the necessary steps to unmount an individual OverlayItem. It
+// acts as a sort of multiplexer, calling the corresponding private method
+// depending on the type of overlay involved. Note that this method does not
+// unmount the overlay itself (which may consist of a series of OverlayItems);
+// that happens in OverlaySet.Unmount().
 func (overlay OverlayItem) Unmount() error {
 	switch overlay.Kind {
 	case OLKINDDIR:
@@ -166,10 +157,17 @@ func (overlay OverlayItem) Unmount() error {
 	}
 }
 
+// unmountDir is the private method for unmounting directory-based OverlayItems.
+// It does nothing more than wrap the detachMount() function, called on the
+// OverlayItem's DirToMount field, in a method. It is therefore a somewhat
+// degenerate case, but this wrapping is still maintained for uniformity across
+// the different overlay kinds.
 func (overlay OverlayItem) unmountDir() error {
 	return detachMount(overlay.DirToMount)
 }
 
+// unmountSquashfs is the private method for unmounting squashfs-based
+// OverlayItems.
 func (overlay OverlayItem) unmountSquashfs() error {
 	defer os.Remove(overlay.DirToMount)
 	fusermountCmd, innerErr := bin.FindBin("fusermount")
@@ -187,10 +185,38 @@ func (overlay OverlayItem) unmountSquashfs() error {
 	return nil
 }
 
+// prepareWritableOverlay ensures that the upper and work subdirs of a writable
+// overlay dir exist, and if not, creates them.
+func (overlay *OverlayItem) prepareWritableOverlay() error {
+	switch overlay.Kind {
+	case OLKINDDIR:
+		overlay.DirToMount = overlay.BarePath
+		if err := ensureOverlayDir(overlay.DirToMount, true, 0o755); err != nil {
+			return err
+		}
+		sylog.Debugf("Ensuring %q exists", overlay.Upper())
+		if err := ensureOverlayDir(overlay.Upper(), true, 0o755); err != nil {
+			return fmt.Errorf("err encountered while preparing upper subdir of overlay dir %q: %w", overlay.Upper(), err)
+		}
+		sylog.Debugf("Ensuring %q exists", overlay.Work())
+		if err := ensureOverlayDir(overlay.Work(), true, 0o700); err != nil {
+			return fmt.Errorf("err encountered while preparing work subdir of overlay dir %q: %w", overlay.Work(), err)
+		}
+	default:
+		return fmt.Errorf("internal error: unrecognized image type in prepareWritableOverlay() (kind: %v)", overlay.Kind)
+	}
+
+	return nil
+}
+
+// Upper returns the "upper"-subdir of the OverlayItem's DirToMount field.
+// Useful for computing options strings for overlay-related mount system calls.
 func (overlay OverlayItem) Upper() string {
 	return filepath.Join(overlay.DirToMount, "upper")
 }
 
+// Work returns the "work"-subdir of the OverlayItem's DirToMount field. Useful
+// for computing options strings for overlay-related mount system calls.
 func (overlay OverlayItem) Work() string {
 	return filepath.Join(overlay.DirToMount, "work")
 }
@@ -218,7 +244,7 @@ func CreateOverlay(bundlePath string) error {
 		BarePath: overlayDir,
 		Kind:     OLKINDDIR,
 		Writable: true,
-	}}.Apply(RootFs(bundlePath).Path())
+	}}.Mount(RootFs(bundlePath).Path())
 }
 
 // DeleteOverlay deletes an overlay previously created using a directory inside
@@ -271,7 +297,7 @@ func CreateOverlayTmpfs(bundlePath string, sizeMiB int) (string, error) {
 		BarePath: overlayDir,
 		Kind:     OLKINDDIR,
 		Writable: true,
-	}}.Apply(RootFs(bundlePath).Path())
+	}}.Mount(RootFs(bundlePath).Path())
 	if err != nil {
 		return "", err
 	}
@@ -325,6 +351,8 @@ func ensureOverlayDir(dir string, createIfMissing bool, createPerm os.FileMode) 
 	return nil
 }
 
+// detachAndDelete performs an unmount system call on the specified directory,
+// followed by deletion of the directory and all of its contents.
 func detachAndDelete(overlayDir string) error {
 	sylog.Debugf("Detaching overlayDir %q", overlayDir)
 	if err := syscall.Unmount(overlayDir, syscall.MNT_DETACH); err != nil {
@@ -338,6 +366,7 @@ func detachAndDelete(overlayDir string) error {
 	return nil
 }
 
+// detachMount performs an unmount system call on the specified directory.
 func detachMount(dir string) error {
 	sylog.Debugf("Calling syscall.Unmount() to detach %q", dir)
 	if err := syscall.Unmount(dir, syscall.MNT_DETACH); err != nil {

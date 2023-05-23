@@ -43,24 +43,24 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 	writableOverlayFound := false
 	ovs := tools.OverlaySet{}
 	for _, p := range overlayPaths {
-		olInfo, err := analyzeOverlay(p)
+		overlay, err := analyzeOverlay(p)
 		if err != nil {
 			return err
 		}
 
-		if olInfo.Writable && writableOverlayFound {
-			return fmt.Errorf("you can't specify more than one writable overlay; %#v has already been specified as a writable overlay; use '--overlay %s:ro' instead", ovs.WritableOverlay, olInfo.BarePath)
+		if overlay.Writable && writableOverlayFound {
+			return fmt.Errorf("you can't specify more than one writable overlay; %#v has already been specified as a writable overlay; use '--overlay %s:ro' instead", ovs.WritableOverlay, overlay.BarePath)
 		}
-		if olInfo.Writable {
+		if overlay.Writable {
 			writableOverlayFound = true
-			ovs.WritableOverlay = olInfo
+			ovs.WritableOverlay = overlay
 		} else {
-			ovs.ReadonlyOverlays = append(ovs.ReadonlyOverlays, olInfo)
+			ovs.ReadonlyOverlays = append(ovs.ReadonlyOverlays, overlay)
 		}
 	}
 
 	rootFsDir := tools.RootFs(bundleDir).Path()
-	err := ovs.Apply(rootFsDir)
+	err := ovs.Mount(rootFsDir)
 	if err != nil {
 		return err
 	}
@@ -83,51 +83,51 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 // analyzeOverlay takes a string argument, as passed to --overlay, and returns
 // an overlayInfo struct describing the requested overlay.
 func analyzeOverlay(overlayString string) (*tools.OverlayItem, error) {
-	olInfo := tools.OverlayItem{}
+	overlay := tools.OverlayItem{}
 
 	splitted := strings.SplitN(overlayString, ":", 2)
-	olInfo.BarePath = splitted[0]
+	overlay.BarePath = splitted[0]
 	if len(splitted) > 1 {
 		if splitted[1] == "ro" {
-			olInfo.Writable = false
+			overlay.Writable = false
 		}
 	}
 
-	s, err := os.Stat(olInfo.BarePath)
+	s, err := os.Stat(overlay.BarePath)
 	if (err != nil) && os.IsNotExist(err) {
-		return nil, fmt.Errorf("specified overlay %q does not exist", olInfo.BarePath)
+		return nil, fmt.Errorf("specified overlay %q does not exist", overlay.BarePath)
 	}
 	if err != nil {
 		return nil, err
 	}
 
 	if s.IsDir() {
-		olInfo.Kind = tools.OLKINDDIR
-	} else if err := analyzeImageFile(&olInfo); err != nil {
-		return nil, fmt.Errorf("error encountered while examining image file %s: %s", olInfo.BarePath, err)
+		overlay.Kind = tools.OLKINDDIR
+	} else if err := analyzeImageFile(&overlay); err != nil {
+		return nil, fmt.Errorf("error encountered while examining image file %s: %s", overlay.BarePath, err)
 	}
 
-	return &olInfo, nil
+	return &overlay, nil
 }
 
 // analyzeImageFile attempts to determine the format of an image file based on
 // its header
-func analyzeImageFile(olInfo *tools.OverlayItem) error {
-	img, err := image.Init(olInfo.BarePath, olInfo.Writable)
+func analyzeImageFile(overlay *tools.OverlayItem) error {
+	img, err := image.Init(overlay.BarePath, overlay.Writable)
 	if err != nil {
 		return fmt.Errorf("error encountered while trying to examine image")
 	}
 
 	switch img.Type {
 	case image.SQUASHFS:
-		olInfo.Kind = tools.OLKINDSQUASHFS
+		overlay.Kind = tools.OLKINDSQUASHFS
 		// squashfs image must be readonly
-		olInfo.Writable = false
+		overlay.Writable = false
 		return nil
 	case image.EXT3:
-		olInfo.Kind = tools.OLKINDEXTFS
+		overlay.Kind = tools.OLKINDEXTFS
 	default:
-		return fmt.Errorf("image %s is of a type that is not currently supported for OCI-mode overlays", olInfo.BarePath)
+		return fmt.Errorf("image %s is of a type that is not currently supported for OCI-mode overlays", overlay.BarePath)
 	}
 
 	return nil

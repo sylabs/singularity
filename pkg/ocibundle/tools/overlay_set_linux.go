@@ -36,8 +36,9 @@ type OverlaySet struct {
 	WritableOverlay *OverlayItem
 }
 
-// Apply prepares and mounts the OverlaySet
-func (ovs OverlaySet) Apply(rootFsDir string) error {
+// Mount prepares and mounts the entire OverlaySet onto the specified rootfs
+// directory.
+func (ovs OverlaySet) Mount(rootFsDir string) error {
 	// Prepare internal structure of writable overlay dir, if necessary
 	if ovs.WritableOverlay != nil {
 		if err := ovs.WritableOverlay.prepareWritableOverlay(); err != nil {
@@ -54,7 +55,7 @@ func (ovs OverlaySet) Apply(rootFsDir string) error {
 	return ovs.mount(rootFsDir)
 }
 
-// UnmountOverlay ummounts an OverlaySet from a specified rootfs directory
+// UnmountOverlay ummounts an OverlaySet from a specified rootfs directory.
 func (ovs OverlaySet) Unmount(rootFsDir string) error {
 	if err := detachMount(rootFsDir); err != nil {
 		return err
@@ -63,7 +64,10 @@ func (ovs OverlaySet) Unmount(rootFsDir string) error {
 	return ovs.detachIndividualMounts()
 }
 
-// mount mounts an overlay atop a given rootfs directory
+// mount performs the final step in mounting an OverlaySet, namely mounting of
+// the overlay with its full-fledged options string, representing all the
+// individual OverlayItems (writable and read-only) that comprise the
+// OverlaySet.
 func (ovs OverlaySet) mount(rootFsDir string) error {
 	// Try to perform actual mount
 	options := ovs.options(rootFsDir)
@@ -75,8 +79,9 @@ func (ovs OverlaySet) mount(rootFsDir string) error {
 	return nil
 }
 
-// options creates an options string to be used in an overlay mount based on the
-// current OverlaySet and a rootfs path.
+// options creates an options string to be used in an overlay mount,
+// representing all the individual OverlayItems (writable and read-only) that
+// comprise the OverlaySet.
 func (ovs OverlaySet) options(rootFsDir string) string {
 	// Create lowerdir argument of options string
 	lowerDirs := lo.Map(ovs.ReadonlyOverlays, func(overlay *OverlayItem, _ int) string {
@@ -92,12 +97,10 @@ func (ovs OverlaySet) options(rootFsDir string) string {
 	return fmt.Sprintf("lowerdir=%s", lowerDirJoined)
 }
 
-// performIndividualMounts creates the individual mounts that furnish the
-// "lowerdir" elements of the eventual overlay mount. In the case of a directory
-// overlay, this involves a bind-mount & remount of every OverlaySet the
-// directory onto itself. This pattern of bind mount followed by remount allows
-// application of more restrictive mount flags than are in force on the
-// underlying filesystem.
+// performIndividualMounts creates the mounts that furnish the individual
+// elements of the OverlaySet. The actions taken will differ depending on which
+// kind of overlay each OverlayItem is; see comments on OverlayItem.Mount for
+// details.
 func (ovs OverlaySet) performIndividualMounts() error {
 	overlaysToBind := ovs.ReadonlyOverlays
 	if ovs.WritableOverlay != nil {
@@ -115,7 +118,9 @@ func (ovs OverlaySet) performIndividualMounts() error {
 }
 
 // detachIndividualMounts detaches the bind mounts & remounts created by
-// performIndividualMounts()
+// performIndividualMounts, above. As in performIndividualMounts, the actions
+// taken will differ depending on which kind of overlay each OverlayItem is; see
+// comments on OverlayItem.Unmount for details.
 func (ovs OverlaySet) detachIndividualMounts() error {
 	overlaysToDetach := ovs.ReadonlyOverlays
 	if ovs.WritableOverlay != nil {
