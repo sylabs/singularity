@@ -12,6 +12,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/samber/lo"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
@@ -25,17 +26,51 @@ import (
 // An empty WritableLoc field indicates that no writable overlay is to be
 // mounted.
 type OverlaySet struct {
-	// ReadonlyLocs is a list of directories to be mounted as read-only
+	// ReadonlyOverlays is a list of directories to be mounted as read-only
 	// overlays. The mount point atop which these will be mounted is left
 	// implicit, to be chosen by whichever function consumes the OverlaySet.
-	ReadonlyLocs []string
+	ReadonlyOverlays []*OverlayInfo
 
-	// WritableLoc is the directory to be mounted as a writable overlay. The
+	// WritableOverlay is the directory to be mounted as a writable overlay. The
 	// mount point atop which this will be mounted is left implicit, to be
 	// chosen by whichever function consumes the OverlaySet. Empty value
 	// indicates no writable overlay is to be mounted.
-	WritableLoc string
+	WritableOverlay *OverlayInfo
 }
+
+// OverlayInfo represents information about an overlay (as specified, for
+// example, in a --overlay argument)
+type OverlayInfo struct {
+	// Kind represents what kind of overlay this is
+	Kind OverlayKind
+
+	// Writable represents whether this is a writable overlay
+	Writable bool
+
+	// BarePath is the path of the overlay stripped of any colon-prefixed
+	// options (like ":ro")
+	BarePath string
+
+	// DirToMount is the path of the directory that will actually be passed to
+	// the mount system-call when mounting this overlay
+	DirToMount string
+}
+
+// OverlayKind describes whether an overlay is a directory, a squashfs image,
+// etc.
+type OverlayKind int
+
+// Possible values for OverlayKind
+const (
+	// OLKindDir represents a directory
+	OLKindDir OverlayKind = iota
+
+	// OLKindSquashFS represents a squashfs image file
+	OLKindSquashFS
+
+	// OLKindExtFS represents an extfs image file
+	OLKindExtFS
+)
 
 // CreateOverlay creates a writable overlay using a directory inside the OCI
 // bundle.
@@ -57,8 +92,11 @@ func CreateOverlay(bundlePath string) error {
 	}()
 
 	return ApplyOverlay(
-		RootFs(bundlePath).Path(),
-		OverlaySet{WritableLoc: overlayDir},
+		RootFs(bundlePath).Path(), OverlaySet{WritableOverlay: &OverlayInfo{
+			BarePath: overlayDir,
+			Kind:     OLKindDir,
+			Writable: true,
+		}},
 	)
 }
 
@@ -109,8 +147,11 @@ func CreateOverlayTmpfs(bundlePath string, sizeMiB int) (string, error) {
 	}()
 
 	err = ApplyOverlay(
-		RootFs(bundlePath).Path(),
-		OverlaySet{WritableLoc: overlayDir},
+		RootFs(bundlePath).Path(), OverlaySet{WritableOverlay: &OverlayInfo{
+			BarePath: overlayDir,
+			Kind:     OLKindDir,
+			Writable: true,
+		}},
 	)
 	if err != nil {
 		return "", err
@@ -139,11 +180,8 @@ func DeleteOverlayTmpfs(bundlePath, overlayDir string) error {
 // ApplyOverlay prepares and mounts the specified overlay
 func ApplyOverlay(rootFsDir string, ovs OverlaySet) error {
 	// Prepare internal structure of writable overlay dir, if necessary
-	if len(ovs.WritableLoc) > 0 {
-		if err := ensureOverlayDir(ovs.WritableLoc, true, 0o755); err != nil {
-			return err
-		}
-		if err := prepareWritableOverlay(ovs.WritableLoc); err != nil {
+	if ovs.WritableOverlay != nil {
+		if err := prepareWritableOverlay(ovs.WritableOverlay); err != nil {
 			return err
 		}
 	}
@@ -168,14 +206,21 @@ func UnmountOverlay(rootFsDir string, ovs OverlaySet) error {
 
 // prepareWritableOverlay ensures that the upper and work subdirs of a writable
 // overlay dir exist, and if not, creates them.
-func prepareWritableOverlay(dir string) error {
-	sylog.Debugf("Ensuring %q exists", upperSubdirOf(dir))
-	if err := ensureOverlayDir(upperSubdirOf(dir), true, 0o755); err != nil {
-		return fmt.Errorf("err encountered while preparing upper subdir of overlay dir %q: %w", upperSubdirOf(dir), err)
-	}
-	sylog.Debugf("Ensuring %q exists", workSubdirOf(dir))
-	if err := ensureOverlayDir(workSubdirOf(dir), true, 0o700); err != nil {
-		return fmt.Errorf("err encountered while preparing work subdir of overlay dir %q: %w", workSubdirOf(dir), err)
+func prepareWritableOverlay(overlay *OverlayInfo) error {
+	switch overlay.Kind {
+	case OLKindDir:
+		overlay.DirToMount = overlay.BarePath
+		if err := ensureOverlayDir(overlay.DirToMount, true, 0o755); err != nil {
+			return err
+		}
+		sylog.Debugf("Ensuring %q exists", upperSubdirOf(overlay.DirToMount))
+		if err := ensureOverlayDir(upperSubdirOf(overlay.DirToMount), true, 0o755); err != nil {
+			return fmt.Errorf("err encountered while preparing upper subdir of overlay dir %q: %w", upperSubdirOf(overlay.DirToMount), err)
+		}
+		sylog.Debugf("Ensuring %q exists", workSubdirOf(overlay.DirToMount))
+		if err := ensureOverlayDir(workSubdirOf(overlay.DirToMount), true, 0o700); err != nil {
+			return fmt.Errorf("err encountered while preparing work subdir of overlay dir %q: %w", workSubdirOf(overlay.DirToMount), err)
+		}
 	}
 
 	return nil
@@ -188,40 +233,38 @@ func prepareWritableOverlay(dir string) error {
 func performIdentityMounts(ovs OverlaySet) error {
 	var err error
 
-	locsToBind := ovs.ReadonlyLocs
-	if len(ovs.WritableLoc) > 0 {
-		// Check if writable overlay dir already exists; if it doesn't, try to
-		// create it.
-		if err = ensureOverlayDir(ovs.WritableLoc, true, 0o755); err != nil {
-			return err
-		}
-
-		locsToBind = append(locsToBind, ovs.WritableLoc)
+	overlaysToBind := ovs.ReadonlyOverlays
+	if ovs.WritableOverlay != nil {
+		overlaysToBind = append(overlaysToBind, ovs.WritableOverlay)
 	}
 
 	// Try to do initial bind-mounts
-	for _, d := range locsToBind {
-		if err = ensureOverlayDir(d, false, 0); err != nil {
-			return fmt.Errorf("error accessing directory %s: %s", d, err)
+	for _, overlay := range overlaysToBind {
+		if (overlay.Kind == OLKindDir) && (len(overlay.DirToMount) < 1) {
+			overlay.DirToMount = overlay.BarePath
 		}
 
-		sylog.Debugf("Performing identity bind-mount of %q", d)
-		if err = syscall.Mount(d, d, "", syscall.MS_BIND, ""); err != nil {
-			return fmt.Errorf("failed to bind %s: %s", d, err)
+		if err = ensureOverlayDir(overlay.DirToMount, false, 0); err != nil {
+			return fmt.Errorf("error accessing directory %s: %s", overlay.DirToMount, err)
+		}
+
+		sylog.Debugf("Performing identity bind-mount of %q", overlay.DirToMount)
+		if err = syscall.Mount(overlay.DirToMount, overlay.DirToMount, "", syscall.MS_BIND, ""); err != nil {
+			return fmt.Errorf("failed to bind %s: %s", overlay.DirToMount, err)
 		}
 
 		// best effort to cleanup mount
 		defer func() {
 			if err != nil {
-				sylog.Debugf("Encountered error with current OverlaySet; attempting to unmount %q", d)
-				syscall.Unmount(d, syscall.MNT_DETACH)
+				sylog.Debugf("Encountered error with current OverlaySet; attempting to unmount %q", overlay.DirToMount)
+				syscall.Unmount(overlay.DirToMount, syscall.MNT_DETACH)
 			}
 		}()
 
 		// Try to perform remount
-		sylog.Debugf("Performing remount of %q", d)
-		if err = syscall.Mount("", d, "", syscall.MS_REMOUNT|syscall.MS_BIND, ""); err != nil {
-			return fmt.Errorf("failed to remount %s: %s", d, err)
+		sylog.Debugf("Performing remount of %q", overlay.DirToMount)
+		if err = syscall.Mount("", overlay.DirToMount, "", syscall.MS_REMOUNT|syscall.MS_BIND, ""); err != nil {
+			return fmt.Errorf("failed to remount %s: %s", overlay.DirToMount, err)
 		}
 	}
 
@@ -231,18 +274,18 @@ func performIdentityMounts(ovs OverlaySet) error {
 // detachIdentityMounts detaches mounts created by the bind-mount & remount
 // pattern (as implemented in performIdentityMounts())
 func detachIdentityMounts(ovs OverlaySet) error {
-	locsToDetach := ovs.ReadonlyLocs
-	if len(ovs.WritableLoc) > 0 {
-		locsToDetach = append(locsToDetach, ovs.WritableLoc)
+	overlaysToDetach := ovs.ReadonlyOverlays
+	if ovs.WritableOverlay != nil {
+		overlaysToDetach = append(overlaysToDetach, ovs.WritableOverlay)
 	}
 
 	// Don't stop on the first error; try to clean up as much as possible, and
 	// then return the first error encountered.
 	errors := []error{}
-	for _, d := range locsToDetach {
-		err := detachMount(d)
+	for _, overlay := range overlaysToDetach {
+		err := detachMount(overlay.DirToMount)
 		if err != nil {
-			sylog.Errorf("Error encountered trying to detach identity mount %s: %s", d, err)
+			sylog.Errorf("Error encountered trying to detach identity mount %s: %s", overlay.DirToMount, err)
 			errors = append(errors, err)
 		}
 	}
@@ -257,10 +300,13 @@ func detachIdentityMounts(ovs OverlaySet) error {
 // overlayOptions creates the options string to be used in an overlay mount
 func overlayOptions(rootFsDir string, ovs OverlaySet) string {
 	// Create lowerdir argument of options string
-	lowerDirJoined := strings.Join(append(ovs.ReadonlyLocs, rootFsDir), ":")
+	lowerDirs := lo.Map(ovs.ReadonlyOverlays, func(overlay *OverlayInfo, _ int) string {
+		return overlay.DirToMount
+	})
+	lowerDirJoined := strings.Join(append(lowerDirs, rootFsDir), ":")
 
-	if len(ovs.WritableLoc) > 0 {
-		return fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", lowerDirJoined, upperSubdirOf(ovs.WritableLoc), workSubdirOf(ovs.WritableLoc))
+	if (ovs.WritableOverlay != nil) && (ovs.WritableOverlay.Kind == OLKindDir) {
+		return fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", lowerDirJoined, upperSubdirOf(ovs.WritableOverlay.DirToMount), workSubdirOf(ovs.WritableOverlay.DirToMount))
 	}
 
 	return fmt.Sprintf("lowerdir=%s", lowerDirJoined)

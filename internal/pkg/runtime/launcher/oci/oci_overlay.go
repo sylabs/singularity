@@ -7,12 +7,21 @@ package oci
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
+)
+
+const (
+	// bufferSize is the size of the buffer to use for reading byte-contents
+	// from files
+	bufferSize = 2048
 )
 
 // WrapWithWritableTmpFs runs a function wrapped with prep / cleanup steps for a writable tmpfs.
@@ -41,23 +50,19 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 	writableOverlayFound := false
 	ovs := tools.OverlaySet{}
 	for _, p := range overlayPaths {
-		writable := true
-		splitted := strings.SplitN(p, ":", 2)
-		barePath := splitted[0]
-		if len(splitted) > 1 {
-			if splitted[1] == "ro" {
-				writable = false
-			}
+		olInfo, err := analyzeOverlay(p)
+		if err != nil {
+			return err
 		}
 
-		if writable && writableOverlayFound {
-			return fmt.Errorf("you can't specify more than one writable overlay; %#v has already been specified as a writable overlay; use '--overlay %s:ro' instead", ovs.WritableLoc, barePath)
+		if olInfo.Writable && writableOverlayFound {
+			return fmt.Errorf("you can't specify more than one writable overlay; %#v has already been specified as a writable overlay; use '--overlay %s:ro' instead", ovs.WritableOverlay, olInfo.BarePath)
 		}
-		if writable {
+		if olInfo.Writable {
 			writableOverlayFound = true
-			ovs.WritableLoc = barePath
+			ovs.WritableOverlay = olInfo
 		} else {
-			ovs.ReadonlyLocs = append(ovs.ReadonlyLocs, barePath)
+			ovs.ReadonlyOverlays = append(ovs.ReadonlyOverlays, olInfo)
 		}
 	}
 
@@ -80,6 +85,66 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 
 	// Return any error from the actual container payload - preserve exit code.
 	return err
+}
+
+// analyzeOverlay takes a string argument, as passed to --overlay, and returns
+// an overlayInfo struct describing the requested overlay.
+func analyzeOverlay(overlayString string) (*tools.OverlayInfo, error) {
+	olInfo := tools.OverlayInfo{}
+
+	splitted := strings.SplitN(overlayString, ":", 2)
+	olInfo.BarePath = splitted[0]
+	if len(splitted) > 1 {
+		if splitted[1] == "ro" {
+			olInfo.Writable = false
+		}
+	}
+
+	s, err := os.Stat(olInfo.BarePath)
+	if (err != nil) && os.IsNotExist(err) {
+		return nil, fmt.Errorf("specified overlay %q does not exist", olInfo.BarePath)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	if s.IsDir() {
+		olInfo.Kind = tools.OLKindDir
+	} else if err := analyzeImageFile(&olInfo); err != nil {
+		return nil, fmt.Errorf("error encountered while examining image file %s: %s", olInfo.BarePath, err)
+	}
+
+	return &olInfo, nil
+}
+
+// analyzeImageFile attempts to determine the format of an image file based on
+// its header
+func analyzeImageFile(olInfo *tools.OverlayInfo) error {
+	header := make([]byte, bufferSize)
+	file, err := os.Open(olInfo.BarePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	n, err := file.Read(header)
+	if (err != nil) && ((err != io.EOF) || (n == 0)) {
+		return err
+	}
+
+	_, err = image.CheckSquashfsHeader(header)
+	if err == nil {
+		olInfo.Kind = tools.OLKindSquashFS
+		return nil
+	}
+
+	_, err = image.CheckExt3Header(header)
+	if err == nil {
+		olInfo.Kind = tools.OLKindExtFS
+		return nil
+	}
+
+	return fmt.Errorf("unrecognized image format")
 }
 
 func prepareWritableTmpfs(bundleDir string) (string, error) {
