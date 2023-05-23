@@ -60,7 +60,7 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 	}
 
 	rootFsDir := tools.RootFs(bundleDir).Path()
-	err := tools.ApplyOverlay(rootFsDir, ovs)
+	err := ovs.Apply(rootFsDir)
 	if err != nil {
 		return err
 	}
@@ -72,7 +72,7 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 	}
 
 	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
-	if cleanupErr := tools.UnmountOverlay(rootFsDir, ovs); cleanupErr != nil {
+	if cleanupErr := ovs.Unmount(rootFsDir); cleanupErr != nil {
 		sylog.Errorf("While unmounting rootfs overlay: %v", cleanupErr)
 	}
 
@@ -82,8 +82,8 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 
 // analyzeOverlay takes a string argument, as passed to --overlay, and returns
 // an overlayInfo struct describing the requested overlay.
-func analyzeOverlay(overlayString string) (*tools.OverlayInfo, error) {
-	olInfo := tools.OverlayInfo{}
+func analyzeOverlay(overlayString string) (*tools.OverlayItem, error) {
+	olInfo := tools.OverlayItem{}
 
 	splitted := strings.SplitN(overlayString, ":", 2)
 	olInfo.BarePath = splitted[0]
@@ -102,7 +102,7 @@ func analyzeOverlay(overlayString string) (*tools.OverlayInfo, error) {
 	}
 
 	if s.IsDir() {
-		olInfo.Kind = tools.OLKindDir
+		olInfo.Kind = tools.OLKINDDIR
 	} else if err := analyzeImageFile(&olInfo); err != nil {
 		return nil, fmt.Errorf("error encountered while examining image file %s: %s", olInfo.BarePath, err)
 	}
@@ -112,7 +112,7 @@ func analyzeOverlay(overlayString string) (*tools.OverlayInfo, error) {
 
 // analyzeImageFile attempts to determine the format of an image file based on
 // its header
-func analyzeImageFile(olInfo *tools.OverlayInfo) error {
+func analyzeImageFile(olInfo *tools.OverlayItem) error {
 	img, err := image.Init(olInfo.BarePath, olInfo.Writable)
 	if err != nil {
 		return fmt.Errorf("error encountered while trying to examine image")
@@ -120,10 +120,12 @@ func analyzeImageFile(olInfo *tools.OverlayInfo) error {
 
 	switch img.Type {
 	case image.SQUASHFS:
-		olInfo.Kind = tools.OLKindSquashFS
+		olInfo.Kind = tools.OLKINDSQUASHFS
+		// squashfs image must be readonly
+		olInfo.Writable = false
 		return nil
 	case image.EXT3:
-		olInfo.Kind = tools.OLKindExtFS
+		olInfo.Kind = tools.OLKINDEXTFS
 	default:
 		return fmt.Errorf("image %s is of a type that is not currently supported for OCI-mode overlays", olInfo.BarePath)
 	}

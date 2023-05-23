@@ -60,12 +60,9 @@ func FindBin(name string) (path string, err error) {
 	// ldconfig is invoked by nvidia-container-cli, so must be trusted also.
 	case "cryptsetup", "ldconfig", "nvidia-container-cli":
 		path, err = findFromConfigOnly(name)
-		// distro provided fusermount for unpriv SIF mount
-	case "fusermount":
-		path, err = findOnPath(name)
-	// distro provided squashfuse for unpriv SIF mount and OCI-mode bare-image
-	// overlay
-	case "squashfuse":
+	// distro provided squashfuse and fusermount for unpriv SIF mount and
+	// OCI-mode bare-image overlay
+	case "squashfuse", "fusermount":
 		path, err = findOnPath(name)
 	// fuse2fs for OCI-mode bare-image overlay
 	case "fuse2fs":
