@@ -7,7 +7,6 @@ package oci
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -16,12 +15,6 @@ import (
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
-)
-
-const (
-	// bufferSize is the size of the buffer to use for reading byte-contents
-	// from files
-	bufferSize = 2048
 )
 
 // WrapWithWritableTmpFs runs a function wrapped with prep / cleanup steps for a writable tmpfs.
@@ -120,31 +113,22 @@ func analyzeOverlay(overlayString string) (*tools.OverlayInfo, error) {
 // analyzeImageFile attempts to determine the format of an image file based on
 // its header
 func analyzeImageFile(olInfo *tools.OverlayInfo) error {
-	header := make([]byte, bufferSize)
-	file, err := os.Open(olInfo.BarePath)
+	img, err := image.Init(olInfo.BarePath, olInfo.Writable)
 	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	n, err := file.Read(header)
-	if (err != nil) && ((err != io.EOF) || (n == 0)) {
-		return err
+		return fmt.Errorf("error encountered while trying to examine image")
 	}
 
-	_, err = image.CheckSquashfsHeader(header)
-	if err == nil {
+	switch img.Type {
+	case image.SQUASHFS:
 		olInfo.Kind = tools.OLKindSquashFS
 		return nil
-	}
-
-	_, err = image.CheckExt3Header(header)
-	if err == nil {
+	case image.EXT3:
 		olInfo.Kind = tools.OLKindExtFS
-		return nil
+	default:
+		return fmt.Errorf("image %s is of a type that is not currently supported for OCI-mode overlays", olInfo.BarePath)
 	}
 
-	return fmt.Errorf("unrecognized image format")
+	return nil
 }
 
 func prepareWritableTmpfs(bundleDir string) (string, error) {
