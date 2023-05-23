@@ -7,13 +7,10 @@ package tools
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
 	"strings"
 	"syscall"
 
 	"github.com/samber/lo"
-	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
@@ -88,7 +85,8 @@ func (ovs OverlaySet) options(rootFsDir string) string {
 	lowerDirJoined := strings.Join(append(lowerDirs, rootFsDir), ":")
 
 	if (ovs.WritableOverlay != nil) && (ovs.WritableOverlay.Kind == OLKINDDIR) {
-		return fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", lowerDirJoined, upperSubdirOf(ovs.WritableOverlay.DirToMount), workSubdirOf(ovs.WritableOverlay.DirToMount))
+		return fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s",
+			lowerDirJoined, ovs.WritableOverlay.Upper(), ovs.WritableOverlay.Work())
 	}
 
 	return fmt.Sprintf("lowerdir=%s", lowerDirJoined)
@@ -101,8 +99,6 @@ func (ovs OverlaySet) options(rootFsDir string) string {
 // application of more restrictive mount flags than are in force on the
 // underlying filesystem.
 func (ovs OverlaySet) performIndividualMounts() error {
-	var err error
-
 	overlaysToBind := ovs.ReadonlyOverlays
 	if ovs.WritableOverlay != nil {
 		overlaysToBind = append(overlaysToBind, ovs.WritableOverlay)
@@ -110,70 +106,12 @@ func (ovs OverlaySet) performIndividualMounts() error {
 
 	// Try to do initial bind-mounts
 	for _, overlay := range overlaysToBind {
-		switch overlay.Kind {
-		case OLKINDDIR:
-			if len(overlay.DirToMount) < 1 {
-				overlay.DirToMount = overlay.BarePath
-			}
-
-			if err = ensureOverlayDir(overlay.DirToMount, false, 0); err != nil {
-				return fmt.Errorf("error accessing directory %s: %s", overlay.DirToMount, err)
-			}
-
-			sylog.Debugf("Performing identity bind-mount of %q", overlay.DirToMount)
-			if err = syscall.Mount(overlay.DirToMount, overlay.DirToMount, "", syscall.MS_BIND, ""); err != nil {
-				return fmt.Errorf("failed to bind %s: %s", overlay.DirToMount, err)
-			}
-
-			// Best effort to cleanup mount
-			defer func() {
-				if err != nil {
-					sylog.Debugf("Encountered error with current OverlaySet; attempting to unmount %q", overlay.DirToMount)
-					syscall.Unmount(overlay.DirToMount, syscall.MNT_DETACH)
-				}
-			}()
-
-			// Try to perform remount
-			sylog.Debugf("Performing remount of %q", overlay.DirToMount)
-			if err = syscall.Mount("", overlay.DirToMount, "", syscall.MS_REMOUNT|syscall.MS_BIND, ""); err != nil {
-				return fmt.Errorf("failed to remount %s: %s", overlay.DirToMount, err)
-			}
-		case OLKINDSQUASHFS:
-			squashfuseCmd, err := bin.FindBin("squashfuse")
-			if err != nil {
-				return fmt.Errorf("use of squashfs overlay requires squashfuse to be installed: %s", err)
-			}
-			// Even though fusermount is not needed for this step, we shouldn't
-			// do the squashfuse mount unless we have the necessary tools to
-			// eventually unmount it
-			_, err = bin.FindBin("fusermount")
-			if err != nil {
-				return fmt.Errorf("use of squashfs overlay requires fusermount to be installed: %s", err)
-			}
-			sqshfsDir, err := os.MkdirTemp("", "squashfuse-for-oci-overlay-")
-			if err != nil {
-				return fmt.Errorf("failed to create temporary dir %q for OCI-mode squashfs overlay: %s", sqshfsDir, err)
-			}
-			// Best effort to cleanup temporary dir
-			defer func() {
-				if err != nil {
-					sylog.Debugf("Encountered error with current OverlaySet; attempting to remove %q", sqshfsDir)
-					os.Remove(sqshfsDir)
-				}
-			}()
-			execCmd := exec.Command(squashfuseCmd, overlay.BarePath, sqshfsDir)
-			execCmd.Stderr = os.Stderr
-			_, err = execCmd.Output()
-			if err != nil {
-				return fmt.Errorf("encountered error while trying to mount squashfs image %s for OCI-mode overlay at %s: %s", overlay.BarePath, sqshfsDir, err)
-			}
-			overlay.DirToMount = sqshfsDir
-		default:
-			return fmt.Errorf("internal error: unrecognized image type in prepareWritableOverlay() (kind: %v)", overlay.Kind)
+		if err := overlay.Mount(); err != nil {
+			return err
 		}
 	}
 
-	return err
+	return nil
 }
 
 // detachIndividualMounts detaches the bind mounts & remounts created by
@@ -188,28 +126,7 @@ func (ovs OverlaySet) detachIndividualMounts() error {
 	// then return the first error encountered.
 	errors := []error{}
 	for _, overlay := range overlaysToDetach {
-		var err error
-		switch overlay.Kind {
-		case OLKINDDIR:
-			err = detachMount(overlay.DirToMount)
-		case OLKINDSQUASHFS:
-			defer os.Remove(overlay.DirToMount)
-			fusermountCmd, innerErr := bin.FindBin("fusermount")
-			if innerErr != nil {
-				// The code in performIndividualMounts() should not have created
-				// a squashfs overlay without fusermount in place
-				err = fmt.Errorf("internal error: squashfuse mount created without fusermount installed: %s", innerErr)
-				break // This breaks out of the switch-block, not the for-loop
-			}
-			execCmd := exec.Command(fusermountCmd, "-u", overlay.DirToMount)
-			execCmd.Stderr = os.Stderr
-			_, innerErr = execCmd.Output()
-			if innerErr != nil {
-				err = fmt.Errorf("encountered error while trying to unmount squashfs image %s from %s: %s", overlay.BarePath, overlay.DirToMount, innerErr)
-			}
-		default:
-			return fmt.Errorf("internal error: unrecognized image type in prepareWritableOverlay() (kind: %v)", overlay.Kind)
-		}
+		err := overlay.Unmount()
 		if err != nil {
 			sylog.Errorf("Error encountered trying to detach identity mount %s: %s", overlay.DirToMount, err)
 			errors = append(errors, err)

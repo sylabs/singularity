@@ -8,9 +8,11 @@ package tools
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"syscall"
 
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
@@ -57,19 +59,140 @@ func (overlay *OverlayItem) prepareWritableOverlay() error {
 		if err := ensureOverlayDir(overlay.DirToMount, true, 0o755); err != nil {
 			return err
 		}
-		sylog.Debugf("Ensuring %q exists", upperSubdirOf(overlay.DirToMount))
-		if err := ensureOverlayDir(upperSubdirOf(overlay.DirToMount), true, 0o755); err != nil {
-			return fmt.Errorf("err encountered while preparing upper subdir of overlay dir %q: %w", upperSubdirOf(overlay.DirToMount), err)
+		sylog.Debugf("Ensuring %q exists", overlay.Upper())
+		if err := ensureOverlayDir(overlay.Upper(), true, 0o755); err != nil {
+			return fmt.Errorf("err encountered while preparing upper subdir of overlay dir %q: %w", overlay.Upper(), err)
 		}
-		sylog.Debugf("Ensuring %q exists", workSubdirOf(overlay.DirToMount))
-		if err := ensureOverlayDir(workSubdirOf(overlay.DirToMount), true, 0o700); err != nil {
-			return fmt.Errorf("err encountered while preparing work subdir of overlay dir %q: %w", workSubdirOf(overlay.DirToMount), err)
+		sylog.Debugf("Ensuring %q exists", overlay.Work())
+		if err := ensureOverlayDir(overlay.Work(), true, 0o700); err != nil {
+			return fmt.Errorf("err encountered while preparing work subdir of overlay dir %q: %w", overlay.Work(), err)
 		}
 	default:
 		return fmt.Errorf("internal error: unrecognized image type in prepareWritableOverlay() (kind: %v)", overlay.Kind)
 	}
 
 	return nil
+}
+
+func (overlay *OverlayItem) Mount() error {
+	switch overlay.Kind {
+	case OLKINDDIR:
+		return overlay.mountDir()
+	case OLKINDSQUASHFS:
+		return overlay.mountSquashfs()
+	default:
+		return fmt.Errorf("internal error: unrecognized image type in prepareWritableOverlay() (kind: %v)", overlay.Kind)
+	}
+}
+
+func (overlay *OverlayItem) mountDir() error {
+	var err error
+	if len(overlay.DirToMount) < 1 {
+		overlay.DirToMount = overlay.BarePath
+	}
+
+	if err = ensureOverlayDir(overlay.DirToMount, false, 0); err != nil {
+		return fmt.Errorf("error accessing directory %s: %s", overlay.DirToMount, err)
+	}
+
+	sylog.Debugf("Performing identity bind-mount of %q", overlay.DirToMount)
+	if err = syscall.Mount(overlay.DirToMount, overlay.DirToMount, "", syscall.MS_BIND, ""); err != nil {
+		return fmt.Errorf("failed to bind %s: %s", overlay.DirToMount, err)
+	}
+
+	// Best effort to cleanup mount
+	defer func() {
+		if err != nil {
+			sylog.Debugf("Encountered error with current OverlaySet; attempting to unmount %q", overlay.DirToMount)
+			syscall.Unmount(overlay.DirToMount, syscall.MNT_DETACH)
+		}
+	}()
+
+	// Try to perform remount
+	sylog.Debugf("Performing remount of %q", overlay.DirToMount)
+	if err = syscall.Mount("", overlay.DirToMount, "", syscall.MS_REMOUNT|syscall.MS_BIND, ""); err != nil {
+		return fmt.Errorf("failed to remount %s: %s", overlay.DirToMount, err)
+	}
+
+	return nil
+}
+
+func (overlay *OverlayItem) mountSquashfs() error {
+	var err error
+	squashfuseCmd, err := bin.FindBin("squashfuse")
+	if err != nil {
+		return fmt.Errorf("use of squashfs overlay requires squashfuse to be installed: %s", err)
+	}
+
+	// Even though fusermount is not needed for this step, we shouldn't
+	// do the squashfuse mount unless we have the necessary tools to
+	// eventually unmount it
+	_, err = bin.FindBin("fusermount")
+	if err != nil {
+		return fmt.Errorf("use of squashfs overlay requires fusermount to be installed: %s", err)
+	}
+	sqshfsDir, err := os.MkdirTemp("", "squashfuse-for-oci-overlay-")
+	if err != nil {
+		return fmt.Errorf("failed to create temporary dir %q for OCI-mode squashfs overlay: %s", sqshfsDir, err)
+	}
+
+	// Best effort to cleanup temporary dir
+	defer func() {
+		if err != nil {
+			sylog.Debugf("Encountered error with current OverlaySet; attempting to remove %q", sqshfsDir)
+			os.Remove(sqshfsDir)
+		}
+	}()
+
+	execCmd := exec.Command(squashfuseCmd, overlay.BarePath, sqshfsDir)
+	execCmd.Stderr = os.Stderr
+	_, err = execCmd.Output()
+	if err != nil {
+		return fmt.Errorf("encountered error while trying to mount squashfs image %s for OCI-mode overlay at %s: %s", overlay.BarePath, sqshfsDir, err)
+	}
+	overlay.DirToMount = sqshfsDir
+
+	return nil
+}
+
+func (overlay OverlayItem) Unmount() error {
+	switch overlay.Kind {
+	case OLKINDDIR:
+		return overlay.unmountDir()
+	case OLKINDSQUASHFS:
+		return overlay.unmountSquashfs()
+	default:
+		return fmt.Errorf("internal error: unrecognized image type in prepareWritableOverlay() (kind: %v)", overlay.Kind)
+	}
+}
+
+func (overlay OverlayItem) unmountDir() error {
+	return detachMount(overlay.DirToMount)
+}
+
+func (overlay OverlayItem) unmountSquashfs() error {
+	defer os.Remove(overlay.DirToMount)
+	fusermountCmd, innerErr := bin.FindBin("fusermount")
+	if innerErr != nil {
+		// The code in performIndividualMounts() should not have created
+		// a squashfs overlay without fusermount in place
+		return fmt.Errorf("internal error: squashfuse mount created without fusermount installed: %s", innerErr)
+	}
+	execCmd := exec.Command(fusermountCmd, "-u", overlay.DirToMount)
+	execCmd.Stderr = os.Stderr
+	_, innerErr = execCmd.Output()
+	if innerErr != nil {
+		return fmt.Errorf("encountered error while trying to unmount squashfs image %s from %s: %s", overlay.BarePath, overlay.DirToMount, innerErr)
+	}
+	return nil
+}
+
+func (overlay OverlayItem) Upper() string {
+	return filepath.Join(overlay.DirToMount, "upper")
+}
+
+func (overlay OverlayItem) Work() string {
+	return filepath.Join(overlay.DirToMount, "work")
 }
 
 // CreateOverlay creates a writable overlay using a directory inside the OCI
@@ -200,14 +323,6 @@ func ensureOverlayDir(dir string, createIfMissing bool, createPerm os.FileMode) 
 	}
 
 	return nil
-}
-
-func upperSubdirOf(overlayDir string) string {
-	return filepath.Join(overlayDir, "upper")
-}
-
-func workSubdirOf(overlayDir string) string {
-	return filepath.Join(overlayDir, "work")
 }
 
 func detachAndDelete(overlayDir string) error {
