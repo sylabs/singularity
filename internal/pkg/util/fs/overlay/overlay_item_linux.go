@@ -76,7 +76,7 @@ func NewOverlayFromString(overlayString string) (*Item, error) {
 func analyzeImageFile(overlay *Item) error {
 	img, err := image.Init(overlay.BarePath, overlay.Writable)
 	if err != nil {
-		return fmt.Errorf("error encountered while trying to examine image")
+		return fmt.Errorf("error encountered while trying to examine image: %s", err)
 	}
 
 	switch img.Type {
@@ -127,9 +127,11 @@ func (i *Item) Mount() error {
 	case image.SANDBOX:
 		return i.mountDir()
 	case image.SQUASHFS:
-		return i.mountSquashfs()
+		return i.mountWithFuse("squashfuse")
+	case image.EXT3:
+		return i.mountWithFuse("fuse2fs")
 	default:
-		return fmt.Errorf("internal error: unrecognized image type in prepareWritableOverlay() (type: %v)", i.Type)
+		return fmt.Errorf("internal error: unrecognized image type in overlay.Item.Mount() (type: %v)", i.Type)
 	}
 }
 
@@ -169,21 +171,21 @@ func (i *Item) mountDir() error {
 	return nil
 }
 
-// mountSquashfs mounts a squashfs image to a temporary directory using
-// squashfuse.
-func (i *Item) mountSquashfs() error {
+// mountWithFuse mounts an image to a temporary directory using a specified fuse
+// tool. It also verifies that fusermount is present before performing the
+// mount.
+func (i *Item) mountWithFuse(fuseMountTool string) error {
 	var err error
-	squashfuseCmd, err := bin.FindBin("squashfuse")
+	fuseMountCmd, err := bin.FindBin(fuseMountTool)
 	if err != nil {
-		return fmt.Errorf("use of squashfs overlay requires squashfuse to be installed: %s", err)
+		return fmt.Errorf("use of image %q as overlay requires %s to be installed: %s", i.BarePath, fuseMountTool, err)
 	}
 
-	// Even though fusermount is not needed for this step, we shouldn't
-	// do the squashfuse mount unless we have the necessary tools to
-	// eventually unmount it
+	// Even though fusermount is not needed for this step, we shouldn't perform
+	// the mount unless we have the necessary tools to eventually unmount it
 	_, err = bin.FindBin("fusermount")
 	if err != nil {
-		return fmt.Errorf("use of squashfs overlay requires fusermount to be installed: %s", err)
+		return fmt.Errorf("use of image %q as overlay requires fusermount to be installed: %s", i.BarePath, err)
 	}
 
 	// Obtain parent directory in which to create overlay-related mount
@@ -191,28 +193,28 @@ func (i *Item) mountSquashfs() error {
 	// related discussion.
 	parentDir, err := i.GetSecureParentDir()
 	if err != nil {
-		return fmt.Errorf("error while trying to create parent dir for squashfs overlay: %s", err)
+		return fmt.Errorf("error while trying to create parent dir for overlay %q: %s", i.BarePath, err)
 	}
-	sqshfsDir, err := os.MkdirTemp(parentDir, "squashfuse-for-overlay-")
+	fuseMountDir, err := os.MkdirTemp(parentDir, "overlay-mountpoint-")
 	if err != nil {
-		return fmt.Errorf("failed to create temporary dir %q for squashfs overlay: %s", sqshfsDir, err)
+		return fmt.Errorf("failed to create temporary dir %q for overlay %q: %s", fuseMountDir, i.BarePath, err)
 	}
 
 	// Best effort to cleanup temporary dir
 	defer func() {
 		if err != nil {
-			sylog.Debugf("Encountered error with current OverlaySet; attempting to remove %q", sqshfsDir)
-			os.Remove(sqshfsDir)
+			sylog.Debugf("Encountered error with current OverlaySet; attempting to remove %q", fuseMountDir)
+			os.Remove(fuseMountDir)
 		}
 	}()
 
-	execCmd := exec.Command(squashfuseCmd, i.BarePath, sqshfsDir)
+	execCmd := exec.Command(fuseMountCmd, i.BarePath, fuseMountDir)
 	execCmd.Stderr = os.Stderr
 	_, err = execCmd.Output()
 	if err != nil {
-		return fmt.Errorf("encountered error while trying to mount squashfs image %s as overlay at %s: %s", i.BarePath, sqshfsDir, err)
+		return fmt.Errorf("encountered error while trying to mount image %q as overlay at %s: %s", i.BarePath, fuseMountDir, err)
 	}
-	i.DirToMount = sqshfsDir
+	i.DirToMount = fuseMountDir
 
 	return nil
 }
@@ -224,10 +226,14 @@ func (i Item) Unmount() error {
 	switch i.Type {
 	case image.SANDBOX:
 		return i.unmountDir()
+
 	case image.SQUASHFS:
-		return i.unmountSquashfs()
+		fallthrough
+	case image.EXT3:
+		return i.unmountFuse()
+
 	default:
-		return fmt.Errorf("internal error: unrecognized image type in prepareWritableOverlay() (type: %v)", i.Type)
+		return fmt.Errorf("internal error: unrecognized image type in overlay.Item.Unmount() (type: %v)", i.Type)
 	}
 }
 
@@ -236,20 +242,20 @@ func (i Item) unmountDir() error {
 	return DetachMount(i.DirToMount)
 }
 
-// unmountSquashfs unmounts squashfs-based OverlayItems.
-func (i Item) unmountSquashfs() error {
+// unmountFuse unmounts FUSE-based OverlayItems.
+func (i Item) unmountFuse() error {
 	defer os.Remove(i.DirToMount)
 	fusermountCmd, innerErr := bin.FindBin("fusermount")
 	if innerErr != nil {
 		// The code in performIndividualMounts() should not have created
-		// a squashfs overlay without fusermount in place
-		return fmt.Errorf("internal error: squashfuse mount created without fusermount installed: %s", innerErr)
+		// a FUSE-based overlay without fusermount in place
+		return fmt.Errorf("internal error: FUSE-based mount created without fusermount installed: %s", innerErr)
 	}
 	execCmd := exec.Command(fusermountCmd, "-u", i.DirToMount)
 	execCmd.Stderr = os.Stderr
 	_, innerErr = execCmd.Output()
 	if innerErr != nil {
-		return fmt.Errorf("encountered error while trying to unmount squashfs image %s from %s: %s", i.BarePath, i.DirToMount, innerErr)
+		return fmt.Errorf("encountered error while trying to unmount image %q from %s: %s", i.BarePath, i.DirToMount, innerErr)
 	}
 	return nil
 }
