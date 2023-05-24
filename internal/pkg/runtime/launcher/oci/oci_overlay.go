@@ -7,11 +7,9 @@ package oci
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
@@ -43,7 +41,7 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 	writableOverlayFound := false
 	ovs := tools.OverlaySet{}
 	for _, p := range overlayPaths {
-		overlay, err := analyzeOverlay(p)
+		overlay, err := tools.NewOverlayFromString(p)
 		if err != nil {
 			return err
 		}
@@ -78,59 +76,6 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 
 	// Return any error from the actual container payload - preserve exit code.
 	return err
-}
-
-// analyzeOverlay takes a string argument, as passed to --overlay, and returns
-// an overlayInfo struct describing the requested overlay.
-func analyzeOverlay(overlayString string) (*tools.OverlayItem, error) {
-	overlay := tools.OverlayItem{}
-
-	splitted := strings.SplitN(overlayString, ":", 2)
-	overlay.BarePath = splitted[0]
-	if len(splitted) > 1 {
-		if splitted[1] == "ro" {
-			overlay.Writable = false
-		}
-	}
-
-	s, err := os.Stat(overlay.BarePath)
-	if (err != nil) && os.IsNotExist(err) {
-		return nil, fmt.Errorf("specified overlay %q does not exist", overlay.BarePath)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	if s.IsDir() {
-		overlay.Kind = tools.OLKINDDIR
-	} else if err := analyzeImageFile(&overlay); err != nil {
-		return nil, fmt.Errorf("error encountered while examining image file %s: %s", overlay.BarePath, err)
-	}
-
-	return &overlay, nil
-}
-
-// analyzeImageFile attempts to determine the format of an image file based on
-// its header
-func analyzeImageFile(overlay *tools.OverlayItem) error {
-	img, err := image.Init(overlay.BarePath, overlay.Writable)
-	if err != nil {
-		return fmt.Errorf("error encountered while trying to examine image")
-	}
-
-	switch img.Type {
-	case image.SQUASHFS:
-		overlay.Kind = tools.OLKINDSQUASHFS
-		// squashfs image must be readonly
-		overlay.Writable = false
-		return nil
-	case image.EXT3:
-		overlay.Kind = tools.OLKINDEXTFS
-	default:
-		return fmt.Errorf("image %s is of a type that is not currently supported for OCI-mode overlays", overlay.BarePath)
-	}
-
-	return nil
 }
 
 func prepareWritableTmpfs(bundleDir string) (string, error) {
