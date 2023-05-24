@@ -53,28 +53,6 @@ commands:
       - run:
           name: Update submodules
           command: git submodule update --init
-  check-changes:
-    steps:
-      - run:
-          name: Check changes
-          command: |-
-            rc=0
-            scripts/should-e2e-run "${CIRCLE_PROJECT_USERNAME}" "${CIRCLE_PROJECT_REPONAME}" "${CIRCLE_BRANCH}" "${CIRCLE_PULL_REQUEST}" || rc=$?
-            case $rc in
-              0)
-                echo "Verifying critical changes"
-                ;;
-
-              1)
-                echo "No critical changes, skipping tests"
-                circleci step halt
-                ;;
-
-              *)
-                echo "E: scripts/should-e2e-run returned with exit code $rc. Abort."
-                exit $rc
-                ;;
-            esac
   check-pkg-no-buildcfg:
     steps:
       - run:
@@ -237,7 +215,6 @@ jobs:
     executor: ubuntu-machine
     steps:
       - checkout
-      - check-changes
       - go/install:
           version: << pipeline.parameters.go-version >>
       - stop-background-apt
@@ -253,7 +230,6 @@ jobs:
     executor: ubuntu-machine-large
     steps:
       - checkout
-      - check-changes
       - go/install:
           version: << pipeline.parameters.go-version >>
       - stop-background-apt
