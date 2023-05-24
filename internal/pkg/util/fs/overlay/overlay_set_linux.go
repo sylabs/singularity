@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package tools
+package overlay
 
 import (
 	"fmt"
@@ -15,31 +15,31 @@ import (
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
-// OverlaySet represents a set of overlay directories which will be overlain on
+// Set represents a set of overlay directories which will be overlain on
 // top of some filesystem mount point. The actual mount point atop which these
-// directories will be overlain is not specified in the OverlaySet; it is left
-// implicit, to be chosen by whichever function consumes an OverlaySet. An
-// OverlaySet contains two types of directories: zero or more directories which
+// directories will be overlain is not specified in the Set; it is left
+// implicit, to be chosen by whichever function consumes an Set. An
+// Set contains two types of directories: zero or more directories which
 // will be mounted as read-only overlays atop the (implicit) mount point, and
 // one directory which will be mounted as a writable overlay atop all the rest.
 // An empty WritableLoc field indicates that no writable overlay is to be
 // mounted.
-type OverlaySet struct {
+type Set struct {
 	// ReadonlyOverlays is a list of directories to be mounted as read-only
 	// overlays. The mount point atop which these will be mounted is left
 	// implicit, to be chosen by whichever function consumes the OverlaySet.
-	ReadonlyOverlays []*OverlayItem
+	ReadonlyOverlays []*Item
 
 	// WritableOverlay is the directory to be mounted as a writable overlay. The
 	// mount point atop which this will be mounted is left implicit, to be
 	// chosen by whichever function consumes the OverlaySet. Empty value
 	// indicates no writable overlay is to be mounted.
-	WritableOverlay *OverlayItem
+	WritableOverlay *Item
 }
 
 // Mount prepares and mounts the entire OverlaySet onto the specified rootfs
 // directory.
-func (s OverlaySet) Mount(rootFsDir string) error {
+func (s Set) Mount(rootFsDir string) error {
 	// Prepare internal structure of writable overlay dir, if necessary
 	if s.WritableOverlay != nil {
 		if err := s.WritableOverlay.prepareWritableOverlay(); err != nil {
@@ -57,8 +57,8 @@ func (s OverlaySet) Mount(rootFsDir string) error {
 }
 
 // UnmountOverlay ummounts an OverlaySet from a specified rootfs directory.
-func (s OverlaySet) Unmount(rootFsDir string) error {
-	if err := detachMount(rootFsDir); err != nil {
+func (s Set) Unmount(rootFsDir string) error {
+	if err := DetachMount(rootFsDir); err != nil {
 		return err
 	}
 
@@ -67,15 +67,15 @@ func (s OverlaySet) Unmount(rootFsDir string) error {
 
 // performIndividualMounts creates the mounts that furnish the individual
 // elements of the OverlaySet.
-func (s OverlaySet) performIndividualMounts() error {
+func (s Set) performIndividualMounts() error {
 	overlaysToBind := s.ReadonlyOverlays
 	if s.WritableOverlay != nil {
 		overlaysToBind = append(overlaysToBind, s.WritableOverlay)
 	}
 
 	// Try to do initial bind-mounts
-	for _, overlay := range overlaysToBind {
-		if err := overlay.Mount(); err != nil {
+	for _, o := range overlaysToBind {
+		if err := o.Mount(); err != nil {
 			return err
 		}
 	}
@@ -87,7 +87,7 @@ func (s OverlaySet) performIndividualMounts() error {
 // mounting of the overlay with its full-fledged options string, representing
 // all the individual OverlayItems (writable and read-only) that comprise the
 // OverlaySet.
-func (s OverlaySet) performFinalMount(rootFsDir string) error {
+func (s Set) performFinalMount(rootFsDir string) error {
 	// Try to perform actual mount
 	options := s.options(rootFsDir)
 	sylog.Debugf("Mounting overlay with rootFsDir %q, options: %q", rootFsDir, options)
@@ -101,10 +101,10 @@ func (s OverlaySet) performFinalMount(rootFsDir string) error {
 // options creates an options string to be used in an overlay mount,
 // representing all the individual OverlayItems (writable and read-only) that
 // comprise the OverlaySet.
-func (s OverlaySet) options(rootFsDir string) string {
+func (s Set) options(rootFsDir string) string {
 	// Create lowerdir argument of options string
-	lowerDirs := lo.Map(s.ReadonlyOverlays, func(overlay *OverlayItem, _ int) string {
-		return overlay.DirToMount
+	lowerDirs := lo.Map(s.ReadonlyOverlays, func(o *Item, _ int) string {
+		return o.DirToMount
 	})
 	lowerDirJoined := strings.Join(append(lowerDirs, rootFsDir), ":")
 
@@ -118,7 +118,7 @@ func (s OverlaySet) options(rootFsDir string) string {
 
 // detachIndividualMounts detaches the bind mounts & remounts created by
 // performIndividualMounts, above.
-func (s OverlaySet) detachIndividualMounts() error {
+func (s Set) detachIndividualMounts() error {
 	overlaysToDetach := s.ReadonlyOverlays
 	if s.WritableOverlay != nil {
 		overlaysToDetach = append(overlaysToDetach, s.WritableOverlay)

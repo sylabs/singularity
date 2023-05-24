@@ -202,3 +202,57 @@ func CheckRootless() error {
 	sylog.Debugf("Rootless overlay appears supported on this system.")
 	return nil
 }
+
+// ensureOverlayDir checks if a directory already exists; if it doesn't, and
+// createIfMissing is true, it attempts to create it with the specified
+// permissions.
+func EnsureOverlayDir(dir string, createIfMissing bool, createPerm os.FileMode) error {
+	if len(dir) == 0 {
+		return fmt.Errorf("internal error: ensureOverlayDir() called with empty dir name")
+	}
+
+	_, err := os.Stat(dir)
+	if err == nil {
+		return nil
+	}
+
+	if !os.IsNotExist(err) {
+		return err
+	}
+
+	if !createIfMissing {
+		return fmt.Errorf("missing overlay dir %q", dir)
+	}
+
+	// Create the requested dir
+	if err := os.Mkdir(dir, createPerm); err != nil {
+		return fmt.Errorf("failed to create %q: %s", dir, err)
+	}
+
+	return nil
+}
+
+// detachAndDelete performs an unmount system call on the specified directory,
+// followed by deletion of the directory and all of its contents.
+func DetachAndDelete(overlayDir string) error {
+	sylog.Debugf("Detaching overlayDir %q", overlayDir)
+	if err := syscall.Unmount(overlayDir, syscall.MNT_DETACH); err != nil {
+		return fmt.Errorf("failed to unmount %s: %s", overlayDir, err)
+	}
+
+	sylog.Debugf("Removing overlayDir %q", overlayDir)
+	if err := os.RemoveAll(overlayDir); err != nil {
+		return fmt.Errorf("failed to remove %s: %s", overlayDir, err)
+	}
+	return nil
+}
+
+// detachMount performs an unmount system call on the specified directory.
+func DetachMount(dir string) error {
+	sylog.Debugf("Calling syscall.Unmount() to detach %q", dir)
+	if err := syscall.Unmount(dir, syscall.MNT_DETACH); err != nil {
+		return fmt.Errorf("failed to detach %s: %s", dir, err)
+	}
+
+	return nil
+}

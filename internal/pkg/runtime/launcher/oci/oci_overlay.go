@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/sylabs/singularity/internal/pkg/util/fs/overlay"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
@@ -39,12 +40,14 @@ func WrapWithWritableTmpFs(f func() error, bundleDir string) error {
 // WrapWithOverlays runs a function wrapped with prep / cleanup steps for overlays.
 func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) error {
 	writableOverlayFound := false
-	ovs := tools.OverlaySet{}
+	ovs := overlay.Set{}
 	for _, p := range overlayPaths {
-		overlay, err := tools.NewOverlayFromString(p)
+		overlay, err := overlay.NewOverlayFromString(p)
 		if err != nil {
 			return err
 		}
+
+		overlay.SetSecureParentDir(bundleDir)
 
 		if overlay.Writable && writableOverlayFound {
 			return fmt.Errorf("you can't specify more than one writable overlay; %#v has already been specified as a writable overlay; use '--overlay %s:ro' instead", ovs.WritableOverlay, overlay.BarePath)
