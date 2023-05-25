@@ -44,7 +44,7 @@ type Item struct {
 // NewOverlayFromString takes a string argument, as passed to --overlay, and returns
 // an overlayInfo struct describing the requested overlay.
 func NewOverlayFromString(overlayString string) (*Item, error) {
-	overlay := Item{}
+	overlay := Item{Writable: true}
 
 	splitted := strings.SplitN(overlayString, ":", 2)
 	overlay.BarePath = splitted[0]
