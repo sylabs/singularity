@@ -36,9 +36,9 @@ func CreateOverlay(bundlePath string) error {
 	}()
 
 	olSet := overlay.Set{WritableOverlay: &overlay.Item{
-		BarePath: olDir,
-		Type:     image.SANDBOX,
-		Writable: true,
+		SourcePath: olDir,
+		Type:       image.SANDBOX,
+		Writable:   true,
 	}}
 
 	return olSet.Mount(RootFs(bundlePath).Path())
@@ -91,9 +91,9 @@ func CreateOverlayTmpfs(bundlePath string, sizeMiB int) (string, error) {
 	}()
 
 	olSet := overlay.Set{WritableOverlay: &overlay.Item{
-		BarePath: olDir,
-		Type:     image.SANDBOX,
-		Writable: true,
+		SourcePath: olDir,
+		Type:       image.SANDBOX,
+		Writable:   true,
 	}}
 
 	err = olSet.Mount(RootFs(bundlePath).Path())

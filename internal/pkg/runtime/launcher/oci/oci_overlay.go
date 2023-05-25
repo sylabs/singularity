@@ -42,21 +42,21 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 	writableOverlayFound := false
 	ovs := overlay.Set{}
 	for _, p := range overlayPaths {
-		overlay, err := overlay.NewOverlayFromString(p)
+		item, err := overlay.NewItemFromString(p)
 		if err != nil {
 			return err
 		}
 
-		overlay.SetSecureParentDir(bundleDir)
+		item.SetParentDir(bundleDir)
 
-		if overlay.Writable && writableOverlayFound {
-			return fmt.Errorf("you can't specify more than one writable overlay; %#v has already been specified as a writable overlay; use '--overlay %s:ro' instead", ovs.WritableOverlay, overlay.BarePath)
+		if item.Writable && writableOverlayFound {
+			return fmt.Errorf("you can't specify more than one writable overlay; %#v has already been specified as a writable overlay; use '--overlay %s:ro' instead", ovs.WritableOverlay, item.SourcePath)
 		}
-		if overlay.Writable {
+		if item.Writable {
 			writableOverlayFound = true
-			ovs.WritableOverlay = overlay
+			ovs.WritableOverlay = item
 		} else {
-			ovs.ReadonlyOverlays = append(ovs.ReadonlyOverlays, overlay)
+			ovs.ReadonlyOverlays = append(ovs.ReadonlyOverlays, item)
 		}
 	}
 

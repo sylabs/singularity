@@ -41,8 +41,8 @@
 - OCI-mode now supports an `--overlay <arg>` flag. `<arg>` can be a writable
   directory, in which case changes to the filesystem will persist across runs of
   the OCI container. Alternatively, `<arg>` can be `<dir>:ro` or the path of a
-  squashfs image, either of which will be mounted as a read-only overlay.
-  Multiple overlays can be specified, but all but one must be read-only.
+  squashfs or extfs image, to be mounted as a read-only overlay. Multiple
+  overlays can be specified, but all but one must be read-only.
 - The `tap` CNI plugin, new to github.com/containernetworking/plugins v1.3.0,
   is now provided.
 - OCI-mode now supports the `--workdir <workdir>` option. If this option is
