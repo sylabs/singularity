@@ -1044,9 +1044,6 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 				os.RemoveAll(fullPath)
 			}
 		})
-		if err = os.WriteFile(filepath.Join(fullPath, "my_test_file"), []byte("my_test_string"), 0o644); err != nil {
-			t.Fatal(err)
-		}
 
 		// Create a few read-only overlay subdirs under testDir
 		for i := 0; i < 3; i++ {
@@ -1082,6 +1079,11 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 		}{
 			{
 				name:     "ExistWritable",
+				args:     []string{"--overlay", filepath.Join(testDir, "my_rw_ol_dir"), imageRef, "sh", "-c", "echo my_test_string > /my_test_file"},
+				exitCode: 0,
+			},
+			{
+				name:     "ExistWritableRevisit",
 				args:     []string{"--overlay", filepath.Join(testDir, "my_rw_ol_dir"), imageRef, "cat", "/my_test_file"},
 				exitCode: 0,
 				wantOutputs: []e2e.SingularityCmdResultOp{
