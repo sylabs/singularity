@@ -123,6 +123,12 @@ func (i *Item) GetParentDir() (string, error) {
 // this method does not mount the assembled overlay itself. That happens in
 // Set.Mount().
 func (i *Item) Mount() error {
+	if i.Writable {
+		if err := i.prepareWritableOverlay(); err != nil {
+			return err
+		}
+	}
+
 	switch i.Type {
 	case image.SANDBOX:
 		return i.mountDir()

@@ -43,13 +43,6 @@ func (s Set) Mount(rootFsDir string) error {
 		return err
 	}
 
-	// Prepare internal structure of writable overlay dir, if necessary
-	if s.WritableOverlay != nil {
-		if err := s.WritableOverlay.prepareWritableOverlay(); err != nil {
-			return err
-		}
-	}
-
 	// Perform actual overlay mount
 	return s.performFinalMount(rootFsDir)
 }
