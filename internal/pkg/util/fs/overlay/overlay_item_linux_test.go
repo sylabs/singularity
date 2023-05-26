@@ -15,6 +15,12 @@ import (
 	"github.com/sylabs/singularity/pkg/image"
 )
 
+const (
+	testFilePath       string = "file-for-testing"
+	squashfsTestString string = "squashfs-test-string\n"
+	extfsTestString    string = "extfs-test-string\n"
+)
+
 func mkTempDirOrFatal(t *testing.T) string {
 	tmpDir, err := os.MkdirTemp("", "testoverlayitem-")
 	if err != nil {
@@ -53,7 +59,7 @@ func TestItemWritableField(t *testing.T) {
 }
 
 func TestItemMissing(t *testing.T) {
-	const dir string = "/testitemwritableflag-missing"
+	const dir string = "/testoverlayitem-this_should_be_missing"
 	rwOverlayStr := dir
 	roOverlayStr := dir + ":ro"
 
@@ -184,8 +190,6 @@ func TestDirMounts(t *testing.T) {
 }
 
 func tryImageRO(t *testing.T, olStr string, typeCode int, typeStr, expectStr string) {
-	const testFilePath string = "file-for-testing"
-
 	item, err := NewItemFromString(olStr)
 	if err != nil {
 		t.Fatalf("failed to mount %s image at %q: %s", typeStr, olStr, err)
@@ -218,7 +222,7 @@ func TestSquashfsRO(t *testing.T) {
 	if err != nil {
 		t.Skipf("squashfuse not found (%s), skipping test", err)
 	}
-	tryImageRO(t, filepath.Join(".", "testdata", "squashfs.img"), image.SQUASHFS, "squashfs", "squashfs-test-string\n")
+	tryImageRO(t, filepath.Join(".", "testdata", "squashfs.img"), image.SQUASHFS, "squashfs", squashfsTestString)
 }
 
 func TestExtfsRO(t *testing.T) {
@@ -226,5 +230,5 @@ func TestExtfsRO(t *testing.T) {
 	if err != nil {
 		t.Skipf("fuse2fs not found (%s), skipping test", err)
 	}
-	tryImageRO(t, filepath.Join(".", "testdata", "extfs.img")+":ro", image.EXT3, "extfs", "extfs-test-string\n")
+	tryImageRO(t, filepath.Join(".", "testdata", "extfs.img")+":ro", image.EXT3, "extfs", extfsTestString)
 }
