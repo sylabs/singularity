@@ -55,6 +55,8 @@
 - When `singularity registry login` is used to login to a public OCI registry,
   the password is not verified at login time.
 - Improved the clarity of `singularity key list` output.
+- Do not mount current working directory when its path in the container and on
+  the host contain symlinks to different locations. 
 
 ### New Features & Functionality
 
