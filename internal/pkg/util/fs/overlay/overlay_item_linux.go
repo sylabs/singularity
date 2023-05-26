@@ -75,9 +75,9 @@ func NewItemFromString(overlayString string) (*Item, error) {
 // analyzeImageFile attempts to determine the format of an image file based on
 // its header
 func (i *Item) analyzeImageFile() error {
-	img, err := image.Init(i.SourcePath, i.Writable)
+	img, err := image.Init(i.SourcePath, false)
 	if err != nil {
-		return fmt.Errorf("error encountered while trying to examine image: %s", err)
+		return err
 	}
 
 	switch img.Type {
