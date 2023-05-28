@@ -40,7 +40,7 @@ func WrapWithWritableTmpFs(f func() error, bundleDir string) error {
 // WrapWithOverlays runs a function wrapped with prep / cleanup steps for overlays.
 func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) error {
 	writableOverlayFound := false
-	ovs := overlay.Set{}
+	s := overlay.Set{}
 	for _, p := range overlayPaths {
 		item, err := overlay.NewItemFromString(p)
 		if err != nil {
@@ -50,18 +50,18 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 		item.SetParentDir(bundleDir)
 
 		if item.Writable && writableOverlayFound {
-			return fmt.Errorf("you can't specify more than one writable overlay; %#v has already been specified as a writable overlay; use '--overlay %s:ro' instead", ovs.WritableOverlay, item.SourcePath)
+			return fmt.Errorf("you can't specify more than one writable overlay; %#v has already been specified as a writable overlay; use '--overlay %s:ro' instead", s.WritableOverlay, item.SourcePath)
 		}
 		if item.Writable {
 			writableOverlayFound = true
-			ovs.WritableOverlay = item
+			s.WritableOverlay = item
 		} else {
-			ovs.ReadonlyOverlays = append(ovs.ReadonlyOverlays, item)
+			s.ReadonlyOverlays = append(s.ReadonlyOverlays, item)
 		}
 	}
 
 	rootFsDir := tools.RootFs(bundleDir).Path()
-	err := ovs.Mount(rootFsDir)
+	err := s.Mount(rootFsDir)
 	if err != nil {
 		return err
 	}
@@ -73,7 +73,7 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 	}
 
 	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
-	if cleanupErr := ovs.Unmount(rootFsDir); cleanupErr != nil {
+	if cleanupErr := s.Unmount(rootFsDir); cleanupErr != nil {
 		sylog.Errorf("While unmounting rootfs overlay: %v", cleanupErr)
 	}
 

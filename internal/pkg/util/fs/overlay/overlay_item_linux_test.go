@@ -7,11 +7,11 @@ package overlay
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/pkg/image"
 )
 
@@ -218,17 +218,11 @@ func tryImageRO(t *testing.T, olStr string, typeCode int, typeStr, expectStr str
 }
 
 func TestSquashfsRO(t *testing.T) {
-	_, err := exec.LookPath("squashfuse")
-	if err != nil {
-		t.Skipf("squashfuse not found (%s), skipping test", err)
-	}
+	require.Command(t, "squashfuse")
 	tryImageRO(t, filepath.Join(".", "testdata", "squashfs.img"), image.SQUASHFS, "squashfs", squashfsTestString)
 }
 
 func TestExtfsRO(t *testing.T) {
-	_, err := exec.LookPath("fuse2fs")
-	if err != nil {
-		t.Skipf("fuse2fs not found (%s), skipping test", err)
-	}
+	require.Command(t, "fuse2fs")
 	tryImageRO(t, filepath.Join(".", "testdata", "extfs.img")+":ro", image.EXT3, "extfs", extfsTestString)
 }
