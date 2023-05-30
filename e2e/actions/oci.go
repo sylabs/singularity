@@ -7,6 +7,7 @@ package actions
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -1364,6 +1365,97 @@ func (c actionTests) ociRelWorkdirScratch(t *testing.T) {
 			e2e.WithCommand("exec"),
 			e2e.WithArgs("--workdir", "./"+subdirName, "--scratch", "/myscratch", imageRef, "true"),
 			e2e.ExpectExit(0),
+		)
+	}
+}
+
+// ociSTDPipe tests pipe stdin/stdout to singularity actions cmd
+func (c actionTests) ociSTDPipe(t *testing.T) {
+	e2e.EnsureOCIArchive(t, c.env)
+	imageRef := "oci-archive:" + c.env.OCIArchivePath
+
+	stdinTests := []struct {
+		name    string
+		command string
+		argv    []string
+		input   string
+		exit    int
+	}{
+		{
+			name:    "TrueSTDIN",
+			command: "exec",
+			argv:    []string{imageRef, "grep", "hi"},
+			input:   "hi",
+			exit:    0,
+		},
+		{
+			name:    "FalseSTDIN",
+			command: "exec",
+			argv:    []string{imageRef, "grep", "hi"},
+			input:   "bye",
+			exit:    1,
+		},
+	}
+
+	var input bytes.Buffer
+
+	for _, tt := range stdinTests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithCommand(tt.command),
+			e2e.WithArgs(tt.argv...),
+			e2e.WithStdin(&input),
+			e2e.PreRun(func(t *testing.T) {
+				input.WriteString(tt.input)
+			}),
+			e2e.ExpectExit(tt.exit),
+		)
+		input.Reset()
+	}
+
+	user := e2e.CurrentUser(t)
+	stdoutTests := []struct {
+		name    string
+		command string
+		argv    []string
+		output  string
+		exit    int
+	}{
+		{
+			name:    "CwdPath",
+			command: "exec",
+			argv:    []string{"--cwd", "/etc", imageRef, "pwd"},
+			output:  "/etc",
+			exit:    0,
+		},
+		{
+			name:    "PwdPath",
+			command: "exec",
+			argv:    []string{"--pwd", "/etc", imageRef, "pwd"},
+			output:  "/etc",
+			exit:    0,
+		},
+		{
+			name:    "id",
+			command: "exec",
+			argv:    []string{imageRef, "id", "-un"},
+			output:  user.Name,
+			exit:    0,
+		},
+	}
+	for _, tt := range stdoutTests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithCommand(tt.command),
+			e2e.WithArgs(tt.argv...),
+			e2e.ExpectExit(
+				tt.exit,
+				e2e.ExpectOutput(e2e.ExactMatch, tt.output),
+			),
 		)
 	}
 }
