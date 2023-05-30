@@ -7,7 +7,9 @@ package oci
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/util/fs/overlay"
 	"github.com/sylabs/singularity/pkg/image"
@@ -40,7 +42,16 @@ func WrapWithWritableTmpFs(f func() error, bundleDir string) error {
 // WrapWithOverlays runs a function wrapped with prep / cleanup steps for overlays.
 func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) error {
 	writableOverlayFound := false
-	s := overlay.Set{}
+	s := overlay.Set{
+		ReadonlyOverlays: []*overlay.Item{
+			{
+				SourcePath: filepath.Join(bundleDir, "session"),
+				Type:       image.SANDBOX,
+				Writable:   false,
+			},
+		},
+	}
+
 	for _, p := range overlayPaths {
 		item, err := overlay.NewItemFromString(p)
 		if err != nil {
@@ -81,43 +92,78 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 	return err
 }
 
-// WrapWithSession runs a function wrapped with prep / cleanup steps for a session directory overlay.
-func WrapWithSessionOverlay(f func() error, bundleDir string) error {
-	s := overlay.Set{ReadonlyOverlays: []*overlay.Item{
-		{
-			SourcePath: filepath.Join(bundleDir, "session"),
-			Type:       image.SANDBOX,
-			Writable:   false,
-		},
-	}}
-
-	rootFsDir := tools.RootFs(bundleDir).Path()
-	err := s.Mount(rootFsDir)
-	if err != nil {
-		return err
-	}
-
-	err = f()
-
-	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
-	if cleanupErr := s.Unmount(rootFsDir); cleanupErr != nil {
-		sylog.Errorf("While unmounting rootfs session overlay: %v", cleanupErr)
-	}
-
-	// Return any error from the actual container payload - preserve exit code.
-	return err
-}
-
 func prepareWritableTmpfs(bundleDir string) (string, error) {
 	sylog.Debugf("Configuring writable tmpfs overlay for %s", bundleDir)
 	c := singularityconf.GetCurrentConfig()
 	if c == nil {
 		return "", fmt.Errorf("singularity configuration is not initialized")
 	}
-	return tools.CreateOverlayTmpfs(bundleDir, int(c.SessiondirMaxSize))
+	var err error
+
+	oldumask := syscall.Umask(0)
+	defer syscall.Umask(oldumask)
+
+	olDir := filepath.Join(bundleDir, "overlay")
+	err = overlay.EnsureOverlayDir(olDir, true, 0o700)
+	if err != nil {
+		return "", fmt.Errorf("failed to create %s: %s", olDir, err)
+	}
+	// delete overlay directory in case of error
+	defer func() {
+		if err != nil {
+			sylog.Debugf("Encountered error in CreateOverlay; attempting to remove overlay dir %q", olDir)
+			os.RemoveAll(olDir)
+		}
+	}()
+
+	options := fmt.Sprintf("mode=1777,size=%dm", c.SessiondirMaxSize)
+	err = syscall.Mount("tmpfs", olDir, "tmpfs", syscall.MS_NODEV, options)
+	if err != nil {
+		return "", fmt.Errorf("failed to bind %s: %s", olDir, err)
+	}
+	// best effort to cleanup mount
+	defer func() {
+		if err != nil {
+			sylog.Debugf("Encountered error in CreateOverlayTmpfs; attempting to detach overlay dir %q", olDir)
+			syscall.Unmount(olDir, syscall.MNT_DETACH)
+		}
+	}()
+
+	olSet := overlay.Set{
+		ReadonlyOverlays: []*overlay.Item{
+			{
+				SourcePath: filepath.Join(bundleDir, "session"),
+				Type:       image.SANDBOX,
+				Writable:   false,
+			},
+		},
+		WritableOverlay: &overlay.Item{
+			SourcePath: olDir,
+			Type:       image.SANDBOX,
+			Writable:   true,
+		}}
+
+	err = olSet.Mount(tools.RootFs(bundleDir).Path())
+	if err != nil {
+		return "", err
+	}
+
+	return olDir, nil
 }
 
 func cleanupWritableTmpfs(bundleDir, overlayDir string) error {
 	sylog.Debugf("Cleaning up writable tmpfs overlay for %s", bundleDir)
-	return tools.DeleteOverlayTmpfs(bundleDir, overlayDir)
+	rootFsDir := tools.RootFs(bundleDir).Path()
+
+	if err := overlay.DetachMount(rootFsDir); err != nil {
+		return err
+	}
+
+	// Because CreateOverlayTmpfs() mounts the tmpfs on olDir, and then
+	// calls ApplyOverlay(), there needs to be an extra unmount in the this case
+	if err := overlay.DetachMount(overlayDir); err != nil {
+		return err
+	}
+
+	return overlay.DetachAndDelete(overlayDir)
 }
