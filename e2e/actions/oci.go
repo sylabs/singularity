@@ -23,6 +23,18 @@ import (
 	"gotest.tools/v3/assert"
 )
 
+const (
+	imgTestFilePath    string = "file-for-testing"
+	squashfsTestString string = "squashfs-test-string"
+	extfsTestString    string = "extfs-test-string"
+)
+
+var (
+	imgsPath        = filepath.Join("..", "internal", "pkg", "util", "fs", "overlay", "testdata")
+	squashfsImgPath = filepath.Join(imgsPath, "squashfs.img")
+	extfsImgPath    = filepath.Join(imgsPath, "extfs.img")
+)
+
 func (c actionTests) actionOciRun(t *testing.T) {
 	e2e.EnsureOCIArchive(t, c.env)
 	e2e.EnsureDockerArchive(t, c.env)
@@ -1018,6 +1030,8 @@ func (c actionTests) actionOciCompat(t *testing.T) {
 }
 
 // actionOciOverlay checks that --overlay functions correctly in OCI mode.
+//
+//nolint:maintidx
 func (c actionTests) actionOciOverlay(t *testing.T) {
 	e2e.EnsureOCIArchive(t, c.env)
 	imageRef := "oci-archive:" + c.env.OCIArchivePath
@@ -1032,6 +1046,20 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 				os.RemoveAll(testDir)
 			}
 		})
+
+		// Create a few read-only overlay subdirs under testDir
+		for i := 0; i < 3; i++ {
+			dirName := fmt.Sprintf("my_rw_ol_dir%d", i)
+			fullPath := filepath.Join(testDir, dirName)
+			if err = os.Mkdir(fullPath, 0o755); err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				if !t.Failed() {
+					os.RemoveAll(fullPath)
+				}
+			})
+		}
 
 		// Create a few read-only overlay subdirs under testDir
 		for i := 0; i < 3; i++ {
@@ -1060,47 +1088,164 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 		}
 
 		tests := []struct {
-			name        string
-			args        []string
-			exitCode    int
-			wantOutputs []e2e.SingularityCmdResultOp
+			name         string
+			args         []string
+			exitCode     int
+			requiredCmds []string
+			wantOutputs  []e2e.SingularityCmdResultOp
 		}{
 			{
-				name:     "NewWritable",
-				args:     []string{"--overlay", filepath.Join(testDir, "my_rw_ol_dir"), imageRef, "sh", "-c", "echo my_test_string > /my_test_file"},
+				name:     "ExistRWDir",
+				args:     []string{"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"), imageRef, "sh", "-c", "echo my_test_string > /my_test_file"},
 				exitCode: 0,
 			},
 			{
-				name:     "ExistWritable",
-				args:     []string{"--overlay", filepath.Join(testDir, "my_rw_ol_dir"), imageRef, "cat", "/my_test_file"},
+				name:     "ExistRWDirRevisit",
+				args:     []string{"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"), imageRef, "cat", "/my_test_file"},
 				exitCode: 0,
 				wantOutputs: []e2e.SingularityCmdResultOp{
 					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
 				},
 			},
 			{
-				name:     "NonExistReadonly",
-				args:     []string{"--overlay", filepath.Join(testDir, "my_ro_ol_dir_nonexistent:ro"), imageRef, "echo", "hi"},
+				name:     "RWOverlayMissing",
+				args:     []string{"--overlay", filepath.Join(testDir, "something_nonexistent"), imageRef, "echo", "hi"},
 				exitCode: 255,
 			},
 			{
-				name:     "ReadonlyAddsTmpfs",
+				name:     "ROOverlayMissing",
+				args:     []string{"--overlay", filepath.Join(testDir, "something_nonexistent:ro"), imageRef, "echo", "hi"},
+				exitCode: 255,
+			},
+			{
+				name:     "AutoAddTmpfs",
 				args:     []string{"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"), imageRef, "sh", "-c", "echo this_should_disappear > /my_test_file"},
 				exitCode: 0,
 			},
 			{
-				name:     "SeveralReadonly",
-				args:     []string{"--overlay", filepath.Join(testDir, "my_ro_ol_dir2:ro"), "--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"), imageRef, "cat", "/testfile.1", "/maskable_testfile"},
+				name: "SeveralRODirs",
+				args: []string{
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir2:ro"),
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir0:ro"),
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
+					imageRef, "cat", "/testfile.1", "/maskable_testfile",
+				},
 				exitCode: 0,
 				wantOutputs: []e2e.SingularityCmdResultOp{
 					e2e.ExpectOutput(e2e.ContainMatch, "test_string_1"),
 					e2e.ExpectOutput(e2e.ContainMatch, "maskable_string_2"),
 				},
 			},
+			{
+				name: "AllTypesAtOnce",
+				args: []string{
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir2:ro"),
+					"--overlay", extfsImgPath + ":ro",
+					"--overlay", squashfsImgPath,
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
+					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
+					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
+				},
+				requiredCmds: []string{"squashfuse", "fuse2fs"},
+				exitCode:     0,
+				wantOutputs: []e2e.SingularityCmdResultOp{
+					e2e.ExpectOutput(e2e.ContainMatch, "test_string_1"),
+					e2e.ExpectOutput(e2e.ContainMatch, "maskable_string_2"),
+					e2e.ExpectOutput(e2e.ContainMatch, extfsTestString),
+				},
+			},
+			{
+				name: "SquashfsAndDirs",
+				args: []string{
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir2:ro"),
+					"--overlay", squashfsImgPath,
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
+					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
+					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
+				},
+				requiredCmds: []string{"squashfuse"},
+				exitCode:     0,
+				wantOutputs: []e2e.SingularityCmdResultOp{
+					e2e.ExpectOutput(e2e.ContainMatch, "test_string_1"),
+					e2e.ExpectOutput(e2e.ContainMatch, "maskable_string_2"),
+					e2e.ExpectOutput(e2e.ContainMatch, squashfsTestString),
+				},
+			},
+			{
+				name: "ExtfsAndDirs",
+				args: []string{
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir2:ro"),
+					"--overlay", extfsImgPath + ":ro",
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
+					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
+					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
+				},
+				requiredCmds: []string{"fuse2fs"},
+				exitCode:     0,
+				wantOutputs: []e2e.SingularityCmdResultOp{
+					e2e.ExpectOutput(e2e.ContainMatch, "test_string_1"),
+					e2e.ExpectOutput(e2e.ContainMatch, "maskable_string_2"),
+					e2e.ExpectOutput(e2e.ContainMatch, extfsTestString),
+				},
+			},
+			{
+				name: "SquashfsAndDirsAndMissingRO",
+				args: []string{
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir2:ro"),
+					"--overlay", squashfsImgPath,
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
+					"--overlay", filepath.Join(testDir, "something_nonexistent:ro"),
+					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
+					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
+				},
+				requiredCmds: []string{"squashfuse"},
+				exitCode:     255,
+			},
+			{
+				name: "SquashfsAndDirsAndMissingRW",
+				args: []string{
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir2:ro"),
+					"--overlay", squashfsImgPath,
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
+					"--overlay", filepath.Join(testDir, "something_nonexistent"),
+					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
+				},
+				requiredCmds: []string{"squashfuse"},
+				exitCode:     255,
+			},
+			{
+				name: "TwoWritables",
+				args: []string{
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir2:ro"),
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
+					"--overlay", filepath.Join(testDir, "my_rw_ol_dir1"),
+					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
+					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
+				},
+				requiredCmds: []string{"squashfuse"},
+				exitCode:     255,
+			},
+			{
+				name: "ThreeWritables",
+				args: []string{
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir2:ro"),
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
+					"--overlay", filepath.Join(testDir, "my_rw_ol_dir1"),
+					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
+					"--overlay", filepath.Join(testDir, "my_rw_ol_dir2"),
+					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
+				},
+				requiredCmds: []string{"squashfuse"},
+				exitCode:     255,
+			},
 		}
 
 		t.Run(profile.String(), func(t *testing.T) {
 			for _, tt := range tests {
+				if !haveAllCommands(t, tt.requiredCmds) {
+					continue
+				}
+
 				c.env.RunSingularity(
 					t,
 					e2e.AsSubtest(tt.name),
@@ -1168,6 +1313,16 @@ func countLines(path string) (int, error) {
 	}
 
 	return lines, nil
+}
+
+func haveAllCommands(t *testing.T, cmds []string) bool {
+	for _, c := range cmds {
+		if _, err := exec.LookPath(c); err != nil {
+			return false
+		}
+	}
+
+	return true
 }
 
 // Make sure --workdir and --scratch work together nicely even when workdir is a

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/sylabs/singularity/internal/pkg/util/fs/overlay"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
@@ -39,30 +40,28 @@ func WrapWithWritableTmpFs(f func() error, bundleDir string) error {
 // WrapWithOverlays runs a function wrapped with prep / cleanup steps for overlays.
 func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) error {
 	writableOverlayFound := false
-	ovs := tools.OverlaySet{}
+	s := overlay.Set{}
 	for _, p := range overlayPaths {
-		writable := true
-		splitted := strings.SplitN(p, ":", 2)
-		barePath := splitted[0]
-		if len(splitted) > 1 {
-			if splitted[1] == "ro" {
-				writable = false
-			}
+		item, err := overlay.NewItemFromString(p)
+		if err != nil {
+			return err
 		}
 
-		if writable && writableOverlayFound {
-			return fmt.Errorf("you can't specify more than one writable overlay; %#v has already been specified as a writable overlay; use '--overlay %s:ro' instead", ovs.WritableLoc, barePath)
+		item.SetParentDir(bundleDir)
+
+		if item.Writable && writableOverlayFound {
+			return fmt.Errorf("you can't specify more than one writable overlay; %#v has already been specified as a writable overlay; use '--overlay %s:ro' instead", s.WritableOverlay, item.SourcePath)
 		}
-		if writable {
+		if item.Writable {
 			writableOverlayFound = true
-			ovs.WritableLoc = barePath
+			s.WritableOverlay = item
 		} else {
-			ovs.ReadonlyLocs = append(ovs.ReadonlyLocs, barePath)
+			s.ReadonlyOverlays = append(s.ReadonlyOverlays, item)
 		}
 	}
 
 	rootFsDir := tools.RootFs(bundleDir).Path()
-	err := tools.ApplyOverlay(rootFsDir, ovs)
+	err := s.Mount(rootFsDir)
 	if err != nil {
 		return err
 	}
@@ -74,7 +73,7 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 	}
 
 	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
-	if cleanupErr := tools.UnmountOverlay(rootFsDir, ovs); cleanupErr != nil {
+	if cleanupErr := s.Unmount(rootFsDir); cleanupErr != nil {
 		sylog.Errorf("While unmounting rootfs overlay: %v", cleanupErr)
 	}
 
