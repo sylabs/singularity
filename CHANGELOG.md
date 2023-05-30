@@ -14,6 +14,8 @@
 
 - In `--oci` mode, do not attempt to use unprivileged overlay on systems that do
   not support it.
+- Fix dropped "n" characters on some platforms in definition file stored as part
+  of SIF metadata.
 
 ## 3.11.3 \[2023-05-04\]
 
