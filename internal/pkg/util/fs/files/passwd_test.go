@@ -21,7 +21,7 @@ func TestPasswd(t *testing.T) {
 	uid := os.Getuid()
 
 	// Test how Passwd() works with a bad passwd file
-	_, err := Passwd("/fake", "/fake", uid)
+	_, err := Passwd("/fake", "/fake", uid, nil)
 	if err == nil {
 		t.Errorf("should have failed with bad passwd file")
 	}
@@ -34,7 +34,8 @@ func TestPasswd(t *testing.T) {
 	emptyPasswd := f.Name()
 	defer os.Remove(emptyPasswd)
 	f.Close()
-	_, err = Passwd(emptyPasswd, "/home", uid)
+
+	_, err = Passwd(emptyPasswd, "/home", uid, nil)
 	if err != nil {
 		t.Error(err)
 	}
@@ -43,7 +44,7 @@ func TestPasswd(t *testing.T) {
 	testUID := 0
 	testHomeDir := "/tmp"
 	testGoldenFile := "passwd.root.customhome.golden"
-	bytes, err := Passwd(inputPasswdFilePath, testHomeDir, testUID)
+	bytes, err := Passwd(inputPasswdFilePath, testHomeDir, testUID, nil)
 	if err != nil {
 		t.Errorf("Unexpected error encountered calling Passwd(): %v", err)
 		return

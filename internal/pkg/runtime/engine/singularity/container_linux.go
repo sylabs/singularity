@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	osuser "os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -1456,13 +1457,14 @@ func (c *container) getHomePaths() (source string, dest string, err error) {
 		dest = filepath.Clean(c.engine.EngineConfig.GetHomeDest())
 		source, err = filepath.Abs(filepath.Clean(c.engine.EngineConfig.GetHomeSource()))
 	} else {
-		pw, err := user.CurrentOriginal()
-		if err == nil {
-			source = pw.Dir
-			if c.engine.EngineConfig.GetFakeroot() {
+		source = c.engine.EngineConfig.JSON.UserInfo.Home
+		if source != "" {
+			if c.engine.EngineConfig.GetFakeroot() || os.Getuid() == 0 {
+				// Mount user home directory onto /root for
+				//  any root-mapped namespace
 				dest = "/root"
 			} else {
-				dest = pw.Dir
+				dest = source
 			}
 		}
 	}
@@ -2001,7 +2003,7 @@ func (c *container) addIdentityMount(system *mount.System) error {
 		if err != nil {
 			sylog.Warningf("%s", err)
 		} else {
-			content, err := files.Passwd(passwd, home, uid)
+			content, err := files.Passwd(passwd, home, uid, c)
 			if err != nil {
 				sylog.Warningf("%s", err)
 			} else {
@@ -2024,7 +2026,7 @@ func (c *container) addIdentityMount(system *mount.System) error {
 
 	if c.engine.EngineConfig.File.ConfigGroup {
 		group := filepath.Join(rootfs, "/etc/group")
-		content, err := files.Group(group, uid, c.engine.EngineConfig.GetTargetGID())
+		content, err := files.Group(group, uid, c.engine.EngineConfig.GetTargetGID(), c)
 		if err != nil {
 			sylog.Warningf("%s", err)
 		} else {
@@ -2440,4 +2442,37 @@ func (c *container) getBindFlags(source string, defaultFlags uintptr) (uintptr, 
 	}
 
 	return defaultFlags | addFlags, nil
+}
+
+func (c *container) GetPwUID(uid uint32) (*user.User, error) {
+	if c.engine.EngineConfig.JSON.UserInfo.Username == "" {
+		return nil, osuser.UnknownUserIdError(uid)
+	}
+	return &user.User{
+		Name:  c.engine.EngineConfig.JSON.UserInfo.Username,
+		UID:   uint32(c.engine.EngineConfig.JSON.UserInfo.UID),
+		GID:   uint32(c.engine.EngineConfig.JSON.UserInfo.GID),
+		Gecos: c.engine.EngineConfig.JSON.UserInfo.Gecos,
+		Dir:   c.engine.EngineConfig.JSON.UserInfo.Home,
+		Shell: c.engine.EngineConfig.JSON.UserInfo.Shell,
+	}, nil
+}
+
+func (c *container) GetGrGID(gid uint32) (*user.Group, error) {
+	name, ok := c.engine.EngineConfig.JSON.UserInfo.Groups[int(gid)]
+	if ok {
+		return &user.Group{
+			Name: name,
+			GID:  gid,
+		}, nil
+	}
+	return nil, osuser.UnknownGroupIdError(fmt.Sprintf("%d", gid))
+}
+
+func (c *container) Getgroups() ([]int, error) {
+	gids := make([]int, 0, len(c.engine.EngineConfig.JSON.UserInfo.Groups))
+	for gid := range c.engine.EngineConfig.JSON.UserInfo.Groups {
+		gids = append(gids, gid)
+	}
+	return gids, nil
 }
