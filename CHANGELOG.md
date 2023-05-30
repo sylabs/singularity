@@ -16,6 +16,7 @@
   not support it.
 - Fix dropped "n" characters on some platforms in definition file stored as part
   of SIF metadata.
+- Pass STDIN to `--oci` containers correctly, to fix piping input to a container.
 
 ## 3.11.3 \[2023-05-04\]
 
