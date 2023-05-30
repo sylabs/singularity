@@ -57,6 +57,8 @@
 ### Bug Fixes
 
 - Fix interaction between `--workdir` when given relative path and `--scratch`.
+- Fix dropped "n" characters on some platforms in definition file stored as part
+  of SIF metadata.
 
 ## 3.11.3 \[2023-05-04\]
 
