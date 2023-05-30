@@ -219,10 +219,10 @@ func tryImageRO(t *testing.T, olStr string, typeCode int, typeStr, expectStr str
 
 func TestSquashfsRO(t *testing.T) {
 	require.Command(t, "squashfuse")
-	tryImageRO(t, filepath.Join(".", "testdata", "squashfs.img"), image.SQUASHFS, "squashfs", squashfsTestString)
+	tryImageRO(t, filepath.Join("..", "..", "..", "..", "..", "test", "images", "squashfs-for-overlay.img"), image.SQUASHFS, "squashfs", squashfsTestString)
 }
 
 func TestExtfsRO(t *testing.T) {
 	require.Command(t, "fuse2fs")
-	tryImageRO(t, filepath.Join(".", "testdata", "extfs.img")+":ro", image.EXT3, "extfs", extfsTestString)
+	tryImageRO(t, filepath.Join("..", "..", "..", "..", "..", "test", "images", "extfs-for-overlay.img")+":ro", image.EXT3, "extfs", extfsTestString)
 }
