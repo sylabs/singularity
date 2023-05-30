@@ -96,7 +96,7 @@ func Exec(containerID string, cmdArgs []string, systemdCgroups bool) error {
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdout
+	cmd.Stdin = os.Stdin
 	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }
@@ -122,7 +122,6 @@ func Kill(containerID string, killSignal string, systemdCgroups bool) error {
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }
@@ -149,12 +148,11 @@ func Pause(containerID string, systemdCgroups bool) error {
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }
 
-// Resume pauses processes in a container
+// Resume un-pauses processes in a container
 func Resume(containerID string, systemdCgroups bool) error {
 	runtimeBin, err := runtime()
 	if err != nil {
@@ -176,7 +174,6 @@ func Resume(containerID string, systemdCgroups bool) error {
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }
@@ -216,7 +213,7 @@ func Run(ctx context.Context, containerID, bundlePath, pidFile string, systemdCg
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdout
+	cmd.Stdin = os.Stdin
 	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }
@@ -310,7 +307,6 @@ func Start(containerID string, systemdCgroups bool) error {
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }
@@ -337,7 +333,6 @@ func State(containerID string, systemdCgroups bool) error {
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }
@@ -364,7 +359,6 @@ func Update(containerID, cgFile string, systemdCgroups bool) error {
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdout
 	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
 }
