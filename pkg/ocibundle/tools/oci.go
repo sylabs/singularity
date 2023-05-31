@@ -103,7 +103,9 @@ func DeleteBundle(bundlePath string) error {
 	if err := os.Remove(Config(bundlePath).Path()); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to delete config.json file: %s", err)
 	}
-	if err := os.Remove(bundlePath); err != nil && !os.IsNotExist(err) {
+	// Allow removal of bundle dir to fail with directory not empty.
+	// Preserves `overlay` dir content in `singularity oci mount/umount` flow.
+	if err := os.Remove(bundlePath); err != nil && !os.IsExist(err) {
 		return fmt.Errorf("failed to delete bundle %s directory: %s", bundlePath, err)
 	}
 	return nil
