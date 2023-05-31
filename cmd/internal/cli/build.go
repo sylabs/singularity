@@ -1,5 +1,7 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -26,29 +28,31 @@ import (
 )
 
 var buildArgs struct {
-	sections      []string
-	bindPaths     []string
-	mounts        []string
-	arch          string
-	builderURL    string
-	libraryURL    string
-	keyServerURL  string
-	webURL        string
-	detached      bool
-	encrypt       bool
-	fakeroot      bool
-	fixPerms      bool
-	isJSON        bool
-	noCleanUp     bool
-	noTest        bool
-	noSetgroups   bool
-	remote        bool
-	sandbox       bool
-	update        bool
-	nvidia        bool
-	nvccli        bool
-	rocm          bool
-	writableTmpfs bool // For test section only
+	sections        []string
+	bindPaths       []string
+	mounts          []string
+	arch            string
+	builderURL      string
+	libraryURL      string
+	keyServerURL    string
+	webURL          string
+	detached        bool
+	encrypt         bool
+	fakeroot        bool
+	fixPerms        bool
+	isJSON          bool
+	noCleanUp       bool
+	noTest          bool
+	noSetgroups     bool
+	remote          bool
+	sandbox         bool
+	update          bool
+	nvidia          bool
+	nvccli          bool
+	rocm            bool
+	writableTmpfs   bool     // For test section only
+	buildVarArgs    []string // Variables passed to build procedure.
+	buildVarArgFile string   // Variables file passed to build procedure.
 }
 
 // -s|--sandbox
@@ -287,6 +291,22 @@ var buildWritableTmpfsFlag = cmdline.Flag{
 	EnvKeys:      []string{"WRITABLE_TMPFS"},
 }
 
+var buildVarArgsFlag = cmdline.Flag{
+	ID:           "buildVarArgsFlag",
+	Value:        &buildArgs.buildVarArgs,
+	DefaultValue: []string{},
+	Name:         "build-arg",
+	Usage:        "defines variable=value to replace {{ variable }} entries in build definition file",
+}
+
+var buildVarArgFileFlag = cmdline.Flag{
+	ID:           "buildVarArgFileFlag",
+	Value:        &buildArgs.buildVarArgFile,
+	DefaultValue: "",
+	Name:         "build-arg-file",
+	Usage:        "specifies a file containing variable=value lines to replace '{{ variable }}' with value in build definition files",
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(buildCmd)
@@ -325,6 +345,8 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&buildBindFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildMountFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildWritableTmpfsFlag, buildCmd)
+		cmdManager.RegisterFlagForCmd(&buildVarArgsFlag, buildCmd)
+		cmdManager.RegisterFlagForCmd(&buildVarArgFileFlag, buildCmd)
 	})
 }
 

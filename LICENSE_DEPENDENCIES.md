@@ -467,6 +467,12 @@ The dependencies and their licenses are as follows:
 
 **Project URL:** <https://oras.land/oras-go/pkg>
 
+## github.com/emirpasic/gods
+
+**License:** BSD-2-Clause
+
+**License URL:** <https://github.com/emirpasic/gods/blob/master/LICENSE>
+
 ## github.com/godbus/dbus/v5
 
 **License:** BSD-2-Clause
@@ -856,12 +862,6 @@ The dependencies and their licenses are as follows:
 **License:** MIT
 
 **License URL:** <https://github.com/klauspost/pgzip/blob/master/LICENSE>
-
-## github.com/kr/pty
-
-**License:** MIT
-
-**License URL:** <https://github.com/kr/pty/blob/master/LICENSE>
 
 ## github.com/mailru/easyjson
 
