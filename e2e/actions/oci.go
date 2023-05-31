@@ -6,7 +6,6 @@
 package actions
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -1389,7 +1388,7 @@ func (c actionTests) actionOciOverlayTeardown(t *testing.T) {
 	imageRef := "oci-archive:" + c.env.OCIArchivePath
 
 	const mountInfoPath string = "/proc/self/mountinfo"
-	numMountLinesPre, err := countLines(mountInfoPath)
+	mountsPre, err := os.ReadFile(mountInfoPath)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1412,30 +1411,14 @@ func (c actionTests) actionOciOverlayTeardown(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 
-	numMountLinesPost, err := countLines(mountInfoPath)
+	mountsPost, err := os.ReadFile(mountInfoPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	assert.Equal(
-		t, numMountLinesPost, numMountLinesPre,
-		"Number of mounts after running in OCI-mode with overlays (%d) does not match the number before the run (%d)", numMountLinesPost, numMountLinesPre)
-}
-
-func countLines(path string) (int, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return -1, err
-	}
-	defer file.Close()
-	scanner := bufio.NewScanner(file)
-	scanner.Split(bufio.ScanLines)
-	lines := 0
-	for scanner.Scan() {
-		lines++
-	}
-
-	return lines, nil
+		t, string(mountsPre), string(mountsPost),
+		"/proc/self/mountinfo table differs after running OCI container")
 }
 
 // Check that write permissions are indeed available for writable FUSE-mounted
