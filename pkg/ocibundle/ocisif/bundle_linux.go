@@ -93,7 +93,7 @@ func (b *Bundle) Delete() error {
 	sylog.Debugf("Deleting oci-sif bundle at %s", b.bundlePath)
 
 	if b.imageMounted {
-		sylog.Debugf("Unmounting squashfs rootfs image")
+		sylog.Debugf("Unmounting squashfs rootfs image from %q", tools.RootFs(b.bundlePath).Path())
 		if err := unmountSquashFS(context.TODO(), tools.RootFs(b.bundlePath).Path()); err != nil {
 			return err
 		}
@@ -155,6 +155,7 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	}
 
 	// Initial image mount onto rootfs dir
+	sylog.Debugf("Mounting squashfs rootfs from %q to %q", srcRef.StringWithinTransport(), tools.RootFs(b.bundlePath).Path())
 	if err := mount(ctx, srcRef.StringWithinTransport(), tools.RootFs(b.bundlePath).Path(), rootfsLayer.Digest); err != nil {
 		if errCleanup := b.Delete(); errCleanup != nil {
 			sylog.Errorf("While removing temporary bundle: %v", errCleanup)
@@ -238,6 +239,8 @@ func mountSquashFS(ctx context.Context, offset int64, path, mountPath string) er
 	//nolint:gosec // note (gosec exclusion) - we require callers to be able to specify squashfuse not on PATH
 	cmd := exec.CommandContext(ctx, "squashfuse", args...)
 
+	sylog.Debugf("Executing squashfuse %s", strings.Join(args, " "))
+
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to mount: %w", err)
 	}
@@ -251,6 +254,8 @@ func unmountSquashFS(ctx context.Context, mountPath string) error {
 		filepath.Clean(mountPath),
 	}
 	cmd := exec.CommandContext(ctx, "fusermount", args...) //nolint:gosec
+
+	sylog.Debugf("Executing fusermount %s", strings.Join(args, " "))
 
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to unmount: %w", err)
