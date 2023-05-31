@@ -31,9 +31,9 @@ const (
 )
 
 var (
-	imgsPath        = filepath.Join("..", "internal", "pkg", "util", "fs", "overlay", "testdata")
-	squashfsImgPath = filepath.Join(imgsPath, "squashfs.img")
-	extfsImgPath    = filepath.Join(imgsPath, "extfs.img")
+	imgsPath        = filepath.Join("..", "test", "images")
+	squashfsImgPath = filepath.Join(imgsPath, "squashfs-for-overlay.img")
+	extfsImgPath    = filepath.Join(imgsPath, "extfs-for-overlay.img")
 )
 
 func (c actionTests) actionOciRun(t *testing.T) {

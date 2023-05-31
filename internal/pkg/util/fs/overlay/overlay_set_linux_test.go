@@ -31,13 +31,13 @@ func TestAllTypesAtOnce(t *testing.T) {
 	squashfsSupported := false
 	if _, err := exec.LookPath("squashfs"); err == nil {
 		squashfsSupported = true
-		addROItemOrFatal(t, &s, filepath.Join(".", "testdata", "squashfs.img"))
+		addROItemOrFatal(t, &s, filepath.Join("..", "..", "..", "..", "..", "test", "images", "squashfs-for-overlay.img"))
 	}
 
 	extfsSupported := false
 	if _, err := exec.LookPath("fuse2fs"); err == nil {
 		extfsSupported = true
-		addROItemOrFatal(t, &s, filepath.Join(".", "testdata", "extfs.img")+":ro")
+		addROItemOrFatal(t, &s, filepath.Join("..", "..", "..", "..", "..", "test", "images", "extfs-for-overlay.img")+":ro")
 	}
 
 	tmpRWDir := mkTempDirOrFatal(t)
