@@ -94,16 +94,16 @@ func SaveBundleConfig(bundlePath string, g *generate.Generator) error {
 // DeleteBundle deletes bundle directory
 func DeleteBundle(bundlePath string) error {
 	sylog.Debugf("Deleting generic oci bundle at %s", bundlePath)
-	if err := os.RemoveAll(Volumes(bundlePath).Path()); err != nil {
+	if err := os.RemoveAll(Volumes(bundlePath).Path()); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to delete volumes directory: %s", err)
 	}
-	if err := os.Remove(RootFs(bundlePath).Path()); err != nil {
+	if err := os.Remove(RootFs(bundlePath).Path()); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to delete rootfs directory: %s", err)
 	}
-	if err := os.Remove(Config(bundlePath).Path()); err != nil {
+	if err := os.Remove(Config(bundlePath).Path()); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to delete config.json file: %s", err)
 	}
-	if err := os.Remove(bundlePath); err != nil && !os.IsExist(err) {
+	if err := os.Remove(bundlePath); err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("failed to delete bundle %s directory: %s", bundlePath, err)
 	}
 	return nil

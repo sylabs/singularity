@@ -31,6 +31,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/oci"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -112,6 +113,8 @@ func New(opts ...Option) (ocibundle.Bundle, error) {
 
 // Delete erases OCI bundle created an OCI image ref
 func (b *Bundle) Delete() error {
+	// Extracted rootfs may contain files that need a chmod to delete.
+	fs.ForceRemoveAll(tools.RootFs(b.bundlePath).Path())
 	return tools.DeleteBundle(b.bundlePath)
 }
 
