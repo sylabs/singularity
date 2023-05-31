@@ -130,13 +130,6 @@ func prepareWritableTmpfs(bundleDir string) (string, error) {
 	}()
 
 	olSet := overlay.Set{
-		ReadonlyOverlays: []*overlay.Item{
-			{
-				SourcePath: filepath.Join(bundleDir, "session"),
-				Type:       image.SANDBOX,
-				Writable:   false,
-			},
-		},
 		WritableOverlay: &overlay.Item{
 			SourcePath: olDir,
 			Type:       image.SANDBOX,

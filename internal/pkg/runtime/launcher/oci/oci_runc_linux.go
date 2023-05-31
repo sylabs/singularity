@@ -226,11 +226,7 @@ func RunWrapped(ctx context.Context, containerID, bundlePath, pidFile string, ov
 		return Run(ctx, containerID, bundlePath, pidFile, systemdCgroups)
 	}
 
-	if len(overlayPaths) > 0 {
-		return WrapWithOverlays(runFunc, bundlePath, overlayPaths)
-	}
-
-	return WrapWithWritableTmpFs(runFunc, bundlePath)
+	return WrapWithOverlays(runFunc, bundlePath, overlayPaths)
 }
 
 // Start starts a previously created container
