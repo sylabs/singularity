@@ -134,7 +134,8 @@ func prepareWritableTmpfs(bundleDir string) (string, error) {
 			SourcePath: olDir,
 			Type:       image.SANDBOX,
 			Writable:   true,
-		}}
+		},
+	}
 
 	err = olSet.Mount(tools.RootFs(bundleDir).Path())
 	if err != nil {

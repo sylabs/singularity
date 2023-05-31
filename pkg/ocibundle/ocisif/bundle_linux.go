@@ -89,12 +89,12 @@ func New(opts ...Option) (ocibundle.Bundle, error) {
 }
 
 // Delete erases OCI bundle created an OCI image ref
-func (b *Bundle) Delete() error {
+func (b *Bundle) Delete(ctx context.Context) error {
 	sylog.Debugf("Deleting oci-sif bundle at %s", b.bundlePath)
 
 	if b.imageMounted {
 		sylog.Debugf("Unmounting squashfs rootfs image from %q", tools.RootFs(b.bundlePath).Path())
-		if err := unmountSquashFS(context.TODO(), tools.RootFs(b.bundlePath).Path()); err != nil {
+		if err := unmountSquashFS(ctx, tools.RootFs(b.bundlePath).Path()); err != nil {
 			return err
 		}
 	}
@@ -148,7 +148,7 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	// generate OCI bundle directory and config
 	g, err := tools.GenerateBundleConfig(b.bundlePath, ociConfig)
 	if err != nil {
-		if errCleanup := b.Delete(); errCleanup != nil {
+		if errCleanup := b.Delete(ctx); errCleanup != nil {
 			sylog.Errorf("While removing temporary bundle: %v", errCleanup)
 		}
 		return fmt.Errorf("failed to generate OCI bundle/config: %s", err)
@@ -157,7 +157,7 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	// Initial image mount onto rootfs dir
 	sylog.Debugf("Mounting squashfs rootfs from %q to %q", srcRef.StringWithinTransport(), tools.RootFs(b.bundlePath).Path())
 	if err := mount(ctx, srcRef.StringWithinTransport(), tools.RootFs(b.bundlePath).Path(), rootfsLayer.Digest); err != nil {
-		if errCleanup := b.Delete(); errCleanup != nil {
+		if errCleanup := b.Delete(ctx); errCleanup != nil {
 			sylog.Errorf("While removing temporary bundle: %v", errCleanup)
 		}
 		return fmt.Errorf("while mounting squashfs layer: %w", err)
@@ -192,7 +192,6 @@ func (b *Bundle) writeConfig(g *generate.Generator) error {
 }
 
 func (b *Bundle) getImageReference() (srcRef types.ImageReference, err error) {
-
 	parts := strings.SplitN(b.imageRef, ":", 2)
 	if len(parts) < 2 {
 		return nil, fmt.Errorf("could not parse image ref: %s", b.imageRef)

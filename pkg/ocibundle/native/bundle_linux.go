@@ -112,7 +112,7 @@ func New(opts ...Option) (ocibundle.Bundle, error) {
 }
 
 // Delete erases OCI bundle created an OCI image ref
-func (b *Bundle) Delete() error {
+func (b *Bundle) Delete(ctx context.Context) error {
 	// Extracted rootfs may contain files that need a chmod to delete.
 	fs.ForceRemoveAll(tools.RootFs(b.bundlePath).Path())
 	return tools.DeleteBundle(b.bundlePath)

@@ -374,7 +374,7 @@ var OciUmountCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.OciUmount(args[0]); err != nil {
+		if err := singularity.OciUmount(cmd.Context(), args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},

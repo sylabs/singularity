@@ -93,7 +93,7 @@ func TestFromSif(t *testing.T) {
 			}
 
 			// Clean up
-			if err := bundle.Delete(); err != nil {
+			if err := bundle.Delete(context.Background()); err != nil {
 				t.Error(err)
 			}
 		})

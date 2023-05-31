@@ -542,7 +542,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		sylog.Errorf("Couldn't remove session directory %q: %v", sessionDir, err)
 	}
 
-	if errCleanup := b.Delete(); errCleanup != nil {
+	if errCleanup := b.Delete(ctx); errCleanup != nil {
 		sylog.Errorf("While cleaning up temporary bundle directory %q: %v", bundleDir, errCleanup)
 	}
 

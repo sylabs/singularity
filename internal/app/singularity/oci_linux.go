@@ -144,12 +144,12 @@ func OciMount(ctx context.Context, image string, bundle string) error {
 }
 
 // OciUmount umount SIF and delete OCI bundle
-func OciUmount(bundle string) error {
+func OciUmount(ctx context.Context, bundle string) error {
 	d, err := ocibundle.FromSif("", bundle, true)
 	if err != nil {
 		return err
 	}
-	return d.Delete()
+	return d.Delete(ctx)
 }
 
 func systemdCgroups() (use bool, err error) {
