@@ -544,8 +544,8 @@ github.com/sylabs/json-resp v0.8.2 h1:k2dgtMXL+nztYtxrI24Zck/sfexyly4D1+X504eZTK
 github.com/sylabs/json-resp v0.8.2/go.mod h1:Q9X4wRlZNPv3x76KaL8vTCBO4aC/DP2gh13xdtEqd1g=
 github.com/sylabs/scs-build-client v0.7.7 h1:gBmGcVKgVfzSllZVG4lsSqBsVwXbXhr2usrPSSHFBB0=
 github.com/sylabs/scs-build-client v0.7.7/go.mod h1:3F6mOSxHb4XjcgXWS+D9FzdkGKI0M/WV/0Mv8c6M3G8=
-github.com/sylabs/scs-key-client v0.7.2 h1:q1ia4gSVD7z3u706N7aIwtk70SayfeAeL8Uo322JuYo=
-github.com/sylabs/scs-key-client v0.7.2/go.mod h1:cmD4C9QfNLXW4QSXvwoaPZAuwaToIsHuD0AUHNdjDlA=
+github.com/sylabs/scs-key-client v0.7.3 h1:k//63VQmgtJb+oTXmyO2thdSjgvi18mJLDI9bYAAceA=
+github.com/sylabs/scs-key-client v0.7.3/go.mod h1:FHLCehXKHTrvGSx35qLvXUU1zGpu8ad4WGTkgs4h4wA=
 github.com/sylabs/scs-library-client v1.4.4 h1:ot70EXBdM1aKMtaA7KQaz2TwhlMMTbU5+L8nje67zAQ=
 github.com/sylabs/scs-library-client v1.4.4/go.mod h1:nCAsuxBKCNGHKCrMae0EuySFEJgYFSRgqq4X/c7kI2g=
 github.com/sylabs/sif/v2 v2.11.4 h1:4dRvsRFVkyS7e8oD8AEL0HrJocnet05+EFW+DhVb/Ic=
