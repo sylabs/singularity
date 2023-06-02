@@ -47,8 +47,13 @@ type Item struct {
 func NewItemFromString(overlayString string) (*Item, error) {
 	item := Item{Writable: true}
 
+	var err error
 	splitted := strings.SplitN(overlayString, ":", 2)
-	item.SourcePath = splitted[0]
+	item.SourcePath, err = filepath.Abs(splitted[0])
+	if err != nil {
+		return nil, fmt.Errorf("error while trying to convert overlay path %q to absolute path: %s", splitted[0], err)
+	}
+
 	if len(splitted) > 1 {
 		if splitted[1] == "ro" {
 			item.Writable = false
@@ -259,18 +264,9 @@ func (i Item) unmountDir() error {
 // unmountFuse unmounts FUSE-based Items.
 func (i Item) unmountFuse() error {
 	defer os.Remove(i.StagingDir)
-	fusermountCmd, innerErr := bin.FindBin("fusermount")
-	if innerErr != nil {
-		// The code in performIndividualMounts() should not have created
-		// a FUSE-based overlay without fusermount in place
-		return fmt.Errorf("internal error: FUSE-based mount created without fusermount installed: %s", innerErr)
-	}
-	sylog.Debugf("Executing FUSE unmount command: %s -u %s", fusermountCmd, i.StagingDir)
-	execCmd := exec.Command(fusermountCmd, "-u", i.StagingDir)
-	execCmd.Stderr = os.Stderr
-	_, innerErr = execCmd.Output()
-	if innerErr != nil {
-		return fmt.Errorf("error while trying to unmount image %q from %s: %s", i.SourcePath, i.StagingDir, innerErr)
+	err := UnmountWithFuse(i.StagingDir)
+	if err != nil {
+		return fmt.Errorf("error while trying to unmount image %q from %s: %s", i.SourcePath, i.StagingDir, err)
 	}
 	return nil
 }

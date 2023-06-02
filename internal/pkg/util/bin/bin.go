@@ -57,8 +57,12 @@ func FindBin(name string) (path string, err error) {
 	// fuse2fs for OCI-mode bare-image overlay
 	case "fuse2fs":
 		return findOnPath(name)
+	// fuse-overlayfs for mounting overlays without kernel support for
+	// unprivileged overlays
+	case "fuse-overlayfs":
+		return findOnPath(name)
 	default:
-		return "", fmt.Errorf("unknown executable name %q", name)
+		return "", fmt.Errorf("executable name %q is not known to FindBin", name)
 	}
 }
 

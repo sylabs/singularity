@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/util/bin"
@@ -203,6 +204,36 @@ func CheckRootless() error {
 	return nil
 }
 
+// Info about kernel support for unprivileged overlays
+var unprivOverlays struct {
+	kernelSupport bool
+	initOnce      sync.Once
+	err           error
+}
+
+// UnprivOverlaysSupported checks whether there is kernel support for unprivileged overlays. The actual check is performed only once and cached in the unprivOverlays variable, above.
+func UnprivOverlaysSupported() (bool, error) {
+	unprivOverlays.initOnce.Do(func() {
+		err := CheckRootless()
+		if err == nil {
+			unprivOverlays.kernelSupport = true
+			return
+		}
+
+		if err == ErrNoRootlessOverlay {
+			unprivOverlays.kernelSupport = false
+		}
+
+		unprivOverlays.err = err
+	})
+
+	if unprivOverlays.err != nil {
+		return false, unprivOverlays.err
+	}
+
+	return unprivOverlays.kernelSupport, nil
+}
+
 // ensureOverlayDir checks if a directory already exists; if it doesn't, and
 // createIfMissing is true, it attempts to create it with the specified
 // permissions.
@@ -247,7 +278,7 @@ func DetachAndDelete(overlayDir string) error {
 	return nil
 }
 
-// detachMount performs an unmount system call on the specified directory.
+// DetachMount performs an unmount system call on the specified directory.
 func DetachMount(dir string) error {
 	sylog.Debugf("Calling syscall.Unmount() to detach %q", dir)
 	if err := syscall.Unmount(dir, syscall.MNT_DETACH); err != nil {
@@ -255,4 +286,20 @@ func DetachMount(dir string) error {
 	}
 
 	return nil
+}
+
+// UnmountWithFuse performs an unmount on the specified directory using
+// fusermount -u.
+func UnmountWithFuse(dir string) error {
+	fusermountCmd, err := bin.FindBin("fusermount")
+	if err != nil {
+		// We should not be creating FUSE-based mounts in the first place
+		// without checking that fusermount is available.
+		return fmt.Errorf("internal error: FUSE-based mount created without fusermount installed: %s", err)
+	}
+	sylog.Debugf("Executing FUSE unmount command: %s -u %s", fusermountCmd, dir)
+	execCmd := exec.Command(fusermountCmd, "-u", dir)
+	execCmd.Stderr = os.Stderr
+	_, err = execCmd.Output()
+	return err
 }
