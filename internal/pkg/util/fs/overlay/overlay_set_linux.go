@@ -61,16 +61,18 @@ func (s Set) Mount(rootFsDir string) error {
 
 // UnmountOverlay ummounts a Set from a specified rootfs directory.
 func (s Set) Unmount(rootFsDir string) error {
-	unmounterFunc := DetachMount
 	unprivOls, err := UnprivOverlaysSupported()
 	if err != nil {
-		return fmt.Errorf("error encountered while checking for unprivileged overlay support in kernel: %s", err)
-	}
-	if !unprivOls {
-		unmounterFunc = UnmountWithFuse
+		return fmt.Errorf("while checking for unprivileged overlay support in kernel: %w", err)
 	}
 
-	if err := unmounterFunc(rootFsDir); err != nil {
+	if unprivOls {
+		err = DetachMount(rootFsDir)
+	} else {
+		err = UnmountWithFuse(rootFsDir)
+	}
+
+	if err != nil {
 		return err
 	}
 
@@ -103,25 +105,25 @@ func (s Set) performFinalMount(rootFsDir string) error {
 	options := s.options(rootFsDir)
 	unprivOls, err := UnprivOverlaysSupported()
 	if err != nil {
-		return fmt.Errorf("error encountered while checking for unprivileged overlay support in kernel: %s", err)
+		return fmt.Errorf("while checking for unprivileged overlay support in kernel: %w", err)
 	}
 
 	if unprivOls {
 		sylog.Debugf("Mounting overlay (via syscall) with rootFsDir %q, options: %q", rootFsDir, options)
 		if err := syscall.Mount("overlay", rootFsDir, "overlay", syscall.MS_NODEV, options); err != nil {
-			return fmt.Errorf("failed to mount %s: %s", rootFsDir, err)
+			return fmt.Errorf("failed to mount %s: %w", rootFsDir, err)
 		}
 	} else {
 		fuseOlFsCmd, err := bin.FindBin("fuse-overlayfs")
 		if err != nil {
-			return fmt.Errorf("kernel does not support unprivileged overlays, and fuse-overlayfs not installed: %s", err)
+			return fmt.Errorf("kernel does not support unprivileged overlays, and fuse-overlayfs not available: %w", err)
 		}
 
 		// Even though fusermount is not needed for this step, we shouldn't perform
 		// the mount unless we have the necessary tools to eventually unmount it
 		_, err = bin.FindBin("fusermount")
 		if err != nil {
-			return fmt.Errorf("kernel does not support unprivileged overlays, and using fuse-overlayfs fallback requires fusermount to be installed: %s", err)
+			return fmt.Errorf("kernel does not support unprivileged overlays, and using fuse-overlayfs fallback requires fusermount to be installed: %w", err)
 		}
 
 		sylog.Debugf("Mounting overlay (via fuse-overlayfs) with rootFsDir %q, options: %q", rootFsDir, options)
@@ -129,7 +131,7 @@ func (s Set) performFinalMount(rootFsDir string) error {
 		execCmd.Stderr = os.Stderr
 		_, err = execCmd.Output()
 		if err != nil {
-			return fmt.Errorf("failed to mount %s: %s", rootFsDir, err)
+			return fmt.Errorf("failed to mount %s: %w", rootFsDir, err)
 		}
 	}
 

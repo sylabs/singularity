@@ -51,7 +51,7 @@ func NewItemFromString(overlayString string) (*Item, error) {
 	splitted := strings.SplitN(overlayString, ":", 2)
 	item.SourcePath, err = filepath.Abs(splitted[0])
 	if err != nil {
-		return nil, fmt.Errorf("error while trying to convert overlay path %q to absolute path: %s", splitted[0], err)
+		return nil, fmt.Errorf("error while trying to convert overlay path %q to absolute path: %w", splitted[0], err)
 	}
 
 	if len(splitted) > 1 {
@@ -71,7 +71,7 @@ func NewItemFromString(overlayString string) (*Item, error) {
 	if s.IsDir() {
 		item.Type = image.SANDBOX
 	} else if err := item.analyzeImageFile(); err != nil {
-		return nil, fmt.Errorf("error encountered while examining image file %s: %s", item.SourcePath, err)
+		return nil, fmt.Errorf("while examining image file %s: %w", item.SourcePath, err)
 	}
 
 	return &item, nil
@@ -160,12 +160,12 @@ func (i *Item) mountDir() error {
 	}
 
 	if err = EnsureOverlayDir(i.StagingDir, false, 0); err != nil {
-		return fmt.Errorf("error accessing directory %s: %s", i.StagingDir, err)
+		return fmt.Errorf("error accessing directory %s: %w", i.StagingDir, err)
 	}
 
 	sylog.Debugf("Performing identity bind-mount of %q", i.StagingDir)
 	if err = syscall.Mount(i.StagingDir, i.StagingDir, "", syscall.MS_BIND, ""); err != nil {
-		return fmt.Errorf("failed to bind %s: %s", i.StagingDir, err)
+		return fmt.Errorf("failed to bind %s: %w", i.StagingDir, err)
 	}
 
 	// Best effort to cleanup mount
@@ -179,7 +179,7 @@ func (i *Item) mountDir() error {
 	// Try to perform remount
 	sylog.Debugf("Performing remount of %q", i.StagingDir)
 	if err = syscall.Mount("", i.StagingDir, "", syscall.MS_REMOUNT|syscall.MS_BIND, ""); err != nil {
-		return fmt.Errorf("failed to remount %s: %s", i.StagingDir, err)
+		return fmt.Errorf("failed to remount %s: %w", i.StagingDir, err)
 	}
 
 	return nil
@@ -192,14 +192,14 @@ func (i *Item) mountWithFuse(fuseMountTool string, additionalArgs ...string) err
 	var err error
 	fuseMountCmd, err := bin.FindBin(fuseMountTool)
 	if err != nil {
-		return fmt.Errorf("use of image %q as overlay requires %s to be installed: %s", i.SourcePath, fuseMountTool, err)
+		return fmt.Errorf("use of image %q as overlay requires %s to be installed: %w", i.SourcePath, fuseMountTool, err)
 	}
 
 	// Even though fusermount is not needed for this step, we shouldn't perform
 	// the mount unless we have the necessary tools to eventually unmount it
 	_, err = bin.FindBin("fusermount")
 	if err != nil {
-		return fmt.Errorf("use of image %q as overlay requires fusermount to be installed: %s", i.SourcePath, err)
+		return fmt.Errorf("use of image %q as overlay requires fusermount to be installed: %w", i.SourcePath, err)
 	}
 
 	// Obtain parent directory in which to create overlay-related mount
@@ -207,11 +207,11 @@ func (i *Item) mountWithFuse(fuseMountTool string, additionalArgs ...string) err
 	// related discussion.
 	parentDir, err := i.GetParentDir()
 	if err != nil {
-		return fmt.Errorf("error while trying to create parent dir for overlay %q: %s", i.SourcePath, err)
+		return fmt.Errorf("error while trying to create parent dir for overlay %q: %w", i.SourcePath, err)
 	}
 	fuseMountDir, err := os.MkdirTemp(parentDir, "overlay-mountpoint-")
 	if err != nil {
-		return fmt.Errorf("failed to create temporary dir %q for overlay %q: %s", fuseMountDir, i.SourcePath, err)
+		return fmt.Errorf("failed to create temporary dir %q for overlay %q: %w", fuseMountDir, i.SourcePath, err)
 	}
 
 	// Best effort to cleanup temporary dir
@@ -231,7 +231,7 @@ func (i *Item) mountWithFuse(fuseMountTool string, additionalArgs ...string) err
 	execCmd.Stderr = os.Stderr
 	_, err = execCmd.Output()
 	if err != nil {
-		return fmt.Errorf("encountered error while trying to mount image %q as overlay at %s: %s", i.SourcePath, fuseMountDir, err)
+		return fmt.Errorf("encountered error while trying to mount image %q as overlay at %s: %w", i.SourcePath, fuseMountDir, err)
 	}
 	i.StagingDir = fuseMountDir
 
@@ -266,7 +266,7 @@ func (i Item) unmountFuse() error {
 	defer os.Remove(i.StagingDir)
 	err := UnmountWithFuse(i.StagingDir)
 	if err != nil {
-		return fmt.Errorf("error while trying to unmount image %q from %s: %s", i.SourcePath, i.StagingDir, err)
+		return fmt.Errorf("error while trying to unmount image %q from %s: %w", i.SourcePath, i.StagingDir, err)
 	}
 	return nil
 }

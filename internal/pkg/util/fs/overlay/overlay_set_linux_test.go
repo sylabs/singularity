@@ -33,7 +33,7 @@ func wrapOverlayTest(f func(t *testing.T)) func(t *testing.T) {
 	unprivOls, unprivOlsErr := UnprivOverlaysSupported()
 	return func(t *testing.T) {
 		if unprivOlsErr != nil {
-			t.Fatalf("error encountered while checking for unprivileged overlay support in kernel: %s", unprivOlsErr)
+			t.Fatalf("while checking for unprivileged overlay support in kernel: %s", unprivOlsErr)
 		}
 
 		fuseOverlayFunc := func(t *testing.T) {
@@ -108,7 +108,7 @@ func TestAllTypesAtOnce(t *testing.T) {
 		}
 
 		if err := s.Unmount(rootfsDir); err != nil {
-			t.Errorf("error encountered while trying to unmount overlay set: %s", err)
+			t.Errorf("while trying to unmount overlay set: %s", err)
 		}
 	})(t)
 }
@@ -142,11 +142,11 @@ func TestPersistentWriteToDir(t *testing.T) {
 		testFilePath := "my_test_file"
 		testFileMountedPath := filepath.Join(rootfsDir, testFilePath)
 		if err := os.WriteFile(testFileMountedPath, bytes, 0o644); err != nil {
-			t.Fatalf("error encountered while trying to write file inside mounted overlay-set: %s", err)
+			t.Fatalf("while trying to write file inside mounted overlay-set: %s", err)
 		}
 
 		if err := s.Unmount(rootfsDir); err != nil {
-			t.Fatalf("error encountered while trying to unmount overlay set: %s", err)
+			t.Fatalf("while trying to unmount overlay set: %s", err)
 		}
 
 		// Mount the same set again, and check that we see the file with the
@@ -163,7 +163,7 @@ func TestPersistentWriteToDir(t *testing.T) {
 			t.Errorf("incorrect file contents in mounted overlay set: expected %q, but found: %q", expectStr, foundStr)
 		}
 		if err := s.Unmount(rootfsDir); err != nil {
-			t.Errorf("error encountered while trying to unmount overlay set: %s", err)
+			t.Errorf("while trying to unmount overlay set: %s", err)
 		}
 	})(t)
 }

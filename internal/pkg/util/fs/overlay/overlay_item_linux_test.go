@@ -177,10 +177,10 @@ func dirMountUnmount(t *testing.T, olStr string) {
 	}
 
 	if err := item.Mount(); err != nil {
-		t.Fatalf("error encountered while trying to mount dir %q: %s", olStr, err)
+		t.Fatalf("while trying to mount dir %q: %s", olStr, err)
 	}
 	if err := item.Unmount(); err != nil {
-		t.Errorf("error encountered while trying to unmount dir %q: %s", olStr, err)
+		t.Errorf("while trying to unmount dir %q: %s", olStr, err)
 	}
 }
 
