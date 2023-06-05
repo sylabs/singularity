@@ -291,6 +291,7 @@ var buildWritableTmpfsFlag = cmdline.Flag{
 	EnvKeys:      []string{"WRITABLE_TMPFS"},
 }
 
+// --build-arg
 var buildVarArgsFlag = cmdline.Flag{
 	ID:           "buildVarArgsFlag",
 	Value:        &buildArgs.buildVarArgs,
@@ -299,6 +300,7 @@ var buildVarArgsFlag = cmdline.Flag{
 	Usage:        "defines variable=value to replace {{ variable }} entries in build definition file",
 }
 
+// --build-arg-file
 var buildVarArgFileFlag = cmdline.Flag{
 	ID:           "buildVarArgFileFlag",
 	Value:        &buildArgs.buildVarArgFile,

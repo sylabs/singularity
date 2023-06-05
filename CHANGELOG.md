@@ -60,10 +60,10 @@
   storage. If `--scratch <scratchdir>` is used in conjunction with `--workdir`,
   scratch directories will be mapped to subdirectories nested under
   `<workdir>/scratch` on the host, rather than to tmpfs storage.
-- Templating support for definition files. Users can now define variables in
+- Templating support for definition files: users can now define variables in
   definition files via a matching pair of double curly brackets. Variables of
   the form `{{ variable }}` will be replaced by a value defined either by a
-  `variable=value` entry in the `%arguments` section of the definition file or
+  `variable=value` entry in the `%arguments` section of the definition file, or
   through new build options `--build-arg` or `--build-arg-file`.
 - If kernel does not support unprivileged overlays, OCI-mode will attempt to use
   `fuse-overlayfs` and `fusermount` for overlay mounting and unmounting.

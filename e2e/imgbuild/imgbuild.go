@@ -1746,13 +1746,17 @@ cat /proc/$$/cmdline`
 //nolint:maintidx
 func (c imgBuildTests) buildDefinitionWithBuildArgs(t *testing.T) {
 	busyboxSIF := e2e.BusyboxSIF(t)
-	fileContent := "HOME=/root"
+	fileContent := `HOME=/root
+DEMO=demo=with===equals==signs
+`
 	argfile, err := e2e.WriteTempFile(c.env.TestDir, "argfile-", fileContent)
 	if err != nil {
 		log.Fatal(err)
 	}
 	t.Cleanup(func() {
-		os.Remove(argfile)
+		if !t.Failed() {
+			os.Remove(argfile)
+		}
 	})
 
 	tests := []struct {
@@ -1769,27 +1773,27 @@ func (c imgBuildTests) buildDefinitionWithBuildArgs(t *testing.T) {
 			name: "ok case single stage build",
 			buildArgs: []string{
 				fmt.Sprintf("IMAGE=%s", busyboxSIF),
-				fmt.Sprintf("SCRIPT_PATH=%s", path.Join("testdata", "build-template", "script.sh")),
+				fmt.Sprintf("SCRIPT_PATH=%s", filepath.Join("..", "test", "build-args", "script.sh")),
 			},
 			verify: []string{
-				fmt.Sprintf("from: %s", busyboxSIF),
+				fmt.Sprintf("From: %s", busyboxSIF),
 				"export AUTHOR=jason",
 				"export VERSION=1",
 				"Author jason",
 				"Version 1",
-				"testdata/build-template/script.sh",
+				"../test/build-args/script.sh",
 			},
-			deffile: path.Join("testdata", "build-template", "single-stage.def"),
+			deffile: filepath.Join("..", "test", "build-args", "single-stage.def"),
 			exit:    0,
 			err:     "",
 		},
 		{
 			name: "ko case single stage build",
 			buildArgs: []string{
-				fmt.Sprintf("SCRIPT_PATH=%s", path.Join("testdata", "build-template", "script.sh")),
+				fmt.Sprintf("SCRIPT_PATH=%s", filepath.Join("..", "test", "build-args", "script.sh")),
 			},
 			verify:  []string{},
-			deffile: path.Join("testdata", "build-template", "single-stage.def"),
+			deffile: filepath.Join("..", "test", "build-args", "single-stage.def"),
 			exit:    255,
 			err:     "IMAGE is not defined",
 		},
@@ -1801,11 +1805,11 @@ func (c imgBuildTests) buildDefinitionWithBuildArgs(t *testing.T) {
 				"HOME=/root",
 			},
 			verify: []string{
-				"from: golang:1.12.3-alpine3.9",
-				"from: alpine:3.9",
+				"From: golang:1.12.3-alpine3.9",
+				"From: alpine:3.9",
 				"cd /root",
 			},
-			deffile: path.Join("testdata", "build-template", "multiple-stage.def"),
+			deffile: filepath.Join("..", "test", "build-args", "multiple-stage.def"),
 			exit:    0,
 			err:     "",
 		},
@@ -1817,11 +1821,11 @@ func (c imgBuildTests) buildDefinitionWithBuildArgs(t *testing.T) {
 			},
 			buildArgFile: argfile,
 			verify: []string{
-				"from: golang:1.12.3-alpine3.9",
-				"from: alpine:3.9",
+				"From: golang:1.12.3-alpine3.9",
+				"From: alpine:3.9",
 				"cd /root",
 			},
-			deffile: path.Join("testdata", "build-template", "multiple-stage.def"),
+			deffile: filepath.Join("..", "test", "build-args", "multiple-stage.def"),
 			exit:    0,
 			err:     "",
 		},
@@ -1832,9 +1836,41 @@ func (c imgBuildTests) buildDefinitionWithBuildArgs(t *testing.T) {
 				"FINAL_IMAGE=alpine:3.9",
 			},
 			verify:  []string{},
-			deffile: path.Join("testdata", "build-template", "multiple-stage.def"),
+			deffile: filepath.Join("..", "test", "build-args", "multiple-stage.def"),
 			exit:    255,
 			err:     "HOME is not defined",
+		},
+		{
+			name: "equal signs in vals",
+			buildArgs: []string{
+				fmt.Sprintf("IMAGE=%s", busyboxSIF),
+				fmt.Sprintf("SCRIPT_PATH=%s", filepath.Join("..", "test", "build-args", "script.sh")),
+				"AUTHOR=Equals=In=My=Name",
+				"DEMO=demo=with===equals==signs",
+			},
+			verify: []string{
+				"Author Equals=In=My=Name",
+				"This is a demo=with===equals==signs for templating definition file",
+			},
+			deffile: filepath.Join("..", "test", "build-args", "single-stage.def"),
+			exit:    0,
+			err:     "",
+		},
+		{
+			name: "equal signs in argfile vals",
+			buildArgs: []string{
+				fmt.Sprintf("IMAGE=%s", busyboxSIF),
+				fmt.Sprintf("SCRIPT_PATH=%s", filepath.Join("..", "test", "build-args", "script.sh")),
+				"AUTHOR=Equals=In=My=Name",
+			},
+			buildArgFile: argfile,
+			verify: []string{
+				"Author Equals=In=My=Name",
+				"This is a demo=with===equals==signs for templating definition file",
+			},
+			deffile: filepath.Join("..", "test", "build-args", "single-stage.def"),
+			exit:    0,
+			err:     "",
 		},
 	}
 
@@ -1876,7 +1912,7 @@ func (c imgBuildTests) buildDefinitionWithBuildArgs(t *testing.T) {
 			c.env.RunSingularity(
 				t,
 				e2e.AsSubtest(tt.name),
-				e2e.WithProfile(e2e.UserProfile),
+				e2e.WithProfile(e2e.RootProfile),
 				e2e.WithCommand("build"),
 				e2e.WithArgs(args...),
 				e2e.PostRun(func(t *testing.T) {
@@ -1891,7 +1927,7 @@ func (c imgBuildTests) buildDefinitionWithBuildArgs(t *testing.T) {
 					c.env.RunSingularity(
 						t,
 						e2e.AsSubtest(tt.name+" verification"),
-						e2e.WithProfile(e2e.UserProfile),
+						e2e.WithProfile(e2e.RootProfile),
 						e2e.WithCommand("sif"),
 						e2e.WithArgs("dump", "1", imagePath),
 						e2e.ExpectExit(0,
@@ -1969,7 +2005,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"proot":                           c.buildProot,                   // build image as an unpriv user with proot
 		"customShebang":                   c.buildCustomShebang,           // build image with custom #! in %test and %runscript
 		"no-setgroups":                    c.buildNoSetgroups,             // build with --fakeroot --no-setgroups
-		"buildVars":                       c.buildDefinitionWithBuildArgs, // builds from definition with build args (build arg file) support
+		"buildArgs":                       c.buildDefinitionWithBuildArgs, // builds from definition with build args (build arg file) support
 		"issue 3848":                      c.issue3848,                    // https://github.com/hpcng/singularity/issues/3848
 		"issue 4203":                      c.issue4203,                    // https://github.com/sylabs/singularity/issues/4203
 		"issue 4407":                      c.issue4407,                    // https://github.com/sylabs/singularity/issues/4407
