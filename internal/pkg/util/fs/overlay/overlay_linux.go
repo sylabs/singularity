@@ -222,6 +222,7 @@ func UnprivOverlaysSupported() (bool, error) {
 
 		if err == ErrNoRootlessOverlay {
 			unprivOverlays.kernelSupport = false
+			return
 		}
 
 		unprivOverlays.err = err
