@@ -53,6 +53,8 @@
   `<workdir>/scratch` on the host, rather than to tmpfs storage.
 - Added ability to set a custom config directory via the new
   `SINGULARITY_CONFIGDIR` environment variable.
+- If kernel does not support unprivileged overlays, OCI-mode will attempt to use
+  `fuse-overlayfs` and `fusermount` for overlay mounting and unmounting.
 
 ### Bug Fixes
 

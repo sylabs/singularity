@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sync"
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/util/bin"
@@ -82,7 +83,7 @@ func check(path string, d dir) error {
 	stfs := &unix.Statfs_t{}
 
 	if err := statfs(path, stfs); err != nil {
-		return fmt.Errorf("could not retrieve underlying filesystem information for %s: %s", path, err)
+		return fmt.Errorf("could not retrieve underlying filesystem information for %s: %w", path, err)
 	}
 
 	fs, ok := incompatibleFs[int64(stfs.Type)]
@@ -141,7 +142,7 @@ var ErrNoRootlessOverlay = errors.New("rootless overlay not supported by kernel"
 func CheckRootless() error {
 	mountBin, err := bin.FindBin("mount")
 	if err != nil {
-		return fmt.Errorf("while looking for mount command: %s", err)
+		return fmt.Errorf("while looking for mount command: %w", err)
 	}
 
 	tmpDir, err := os.MkdirTemp("", "check-overlay")
@@ -203,6 +204,37 @@ func CheckRootless() error {
 	return nil
 }
 
+// Info about kernel support for unprivileged overlays
+var unprivOverlays struct {
+	kernelSupport bool
+	initOnce      sync.Once
+	err           error
+}
+
+// UnprivOverlaysSupported checks whether there is kernel support for unprivileged overlays. The actual check is performed only once and cached in the unprivOverlays variable, above.
+func UnprivOverlaysSupported() (bool, error) {
+	unprivOverlays.initOnce.Do(func() {
+		err := CheckRootless()
+		if err == nil {
+			unprivOverlays.kernelSupport = true
+			return
+		}
+
+		if err == ErrNoRootlessOverlay {
+			unprivOverlays.kernelSupport = false
+			return
+		}
+
+		unprivOverlays.err = err
+	})
+
+	if unprivOverlays.err != nil {
+		return false, unprivOverlays.err
+	}
+
+	return unprivOverlays.kernelSupport, nil
+}
+
 // ensureOverlayDir checks if a directory already exists; if it doesn't, and
 // createIfMissing is true, it attempts to create it with the specified
 // permissions.
@@ -226,7 +258,7 @@ func EnsureOverlayDir(dir string, createIfMissing bool, createPerm os.FileMode) 
 
 	// Create the requested dir
 	if err := os.Mkdir(dir, createPerm); err != nil {
-		return fmt.Errorf("failed to create %q: %s", dir, err)
+		return fmt.Errorf("failed to create %q: %w", dir, err)
 	}
 
 	return nil
@@ -237,22 +269,38 @@ func EnsureOverlayDir(dir string, createIfMissing bool, createPerm os.FileMode) 
 func DetachAndDelete(overlayDir string) error {
 	sylog.Debugf("Detaching overlayDir %q", overlayDir)
 	if err := syscall.Unmount(overlayDir, syscall.MNT_DETACH); err != nil {
-		return fmt.Errorf("failed to unmount %s: %s", overlayDir, err)
+		return fmt.Errorf("failed to unmount %s: %w", overlayDir, err)
 	}
 
 	sylog.Debugf("Removing overlayDir %q", overlayDir)
 	if err := os.RemoveAll(overlayDir); err != nil {
-		return fmt.Errorf("failed to remove %s: %s", overlayDir, err)
+		return fmt.Errorf("failed to remove %s: %w", overlayDir, err)
 	}
 	return nil
 }
 
-// detachMount performs an unmount system call on the specified directory.
+// DetachMount performs an unmount system call on the specified directory.
 func DetachMount(dir string) error {
 	sylog.Debugf("Calling syscall.Unmount() to detach %q", dir)
 	if err := syscall.Unmount(dir, syscall.MNT_DETACH); err != nil {
-		return fmt.Errorf("failed to detach %s: %s", dir, err)
+		return fmt.Errorf("failed to detach %s: %w", dir, err)
 	}
 
 	return nil
+}
+
+// UnmountWithFuse performs an unmount on the specified directory using
+// fusermount -u.
+func UnmountWithFuse(dir string) error {
+	fusermountCmd, err := bin.FindBin("fusermount")
+	if err != nil {
+		// We should not be creating FUSE-based mounts in the first place
+		// without checking that fusermount is available.
+		return fmt.Errorf("fusermount not available while trying to perform unmount: %w", err)
+	}
+	sylog.Debugf("Executing FUSE unmount command: %s -u %s", fusermountCmd, dir)
+	execCmd := exec.Command(fusermountCmd, "-u", dir)
+	execCmd.Stderr = os.Stderr
+	_, err = execCmd.Output()
+	return err
 }

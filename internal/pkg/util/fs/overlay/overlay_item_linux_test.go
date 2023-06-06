@@ -177,10 +177,10 @@ func dirMountUnmount(t *testing.T, olStr string) {
 	}
 
 	if err := item.Mount(); err != nil {
-		t.Fatalf("error encountered while trying to mount dir %q: %s", olStr, err)
+		t.Fatalf("while trying to mount dir %q: %s", olStr, err)
 	}
 	if err := item.Unmount(); err != nil {
-		t.Errorf("error encountered while trying to unmount dir %q: %s", olStr, err)
+		t.Errorf("while trying to unmount dir %q: %s", olStr, err)
 	}
 }
 
@@ -219,10 +219,12 @@ func tryImageRO(t *testing.T, olStr string, typeCode int, typeStr, expectStr str
 
 func TestSquashfsRO(t *testing.T) {
 	require.Command(t, "squashfuse")
+	require.Command(t, "fusermount")
 	tryImageRO(t, filepath.Join("..", "..", "..", "..", "..", "test", "images", "squashfs-for-overlay.img"), image.SQUASHFS, "squashfs", squashfsTestString)
 }
 
 func TestExtfsRO(t *testing.T) {
 	require.Command(t, "fuse2fs")
+	require.Command(t, "fusermount")
 	tryImageRO(t, filepath.Join("..", "..", "..", "..", "..", "test", "images", "extfs-for-overlay.img")+":ro", image.EXT3, "extfs", extfsTestString)
 }
