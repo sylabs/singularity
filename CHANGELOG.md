@@ -38,11 +38,12 @@
   `--fakeroot`, for example).
 - The `remote status` command will now print the username, realname, and email
   of the logged-in user, if available.
-- OCI-mode now supports an `--overlay <arg>` flag. `<arg>` can be a writable
-  directory, in which case changes to the filesystem will persist across runs of
-  the OCI container. Alternatively, `<arg>` can be `<dir>:ro` or the path of a
-  squashfs or extfs image, to be mounted as a read-only overlay. Multiple
-  overlays can be specified, but all but one must be read-only.
+- OCI-mode now supports the `--overlay <arg>` flag. `<arg>` can be the path to a
+  writable directory or writable extfs image, in which case changes to the
+  filesystem will persist across runs of the OCI container. Alternatively,
+  `--overlay <arg>:ro` can be used, where `<arg>` is the path to a directory, to
+  a squashfs image, or to an extfs image, to be mounted as a read-only overlay.
+  Multiple overlays can be specified, but all but one must be read-only.
 - The `tap` CNI plugin, new to github.com/containernetworking/plugins v1.3.0,
   is now provided.
 - OCI-mode now supports the `--workdir <workdir>` option. If this option is

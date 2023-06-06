@@ -128,25 +128,31 @@ func (i *Item) GetParentDir() (string, error) {
 // this method does not mount the assembled overlay itself. That happens in
 // Set.Mount().
 func (i *Item) Mount() error {
-	if i.Writable {
-		if err := i.prepareWritableOverlay(); err != nil {
-			return err
-		}
-	}
-
+	var err error
 	switch i.Type {
 	case image.SANDBOX:
-		return i.mountDir()
+		err = i.mountDir()
 	case image.SQUASHFS:
-		return i.mountWithFuse("squashfuse")
+		err = i.mountWithFuse("squashfuse")
 	case image.EXT3:
 		if i.Writable {
-			return fmt.Errorf("mounting writable extfs images is not currently supported, please use :ro suffix on image specification for read-only mode")
+			err = i.mountWithFuse("fuse2fs", "-o", "rw")
+		} else {
+			err = i.mountWithFuse("fuse2fs", "-o", "ro")
 		}
-		return i.mountWithFuse("fuse2fs", "-o", "ro")
 	default:
 		return fmt.Errorf("internal error: unrecognized image type in overlay.Item.Mount() (type: %v)", i.Type)
 	}
+
+	if err != nil {
+		return err
+	}
+
+	if i.Writable {
+		return i.prepareWritableOverlay()
+	}
+
+	return nil
 }
 
 // mountDir mounts directory-based Items. This involves bind-mounting followed
@@ -277,6 +283,8 @@ func (i *Item) prepareWritableOverlay() error {
 	switch i.Type {
 	case image.SANDBOX:
 		i.StagingDir = i.SourcePath
+		fallthrough
+	case image.EXT3:
 		if err := EnsureOverlayDir(i.StagingDir, true, 0o755); err != nil {
 			return err
 		}
