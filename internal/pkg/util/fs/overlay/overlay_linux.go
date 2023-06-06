@@ -31,7 +31,7 @@ const (
 	upperDir
 )
 
-type fs struct {
+type filesys struct {
 	name       string
 	overlayDir dir
 }
@@ -45,7 +45,7 @@ const (
 	panfs  int64 = 0xAAD7AAEA
 )
 
-var incompatibleFs = map[int64]fs{
+var incompatibleFs = map[int64]filesys{
 	// NFS filesystem
 	nfs: {
 		name:       "NFS",

@@ -1088,6 +1088,14 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 			}
 		}
 
+		// Create a copy of the extfs test image to be used for testing writable
+		// extfs image overlays
+		writableExtfsImgPath := filepath.Join(testDir, "writable-extfs.img")
+		err = fs.CopyFile(extfsImgPath, writableExtfsImgPath, 0o755)
+		if err != nil {
+			t.Fatalf("could not copy %q to %q: %s", extfsImgPath, writableExtfsImgPath, err)
+		}
+
 		tests := []struct {
 			name         string
 			args         []string
@@ -1147,7 +1155,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
 					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
 				},
-				requiredCmds: []string{"squashfuse", "fuse2fs"},
+				requiredCmds: []string{"squashfuse", "fuse2fs", "fusermount"},
 				exitCode:     0,
 				wantOutputs: []e2e.SingularityCmdResultOp{
 					e2e.ExpectOutput(e2e.ContainMatch, "test_string_1"),
@@ -1164,7 +1172,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
 					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
 				},
-				requiredCmds: []string{"squashfuse"},
+				requiredCmds: []string{"squashfuse", "fusermount"},
 				exitCode:     0,
 				wantOutputs: []e2e.SingularityCmdResultOp{
 					e2e.ExpectOutput(e2e.ContainMatch, "test_string_1"),
@@ -1181,7 +1189,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
 					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
 				},
-				requiredCmds: []string{"fuse2fs"},
+				requiredCmds: []string{"fuse2fs", "fusermount"},
 				exitCode:     0,
 				wantOutputs: []e2e.SingularityCmdResultOp{
 					e2e.ExpectOutput(e2e.ContainMatch, "test_string_1"),
@@ -1199,7 +1207,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
 					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
 				},
-				requiredCmds: []string{"squashfuse"},
+				requiredCmds: []string{"squashfuse", "fusermount"},
 				exitCode:     255,
 			},
 			{
@@ -1211,7 +1219,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 					"--overlay", filepath.Join(testDir, "something_nonexistent"),
 					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
 				},
-				requiredCmds: []string{"squashfuse"},
+				requiredCmds: []string{"squashfuse", "fusermount"},
 				exitCode:     255,
 			},
 			{
@@ -1223,8 +1231,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
 					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
 				},
-				requiredCmds: []string{"squashfuse"},
-				exitCode:     255,
+				exitCode: 255,
 			},
 			{
 				name: "ThreeWritables",
@@ -1236,8 +1243,66 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 					"--overlay", filepath.Join(testDir, "my_rw_ol_dir2"),
 					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
 				},
-				requiredCmds: []string{"squashfuse"},
-				exitCode:     255,
+				exitCode: 255,
+			},
+			{
+				name:         "WritableExtfs",
+				args:         []string{"--overlay", writableExtfsImgPath, imageRef, "sh", "-c", "echo my_test_string > /my_test_file"},
+				requiredCmds: []string{"fuse2fs", "fuse-overlayfs", "fusermount"},
+				exitCode:     0,
+			},
+			{
+				name:         "WritableExtfsRevisit",
+				args:         []string{"--overlay", writableExtfsImgPath, imageRef, "cat", "/my_test_file"},
+				requiredCmds: []string{"fuse2fs", "fuse-overlayfs", "fusermount"},
+				exitCode:     0,
+				wantOutputs: []e2e.SingularityCmdResultOp{
+					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+				},
+			},
+			{
+				name: "WritableExtfsWithDirs",
+				args: []string{
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir0:ro"),
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
+					"--overlay", writableExtfsImgPath,
+					imageRef, "cat", "/my_test_file",
+				},
+				requiredCmds: []string{"fuse2fs", "fuse-overlayfs", "fusermount"},
+				exitCode:     0,
+				wantOutputs: []e2e.SingularityCmdResultOp{
+					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+				},
+			},
+			{
+				name: "WritableExtfsWithMix",
+				args: []string{
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir0:ro"),
+					"--overlay", extfsImgPath + ":ro",
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
+					"--overlay", writableExtfsImgPath,
+					imageRef, "cat", "/my_test_file",
+				},
+				exitCode:     0,
+				requiredCmds: []string{"fuse2fs", "fuse-overlayfs", "fusermount"},
+				wantOutputs: []e2e.SingularityCmdResultOp{
+					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+				},
+			},
+			{
+				name: "WritableExtfsWithAll",
+				args: []string{
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir0:ro"),
+					"--overlay", extfsImgPath + ":ro",
+					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
+					"--overlay", writableExtfsImgPath,
+					imageRef, "cat", "/my_test_file",
+				},
+				exitCode:     0,
+				requiredCmds: []string{"squashfuse", "fuse2fs", "fuse-overlayfs", "fusermount"},
+				wantOutputs: []e2e.SingularityCmdResultOp{
+					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+				},
 			},
 		}
 

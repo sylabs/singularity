@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/image"
 )
 
@@ -19,6 +20,12 @@ const (
 	testFilePath       string = "file-for-testing"
 	squashfsTestString string = "squashfs-test-string\n"
 	extfsTestString    string = "extfs-test-string\n"
+)
+
+var (
+	imgsPath        = filepath.Join("..", "..", "..", "..", "..", "test", "images")
+	squashfsImgPath = filepath.Join(imgsPath, "squashfs-for-overlay.img")
+	extfsImgPath    = filepath.Join(imgsPath, "extfs-for-overlay.img")
 )
 
 func mkTempDirOrFatal(t *testing.T) string {
@@ -207,24 +214,69 @@ func tryImageRO(t *testing.T, olStr string, typeCode int, typeStr, expectStr str
 	})
 
 	testFileStagedPath := filepath.Join(item.StagingDir, testFilePath)
-	data, err := os.ReadFile(testFileStagedPath)
-	if err != nil {
-		t.Fatalf("error while trying to read from file %q: %s", testFileStagedPath, err)
-	}
-	foundStr := string(data)
-	if foundStr != expectStr {
-		t.Errorf("incorrect file contents in %s img: expected %q, but found: %q", typeStr, expectStr, foundStr)
-	}
+	checkForStringInOverlay(t, typeStr, testFileStagedPath, expectStr)
 }
 
 func TestSquashfsRO(t *testing.T) {
 	require.Command(t, "squashfuse")
 	require.Command(t, "fusermount")
-	tryImageRO(t, filepath.Join("..", "..", "..", "..", "..", "test", "images", "squashfs-for-overlay.img"), image.SQUASHFS, "squashfs", squashfsTestString)
+	tryImageRO(t, squashfsImgPath, image.SQUASHFS, "squashfs", squashfsTestString)
 }
 
 func TestExtfsRO(t *testing.T) {
 	require.Command(t, "fuse2fs")
 	require.Command(t, "fusermount")
-	tryImageRO(t, filepath.Join("..", "..", "..", "..", "..", "test", "images", "extfs-for-overlay.img")+":ro", image.EXT3, "extfs", extfsTestString)
+	tryImageRO(t, extfsImgPath+":ro", image.EXT3, "extfs", extfsTestString)
+}
+
+func TestExtfsRW(t *testing.T) {
+	require.Command(t, "fuse2fs")
+	require.Command(t, "fuse-overlayfs")
+	require.Command(t, "fusermount")
+	tmpDir := mkTempDirOrFatal(t)
+
+	// Create a copy of the extfs test image to be used for testing writable
+	// extfs image overlays
+	writableExtfsImgPath := filepath.Join(tmpDir, "writable-extfs.img")
+	err := fs.CopyFile(extfsImgPath, writableExtfsImgPath, 0o755)
+	if err != nil {
+		t.Fatalf("could not copy %q to %q: %s", extfsImgPath, writableExtfsImgPath, err)
+	}
+
+	item, err := NewItemFromString(writableExtfsImgPath)
+	if err != nil {
+		t.Fatalf("failed to mount extfs image at %q: %s", writableExtfsImgPath, err)
+	}
+
+	if item.Type != image.EXT3 {
+		t.Errorf("item.Type is %v (should be %v)", item.Type, image.EXT3)
+	}
+
+	if err := item.Mount(); err != nil {
+		t.Fatalf("unable to mount extfs image for reading & writing: %s", err)
+	}
+	t.Cleanup(func() {
+		item.Unmount()
+	})
+
+	testFileStagedPath := filepath.Join(item.StagingDir, testFilePath)
+	checkForStringInOverlay(t, "extfs", testFileStagedPath, extfsTestString)
+	otherTestFileStagedPath := testFileStagedPath + "_other"
+	otherExtfsTestString := "another string"
+	err = os.WriteFile(otherTestFileStagedPath, []byte(otherExtfsTestString), 0o755)
+	if err != nil {
+		t.Errorf("could not write to file %q in extfs image %q: %s", otherTestFileStagedPath, writableExtfsImgPath, err)
+	}
+	checkForStringInOverlay(t, "extfs", otherTestFileStagedPath, otherExtfsTestString)
+}
+
+func checkForStringInOverlay(t *testing.T, typeStr, stagedPath, expectStr string) {
+	data, err := os.ReadFile(stagedPath)
+	if err != nil {
+		t.Fatalf("error while trying to read from file %q: %s", stagedPath, err)
+	}
+	foundStr := string(data)
+	if foundStr != expectStr {
+		t.Errorf("incorrect file contents in %s img: expected %q, but found: %q", typeStr, expectStr, foundStr)
+	}
 }
