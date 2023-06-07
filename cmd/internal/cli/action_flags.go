@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -820,8 +820,8 @@ func init() {
 		actionsCmd := cmdManager.GetCmdGroup("actions")
 
 		if instanceStartCmd != nil {
-			cmdManager.SetCmdGroup("actions_instance", ExecCmd, ShellCmd, RunCmd, TestCmd, instanceStartCmd)
-			cmdManager.RegisterFlagForCmd(&actionBootFlag, instanceStartCmd)
+			cmdManager.SetCmdGroup("actions_instance", ExecCmd, ShellCmd, RunCmd, TestCmd, instanceStartCmd, instanceRunCmd)
+			cmdManager.RegisterFlagForCmd(&actionBootFlag, instanceStartCmd, instanceRunCmd)
 		} else {
 			cmdManager.SetCmdGroup("actions_instance", actionsCmd...)
 		}

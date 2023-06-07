@@ -59,12 +59,17 @@ func (ep ExecParams) ActionScriptArgs() (args []string, err error) {
 		}
 		args = append(args, ep.Process)
 		args = append(args, ep.Args...)
-	case "run", "shell", "test":
+	case "shell", "test":
 		if ep.Process != "" {
 			return []string{}, fmt.Errorf("%s action doesn't support specifying a process", ep.Action)
 		}
 		if ep.Instance != "" {
 			return []string{}, fmt.Errorf("%s action doesn't support specifying an instance", ep.Action)
+		}
+		args = append(args, ep.Args...)
+	case "run":
+		if ep.Process != "" {
+			return []string{}, fmt.Errorf("%s action doesn't support specifying a process", ep.Action)
 		}
 		args = append(args, ep.Args...)
 	case "start":

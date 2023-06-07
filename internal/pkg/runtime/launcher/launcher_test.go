@@ -91,8 +91,8 @@ func TestExecParams_ActionArgs(t *testing.T) {
 			Image:    "image.sif",
 			Action:   "run",
 			Instance: "myinstance",
-			wantArgs: []string{},
-			wantErr:  true,
+			wantArgs: []string{"/.singularity.d/actions/run"},
+			wantErr:  false,
 		},
 		// shell
 		{

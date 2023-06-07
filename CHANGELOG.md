@@ -24,6 +24,8 @@
   overlay create` command. The overlay will be applied read-only, by default,
   when executing the OCI-SIF. To write changes to the container into the overlay,
   use the `--writable` flag.
+- Added a new `instance run` command that will execute the runscript when an
+  instance is initiated instead of executing the startscript.
 
 ### Bug Fixes
 
