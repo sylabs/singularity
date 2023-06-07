@@ -21,6 +21,7 @@ import (
 	cdispecs "github.com/container-orchestrated-devices/container-device-interface/specs-go"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/dirs"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"gotest.tools/v3/assert"
 )
@@ -1356,6 +1357,16 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 	}
 }
 
+func haveAllCommands(t *testing.T, cmds []string) bool {
+	for _, c := range cmds {
+		if _, err := exec.LookPath(c); err != nil {
+			return false
+		}
+	}
+
+	return true
+}
+
 // actionOciOverlayTeardown checks that OCI-mode overlays are correctly
 // unmounted even in root mode (i.e., when user namespaces are not involved).
 func (c actionTests) actionOciOverlayTeardown(t *testing.T) {
@@ -1412,21 +1423,79 @@ func countLines(path string) (int, error) {
 	return lines, nil
 }
 
-func haveAllCommands(t *testing.T, cmds []string) bool {
-	for _, c := range cmds {
-		if _, err := exec.LookPath(c); err != nil {
-			return false
-		}
-	}
+// Check that write permissions are indeed available for writable FUSE-mounted
+// extfs image overlays.
+func (c actionTests) actionOciOverlayExtfsPerms(t *testing.T) {
+	require.Command(t, "fuse2fs")
+	require.Command(t, "fuse-overlayfs")
+	require.Command(t, "fusermount")
 
-	return true
+	for _, profile := range e2e.OCIProfiles {
+		// First, create a writable extfs overlay with `singularity overlay create`.
+		tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "oci_overlay_extfs_perms-", "")
+		t.Cleanup(func() {
+			if !t.Failed() {
+				cleanup(t)
+			}
+		})
+
+		imgPath := filepath.Join(tmpDir, "extfs-perms-test.img")
+
+		c.env.RunSingularity(
+			t,
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("overlay"),
+			e2e.WithArgs("create", "--size", "64", imgPath),
+			e2e.ExpectExit(0),
+		)
+
+		// Now test whether we can write to, and subsequently read from, the image
+		// we created.
+		e2e.EnsureOCIArchive(t, c.env)
+		imageRef := "oci-archive:" + c.env.OCIArchivePath
+
+		tests := []struct {
+			name        string
+			args        []string
+			exitCode    int
+			wantOutputs []e2e.SingularityCmdResultOp
+		}{
+			{
+				name:     "FirstWrite",
+				args:     []string{"--overlay", imgPath, imageRef, "sh", "-c", "echo my_test_string > /my_test_file"},
+				exitCode: 0,
+			},
+			{
+				name:     "ThenRead",
+				args:     []string{"--overlay", imgPath, imageRef, "cat", "/my_test_file"},
+				exitCode: 0,
+				wantOutputs: []e2e.SingularityCmdResultOp{
+					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+				},
+			},
+		}
+		t.Run(profile.String(), func(t *testing.T) {
+			for _, tt := range tests {
+				c.env.RunSingularity(
+					t,
+					e2e.AsSubtest(tt.name),
+					e2e.WithProfile(profile),
+					e2e.WithCommand("exec"),
+					e2e.WithArgs(tt.args...),
+					e2e.ExpectExit(
+						tt.exitCode,
+						tt.wantOutputs...,
+					),
+				)
+			}
+		})
+	}
 }
 
 // Make sure --workdir and --scratch work together nicely even when workdir is a
 // relative path. Test needs to be run in non-parallel mode, because it changes
 // the current working directory of the host.
 func (c actionTests) ociRelWorkdirScratch(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
 	imageRef := "oci-archive:" + c.env.OCIArchivePath
 
 	testdir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "persistent-overlay-", "")

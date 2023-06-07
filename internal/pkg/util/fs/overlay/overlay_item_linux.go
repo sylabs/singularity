@@ -240,8 +240,13 @@ func (i *Item) mountWithFuse(fuseMountTool string, additionalArgs ...string) err
 		}
 	}()
 
-	args := make([]string, 0, len(additionalArgs)+2)
-	args = append(args, additionalArgs...)
+	args := make([]string, 0, len(additionalArgs)+4)
+
+	// TODO: Think through what makes sense for file ownership in FUSE-mounted
+	// images, vis a vis id-mappings and user-namespaces.
+	args = append(args, "-o")
+	args = append(args, "uid=0,gid=0")
+
 	args = append(args, i.SourcePath)
 	args = append(args, fuseMountDir)
 	sylog.Debugf("Executing FUSE mount command: %s %s", fuseMountCmd, strings.Join(args, " "))
