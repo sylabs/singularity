@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sylabs/singularity/internal/pkg/test/tool/dirs"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/image"
@@ -29,7 +30,7 @@ var (
 )
 
 func mkTempDirOrFatal(t *testing.T) string {
-	tmpDir, err := os.MkdirTemp("", "testoverlayitem-")
+	tmpDir, err := os.MkdirTemp(t.TempDir(), "testoverlayitem-")
 	if err != nil {
 		t.Fatalf("failed to create temporary dir: %s", err)
 	}
@@ -42,10 +43,18 @@ func mkTempDirOrFatal(t *testing.T) string {
 	return tmpDir
 }
 
+func mkTempOlDirOrFatal(t *testing.T) string {
+	tmpOlDir := mkTempDirOrFatal(t)
+	dirs.MkdirOrFatal(t, filepath.Join(tmpOlDir, "upper"), 0o777)
+	dirs.MkdirOrFatal(t, filepath.Join(tmpOlDir, "lower"), 0o777)
+
+	return tmpOlDir
+}
+
 func TestItemWritableField(t *testing.T) {
-	tmpDir := mkTempDirOrFatal(t)
-	rwOverlayStr := tmpDir
-	roOverlayStr := tmpDir + ":ro"
+	tmpOlDir := mkTempOlDirOrFatal(t)
+	rwOverlayStr := tmpOlDir
+	roOverlayStr := tmpOlDir + ":ro"
 
 	rwItem, err := NewItemFromString(rwOverlayStr)
 	if err != nil {
@@ -90,9 +99,9 @@ func verifyAutoParentDir(t *testing.T, item *Item) {
 }
 
 func TestAutofillParentDir(t *testing.T) {
-	tmpDir := mkTempDirOrFatal(t)
-	rwOverlayStr := tmpDir
-	roOverlayStr := tmpDir + ":ro"
+	tmpOlDir := mkTempOlDirOrFatal(t)
+	rwOverlayStr := tmpOlDir
+	roOverlayStr := tmpOlDir + ":ro"
 
 	rwItem, err := NewItemFromString(rwOverlayStr)
 	if err != nil {
@@ -117,9 +126,9 @@ func verifyExplicitParentDir(t *testing.T, item *Item, dir string) {
 }
 
 func TestExplicitParentDir(t *testing.T) {
-	tmpDir := mkTempDirOrFatal(t)
-	rwOverlayStr := tmpDir
-	roOverlayStr := tmpDir + ":ro"
+	tmpOlDir := mkTempOlDirOrFatal(t)
+	rwOverlayStr := tmpOlDir
+	roOverlayStr := tmpOlDir + ":ro"
 
 	rwItem, err := NewItemFromString(rwOverlayStr)
 	if err != nil {
@@ -192,8 +201,8 @@ func dirMountUnmount(t *testing.T, olStr string) {
 }
 
 func TestDirMounts(t *testing.T) {
-	dirMountUnmount(t, mkTempDirOrFatal(t)+":ro")
-	dirMountUnmount(t, mkTempDirOrFatal(t))
+	dirMountUnmount(t, mkTempOlDirOrFatal(t)+":ro")
+	dirMountUnmount(t, mkTempOlDirOrFatal(t))
 }
 
 func tryImageRO(t *testing.T, olStr string, typeCode int, typeStr, expectStr string) {
@@ -213,7 +222,7 @@ func tryImageRO(t *testing.T, olStr string, typeCode int, typeStr, expectStr str
 		item.Unmount()
 	})
 
-	testFileStagedPath := filepath.Join(item.StagingDir, testFilePath)
+	testFileStagedPath := filepath.Join(item.GetMountDir(), testFilePath)
 	checkForStringInOverlay(t, typeStr, testFileStagedPath, expectStr)
 }
 
@@ -226,7 +235,12 @@ func TestSquashfsRO(t *testing.T) {
 func TestExtfsRO(t *testing.T) {
 	require.Command(t, "fuse2fs")
 	require.Command(t, "fusermount")
-	tryImageRO(t, extfsImgPath+":ro", image.EXT3, "extfs", extfsTestString)
+	tmpDir := mkTempDirOrFatal(t)
+	readonlyExtfsImgPath := filepath.Join(tmpDir, "readonly-extfs.img")
+	if err := fs.CopyFile(extfsImgPath, readonlyExtfsImgPath, 0o444); err != nil {
+		t.Fatalf("could not copy %q to %q: %s", extfsImgPath, readonlyExtfsImgPath, err)
+	}
+	tryImageRO(t, readonlyExtfsImgPath+":ro", image.EXT3, "extfs", extfsTestString)
 }
 
 func TestExtfsRW(t *testing.T) {
@@ -259,9 +273,9 @@ func TestExtfsRW(t *testing.T) {
 		item.Unmount()
 	})
 
-	testFileStagedPath := filepath.Join(item.StagingDir, testFilePath)
+	testFileStagedPath := filepath.Join(item.GetMountDir(), testFilePath)
 	checkForStringInOverlay(t, "extfs", testFileStagedPath, extfsTestString)
-	otherTestFileStagedPath := testFileStagedPath + "_other"
+	otherTestFileStagedPath := item.GetMountDir() + "_other"
 	otherExtfsTestString := "another string"
 	err = os.WriteFile(otherTestFileStagedPath, []byte(otherExtfsTestString), 0o755)
 	if err != nil {

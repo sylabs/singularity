@@ -155,6 +155,18 @@ func (i *Item) Mount() error {
 	return nil
 }
 
+// GetMountDir returns the path to the directory that will actually be mounted
+// for this overlay. For squashfs overlays, this is equivalent to the
+// Item.StagingDir field. But for all other overlays, it is the "upper"
+// subdirectory of Item.StagingDir.
+func (i Item) GetMountDir() string {
+	if i.Type == image.SQUASHFS {
+		return i.StagingDir
+	}
+
+	return i.Upper()
+}
+
 // mountDir mounts directory-based Items. This involves bind-mounting followed
 // by remounting of the directory onto itself. This pattern of bind-mount
 // followed by remount allows application of more restrictive mount flags than
@@ -229,9 +241,9 @@ func (i *Item) mountWithFuse(fuseMountTool string, additionalArgs ...string) err
 	}()
 
 	args := make([]string, 0, len(additionalArgs)+2)
+	args = append(args, additionalArgs...)
 	args = append(args, i.SourcePath)
 	args = append(args, fuseMountDir)
-	args = append(args, additionalArgs...)
 	sylog.Debugf("Executing FUSE mount command: %s %s", fuseMountCmd, strings.Join(args, " "))
 	execCmd := exec.Command(fuseMountCmd, args...)
 	execCmd.Stderr = os.Stderr
@@ -290,10 +302,12 @@ func (i *Item) prepareWritableOverlay() error {
 		}
 		sylog.Debugf("Ensuring %q exists", i.Upper())
 		if err := EnsureOverlayDir(i.Upper(), true, 0o755); err != nil {
+			sylog.Errorf("Could not create overlay upper dir. If using an overlay image ensure it contains 'upper' and 'work' directories")
 			return fmt.Errorf("err encountered while preparing upper subdir of overlay dir %q: %w", i.Upper(), err)
 		}
 		sylog.Debugf("Ensuring %q exists", i.Work())
 		if err := EnsureOverlayDir(i.Work(), true, 0o700); err != nil {
+			sylog.Errorf("Could not create overlay work dir. If using an overlay image ensure it contains 'upper' and 'work' directories")
 			return fmt.Errorf("err encountered while preparing work subdir of overlay dir %q: %w", i.Work(), err)
 		}
 	default:

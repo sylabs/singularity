@@ -113,8 +113,10 @@ func (s Set) performFinalMount(rootFsDir string) error {
 	useKernelMount := unprivOls && !s.hasWritableExtfsImg()
 
 	if useKernelMount {
+		flags := uintptr(syscall.MS_NODEV)
 		sylog.Debugf("Mounting overlay (via syscall) with rootFsDir %q, options: %q", rootFsDir, options)
-		if err := syscall.Mount("overlay", rootFsDir, "overlay", syscall.MS_NODEV, options); err != nil {
+		sylog.Debugf("overlay mount flags: %#v", flags)
+		if err := syscall.Mount("overlay", rootFsDir, "overlay", flags, options); err != nil {
 			return fmt.Errorf("failed to mount %s: %w", rootFsDir, err)
 		}
 	} else {
@@ -148,7 +150,7 @@ func (s Set) performFinalMount(rootFsDir string) error {
 func (s Set) options(rootFsDir string) string {
 	// Create lowerdir argument of options string
 	lowerDirs := lo.Map(s.ReadonlyOverlays, func(o *Item, _ int) string {
-		return o.StagingDir
+		return o.GetMountDir()
 	})
 	lowerDirJoined := strings.Join(append(lowerDirs, rootFsDir), ":")
 

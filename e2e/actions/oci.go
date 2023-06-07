@@ -20,6 +20,7 @@ import (
 
 	cdispecs "github.com/container-orchestrated-devices/container-device-interface/specs-go"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/test/tool/dirs"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"gotest.tools/v3/assert"
 )
@@ -1048,13 +1049,14 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 			}
 		})
 
-		// Create a few read-only overlay subdirs under testDir
+		// Create a few writable overlay subdirs under testDir
 		for i := 0; i < 3; i++ {
 			dirName := fmt.Sprintf("my_rw_ol_dir%d", i)
 			fullPath := filepath.Join(testDir, dirName)
-			if err = os.Mkdir(fullPath, 0o755); err != nil {
-				t.Fatal(err)
-			}
+			dirs.MkdirOrFatal(t, fullPath, 0o755)
+			upperPath := filepath.Join(fullPath, "upper")
+			dirs.MkdirOrFatal(t, upperPath, 0o777)
+			dirs.MkdirOrFatal(t, filepath.Join(fullPath, "work"), 0o777)
 			t.Cleanup(func() {
 				if !t.Failed() {
 					os.RemoveAll(fullPath)
@@ -1066,26 +1068,35 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 		for i := 0; i < 3; i++ {
 			dirName := fmt.Sprintf("my_ro_ol_dir%d", i)
 			fullPath := filepath.Join(testDir, dirName)
-			if err = os.Mkdir(fullPath, 0o755); err != nil {
-				t.Fatal(err)
-			}
+			dirs.MkdirOrFatal(t, fullPath, 0o755)
+			upperPath := filepath.Join(fullPath, "upper")
+			dirs.MkdirOrFatal(t, upperPath, 0o777)
+			dirs.MkdirOrFatal(t, filepath.Join(fullPath, "work"), 0o777)
 			t.Cleanup(func() {
 				if !t.Failed() {
 					os.RemoveAll(fullPath)
 				}
 			})
 			if err = os.WriteFile(
-				filepath.Join(fullPath, fmt.Sprintf("testfile.%d", i)),
+				filepath.Join(upperPath, fmt.Sprintf("testfile.%d", i)),
 				[]byte(fmt.Sprintf("test_string_%d\n", i)),
 				0o644); err != nil {
 				t.Fatal(err)
 			}
 			if err = os.WriteFile(
-				filepath.Join(fullPath, "maskable_testfile"),
+				filepath.Join(upperPath, "maskable_testfile"),
 				[]byte(fmt.Sprintf("maskable_string_%d\n", i)),
 				0o644); err != nil {
 				t.Fatal(err)
 			}
+		}
+
+		// Create a copy of the extfs test image to be used for testing readonly
+		// extfs image overlays
+		readonlyExtfsImgPath := filepath.Join(testDir, "readonly-extfs.img")
+		err = fs.CopyFile(extfsImgPath, readonlyExtfsImgPath, 0o444)
+		if err != nil {
+			t.Fatalf("could not copy %q to %q: %s", extfsImgPath, readonlyExtfsImgPath, err)
 		}
 
 		// Create a copy of the extfs test image to be used for testing writable
@@ -1111,6 +1122,14 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 			{
 				name:     "ExistRWDirRevisit",
 				args:     []string{"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"), imageRef, "cat", "/my_test_file"},
+				exitCode: 0,
+				wantOutputs: []e2e.SingularityCmdResultOp{
+					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+				},
+			},
+			{
+				name:     "ExistRWDirRevisitAsRO",
+				args:     []string{"--overlay", filepath.Join(testDir, "my_rw_ol_dir0:ro"), imageRef, "cat", "/my_test_file"},
 				exitCode: 0,
 				wantOutputs: []e2e.SingularityCmdResultOp{
 					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
@@ -1149,7 +1168,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 				name: "AllTypesAtOnce",
 				args: []string{
 					"--overlay", filepath.Join(testDir, "my_ro_ol_dir2:ro"),
-					"--overlay", extfsImgPath + ":ro",
+					"--overlay", readonlyExtfsImgPath + ":ro",
 					"--overlay", squashfsImgPath,
 					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
 					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
@@ -1184,7 +1203,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 				name: "ExtfsAndDirs",
 				args: []string{
 					"--overlay", filepath.Join(testDir, "my_ro_ol_dir2:ro"),
-					"--overlay", extfsImgPath + ":ro",
+					"--overlay", readonlyExtfsImgPath + ":ro",
 					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
 					"--overlay", filepath.Join(testDir, "my_rw_ol_dir0"),
 					imageRef, "cat", "/testfile.1", "/maskable_testfile", filepath.Join("/", imgTestFilePath),
@@ -1261,6 +1280,15 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 				},
 			},
 			{
+				name:         "WritableExtfsRevisitAsRO",
+				args:         []string{"--overlay", writableExtfsImgPath + ":ro", imageRef, "cat", "/my_test_file"},
+				requiredCmds: []string{"fuse2fs", "fuse-overlayfs", "fusermount"},
+				exitCode:     0,
+				wantOutputs: []e2e.SingularityCmdResultOp{
+					e2e.ExpectOutput(e2e.ExactMatch, "my_test_string"),
+				},
+			},
+			{
 				name: "WritableExtfsWithDirs",
 				args: []string{
 					"--overlay", filepath.Join(testDir, "my_ro_ol_dir0:ro"),
@@ -1278,7 +1306,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 				name: "WritableExtfsWithMix",
 				args: []string{
 					"--overlay", filepath.Join(testDir, "my_ro_ol_dir0:ro"),
-					"--overlay", extfsImgPath + ":ro",
+					"--overlay", readonlyExtfsImgPath + ":ro",
 					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
 					"--overlay", writableExtfsImgPath,
 					imageRef, "cat", "/my_test_file",
@@ -1293,7 +1321,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 				name: "WritableExtfsWithAll",
 				args: []string{
 					"--overlay", filepath.Join(testDir, "my_ro_ol_dir0:ro"),
-					"--overlay", extfsImgPath + ":ro",
+					"--overlay", readonlyExtfsImgPath + ":ro",
 					"--overlay", filepath.Join(testDir, "my_ro_ol_dir1:ro"),
 					"--overlay", writableExtfsImgPath,
 					imageRef, "cat", "/my_test_file",
@@ -1346,6 +1374,9 @@ func (c actionTests) actionOciOverlayTeardown(t *testing.T) {
 			cleanup(t)
 		}
 	})
+
+	dirs.MkdirOrFatal(t, filepath.Join(tmpDir, "upper"), 0o777)
+	dirs.MkdirOrFatal(t, filepath.Join(tmpDir, "work"), 0o777)
 
 	c.env.RunSingularity(
 		t,

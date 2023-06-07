@@ -57,8 +57,8 @@ func TestAllTypesAtOnce(t *testing.T) {
 	wrapOverlayTest(func(t *testing.T) {
 		s := Set{}
 
-		tmpRODir := mkTempDirOrFatal(t)
-		addROItemOrFatal(t, &s, tmpRODir+":ro")
+		tmpRoOlDir := mkTempOlDirOrFatal(t)
+		addROItemOrFatal(t, &s, tmpRoOlDir+":ro")
 
 		squashfsSupported := false
 		if _, err := exec.LookPath("squashfs"); err == nil {
@@ -69,13 +69,18 @@ func TestAllTypesAtOnce(t *testing.T) {
 		extfsSupported := false
 		if _, err := exec.LookPath("fuse2fs"); err == nil {
 			extfsSupported = true
-			addROItemOrFatal(t, &s, extfsImgPath+":ro")
+			tmpDir := mkTempDirOrFatal(t)
+			readonlyExtfsImgPath := filepath.Join(tmpDir, "readonly-extfs.img")
+			if err := fs.CopyFile(extfsImgPath, readonlyExtfsImgPath, 0o444); err != nil {
+				t.Fatalf("could not copy %q to %q: %s", extfsImgPath, readonlyExtfsImgPath, err)
+			}
+			addROItemOrFatal(t, &s, readonlyExtfsImgPath+":ro")
 		}
 
-		tmpRWDir := mkTempDirOrFatal(t)
-		i, err := NewItemFromString(tmpRWDir)
+		tmpRwOlDir := mkTempOlDirOrFatal(t)
+		i, err := NewItemFromString(tmpRwOlDir)
 		if err != nil {
-			t.Fatalf("failed to create writable-dir overlay item (%q): %s", tmpRWDir, err)
+			t.Fatalf("failed to create writable-dir overlay item (%q): %s", tmpRwOlDir, err)
 		}
 		s.WritableOverlay = i
 
@@ -116,10 +121,10 @@ func TestAllTypesAtOnce(t *testing.T) {
 
 func TestPersistentWriteToDir(t *testing.T) {
 	wrapOverlayTest(func(t *testing.T) {
-		tmpRWDir := mkTempDirOrFatal(t)
-		i, err := NewItemFromString(tmpRWDir)
+		tmpRwOlDir := mkTempOlDirOrFatal(t)
+		i, err := NewItemFromString(tmpRwOlDir)
 		if err != nil {
-			t.Fatalf("failed to create writable-dir overlay item (%q): %s", tmpRWDir, err)
+			t.Fatalf("failed to create writable-dir overlay item (%q): %s", tmpRwOlDir, err)
 		}
 		s := Set{WritableOverlay: i}
 
@@ -206,11 +211,11 @@ func TestDuplicateItemsInSet(t *testing.T) {
 
 		// First, test mounting of an overlay set with only readonly items, one of
 		// which is a duplicate of another.
-		addROItemOrFatal(t, &s, mkTempDirOrFatal(t)+":ro")
-		roI2 := addROItemOrFatal(t, &s, mkTempDirOrFatal(t)+":ro")
-		addROItemOrFatal(t, &s, mkTempDirOrFatal(t)+":ro")
+		addROItemOrFatal(t, &s, mkTempOlDirOrFatal(t)+":ro")
+		roI2 := addROItemOrFatal(t, &s, mkTempOlDirOrFatal(t)+":ro")
+		addROItemOrFatal(t, &s, mkTempOlDirOrFatal(t)+":ro")
 		addROItemOrFatal(t, &s, roI2.SourcePath+":ro")
-		addROItemOrFatal(t, &s, mkTempDirOrFatal(t)+":ro")
+		addROItemOrFatal(t, &s, mkTempOlDirOrFatal(t)+":ro")
 
 		rootfsDir = mkTempDirOrFatal(t)
 		if err := s.Mount(rootfsDir); err == nil {
@@ -222,10 +227,10 @@ func TestDuplicateItemsInSet(t *testing.T) {
 
 		// Next, test mounting of an overlay set with a writable item as well as
 		// several readonly items, one of which is a duplicate of another.
-		tmpRWDir := mkTempDirOrFatal(t)
-		rwI, err = NewItemFromString(tmpRWDir)
+		tmpRwOlDir := mkTempOlDirOrFatal(t)
+		rwI, err = NewItemFromString(tmpRwOlDir)
 		if err != nil {
-			t.Fatalf("failed to create writable-dir overlay item (%q): %s", tmpRWDir, err)
+			t.Fatalf("failed to create writable-dir overlay item (%q): %s", tmpRwOlDir, err)
 		}
 		s.WritableOverlay = rwI
 
