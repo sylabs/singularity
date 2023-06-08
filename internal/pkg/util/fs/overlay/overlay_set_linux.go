@@ -114,8 +114,7 @@ func (s Set) performFinalMount(rootFsDir string) error {
 
 	if useKernelMount {
 		flags := uintptr(syscall.MS_NODEV)
-		sylog.Debugf("Mounting overlay (via syscall) with rootFsDir %q, options: %q", rootFsDir, options)
-		sylog.Debugf("overlay mount flags: %#v", flags)
+		sylog.Debugf("Mounting overlay (via syscall) with rootFsDir %q, options: %q, mount flags: %#v", rootFsDir, options, flags)
 		if err := syscall.Mount("overlay", rootFsDir, "overlay", flags, options); err != nil {
 			return fmt.Errorf("failed to mount %s: %w", rootFsDir, err)
 		}

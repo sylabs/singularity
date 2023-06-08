@@ -1496,6 +1496,7 @@ func (c actionTests) actionOciOverlayExtfsPerms(t *testing.T) {
 // relative path. Test needs to be run in non-parallel mode, because it changes
 // the current working directory of the host.
 func (c actionTests) ociRelWorkdirScratch(t *testing.T) {
+	e2e.EnsureOCIArchive(t, c.env)
 	imageRef := "oci-archive:" + c.env.OCIArchivePath
 
 	testdir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "persistent-overlay-", "")

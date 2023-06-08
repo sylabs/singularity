@@ -14,6 +14,7 @@ import (
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -160,11 +161,19 @@ func (i *Item) Mount() error {
 // Item.StagingDir field. But for all other overlays, it is the "upper"
 // subdirectory of Item.StagingDir.
 func (i Item) GetMountDir() string {
-	if i.Type == image.SQUASHFS {
+	switch i.Type {
+	case image.SQUASHFS:
 		return i.StagingDir
-	}
 
-	return i.Upper()
+	case image.SANDBOX:
+		if i.Writable || fs.IsDir(i.Upper()) {
+			return i.Upper()
+		}
+		return i.StagingDir
+
+	default:
+		return i.Upper()
+	}
 }
 
 // mountDir mounts directory-based Items. This involves bind-mounting followed

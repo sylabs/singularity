@@ -16,7 +16,6 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/dirs"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
 )
 
@@ -344,9 +343,6 @@ func (c ctx) issue1670(t *testing.T) {
 				cleanup(t)
 			}
 		})
-
-		dirs.MkdirOrFatal(t, filepath.Join(tmpDir, "upper"), 0o777)
-		dirs.MkdirOrFatal(t, filepath.Join(tmpDir, "work"), 0o777)
 
 		c.env.RunSingularity(
 			t,

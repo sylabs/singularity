@@ -45,7 +45,7 @@ const (
 	panfs  int64 = 0xAAD7AAEA
 )
 
-var incompatibleFs = map[int64]filesys{
+var incompatibleFilesys = map[int64]filesys{
 	// NFS filesystem
 	nfs: {
 		name:       "NFS",
@@ -86,7 +86,7 @@ func check(path string, d dir) error {
 		return fmt.Errorf("could not retrieve underlying filesystem information for %s: %w", path, err)
 	}
 
-	fs, ok := incompatibleFs[int64(stfs.Type)]
+	fs, ok := incompatibleFilesys[int64(stfs.Type)]
 	if !ok || (ok && fs.overlayDir&d == 0) {
 		return nil
 	}
