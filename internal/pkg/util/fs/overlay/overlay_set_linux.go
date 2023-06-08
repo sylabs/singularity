@@ -14,6 +14,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/sylabs/singularity/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
@@ -66,7 +67,8 @@ func (s Set) Unmount(rootFsDir string) error {
 		return fmt.Errorf("while checking for unprivileged overlay support in kernel: %w", err)
 	}
 
-	if unprivOls {
+	useKernelMount := unprivOls && !s.hasWritableExtfsImg()
+	if useKernelMount {
 		err = DetachMount(rootFsDir)
 	} else {
 		err = UnmountWithFuse(rootFsDir)
@@ -108,22 +110,25 @@ func (s Set) performFinalMount(rootFsDir string) error {
 		return fmt.Errorf("while checking for unprivileged overlay support in kernel: %w", err)
 	}
 
-	if unprivOls {
-		sylog.Debugf("Mounting overlay (via syscall) with rootFsDir %q, options: %q", rootFsDir, options)
-		if err := syscall.Mount("overlay", rootFsDir, "overlay", syscall.MS_NODEV, options); err != nil {
+	useKernelMount := unprivOls && !s.hasWritableExtfsImg()
+
+	if useKernelMount {
+		flags := uintptr(syscall.MS_NODEV)
+		sylog.Debugf("Mounting overlay (via syscall) with rootFsDir %q, options: %q, mount flags: %#v", rootFsDir, options, flags)
+		if err := syscall.Mount("overlay", rootFsDir, "overlay", flags, options); err != nil {
 			return fmt.Errorf("failed to mount %s: %w", rootFsDir, err)
 		}
 	} else {
 		fuseOlFsCmd, err := bin.FindBin("fuse-overlayfs")
 		if err != nil {
-			return fmt.Errorf("kernel does not support unprivileged overlays, and fuse-overlayfs not available: %w", err)
+			return fmt.Errorf("'fuse-overlayfs' must be used for this overlay specification, but is not available: %w", err)
 		}
 
 		// Even though fusermount is not needed for this step, we shouldn't perform
 		// the mount unless we have the necessary tools to eventually unmount it
 		_, err = bin.FindBin("fusermount")
 		if err != nil {
-			return fmt.Errorf("kernel does not support unprivileged overlays, and using fuse-overlayfs fallback requires fusermount to be installed: %w", err)
+			return fmt.Errorf("'fuse-overlayfs' must be used for this overlay specification, and this also requires 'fusermount' to be installed: %w", err)
 		}
 
 		sylog.Debugf("Mounting overlay (via fuse-overlayfs) with rootFsDir %q, options: %q", rootFsDir, options)
@@ -144,7 +149,7 @@ func (s Set) performFinalMount(rootFsDir string) error {
 func (s Set) options(rootFsDir string) string {
 	// Create lowerdir argument of options string
 	lowerDirs := lo.Map(s.ReadonlyOverlays, func(o *Item, _ int) string {
-		return o.StagingDir
+		return o.GetMountDir()
 	})
 	lowerDirJoined := strings.Join(append(lowerDirs, rootFsDir), ":")
 
@@ -154,6 +159,14 @@ func (s Set) options(rootFsDir string) string {
 
 	return fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s",
 		lowerDirJoined, s.WritableOverlay.Upper(), s.WritableOverlay.Work())
+}
+
+func (s Set) hasWritableExtfsImg() bool {
+	if (s.WritableOverlay != nil) && (s.WritableOverlay.Type == image.EXT3) {
+		return true
+	}
+
+	return false
 }
 
 // detachIndividualMounts detaches the bind mounts & remounts created by

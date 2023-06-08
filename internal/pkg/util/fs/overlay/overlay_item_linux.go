@@ -14,6 +14,7 @@ import (
 	"syscall"
 
 	"github.com/sylabs/singularity/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -128,24 +129,50 @@ func (i *Item) GetParentDir() (string, error) {
 // this method does not mount the assembled overlay itself. That happens in
 // Set.Mount().
 func (i *Item) Mount() error {
-	if i.Writable {
-		if err := i.prepareWritableOverlay(); err != nil {
-			return err
-		}
-	}
-
+	var err error
 	switch i.Type {
 	case image.SANDBOX:
-		return i.mountDir()
+		err = i.mountDir()
 	case image.SQUASHFS:
-		return i.mountWithFuse("squashfuse")
+		err = i.mountWithFuse("squashfuse")
 	case image.EXT3:
 		if i.Writable {
-			return fmt.Errorf("mounting writable extfs images is not currently supported, please use :ro suffix on image specification for read-only mode")
+			err = i.mountWithFuse("fuse2fs", "-o", "rw")
+		} else {
+			err = i.mountWithFuse("fuse2fs", "-o", "ro")
 		}
-		return i.mountWithFuse("fuse2fs", "-o", "ro")
 	default:
 		return fmt.Errorf("internal error: unrecognized image type in overlay.Item.Mount() (type: %v)", i.Type)
+	}
+
+	if err != nil {
+		return err
+	}
+
+	if i.Writable {
+		return i.prepareWritableOverlay()
+	}
+
+	return nil
+}
+
+// GetMountDir returns the path to the directory that will actually be mounted
+// for this overlay. For squashfs overlays, this is equivalent to the
+// Item.StagingDir field. But for all other overlays, it is the "upper"
+// subdirectory of Item.StagingDir.
+func (i Item) GetMountDir() string {
+	switch i.Type {
+	case image.SQUASHFS:
+		return i.StagingDir
+
+	case image.SANDBOX:
+		if i.Writable || fs.IsDir(i.Upper()) {
+			return i.Upper()
+		}
+		return i.StagingDir
+
+	default:
+		return i.Upper()
 	}
 }
 
@@ -222,10 +249,15 @@ func (i *Item) mountWithFuse(fuseMountTool string, additionalArgs ...string) err
 		}
 	}()
 
-	args := make([]string, 0, len(additionalArgs)+2)
+	args := make([]string, 0, len(additionalArgs)+4)
+
+	// TODO: Think through what makes sense for file ownership in FUSE-mounted
+	// images, vis a vis id-mappings and user-namespaces.
+	args = append(args, "-o")
+	args = append(args, "uid=0,gid=0")
+
 	args = append(args, i.SourcePath)
 	args = append(args, fuseMountDir)
-	args = append(args, additionalArgs...)
 	sylog.Debugf("Executing FUSE mount command: %s %s", fuseMountCmd, strings.Join(args, " "))
 	execCmd := exec.Command(fuseMountCmd, args...)
 	execCmd.Stderr = os.Stderr
@@ -277,15 +309,19 @@ func (i *Item) prepareWritableOverlay() error {
 	switch i.Type {
 	case image.SANDBOX:
 		i.StagingDir = i.SourcePath
+		fallthrough
+	case image.EXT3:
 		if err := EnsureOverlayDir(i.StagingDir, true, 0o755); err != nil {
 			return err
 		}
 		sylog.Debugf("Ensuring %q exists", i.Upper())
 		if err := EnsureOverlayDir(i.Upper(), true, 0o755); err != nil {
+			sylog.Errorf("Could not create overlay upper dir. If using an overlay image ensure it contains 'upper' and 'work' directories")
 			return fmt.Errorf("err encountered while preparing upper subdir of overlay dir %q: %w", i.Upper(), err)
 		}
 		sylog.Debugf("Ensuring %q exists", i.Work())
 		if err := EnsureOverlayDir(i.Work(), true, 0o700); err != nil {
+			sylog.Errorf("Could not create overlay work dir. If using an overlay image ensure it contains 'upper' and 'work' directories")
 			return fmt.Errorf("err encountered while preparing work subdir of overlay dir %q: %w", i.Work(), err)
 		}
 	default:
