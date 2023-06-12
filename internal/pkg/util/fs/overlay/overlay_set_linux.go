@@ -118,7 +118,7 @@ func (s Set) performFinalMount(rootFsDir string) error {
 		options := options + ",xino=on"
 		sylog.Debugf("Mounting overlay (via syscall) with rootFsDir %q, options: %q, mount flags: %#v", rootFsDir, options, flags)
 		err := syscall.Mount("overlay", rootFsDir, "overlay", flags, options)
-		if err != nil && err == syscall.EINVAL {
+		if err == syscall.EINVAL {
 			options = xinoBackoffOptions
 			sylog.Debugf("mounting with 'xino=on' failed, trying again with options: %q", options)
 			err = syscall.Mount("overlay", rootFsDir, "overlay", flags, options)
