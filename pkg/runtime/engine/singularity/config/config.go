@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -127,6 +127,7 @@ type JSONConfig struct {
 	XdgRuntimeDir         string            `json:"xdgRuntimeDir,omitempty"`
 	DbusSessionBusAddress string            `json:"dbusSessionBusAddress,omitempty"`
 	NoEval                bool              `json:"noEval,omitempty"`
+	NoSetgroups           bool              `json:"noSetgroups,omitempty"`
 }
 
 // SetImage sets the container image path to be used by EngineConfig.JSON.
@@ -833,4 +834,16 @@ func (e *EngineConfig) SetNoEval(noEval bool) {
 // runscripts generated from OCI containers CMD/ENTRYPOINT.
 func (e *EngineConfig) GetNoEval() bool {
 	return e.JSON.NoEval
+}
+
+// SetNoSetgroups sets whether to skip the setgroups call for a container in a
+// user namespace.
+func (e *EngineConfig) SetNoSetgroups(noSetgroups bool) {
+	e.JSON.NoSetgroups = noSetgroups
+}
+
+// GetNoSetgroups gets whether to skip the setgroups call for a container in a
+// user namespace.
+func (e *EngineConfig) GetNoSetgroups() bool {
+	return e.JSON.NoSetgroups
 }

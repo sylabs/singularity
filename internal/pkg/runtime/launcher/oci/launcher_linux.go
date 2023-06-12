@@ -177,6 +177,10 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "SIFFUSE")
 	}
 
+	if lo.NoSetgroups {
+		badOpt = append(badOpt, "NoSetgroups")
+	}
+
 	if len(badOpt) > 0 {
 		return fmt.Errorf("%w: %s", ErrUnsupportedOption, strings.Join(badOpt, ","))
 	}
