@@ -130,7 +130,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 
 	uid := e.EngineConfig.GetTargetUID()
 	gids := e.EngineConfig.GetTargetGID()
-	useTargetIDs := false
+	useTargetIDs := e.EngineConfig.GetFakeroot()
 
 	if os.Getuid() == 0 && (uid != 0 || len(gids) > 0) {
 		starterConfig.SetTargetUID(uid)
@@ -1437,7 +1437,7 @@ func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, 
 func (e *EngineOperations) setUserInfo(useTargetIDs bool) {
 	var gids []int
 
-	pw, err := user.Current()
+	pw, err := user.CurrentOriginal()
 	if err != nil {
 		return
 	}

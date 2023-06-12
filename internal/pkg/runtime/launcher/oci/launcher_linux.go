@@ -388,7 +388,7 @@ func (l *Launcher) updatePasswdGroup(rootfs string, uid, gid uint32) error {
 
 	if l.singularityConf.ConfigPasswd {
 		sylog.Debugf("Updating passwd file: %s", containerPasswd)
-		content, err := files.Passwd(containerPasswd, l.cfg.HomeDir, int(uid), nil)
+		content, err := files.Passwd(containerPasswd, l.homeDest, int(uid), nil)
 		if err != nil {
 			sylog.Warningf("%s", err)
 		} else if err := os.WriteFile(containerPasswd, content, 0o755); err != nil {

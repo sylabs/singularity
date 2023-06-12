@@ -1459,9 +1459,9 @@ func (c *container) getHomePaths() (source string, dest string, err error) {
 	} else {
 		source = c.engine.EngineConfig.JSON.UserInfo.Home
 		if source != "" {
-			if c.engine.EngineConfig.GetFakeroot() || os.Getuid() == 0 {
-				// Mount user home directory onto /root for
-				//  any root-mapped namespace
+			if c.engine.EngineConfig.GetFakeroot() {
+				// Mount user home directory onto /root for any root-mapped
+				// namespace
 				dest = "/root"
 			} else {
 				dest = source

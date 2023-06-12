@@ -75,13 +75,17 @@ func Passwd(path string, home string, uid int, customLookup UserGroupLookup) (co
 			return content, fmt.Errorf("failed to parse this /etc/passwd line in container: %#v (%s)", line, err)
 		}
 		if entry.Uid() == uid {
-			userExists = true
 			// If user already exists in container, rebuild their passwd info preserving their original shell value
-			lines[i] = makePasswdLine(pwInfo.Name, pwInfo.UID, pwInfo.GID, pwInfo.Gecos, homeDir, entry.Shell())
+			userExists = true
+			origLine := lines[i]
+			revisedLine := makePasswdLine(pwInfo.Name, pwInfo.UID, pwInfo.GID, pwInfo.Gecos, homeDir, entry.Shell())
+			sylog.Debugf("replacing line in passwd file: %q instead of %q", revisedLine, origLine)
+			lines[i] = revisedLine
 			break
 		}
 	}
 	if !userExists {
+		sylog.Debugf("appending new line to passwd file: %q", userInfo)
 		lines = append(lines, userInfo)
 	}
 

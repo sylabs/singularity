@@ -28,6 +28,9 @@
   inheritable / ambient capabilites, matching other OCI runtimes.
 - In OCI-mode, a container run as root, or with `--fakeroot` has OCI default
   effective/permitted capabilities.
+- Lookup and store user/group information in stage one prior to entering any
+  namespaces to fix issue with winbind not correctly lookup user/group
+  information when using user namespace.
 
 ### New Features & Functionality
 
@@ -226,9 +229,6 @@
 - Instances are started in a cgroup, by default, when run as root or when
   unified cgroups v2 with systemd as manager is configured. This allows
   `singularity instance stats` to be supported by default when possible.
-- Lookup and store user/group information in stage one prior to entering any
-  namespaces to fix issue with winbind not correctly lookup user/group information
-  when using user namespace.
 
 ### New features / functionalities
 
