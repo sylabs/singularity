@@ -1,4 +1,6 @@
 // Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -171,7 +173,7 @@ func calculateMemoryUsage(stats *libcgroups.MemoryStats) (float64, float64, floa
 		in := &syscall.Sysinfo_t{}
 		err := syscall.Sysinfo(in)
 		if err == nil {
-			memLimit = in.Totalram * uint64(in.Unit)
+			memLimit = uint64(in.Totalram) * uint64(in.Unit)
 		}
 	}
 	if memLimit != 0 {
