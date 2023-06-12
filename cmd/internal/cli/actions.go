@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -390,6 +390,7 @@ func launchContainer(cmd *cobra.Command, image string, containerCmd string, cont
 		launcher.OptShellPath(shellPath),
 		launcher.OptPwdPath(pwdPath),
 		launcher.OptFakeroot(isFakeroot),
+		launcher.OptNoSetgroups(noSetgroups),
 		launcher.OptBoot(isBoot),
 		launcher.OptNoInit(noInit),
 		launcher.OptContain(isContained),

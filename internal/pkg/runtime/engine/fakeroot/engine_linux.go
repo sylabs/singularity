@@ -137,6 +137,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 
 	starterConfig.SetHybridWorkflow(true)
 	starterConfig.SetAllowSetgroups(true)
+	starterConfig.SetNoSetgroups(e.EngineConfig.NoSetgroups)
 
 	starterConfig.SetTargetUID(0)
 	starterConfig.SetTargetGID([]int{0})
