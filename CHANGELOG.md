@@ -2,6 +2,11 @@
 
 ## Changes Since Last Release
 
+### Changed defaults / behaviours
+
+- Add `xino=on` mount option for writable kernel overlay mount points to fix
+  inode numbers consistency after kernel cache flush.
+
 ### New Features & Functionality
 
 - The `tap` CNI plugin, new to github.com/containernetworking/plugins v1.3.0,
