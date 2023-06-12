@@ -114,9 +114,17 @@ func (s Set) performFinalMount(rootFsDir string) error {
 
 	if useKernelMount {
 		flags := uintptr(syscall.MS_NODEV)
+		xinoBackoffOptions := options
+		options := options + ",xino=on"
 		sylog.Debugf("Mounting overlay (via syscall) with rootFsDir %q, options: %q, mount flags: %#v", rootFsDir, options, flags)
-		if err := syscall.Mount("overlay", rootFsDir, "overlay", flags, options); err != nil {
-			return fmt.Errorf("failed to mount %s: %w", rootFsDir, err)
+		err := syscall.Mount("overlay", rootFsDir, "overlay", flags, options)
+		if err == syscall.EINVAL {
+			options = xinoBackoffOptions
+			sylog.Debugf("mounting with 'xino=on' failed, trying again with options: %q", options)
+			err = syscall.Mount("overlay", rootFsDir, "overlay", flags, options)
+		}
+		if err != nil {
+			return fmt.Errorf("failed to mount overlay at %s: %w", rootFsDir, err)
 		}
 	} else {
 		fuseOlFsCmd, err := bin.FindBin("fuse-overlayfs")
