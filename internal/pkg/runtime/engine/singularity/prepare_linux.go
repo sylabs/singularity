@@ -598,6 +598,7 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 
 		starterConfig.SetHybridWorkflow(true)
 		starterConfig.SetAllowSetgroups(true)
+		starterConfig.SetNoSetgroups(e.EngineConfig.GetNoSetgroups())
 
 		starterConfig.SetTargetUID(0)
 		starterConfig.SetTargetGID([]int{0})

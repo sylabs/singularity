@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018-2021, Sylabs, Inc. All rights reserved.
+  Copyright (c) 2018-2023, Sylabs, Inc. All rights reserved.
 
   This software is licensed under a 3-clause BSD license.  Please
   consult LICENSE.md file distributed with the sources of this project regarding
@@ -311,9 +311,13 @@ static void apply_privileges(struct privileges *privileges, struct capabilities 
                 fatalf("Failed to set GID %d: %s\n", targetGID, strerror(errno));
             }
 
-            debugf("Set %d additional group IDs\n", privileges->numGID);
-            if ( setgroups(privileges->numGID, privileges->targetGID) < 0 ) {
-                fatalf("Failed to set additional groups: %s\n", strerror(errno));
+            if ( privileges->noSetgroups ) {
+                debugf("Skipping setgroups due to configuration.\n");
+            } else {
+                debugf("Set %d additional group IDs\n", privileges->numGID);
+                if ( setgroups(privileges->numGID, privileges->targetGID) < 0 ) {
+                    fatalf("Failed to set additional groups: %s\n", strerror(errno));
+                }
             }
         }
     }

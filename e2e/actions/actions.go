@@ -2552,6 +2552,26 @@ func countSquashfuseMounts(t *testing.T) int {
 	return count
 }
 
+// actionNoSetgoups checks that supplementary groups are visible, mapped to
+// nobody, in the container with --fakeroot --no-setgroups.
+func (c actionTests) actionNoSetgroups(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	// Inside the e2e-tests we will be a member of our user group + single supplementary group.
+	// With `--fakeroot --no-setgroups` we should see these map to:
+	//    root nobody
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.FakerootProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--no-setgroups", c.env.ImagePath, "sh", "-c", "groups"),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ExactMatch, "root nobody"),
+		),
+	)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := actionTests{
@@ -2592,6 +2612,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"fuse mount":                c.fuseMount,                // test fusemount option
 		"bind image":                c.bindImage,                // test bind image with --bind and --mount
 		"no-mount":                  c.actionNoMount,            // test --no-mount
+		"no-setgroups":              c.actionNoSetgroups,        // test --no-setgroups
 		"compat":                    np(c.actionCompat),         // test --compat
 		"umask":                     np(c.actionUmask),          // test umask propagation
 		"invalidRemote":             np(c.invalidRemote),        // GHSA-5mv9-q7fq-9394

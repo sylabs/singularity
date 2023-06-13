@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -80,10 +80,11 @@ func fakerootExec(cmdArgs []string) {
 	os.Setenv("_CONTAINERS_ROOTLESS_UID", strconv.Itoa(os.Getuid()))
 
 	engineConfig := &fakerootConfig.EngineConfig{
-		Args:     args,
-		Envs:     os.Environ(),
-		Home:     user.Dir,
-		BuildEnv: true,
+		Args:        args,
+		Envs:        os.Environ(),
+		Home:        user.Dir,
+		BuildEnv:    true,
+		NoSetgroups: buildArgs.noSetgroups,
 	}
 
 	cfg := &config.Common{

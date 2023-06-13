@@ -59,6 +59,12 @@
   `SINGULARITY_CONFIGDIR` environment variable.
 - If kernel does not support unprivileged overlays, OCI-mode will attempt to use
   `fuse-overlayfs` and `fusermount` for overlay mounting and unmounting.
+- Added `--no-setgroups` flag for `--fakeroot` builds and run/shell/exec. This
+  prevents the `setgroups` syscall being used on the container process in the
+  fakeroot user namespace. Maintains access from within the user namespace to
+  files on the host that have permissions based on supplementary group
+  membership. Note that supplementary groups are mapped to `nobody` in the
+  container, and `chgrp`, `newgrp`, etc. cannot be used.
 
 ### Bug Fixes
 
