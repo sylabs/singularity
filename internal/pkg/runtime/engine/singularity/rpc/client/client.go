@@ -147,16 +147,6 @@ func (t *RPC) SendFuseFd(socket int, fds []int) error {
 	return err
 }
 
-// OpenSendFuseFd calls the OpenSendFuseFd RPC using the supplied arguments.
-func (t *RPC) OpenSendFuseFd(socket int) (int, error) {
-	arguments := &args.OpenSendFuseFdArgs{
-		Socket: socket,
-	}
-	var reply int
-	err := t.Client.Call(t.Name+".OpenSendFuseFd", arguments, &reply)
-	return reply, err
-}
-
 // Symlink calls the mkdir RPC using the supplied arguments.
 func (t *RPC) Symlink(old string, new string) error {
 	arguments := &args.SymlinkArgs{

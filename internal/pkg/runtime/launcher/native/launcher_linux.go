@@ -39,7 +39,6 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	imgutil "github.com/sylabs/singularity/pkg/image"
 	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
-	singularitycallback "github.com/sylabs/singularity/pkg/plugin/callback/runtime/engine/singularity"
 	"github.com/sylabs/singularity/pkg/runtime/engine/config"
 	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -983,52 +982,29 @@ func (l *Launcher) prepareImage(c context.Context, image string) error {
 	// namespace or if we are currently running inside a
 	// user namespace
 	if (l.cfg.Namespaces.User || insideUserNs) && fs.IsFile(image) {
-		convert := true
-		// load image driver plugins
-		if l.engineConfig.File.ImageDriver != "" { // nolint:staticcheck
-			callbackType := (singularitycallback.RegisterImageDriver)(nil) // nolint:staticcheck
-			callbacks, err := plugin.LoadCallbacks(callbackType)
-			if err != nil {
-				sylog.Debugf("Loading plugins callbacks '%T' failed: %s", callbackType, err)
-			} else {
-				for _, callback := range callbacks {
-					if err := callback.(singularitycallback.RegisterImageDriver)(true); err != nil { // nolint:staticcheck
-						sylog.Debugf("While registering image driver: %s", err)
-					}
-				}
-			}
-			driver := imgutil.GetDriver(l.engineConfig.File.ImageDriver) // nolint:staticcheck
-			if driver != nil && driver.Features()&imgutil.ImageFeature != 0 {
-				// the image driver indicates support for image so let's
-				// proceed with the image driver without conversion
-				convert = false
-			}
+		tryFUSE := l.cfg.SIFFUSE || l.engineConfig.File.SIFFUSE
+		if tryFUSE && l.cfg.Fakeroot {
+			return fmt.Errorf("fakeroot is not currently supported with FUSE SIF mounts")
 		}
 
-		if convert {
-			tryFUSE := l.cfg.SIFFUSE || l.engineConfig.File.SIFFUSE
-			if tryFUSE && l.cfg.Fakeroot {
-				return fmt.Errorf("fakeroot is not currently supported with FUSE SIF mounts")
-			}
-
-			fuse, tempDir, imageDir, err := handleImage(c, image, tryFUSE)
+		fuse, tempDir, imageDir, err := handleImage(c, image, tryFUSE)
+		if err != nil {
+			return fmt.Errorf("while handling %s: %w", image, err)
+		}
+		l.engineConfig.SetImage(imageDir)
+		l.engineConfig.SetImageFuse(fuse)
+		l.engineConfig.SetDeleteTempDir(tempDir)
+		l.generator.AddProcessEnv("SINGULARITY_CONTAINER", imageDir)
+		// if '--disable-cache' flag, then remove original SIF after converting to sandbox
+		if l.cfg.CacheDisabled {
+			sylog.Debugf("Removing tmp image: %s", image)
+			err := os.Remove(image)
 			if err != nil {
-				return fmt.Errorf("while handling %s: %w", image, err)
-			}
-			l.engineConfig.SetImage(imageDir)
-			l.engineConfig.SetImageFuse(fuse)
-			l.engineConfig.SetDeleteTempDir(tempDir)
-			l.generator.AddProcessEnv("SINGULARITY_CONTAINER", imageDir)
-			// if '--disable-cache' flag, then remove original SIF after converting to sandbox
-			if l.cfg.CacheDisabled {
-				sylog.Debugf("Removing tmp image: %s", image)
-				err := os.Remove(image)
-				if err != nil {
-					return fmt.Errorf("unable to remove tmp image: %s: %w", image, err)
-				}
+				return fmt.Errorf("unable to remove tmp image: %s: %w", image, err)
 			}
 		}
 	}
+
 	return nil
 }
 

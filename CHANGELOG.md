@@ -21,6 +21,10 @@
 - Add `xino=on` mount option for writable kernel overlay mount points to fix
   inode numbers consistency after kernel cache flush (not applicable to
   fuse-overlayfs).
+- Support for image driver plugins, deprecated at 3.11, has been removed.
+  Unprivileged kernel overlay is supported without a plugin. In
+  `singularity.conf`, the `image driver` directive has been removed, and
+  `enable overlay` no longer supports the `driver` option.
 
 ### New Features & Functionality
 

@@ -42,17 +42,7 @@ func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, st
 	// fakeroot workflow
 	e.stopFuseDrivers()
 
-	if imageDriver != nil {
-		// Strict umount to be sure imageDriver mounts not held
-		if err := umount(false); err != nil {
-			sylog.Errorf("%s", err)
-		}
-		if err := imageDriver.Stop(); err != nil {
-			sylog.Errorf("could not stop driver: %s", err)
-		}
-	}
-
-	if e.EngineConfig.GetImageFuse() && imageDriver == nil {
+	if e.EngineConfig.GetImageFuse() {
 		// Lazy unmount so any underlay mount points don't block umount call against rootfs,
 		// which must be unmounted from master to proceed with the host cleanup.
 		// Everything is tidied up as the container mount namespace disappears.
@@ -105,7 +95,7 @@ func (e *EngineOperations) CleanupContainer(ctx context.Context, fatal error, st
 		}
 	}
 
-	if cryptDev != "" && imageDriver == nil {
+	if cryptDev != "" {
 		if err := cleanupCrypt(cryptDev); err != nil {
 			sylog.Errorf("could not cleanup crypt: %v", err)
 		}
