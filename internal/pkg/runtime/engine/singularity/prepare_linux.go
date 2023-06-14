@@ -177,7 +177,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return err
 	}
 
-	if sendFd || e.EngineConfig.File.ImageDriver != "" { // nolint:staticcheck
+	if sendFd { // nolint:staticcheck
 		fds, err := unix.Socketpair(unix.AF_UNIX, unix.SOCK_STREAM|unix.SOCK_CLOEXEC, 0)
 		if err != nil {
 			return fmt.Errorf("failed to create socketpair to pass file descriptor: %s", err)
@@ -999,7 +999,6 @@ func (e *EngineOperations) setSessionLayer(img *image.Image) error {
 	writableTmpfs := e.EngineConfig.GetWritableTmpfs()
 	writableImage := e.EngineConfig.GetWritableImage()
 	hasOverlayImage := len(e.EngineConfig.GetOverlayImage()) > 0
-	overlayDriver := e.EngineConfig.File.EnableOverlay == "driver"
 
 	if writableImage && hasOverlayImage {
 		return fmt.Errorf("you could not use --overlay in conjunction with --writable")
@@ -1021,19 +1020,6 @@ func (e *EngineOperations) setSessionLayer(img *image.Image) error {
 				break
 			}
 		}
-	}
-
-	// overlay is handled by the image driver
-	if overlayDriver {
-		if e.EngineConfig.File.ImageDriver == "" { // nolint:staticcheck
-			return fmt.Errorf("you need to specify an image driver with 'enable overlay = driver'")
-		}
-		if !writableImage || hasSIFOverlay {
-			e.EngineConfig.SetSessionLayer(singularityConfig.OverlayLayer)
-			return nil
-		}
-		sylog.Debugf("Not attempting to use overlay or underlay: writable flag requested")
-		return nil
 	}
 
 	// Check for implicit user namespace, e.g when we run %test in a fakeroot build

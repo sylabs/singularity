@@ -348,19 +348,6 @@ func (t *Methods) SendFuseFd(arguments *args.SendFuseFdArgs, reply *int) error {
 	return err
 }
 
-// OpenSendFuseFd open a new /dev/fuse file descriptor and send it
-// over unix socket.
-func (t *Methods) OpenSendFuseFd(arguments *args.OpenSendFuseFdArgs, reply *int) error {
-	fd, err := unix.Open("/dev/fuse", unix.O_RDWR, 0)
-	if err != nil {
-		return fmt.Errorf("while opening /dev/fuse: %s", err)
-	}
-	*reply = fd
-
-	rights := unix.UnixRights(fd)
-	return unix.Sendmsg(arguments.Socket, []byte{0}, rights, nil, 0)
-}
-
 // Symlink performs a symlink with the specified arguments.
 func (t *Methods) Symlink(arguments *args.SymlinkArgs, reply *int) error {
 	return os.Symlink(arguments.Old, arguments.New)

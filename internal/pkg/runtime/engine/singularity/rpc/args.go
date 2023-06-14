@@ -80,11 +80,6 @@ type SendFuseFdArgs struct {
 	Fds    []int
 }
 
-// OpenSendFuseFdArgs defines the arguments to open and send a fuse file descriptor.
-type OpenSendFuseFdArgs struct {
-	Socket int
-}
-
 // SymlinkArgs defines the arguments to symlink.
 type SymlinkArgs struct {
 	Old string
