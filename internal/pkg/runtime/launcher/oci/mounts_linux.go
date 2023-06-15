@@ -18,6 +18,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/gpu"
+	"github.com/sylabs/singularity/internal/pkg/util/rootless"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/bind"
@@ -29,7 +30,9 @@ const containerLibDir = "/.singularity.d/libs"
 func (l *Launcher) getMounts() ([]specs.Mount, error) {
 	mounts := &[]specs.Mount{}
 	l.addProcMount(mounts)
-	l.addSysMount(mounts)
+	if err := l.addSysMount(mounts); err != nil {
+		return nil, fmt.Errorf("while configuring sys mount: %w", err)
+	}
 	if err := l.addDevMounts(mounts); err != nil {
 		return nil, fmt.Errorf("while configuring devpts mount: %w", err)
 	}
@@ -161,7 +164,12 @@ func (l *Launcher) addDevMounts(mounts *[]specs.Mount) error {
 		Options:     []string{"nosuid", "noexec", "newinstance", "ptmxmode=0666", "mode=0620"},
 	}
 
-	if os.Getuid() == 0 {
+	rootlessUID, err := rootless.Getuid()
+	if err != nil {
+		return fmt.Errorf("while fetching uid: %w", err)
+	}
+
+	if rootlessUID == 0 {
 		group, err := user.GetGrNam("tty")
 		if err != nil {
 			return fmt.Errorf("while identifying tty gid: %w", err)
@@ -221,13 +229,18 @@ func (l *Launcher) addProcMount(mounts *[]specs.Mount) {
 }
 
 // addSysMount adds the /sys tree in the container.
-func (l *Launcher) addSysMount(mounts *[]specs.Mount) {
+func (l *Launcher) addSysMount(mounts *[]specs.Mount) error {
 	if !l.singularityConf.MountSys {
 		sylog.Debugf("Skipping mount of /sys due to singularity.conf")
-		return
+		return nil
 	}
 
-	if os.Getuid() == 0 {
+	rootlessUID, err := rootless.Getuid()
+	if err != nil {
+		return fmt.Errorf("while fetching uid: %w", err)
+	}
+
+	if rootlessUID == 0 {
 		*mounts = append(*mounts,
 			specs.Mount{
 				Source:      "sysfs",
@@ -244,6 +257,8 @@ func (l *Launcher) addSysMount(mounts *[]specs.Mount) {
 				Options:     []string{"rbind", "nosuid", "noexec", "nodev", "ro"},
 			})
 	}
+
+	return nil
 }
 
 // addHomeMount adds a user home directory as a tmpfs mount. We are currently

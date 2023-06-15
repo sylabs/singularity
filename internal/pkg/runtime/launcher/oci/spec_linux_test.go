@@ -57,9 +57,13 @@ func Test_addNamespaces(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			spec := minimalSpec()
-			newSpec := addNamespaces(spec, tt.ns)
-			newNS := newSpec.Linux.Namespaces
+			ms := minimalSpec()
+			spec := &ms
+			err := addNamespaces(spec, tt.ns)
+			if err != nil {
+				t.Errorf("addNamespaces() returned an unexpected error: %v", err)
+			}
+			newNS := spec.Linux.Namespaces
 			if !reflect.DeepEqual(newNS, tt.wantNS) {
 				t.Errorf("addNamespaces() got %v, want %v", newNS, tt.wantNS)
 			}

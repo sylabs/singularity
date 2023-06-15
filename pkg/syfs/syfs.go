@@ -10,10 +10,10 @@ package syfs
 
 import (
 	"os"
-	"os/user"
 	"path/filepath"
 	"sync"
 
+	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
@@ -49,7 +49,7 @@ func configDir() string {
 		return configDir
 	}
 
-	user, err := user.Current()
+	user, err := user.CurrentOriginal()
 	if err != nil {
 		sylog.Warningf("Could not lookup the current user's information: %s", err)
 
@@ -62,7 +62,7 @@ func configDir() string {
 		return filepath.Join(cwd, singularityDir)
 	}
 
-	return filepath.Join(user.HomeDir, singularityDir)
+	return filepath.Join(user.Dir, singularityDir)
 }
 
 func RemoteConf() string {
@@ -80,14 +80,14 @@ func DockerConf() string {
 // ConfigDirForUsername returns the directory where the singularity
 // configuration and data for the specified username is located.
 func ConfigDirForUsername(username string) (string, error) {
-	u, err := user.Lookup(username)
+	u, err := user.GetPwNam(username)
 	if err != nil {
 		return "", err
 	}
 
-	if cu, err := user.Current(); err == nil && u.Username == cu.Username {
+	if cu, err := user.CurrentOriginal(); err == nil && u.Name == cu.Name {
 		return ConfigDir(), nil
 	}
 
-	return filepath.Join(u.HomeDir, singularityDir), nil
+	return filepath.Join(u.Dir, singularityDir), nil
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher/native"
 	ocilauncher "github.com/sylabs/singularity/internal/pkg/runtime/launcher/oci"
+	"github.com/sylabs/singularity/internal/pkg/util/rootless"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -332,6 +333,20 @@ var TestCmd = &cobra.Command{
 }
 
 func launchContainer(cmd *cobra.Command, image string, containerCmd string, containerArgs []string, instanceName string) error {
+	// The OCI runtime must always be launched where the effective uid/gid is 0 (root or fake-root).
+	if ociRuntime && !rootless.InNS() {
+		// If we need to, enter a new cgroup now, to workaround an issue with crun container cgroup creation (#1538).
+		if err := ocilauncher.CrunNestCgroup(); err != nil {
+			return fmt.Errorf("while applying crun cgroup workaround: %w", err)
+		}
+		// If we are root already, run the launcher in a new mount namespace only.
+		if os.Geteuid() == 0 {
+			return rootless.RunInMountNS(os.Args[1:])
+		}
+		// If we are not root, re-exec in a root-mapped user namespace and mount namespace.
+		return rootless.ExecWithFakeroot(os.Args[1:])
+	}
+
 	ns := launcher.Namespaces{
 		User: userNamespace,
 		UTS:  utsNamespace,

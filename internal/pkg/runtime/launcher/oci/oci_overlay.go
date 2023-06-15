@@ -7,8 +7,6 @@ package oci
 
 import (
 	"fmt"
-	"path/filepath"
-	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/util/fs/overlay"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
@@ -93,20 +91,4 @@ func prepareWritableTmpfs(bundleDir string) (string, error) {
 func cleanupWritableTmpfs(bundleDir, overlayDir string) error {
 	sylog.Debugf("Cleaning up writable tmpfs overlay for %s", bundleDir)
 	return tools.DeleteOverlayTmpfs(bundleDir, overlayDir)
-}
-
-// absOverlay takes an overlay description string (a path, optionally followed by a colon with an option string, like ":ro" or ":rw"), and replaces any relative path in the description string with an absolute one.
-func absOverlay(desc string) (string, error) {
-	splitted := strings.SplitN(desc, ":", 2)
-	barePath := splitted[0]
-	absBarePath, err := filepath.Abs(barePath)
-	if err != nil {
-		return "", err
-	}
-	absDesc := absBarePath
-	if len(splitted) > 1 {
-		absDesc += ":" + splitted[1]
-	}
-
-	return absDesc, nil
 }

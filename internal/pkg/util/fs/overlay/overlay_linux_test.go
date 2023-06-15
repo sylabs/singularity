@@ -6,6 +6,8 @@
 package overlay
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"golang.org/x/sys/unix"
@@ -209,5 +211,85 @@ func TestCheckLowerUpper(t *testing.T) {
 			}
 			t.Errorf("unexpected error for %q: %q instead of %q", tt.name, err, expectedError)
 		}
+	}
+}
+
+func TestAbsOverlay(t *testing.T) {
+	tmpDir := mkTempDirOrFatal(t)
+	oldDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		os.Chdir(oldDir)
+	})
+
+	innerDir := filepath.Join(tmpDir, "inner")
+	if err := os.Mkdir(innerDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name    string
+		desc    string
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "abs",
+			desc: innerDir,
+			want: innerDir,
+		},
+		{
+			name: "rel",
+			desc: "inner",
+			want: innerDir,
+		},
+		{
+			name: "abs_dots",
+			desc: innerDir + "/../inner",
+			want: innerDir,
+		},
+		{
+			name: "rel_dots",
+			desc: "inner/../inner",
+			want: innerDir,
+		},
+		{
+			name: "absDest",
+			desc: innerDir + ":/dest",
+			want: innerDir + ":/dest",
+		},
+		{
+			name: "relDest",
+			desc: "inner" + ":/dest",
+			want: innerDir + ":/dest",
+		},
+		{
+			name: "absDestOpt",
+			desc: innerDir + ":/dest:ro",
+			want: innerDir + ":/dest:ro",
+		},
+		{
+			name: "relDestOpt",
+			desc: "inner" + ":/dest:ro",
+			want: innerDir + ":/dest:ro",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := AbsOverlay(tt.desc)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("AbsOverlay() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("AbsOverlay() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

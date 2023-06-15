@@ -27,6 +27,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
+	"github.com/sylabs/singularity/internal/pkg/util/rootless"
 	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/build/types"
@@ -73,11 +74,12 @@ func fakerootExec(cmdArgs []string) {
 		sylog.Fatalf("failed to retrieve user information: %s", err)
 	}
 
-	// Append the user's real UID to the environment as _CONTAINERS_ROOTLESS_UID.
+	// Append the user's real UID/GID to the environment as _CONTAINERS_ROOTLESS_UID/GID.
 	// This is required in fakeroot builds that may use containers/image 5.7 and above.
 	// https://github.com/containers/image/issues/1066
 	// https://github.com/containers/image/blob/master/internal/rootless/rootless.go
-	os.Setenv("_CONTAINERS_ROOTLESS_UID", strconv.Itoa(os.Getuid()))
+	os.Setenv(rootless.UIDEnv, strconv.Itoa(os.Getuid()))
+	os.Setenv(rootless.GIDEnv, strconv.Itoa(os.Getgid()))
 
 	engineConfig := &fakerootConfig.EngineConfig{
 		Args:        args,

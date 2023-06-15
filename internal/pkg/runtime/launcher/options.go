@@ -6,7 +6,10 @@
 package launcher
 
 import (
+	"fmt"
+
 	"github.com/containers/image/v5/types"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/overlay"
 	"github.com/sylabs/singularity/pkg/util/cryptkey"
 )
 
@@ -170,8 +173,16 @@ func OptWritableTmpfs(b bool) Option {
 }
 
 // OptOverlayPaths sets overlay images and directories to apply to the container.
+// Relative paths are resolved to absolute paths at this point.
 func OptOverlayPaths(op []string) Option {
 	return func(lo *Options) error {
+		var err error
+		for i, p := range op {
+			op[i], err = overlay.AbsOverlay(p)
+			if err != nil {
+				return fmt.Errorf("could not convert %q to absolute path: %w", p, err)
+			}
+		}
 		lo.OverlayPaths = op
 		return nil
 	}
