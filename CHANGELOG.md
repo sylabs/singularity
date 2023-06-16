@@ -77,6 +77,8 @@
   of SIF metadata.
 - Pass STDIN to `--oci` containers correctly, to fix piping input to a container.
 - Fix compilation on 32-bit systems.
+- Set correct `$HOME` in `--oci` mode when `mount home = no` in
+  `singularity.conf`.
 
 ## 3.11.3 \[2023-05-04\]
 

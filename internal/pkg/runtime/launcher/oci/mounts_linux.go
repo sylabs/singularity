@@ -261,13 +261,17 @@ func (l *Launcher) addSysMount(mounts *[]specs.Mount) error {
 	return nil
 }
 
-// addHomeMount adds a user home directory as a tmpfs mount. We are currently
-// emulating `--compat` / `--containall`, so the user must specifically bind in
-// their home directory from the host for it to be available.
+// addHomeMount adds a user home directory as a tmpfs mount, and sets the
+// container home directory. We are currently emulating `--compat` /
+// `--containall`, so the user must specifically bind in their home directory
+// from the host for it to be available.
 func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
+	// If the $HOME mount is skipped by config need to still handle setting the
+	// correct $HOME dir, but just skip adding the mount.
+	skipMount := false
 	if !l.singularityConf.MountHome {
 		sylog.Debugf("Skipping mount of $HOME due to singularity.conf")
-		return nil
+		skipMount = true
 	}
 
 	// Get the host user's data
@@ -291,6 +295,10 @@ func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
 			homeDest := homeSlice[1]
 			l.cfg.HomeDir = homeDest
 
+			if skipMount {
+				return nil
+			}
+
 			// Since the home dir is a bind-mount in this case, we don't have to mount a tmpfs directory for the in-container home dir, and we can just do the bind-mount & return.
 			return addBindMount(mounts, bind.Path{
 				Source:      homeSrc,
@@ -301,6 +309,11 @@ func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
 		// If we're running in fake-root mode (and we haven't requested a custom home dir), we do need to create a tmpfs mount for the home dir, but it's a special case (because of its location & permissions), so we handle that here & return.
 		if l.cfg.Fakeroot {
 			l.cfg.HomeDir = "/root"
+
+			if skipMount {
+				return nil
+			}
+
 			*mounts = append(*mounts,
 				specs.Mount{
 					Destination: "/root",
@@ -319,6 +332,10 @@ func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
 
 		// No fakeroot and no custom home dir - so the in-container home dir will be named the same as the host user's home dir. (Though note that it'll still be a tmpfs mount! It'll get mounted by the catch-all mount append, below.)
 		l.cfg.HomeDir = pw.Dir
+	}
+
+	if skipMount {
+		return nil
 	}
 
 	// If we've not hit a special case (bind-mounted custom home dir, or fakeroot), then create a tmpfs mount as a home dir in the requested location (whether it's custom or not; by this point, l.cfg.HomeDir will reflect the right value).
