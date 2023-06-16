@@ -71,6 +71,9 @@
   container, and `chgrp`, `newgrp`, etc. cannot be used.
 - OCI-mode now supports the `--no-home` flag, to prevent the container home
   directory from being mounted.
+- OCI-mode now supports the `--no-mount` flag to disable the `proc`, `sys`,
+  `devpts`, `tmp`, and `home` mounts in the container. `dev` cannot be disabled
+  in OCI-mode, and `bind-path` mounts are not supported.
   
 ### Bug Fixes
 
