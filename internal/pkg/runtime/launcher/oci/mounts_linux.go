@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -57,6 +57,11 @@ func (l *Launcher) getMounts() ([]specs.Mount, error) {
 	if (l.cfg.Nvidia || l.singularityConf.AlwaysUseNv) && !l.cfg.NoNvidia {
 		if err := l.addNvidiaMounts(mounts); err != nil {
 			return nil, fmt.Errorf("while configuring Nvidia mount(s): %w", err)
+		}
+	}
+	if len(l.cfg.ContainLibs) > 0 {
+		if err := l.addLibrariesMounts(mounts); err != nil {
+			return nil, fmt.Errorf("while configuring containlibs mount(s): %w", err)
 		}
 	}
 
@@ -611,6 +616,27 @@ func (l *Launcher) addNvidiaMounts(mounts *[]specs.Mount) error {
 			Destination: dev,
 		}
 		if err := addDevBindMount(mounts, bind); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (l *Launcher) addLibrariesMounts(mounts *[]specs.Mount) error {
+	if !l.singularityConf.UserBindControl {
+		sylog.Warningf("Ignoring containlibs mount request: user bind control disabled by system administrator")
+		return nil
+	}
+
+	for _, lib := range l.cfg.ContainLibs {
+		containerLib := filepath.Join(containerLibDir, filepath.Base(lib))
+		bind := bind.Path{
+			Source:      lib,
+			Destination: containerLib,
+			Options:     map[string]*bind.Option{"ro": {}},
+		}
+		if err := addBindMount(mounts, bind); err != nil {
 			return err
 		}
 	}

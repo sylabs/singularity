@@ -272,6 +272,14 @@ func (c actionTests) actionOciExec(t *testing.T) {
 				e2e.ExpectOutput(e2e.RegexMatch, `^root:x:0:0:root:[^:]*:/bin/ash\n`),
 			},
 		},
+		{
+			name: "Containlibs",
+			argv: []string{"--containlibs", "/etc/hosts", imageRef, "ls", "/.singularity.d/libs"},
+			exit: 0,
+			wantOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.ExactMatch, `hosts`),
+			},
+		},
 	}
 	for _, profile := range e2e.OCIProfiles {
 		t.Run(profile.String(), func(t *testing.T) {

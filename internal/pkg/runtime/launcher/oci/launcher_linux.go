@@ -116,9 +116,6 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "NvCCLI")
 	}
 
-	if len(lo.ContainLibs) > 0 {
-		badOpt = append(badOpt, "ContainLibs")
-	}
 	if lo.Proot != "" {
 		badOpt = append(badOpt, "Proot")
 	}

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,6 +9,8 @@
 package oci
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -276,6 +278,111 @@ func TestLauncher_addBindMounts(t *testing.T) {
 			}
 			if !reflect.DeepEqual(mounts, tt.wantMounts) {
 				t.Errorf("addBindMount() want %v, got %v", tt.wantMounts, mounts)
+			}
+		})
+	}
+}
+
+func TestLauncher_addLibrariesMounts(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "add-libraries-mounts")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.RemoveAll(tmpDir)
+		}
+	})
+
+	lib1 := filepath.Join(tmpDir, "lib1.so")
+	lib2 := filepath.Join(tmpDir, "lib2.so")
+	libInvalid := filepath.Join(tmpDir, "invalid")
+	if err := os.WriteFile(lib1, []byte("lib1"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(lib2, []byte("lib2"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name       string
+		cfg        launcher.Options
+		userbind   bool
+		wantMounts *[]specs.Mount
+		wantErr    bool
+	}{
+		{
+			name: "Disabled",
+			cfg: launcher.Options{
+				ContainLibs: []string{lib1},
+			},
+			wantMounts: &[]specs.Mount{},
+			wantErr:    false,
+		},
+		{
+			name: "Invalid",
+			cfg: launcher.Options{
+				ContainLibs: []string{libInvalid},
+			},
+			userbind:   true,
+			wantMounts: &[]specs.Mount{},
+			wantErr:    true,
+		},
+		{
+			name: "Single",
+			cfg: launcher.Options{
+				ContainLibs: []string{lib1},
+			},
+			userbind: true,
+			wantMounts: &[]specs.Mount{
+				{
+					Source:      lib1,
+					Destination: "/.singularity.d/libs/lib1.so",
+					Type:        "none",
+					Options:     []string{"rbind", "nosuid", "nodev", "ro"},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Multiple",
+			cfg: launcher.Options{
+				ContainLibs: []string{lib1, lib2},
+			},
+			userbind: true,
+			wantMounts: &[]specs.Mount{
+				{
+					Source:      lib1,
+					Destination: "/.singularity.d/libs/lib1.so",
+					Type:        "none",
+					Options:     []string{"rbind", "nosuid", "nodev", "ro"},
+				},
+				{
+					Source:      lib2,
+					Destination: "/.singularity.d/libs/lib2.so",
+					Type:        "none",
+					Options:     []string{"rbind", "nosuid", "nodev", "ro"},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l := &Launcher{
+				cfg:             tt.cfg,
+				singularityConf: &singularityconf.File{},
+			}
+			if tt.userbind {
+				l.singularityConf.UserBindControl = true
+			}
+			mounts := &[]specs.Mount{}
+			err := l.addLibrariesMounts(mounts)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("addLibrariesMounts() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if !reflect.DeepEqual(mounts, tt.wantMounts) {
+				t.Errorf("addLibrariesMounts() want %v, got %v", tt.wantMounts, mounts)
 			}
 		})
 	}
