@@ -82,9 +82,6 @@ func checkOpts(lo launcher.Options) error {
 	if lo.WritableTmpfs {
 		sylog.Infof("--oci mode uses --writable-tmpfs by default")
 	}
-	if lo.NoHome {
-		badOpt = append(badOpt, "NoHome")
-	}
 
 	if len(lo.FuseMount) > 0 {
 		badOpt = append(badOpt, "FuseMount")

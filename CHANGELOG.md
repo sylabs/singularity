@@ -69,7 +69,9 @@
   files on the host that have permissions based on supplementary group
   membership. Note that supplementary groups are mapped to `nobody` in the
   container, and `chgrp`, `newgrp`, etc. cannot be used.
-
+- OCI-mode now supports the `--no-home` flag, to prevent the container home
+  directory from being mounted.
+  
 ### Bug Fixes
 
 - Fix interaction between `--workdir` when given relative path and `--scratch`.

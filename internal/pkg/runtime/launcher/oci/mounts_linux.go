@@ -266,11 +266,15 @@ func (l *Launcher) addSysMount(mounts *[]specs.Mount) error {
 // `--containall`, so the user must specifically bind in their home directory
 // from the host for it to be available.
 func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
-	// If the $HOME mount is skipped by config need to still handle setting the
-	// correct $HOME dir, but just skip adding the mount.
+	// If the $HOME mount is skipped by config or --no-home, we still need to
+	// handle setting the correct $HOME dir, but just skip adding the mount.
 	skipMount := false
 	if !l.singularityConf.MountHome {
 		sylog.Debugf("Skipping mount of $HOME due to singularity.conf")
+		skipMount = true
+	}
+	if l.cfg.NoHome {
+		sylog.Debugf("Skipping mount of $HOME due to --no-home")
 		skipMount = true
 	}
 
