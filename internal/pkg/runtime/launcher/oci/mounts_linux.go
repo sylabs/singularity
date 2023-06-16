@@ -261,101 +261,61 @@ func (l *Launcher) addSysMount(mounts *[]specs.Mount) error {
 	return nil
 }
 
-// addHomeMount adds a user home directory as a tmpfs mount, and sets the
-// container home directory. We are currently emulating `--compat` /
-// `--containall`, so the user must specifically bind in their home directory
-// from the host for it to be available.
+// addHomeMount adds the user home directory to the container, according to the
+// src and dest computed by parseHomeDir from launcher.New.
 func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
-	// If the $HOME mount is skipped by config or --no-home, we still need to
-	// handle setting the correct $HOME dir, but just skip adding the mount.
-	skipMount := false
 	if !l.singularityConf.MountHome {
 		sylog.Debugf("Skipping mount of $HOME due to singularity.conf")
-		skipMount = true
+		return nil
 	}
 	if l.cfg.NoHome {
 		sylog.Debugf("Skipping mount of $HOME due to --no-home")
-		skipMount = true
-	}
-
-	// Get the host user's data
-	pw, err := user.CurrentOriginal()
-	if err != nil {
-		return err
-	}
-
-	if l.cfg.CustomHome {
-		// Handle any user request to override the home directory source/dest
-		homeSlice := strings.Split(l.cfg.HomeDir, ":")
-		if len(homeSlice) < 1 || len(homeSlice) > 2 {
-			return fmt.Errorf("home argument has incorrect number of elements: %v", homeSlice)
-		}
-		homeSrc := homeSlice[0]
-		l.cfg.HomeDir = homeSrc
-
-		// User requested more than just a custom home dir; they want to bind-mount a directory in the host to this custom home dir.
-		// This means the home dir, as viewed from inside the container, is actually the second member of the ":"-separated slice. The first member is actually just the source portion of the requested bind-mount.
-		if len(homeSlice) > 1 {
-			homeDest := homeSlice[1]
-			l.cfg.HomeDir = homeDest
-
-			if skipMount {
-				return nil
-			}
-
-			// Since the home dir is a bind-mount in this case, we don't have to mount a tmpfs directory for the in-container home dir, and we can just do the bind-mount & return.
-			return addBindMount(mounts, bind.Path{
-				Source:      homeSrc,
-				Destination: homeDest,
-			})
-		}
-	} else {
-		// If we're running in fake-root mode (and we haven't requested a custom home dir), we do need to create a tmpfs mount for the home dir, but it's a special case (because of its location & permissions), so we handle that here & return.
-		if l.cfg.Fakeroot {
-			l.cfg.HomeDir = "/root"
-
-			if skipMount {
-				return nil
-			}
-
-			*mounts = append(*mounts,
-				specs.Mount{
-					Destination: "/root",
-					Type:        "tmpfs",
-					Source:      "tmpfs",
-					Options: []string{
-						"nosuid",
-						"relatime",
-						"mode=755",
-						fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
-					},
-				})
-
-			return nil
-		}
-
-		// No fakeroot and no custom home dir - so the in-container home dir will be named the same as the host user's home dir. (Though note that it'll still be a tmpfs mount! It'll get mounted by the catch-all mount append, below.)
-		l.cfg.HomeDir = pw.Dir
-	}
-
-	if skipMount {
 		return nil
 	}
 
-	// If we've not hit a special case (bind-mounted custom home dir, or fakeroot), then create a tmpfs mount as a home dir in the requested location (whether it's custom or not; by this point, l.cfg.HomeDir will reflect the right value).
+	if l.homeDest == "" {
+		return fmt.Errorf("cannot add home mount with empty destination")
+	}
+
+	// If l.homeSrc is set, then we are simply bind mounting from the host.
+	if l.homeSrc != "" {
+		return addBindMount(mounts, bind.Path{
+			Source:      l.homeSrc,
+			Destination: l.homeDest,
+		})
+	}
+
+	// Otherwise we setup a tmpfs, mounted onto l.homeDst.
+	tmpfsOpt := []string{
+		"nosuid",
+		"relatime",
+		"mode=755",
+		fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
+	}
+
+	// If we aren't using fakeroot, ensure the tmpfs ownership is correct for our real uid/gid.
+	if !l.cfg.Fakeroot {
+		uid, err := rootless.Getuid()
+		if err != nil {
+			return fmt.Errorf("while fetching uid: %w", err)
+		}
+		gid, err := rootless.Getgid()
+		if err != nil {
+			return fmt.Errorf("while fetching gid: %w", err)
+		}
+
+		tmpfsOpt = append(tmpfsOpt,
+			fmt.Sprintf("uid=%d", uid),
+			fmt.Sprintf("gid=%d", gid),
+		)
+	}
+
 	*mounts = append(*mounts,
 		specs.Mount{
-			Destination: l.cfg.HomeDir,
+			Destination: l.homeDest,
 			Type:        "tmpfs",
 			Source:      "tmpfs",
-			Options: []string{
-				"nosuid",
-				"relatime",
-				"mode=755",
-				fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
-				fmt.Sprintf("uid=%d", pw.UID),
-				fmt.Sprintf("gid=%d", pw.GID),
-			},
+			Options:     tmpfsOpt,
 		})
 
 	return nil

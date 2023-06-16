@@ -49,7 +49,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, imag
 
 	// Ensure HOME points to the required home directory, even if it is a custom one, unless the container explicitly specifies its USER, in which case we don't want to touch HOME.
 	if imgSpec.Config.User == "" {
-		rtEnv["HOME"] = l.cfg.HomeDir
+		rtEnv["HOME"] = l.homeDest
 	}
 
 	cwd, err := l.getProcessCwd()
