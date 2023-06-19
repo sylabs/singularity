@@ -12,6 +12,8 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
+	"gotest.tools/v3/assert"
 )
 
 func Test_addNamespaces(t *testing.T) {
@@ -68,5 +70,29 @@ func Test_addNamespaces(t *testing.T) {
 				t.Errorf("addNamespaces() got %v, want %v", newNS, tt.wantNS)
 			}
 		})
+	}
+}
+
+func Test_noSetgroupsAnnotation(t *testing.T) {
+	ms := minimalSpec()
+
+	gotErr := noSetgroupsAnnotation(&ms)
+
+	// crun case - no error, expect annotation
+	if _, err := bin.FindBin("crun"); err == nil {
+		if err != nil {
+			t.Errorf("noSetgroupsAnnotation returned unexpected error when crun available: %s", err)
+		}
+		assert.DeepEqual(t, ms.Annotations,
+			map[string]string{
+				"run.oci.keep_original_groups": "1",
+			},
+		)
+		return
+	}
+
+	// Otherwise, expect an error
+	if gotErr == nil {
+		t.Errorf("noSetgroupsAnnotation returned unexpected success when crun not available")
 	}
 }

@@ -2629,6 +2629,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"ociSTDPIPE":           c.ociSTDPipe,                   // stdin/stdout pipe --oci
 		"ociNetwork":           c.actionOciNetwork,             // singularity exec --oci --net
 		"ociBinds":             c.actionOciBinds,               // singularity exec --oci --bind / --mount
+		"ociNo-setgroups":      c.actionOciNoSetgroups,         // --no-setgroups in OCI mode
 		"ociCdi":               c.actionOciCdi,                 // singularity exec --oci --cdi
 		"ociIDMaps":            c.actionOciIDMaps,              // check uid/gid mapping on host for --oci as user / --fakeroot
 		"ociCompat":            np(c.actionOciCompat),          // --oci equivalence to native mode --compat

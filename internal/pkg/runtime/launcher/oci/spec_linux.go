@@ -6,6 +6,9 @@
 package oci
 
 import (
+	"fmt"
+	"path/filepath"
+
 	"github.com/opencontainers/runtime-spec/specs-go"
 
 	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
@@ -118,5 +121,23 @@ func addNamespaces(spec *specs.Spec, ns launcher.Namespaces) error {
 		)
 	}
 
+	return nil
+}
+
+// noSetgroupsAnnotation will set the `run.oci.keep_original_groups=1` annotation
+// to disable the setgroups call when entering the container. Supported by crun, but not runc.
+func noSetgroupsAnnotation(spec *specs.Spec) error {
+	runtime, err := runtime()
+	if err != nil {
+		return err
+	}
+	if filepath.Base(runtime) != "crun" {
+		return fmt.Errorf("runtime '%q' does not support --no-setgroups", runtime)
+	}
+
+	if spec.Annotations == nil {
+		spec.Annotations = map[string]string{}
+	}
+	spec.Annotations["run.oci.keep_original_groups"] = "1"
 	return nil
 }

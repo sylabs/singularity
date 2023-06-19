@@ -193,10 +193,6 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "SIFFUSE")
 	}
 
-	if lo.NoSetgroups {
-		badOpt = append(badOpt, "NoSetgroups")
-	}
-
 	if len(badOpt) > 0 {
 		return fmt.Errorf("%w: %s", ErrUnsupportedOption, strings.Join(badOpt, ","))
 	}
@@ -276,6 +272,12 @@ func (l *Launcher) createSpec() (spec *specs.Spec, err error) {
 	if cgPath != "" {
 		spec.Linux.CgroupsPath = cgPath
 		spec.Linux.Resources = resources
+	}
+
+	if l.cfg.NoSetgroups {
+		if err := noSetgroupsAnnotation(spec); err != nil {
+			return nil, err
+		}
 	}
 
 	return spec, nil
