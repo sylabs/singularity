@@ -134,8 +134,7 @@ container platform designed to be simple, fast, and secure.
 %config(noreplace) %{_sysconfdir}/singularity/network/*
 %dir %{_sysconfdir}/singularity/seccomp-profiles
 %config(noreplace) %{_sysconfdir}/singularity/seccomp-profiles/*
-%dir %{_sysconfdir}/bash_completion.d
-%{_sysconfdir}/bash_completion.d/*
+%{_datadir}/bash-completion/completions/singularity
 %dir %{_sharedstatedir}/singularity
 %dir %{_sharedstatedir}/singularity/mnt
 %dir %{_sharedstatedir}/singularity/mnt/session

@@ -25,6 +25,8 @@
   Unprivileged kernel overlay is supported without a plugin. In
   `singularity.conf`, the `image driver` directive has been removed, and
   `enable overlay` no longer supports the `driver` option.
+- Bash completions are now install to the modern
+  `share/bash-completion/completions` location, rather than under `etc`.
 
 ### New Features & Functionality
 
