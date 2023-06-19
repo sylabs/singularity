@@ -12,6 +12,6 @@ etc/singularity/global-pgp-public
 etc/singularity/cgroups/*
 etc/singularity/network/*
 etc/singularity/seccomp-profiles/*
-#etc/bash_completion.d/singularity/*
 var/lib/singularity/mnt/session
+usr/share/bash-completion/completions/singularity
 usr/share/man/man1/singularity*
