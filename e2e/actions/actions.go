@@ -2637,5 +2637,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"ociOverlayExtfsPerms": (c.actionOciOverlayExtfsPerms), // permissions in writable extfs overlays mounted with FUSE in OCI mode
 		"ociOverlayTeardown":   np(c.actionOciOverlayTeardown), // proper overlay unmounting in OCI mode
 		"ociNo-mount":          c.actionOciNoMount,             // --no-mount in OCI mode
+		"ociHomeCwdPasswd":     c.actionOciHomeCwdPasswd,       // $HOME is correct in /etc/passwd, and is default cwd
 	}
 }
