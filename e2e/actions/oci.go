@@ -12,7 +12,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"testing"
@@ -1748,4 +1750,33 @@ func (c actionTests) actionOciNoMount(t *testing.T) {
 			e2e.ExpectExit(tt.exit, expectOp),
 		)
 	}
+}
+
+// actionOciNoSetgoups checks that supplementary groups are visible, mapped to
+// nobody, in an unprivileged OCI mode container that runs in a user namespace.
+// Requires crun as runtime.
+func (c actionTests) actionOciNoSetgroups(t *testing.T) {
+	require.Command(t, "crun")
+	e2e.EnsureOCIArchive(t, c.env)
+	imageRef := "oci-archive:" + c.env.OCIArchivePath
+
+	gid := int(e2e.OCIUserProfile.ContainerUser(t).GID)
+	containerGroup, err := user.LookupGroupId(strconv.Itoa(gid))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Inside the e2e-tests we will be a member of our user group + single supplementary group.
+	// With `--fakeroot --no-setgroups` we should see these map to:
+	//    <username> nobody
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.OCIUserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--no-setgroups", imageRef, "sh", "-c", "groups"),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ExactMatch, containerGroup.Name+" nobody"),
+		),
+	)
 }
