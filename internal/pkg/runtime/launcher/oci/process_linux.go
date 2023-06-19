@@ -104,7 +104,7 @@ func (l *Launcher) getProcessCwd() (dir string, err error) {
 		return l.cfg.CwdPath, nil
 	}
 
-	return l.cfg.HomeDir, nil
+	return l.homeDest, nil
 }
 
 // getReverseUserMaps returns uid and gid mappings that re-map container uid to target
