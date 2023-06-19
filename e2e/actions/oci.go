@@ -1630,3 +1630,114 @@ func (c actionTests) ociSTDPipe(t *testing.T) {
 		)
 	}
 }
+
+func (c actionTests) actionOciNoMount(t *testing.T) {
+	e2e.EnsureOCIArchive(t, c.env)
+	imageRef := "oci-archive:" + c.env.OCIArchivePath
+
+	tests := []struct {
+		name      string
+		noMount   string
+		noMatch   string
+		warnMatch string
+		exit      int
+	}{
+		{
+			name:    "proc",
+			noMount: "proc",
+			noMatch: "on /proc",
+			exit:    1, // mount fails with exit code 1 when there is no `/proc`
+		},
+		{
+			name:    "sys",
+			noMount: "sys",
+			noMatch: "on /sys",
+			exit:    0,
+		},
+		{
+			name:      "dev",
+			noMount:   "dev",
+			warnMatch: "--no-mount dev is not supported in OCI mode, ignoring.",
+			exit:      0,
+		},
+		{
+			name:    "devpts",
+			noMount: "devpts",
+			noMatch: "on /dev/pts",
+			exit:    0,
+		},
+		{
+			name:    "tmp",
+			noMount: "tmp",
+			noMatch: "on /tmp",
+			exit:    0,
+		},
+		{
+			name:    "home",
+			noMount: "home",
+			noMatch: "on /home",
+			exit:    0,
+		},
+		{
+			name:      "cwd",
+			noMount:   "cwd",
+			warnMatch: "--no-mount cwd is not supported in OCI mode, ignoring.",
+			exit:      0,
+		},
+		//
+		// TODO - singularity.conf bind path handling is not implemented yet in OCI mode.
+		//        If/when it is, consider how to handle below.
+		//
+		// /etc/hosts & /etc/localtime are default 'bind path' entries we should
+		// be able to disable by abs path. Although other 'bind path' entries
+		// are ignored under '--contain' these two are handled specially in
+		// addBindsMount(), so make sure that `--no-mount` applies properly
+		// under contain also.
+		{
+			name:    "/etc/hosts",
+			noMount: "/etc/hosts",
+			// noMatch: "on /etc/hosts",
+			warnMatch: "--no-mount /etc/hosts is not supported in OCI mode, ignoring.",
+			exit:      0,
+		},
+		{
+			name:    "/etc/localtime",
+			noMount: "/etc/localtime",
+			// noMatch: "on /etc/localtime",
+			warnMatch: "--no-mount /etc/localtime is not supported in OCI mode, ignoring.",
+			exit:      0,
+		},
+		// bind-paths should disable all of the bind path mounts - including both defaults
+		{
+			name:    "binds-paths-hosts",
+			noMount: "bind-paths",
+			// noMatch: "on /etc/hosts",
+			warnMatch: "--no-mount bind-paths is not supported in OCI mode, ignoring.",
+			exit:      0,
+		},
+		{
+			name:    "bind-paths-localtime",
+			noMount: "bind-paths",
+			// noMatch: "on /etc/localtime",
+			warnMatch: "--no-mount bind-paths is not supported in OCI mode, ignoring.",
+			exit:      0,
+		},
+	}
+
+	for _, tt := range tests {
+
+		expectOp := e2e.ExpectOutput(e2e.UnwantedContainMatch, tt.noMatch)
+		if tt.warnMatch != "" {
+			expectOp = e2e.ExpectError(e2e.ContainMatch, tt.warnMatch)
+		}
+
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs("--no-mount", tt.noMount, imageRef, "mount"),
+			e2e.ExpectExit(tt.exit, expectOp),
+		)
+	}
+}

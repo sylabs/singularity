@@ -35,11 +35,14 @@ import (
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"github.com/sylabs/singularity/pkg/util/slice"
 )
 
 var (
 	ErrUnsupportedOption = errors.New("not supported by OCI launcher")
 	ErrNotImplemented    = errors.New("not implemented by OCI launcher")
+
+	unsupportedNoMount = []string{"dev", "cwd", "bind-paths"}
 )
 
 // Launcher will holds configuration for, and will launch a container using an
@@ -103,8 +106,10 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "FuseMount")
 	}
 
-	if len(lo.NoMount) > 0 {
-		badOpt = append(badOpt, "NoMount")
+	for _, nm := range lo.NoMount {
+		if strings.HasPrefix(nm, "/") || slice.ContainsString(unsupportedNoMount, nm) {
+			sylog.Warningf("--no-mount %s is not supported in OCI mode, ignoring.", nm)
+		}
 	}
 
 	if lo.NvCCLI {
