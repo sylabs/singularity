@@ -211,6 +211,17 @@ func (c configTests) ociConfigGlobal(t *testing.T) {
 			directiveValue: "no",
 			exit:           1,
 		},
+		// Verify that though mount is skipped, $HOME is still set correctly
+		// https://github.com/sylabs/singularity/issues/1783
+		{
+			name:           "MountHomeNoCorrectDir",
+			argv:           []string{archiveRef, "sh", "-c", "test $HOME == " + e2e.OCIUserProfile.ContainerUser(t).Dir},
+			profile:        e2e.OCIUserProfile,
+			cwd:            "/",
+			directive:      "mount home",
+			directiveValue: "no",
+			exit:           0,
+		},
 		{
 			name:           "MountHomeYes",
 			argv:           []string{archiveRef, "grep", e2e.OCIUserProfile.ContainerUser(t).Dir, "/proc/self/mountinfo"},

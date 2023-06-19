@@ -69,7 +69,9 @@
   files on the host that have permissions based on supplementary group
   membership. Note that supplementary groups are mapped to `nobody` in the
   container, and `chgrp`, `newgrp`, etc. cannot be used.
-
+- OCI-mode now supports the `--no-home` flag, to prevent the container home
+  directory from being mounted.
+  
 ### Bug Fixes
 
 - Fix interaction between `--workdir` when given relative path and `--scratch`.
@@ -77,6 +79,8 @@
   of SIF metadata.
 - Pass STDIN to `--oci` containers correctly, to fix piping input to a container.
 - Fix compilation on 32-bit systems.
+- Set correct `$HOME` in `--oci` mode when `mount home = no` in
+  `singularity.conf`.
 
 ## 3.11.3 \[2023-05-04\]
 

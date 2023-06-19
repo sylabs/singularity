@@ -210,6 +210,11 @@ func (c actionTests) actionOciExec(t *testing.T) {
 			exit: 0,
 		},
 		{
+			name: "NoHome",
+			argv: []string{"--no-home", imageRef, "grep", e2e.OCIUserProfile.ContainerUser(t).Dir, "/proc/self/mountinfo"},
+			exit: 1,
+		},
+		{
 			name: "UTSNamespace",
 			argv: []string{"--uts", imageRef, "true"},
 			exit: 0,

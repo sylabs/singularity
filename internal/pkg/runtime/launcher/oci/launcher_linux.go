@@ -47,6 +47,12 @@ var (
 type Launcher struct {
 	cfg             launcher.Options
 	singularityConf *singularityconf.File
+	// homeSrc is the computed source (on the host) for the user's home directory.
+	// An empty value indicates there is no source on the host, and a tmpfs will be used.
+	homeSrc string
+	// homeDest is the computed destination (in the container) for the user's home directory.
+	// An empty value is not valid at mount time.
+	homeDest string
 }
 
 // NewLauncher returns a oci.Launcher with an initial configuration set by opts.
@@ -67,7 +73,17 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 		return nil, fmt.Errorf("singularity configuration is not initialized")
 	}
 
-	return &Launcher{cfg: lo, singularityConf: c}, nil
+	homeSrc, homeDest, err := parseHomeDir(lo.HomeDir, lo.CustomHome, lo.Fakeroot)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Launcher{
+		cfg:             lo,
+		singularityConf: c,
+		homeSrc:         homeSrc,
+		homeDest:        homeDest,
+	}, nil
 }
 
 // checkOpts ensures that options set are supported by the oci.Launcher.
@@ -81,9 +97,6 @@ func checkOpts(lo launcher.Options) error {
 	}
 	if lo.WritableTmpfs {
 		sylog.Infof("--oci mode uses --writable-tmpfs by default")
-	}
-	if lo.NoHome {
-		badOpt = append(badOpt, "NoHome")
 	}
 
 	if len(lo.FuseMount) > 0 {
@@ -187,6 +200,43 @@ func checkOpts(lo launcher.Options) error {
 	}
 
 	return nil
+}
+
+// parseHomeDir parses the homedir value passed from the CLI layer into a host source, and container dest.
+// This includes handling fakeroot and custom --home dst, or --home src:dst specifications.
+func parseHomeDir(homedir string, custom, fakeroot bool) (src, dest string, err error) {
+	// Get the host user's information, looking outside of a user namespace if necessary.
+	pw, err := rootless.GetUser()
+	if err != nil {
+		return "", "", err
+	}
+
+	// By default in --oci mode there is no external source for $HOME, i.e. a `tmpfs` will be used.
+	src = ""
+	// By default the destination in the container matches the users's $HOME on the host.
+	dest = pw.HomeDir
+
+	// --fakeroot means we are root in the container so $HOME=/root
+	if fakeroot {
+		dest = "/root"
+	}
+
+	// If the user set a custom --home via the CLI, then override the defaults.
+	if custom {
+		homeSlice := strings.Split(homedir, ":")
+		if len(homeSlice) < 1 || len(homeSlice) > 2 {
+			return "", "", fmt.Errorf("home argument has incorrect number of elements: %v", homeSlice)
+		}
+		// A single path was provided, so we will be mounting a tmpfs on this custom destination.
+		dest = homeSlice[0]
+
+		// Two paths provided (<src>:<dest>), so we will be bind mounting from host to container.
+		if len(homeSlice) > 1 {
+			src = homeSlice[0]
+			dest = homeSlice[1]
+		}
+	}
+	return src, dest, nil
 }
 
 // createSpec creates an initial OCI runtime specification, suitable to launch a
