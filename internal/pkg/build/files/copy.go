@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -101,7 +101,9 @@ func CopyFromHost(src, dstRel, dstRootfs string) error {
 // Symlinks are only dereferenced for the specified source or files that resolve
 // directly from a specified glob pattern. Any additional links inside a directory
 // being copied are not dereferenced.
-func CopyFromStage(src, dst, srcRootfs, dstRootfs string) error {
+// The disableIDMapping boolean should be set if this is a proot build, as the moby CopyWithTar
+// will freeze with ID mapping enabled in this case.
+func CopyFromStage(src, dst, srcRootfs, dstRootfs string, disableIDMapping bool) error {
 	// An absolute path on the host is required for globbing.
 	// Make sure the glob pattern doesn't climb out of the srcRootfs, by making it absolute w.r.t.
 	// the srcRootfs, and cleaning any '../' components that lead above the srcRootfs '/' before we
@@ -159,7 +161,7 @@ func CopyFromStage(src, dst, srcRootfs, dstRootfs string) error {
 			dstResolved = path.Join(dstResolved, srcName)
 		}
 
-		err = archive.CopyWithTar(srcResolved, dstResolved)
+		err = archive.CopyWithTar(srcResolved, dstResolved, disableIDMapping)
 		if err != nil {
 			return fmt.Errorf("while copying %s to %s: %s", paths, dstResolved, err)
 		}

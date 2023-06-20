@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -21,7 +21,7 @@ import (
 // cannot modify to pass a context.
 //
 // nolint:contextcheck
-func CopyWithTar(src, dst string) error {
+func CopyWithTar(src, dst string, disableIDMapping bool) error {
 	ar := da.NewDefaultArchiver()
 
 	// If we are running unprivileged, then squash uid / gid as necessary.
@@ -30,7 +30,7 @@ func CopyWithTar(src, dst string) error {
 	// ownership to be preserved.
 	euid := os.Geteuid()
 	egid := os.Getgid()
-	if euid != 0 || egid != 0 {
+	if (euid != 0 || egid != 0) && !disableIDMapping {
 		sylog.Debugf("Using unprivileged CopyWithTar (uid=%d, gid=%d)", euid, egid)
 		// The docker CopytWithTar function assumes it should create the top-level of dst as the
 		// container root user. If we are unprivileged this means setting up an ID mapping
