@@ -1631,6 +1631,11 @@ func (c imgBuildTests) buildProot(t *testing.T) {
 			name:      "Ubuntu",
 			buildSpec: "testdata/proot_ubuntu.def",
 		},
+		// See: https://github.com/sylabs/singularity/issues/1643
+		{
+			name:      "MultiStage",
+			buildSpec: "testdata/proot_multistage.def",
+		},
 	}
 
 	profiles := []e2e.Profile{e2e.UserProfile}

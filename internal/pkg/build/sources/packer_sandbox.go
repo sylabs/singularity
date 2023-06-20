@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -28,7 +28,7 @@ func (p *SandboxPacker) Pack(context.Context) (*types.Bundle, error) {
 	// copy filesystem into bundle rootfs
 	sylog.Debugf("Copying file system from %s to %s in Bundle\n", rootfs, p.b.RootfsPath)
 
-	err := archive.CopyWithTar(rootfs+`/.`, p.b.RootfsPath)
+	err := archive.CopyWithTar(rootfs+`/.`, p.b.RootfsPath, false)
 	if err != nil {
 		return nil, fmt.Errorf("copy Failed: %v", err)
 	}
