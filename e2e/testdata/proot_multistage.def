@@ -1,0 +1,19 @@
+bootstrap: library
+from: alpine:3.11.5
+Stage: build
+
+%post
+    echo 'test' > /test.txt
+
+bootstrap: library
+from: alpine:3.11.5
+Stage: final
+
+%files from build
+    /test.txt /test.txt
+
+%post
+    echo 'done'
+
+%test
+    test -f /test.txt

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -199,8 +199,10 @@ func (s *stage) copyFilesFrom(b *Build) error {
 				continue
 			}
 			// copy each file into bundle rootfs
+			// Disable IDMapping entirely if it's a proot build
+			proot := os.Getenv("SINGULARITY_PROOT") != ""
 			sylog.Infof("Copying %v to %v", transfer.Src, transfer.Dst)
-			if err := files.CopyFromStage(transfer.Src, transfer.Dst, srcRootfsPath, dstRootfsPath); err != nil {
+			if err := files.CopyFromStage(transfer.Src, transfer.Dst, srcRootfsPath, dstRootfsPath, proot); err != nil {
 				return err
 			}
 		}

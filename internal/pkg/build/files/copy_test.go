@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -730,7 +730,7 @@ func TestCopyFromStage(t *testing.T) {
 
 			// Manually concatenating because we need to preserve any trailing slash that is
 			// stripped by Join.
-			if err := CopyFromStage(tt.srcRel, tt.dstRel, srcRoot, dstRoot); err != nil {
+			if err := CopyFromStage(tt.srcRel, tt.dstRel, srcRoot, dstRoot, false); err != nil {
 				t.Errorf("unexpected failure running %s test: %s", t.Name(), err)
 			}
 
@@ -805,7 +805,7 @@ func TestCopyFromStageNested(t *testing.T) {
 	t.Logf("dstRoot location: %s\n", dstRoot)
 
 	// Copy our source innerDir over into the destination dir
-	if err := CopyFromStage("innerDir", "", srcRoot, dstRoot); err != nil {
+	if err := CopyFromStage("innerDir", "", srcRoot, dstRoot, false); err != nil {
 		t.Errorf("unexpected failure copying directory: %s", err)
 	}
 

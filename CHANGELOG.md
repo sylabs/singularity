@@ -25,6 +25,7 @@
 - Fix compilation on 32-bit systems.
 - Fix seccomp filters to allow mknod/mknodat syscalls to create pipe/socket
   and character devices with device number 0 for fakeroot builds.
+- Fix freeze when copying files between stages in an unprivileged proot build.
 
 ## 3.11.3 \[2023-05-04\]
 

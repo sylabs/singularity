@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -30,7 +30,7 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 	if a.Copy {
 		sylog.Debugf("Copying sandbox from %v to %v", b.RootfsPath, path)
 
-		err := archive.CopyWithTar(b.RootfsPath+`/.`, path)
+		err := archive.CopyWithTar(b.RootfsPath+`/.`, path, false)
 		if err != nil {
 			return fmt.Errorf("copy Failed: %v", err)
 		}
