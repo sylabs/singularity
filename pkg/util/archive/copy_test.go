@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -54,7 +54,7 @@ func testCopyWithTar(t *testing.T) {
 	// Perform the actual copy to a subdir of our dst tempdir.
 	// This ensures CopyWithTar has to create the dest directory, which is
 	// where the non-wrapped call would fail for unprivileged users.
-	err := CopyWithTar(srcRoot, path.Join(dstRoot, "dst"))
+	err := CopyWithTar(srcRoot, path.Join(dstRoot, "dst"), false)
 	if err != nil {
 		t.Fatalf("Error during CopyWithTar: %v", err)
 	}
