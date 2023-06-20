@@ -211,7 +211,8 @@ always use nv = {{ if eq .AlwaysUseNv true }}yes{{ else }}no{{ end }}
 
 # ROOT DEFAULT CAPABILITIES: [full/file/no]
 # DEFAULT: full
-# Define default root capability set kept during runtime
+# Define default root capability set kept during runtime.
+# Applies to the singularity runtime only, not --oci mode.
 # - full: keep all capabilities (same as --keep-privs)
 # - file: keep capabilities configured for root in
 #         ${prefix}/etc/singularity/capability.json

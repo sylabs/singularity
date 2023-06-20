@@ -53,24 +53,6 @@ func minimalSpec() specs.Spec {
 		"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
 	}
 
-	// TODO - these are appropriate minimum for rootless. We need to tie into
-	// Singularity's cap-add / cap-drop mechanism.
-	config.Process.Capabilities = &specs.LinuxCapabilities{
-		Bounding: []string{
-			"CAP_CHOWN",
-			"CAP_DAC_OVERRIDE",
-			"CAP_FOWNER",
-			"CAP_FSETID",
-			"CAP_KILL",
-			"CAP_NET_BIND_SERVICE",
-			"CAP_SETFCAP",
-			"CAP_SETGID",
-			"CAP_SETPCAP",
-			"CAP_SETUID",
-			"CAP_SYS_CHROOT",
-		},
-	}
-
 	// All mounts are added by the launcher, as it must handle flags.
 	config.Mounts = []specs.Mount{}
 
