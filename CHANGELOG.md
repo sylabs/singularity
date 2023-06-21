@@ -85,6 +85,8 @@
   libraries to bind into `/.singularity.d/libs/` in the container.
 - OCI-mode now supports the `--no-privs` flag to drop all capabilities from the
   container process, and enable the NoNewPrivileges flag.
+- OCI-mode now supports the `--keep-privs` flag to keep effective capabilities
+  for the container process (bounding set only for non-root container users).
 
 ### Bug Fixes
 

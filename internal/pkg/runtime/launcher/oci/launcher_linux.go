@@ -146,9 +146,6 @@ func checkOpts(lo launcher.Options) error {
 	if lo.AllowSUID {
 		badOpt = append(badOpt, "AllowSUID")
 	}
-	if lo.KeepPrivs {
-		badOpt = append(badOpt, "KeepPrivs")
-	}
 	if len(lo.SecurityOpts) > 0 {
 		badOpt = append(badOpt, "SecurityOpts")
 	}
