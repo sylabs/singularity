@@ -58,13 +58,21 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, imag
 		return nil, err
 	}
 
+	// OCI default is NoNewPrivileges = false
+	noNewPrivs := false
+	// --no-privs sets NoNewPrivileges
+	if l.cfg.NoPrivs {
+		noNewPrivs = true
+	}
+
 	p := specs.Process{
-		Args:         getProcessArgs(imgSpec, process, args),
-		Capabilities: getProcessCapabilities(u.UID),
-		Cwd:          cwd,
-		Env:          getProcessEnv(imgSpec, rtEnv),
-		User:         u,
-		Terminal:     getProcessTerminal(),
+		Args:            getProcessArgs(imgSpec, process, args),
+		Capabilities:    l.getProcessCapabilities(u.UID),
+		Cwd:             cwd,
+		Env:             getProcessEnv(imgSpec, rtEnv),
+		NoNewPrivileges: noNewPrivs,
+		User:            u,
+		Terminal:        getProcessTerminal(),
 	}
 
 	return &p, nil
@@ -335,7 +343,11 @@ func envFileMap(ctx context.Context, f string) (map[string]string, error) {
 // getProcessCapabilities returns the capabilities that are enabled for the
 // container. These follow OCI specified defaults. A non-root container user has
 // no effective/permitted capabilities.
-func getProcessCapabilities(targetUID uint32) *specs.LinuxCapabilities {
+func (l *Launcher) getProcessCapabilities(targetUID uint32) *specs.LinuxCapabilities {
+	if l.cfg.NoPrivs {
+		return &specs.LinuxCapabilities{}
+	}
+
 	if targetUID == 0 {
 		return &specs.LinuxCapabilities{
 			Bounding:  oci.DefaultCaps,

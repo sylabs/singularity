@@ -149,9 +149,6 @@ func checkOpts(lo launcher.Options) error {
 	if lo.KeepPrivs {
 		badOpt = append(badOpt, "KeepPrivs")
 	}
-	if lo.NoPrivs {
-		badOpt = append(badOpt, "NoPrivs")
-	}
 	if len(lo.SecurityOpts) > 0 {
 		badOpt = append(badOpt, "SecurityOpts")
 	}

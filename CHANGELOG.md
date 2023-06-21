@@ -83,6 +83,8 @@
   in OCI-mode, and `bind-path` mounts are not supported.
 - OCI-mode now suppports the `SINGULARITY_CONTAINLIBS` env var, to specify
   libraries to bind into `/.singularity.d/libs/` in the container.
+- OCI-mode now supports the `--no-privs` flag to drop all capabilities from the
+  container process, and enable the NoNewPrivileges flag.
 
 ### Bug Fixes
 

@@ -24,7 +24,8 @@ func (c ctx) ociCapabilities(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		profile    e2e.Profile
+		options    []string
+		profiles   []e2e.Profile
 		expectInh  string
 		expectPrm  string
 		expectEff  string
@@ -34,7 +35,7 @@ func (c ctx) ociCapabilities(t *testing.T) {
 	}{
 		{
 			name:      "DefaultUser",
-			profile:   e2e.OCIUserProfile,
+			profiles:  []e2e.Profile{e2e.OCIUserProfile},
 			expectInh: nullCapString,
 			expectPrm: nullCapString,
 			expectEff: nullCapString,
@@ -43,7 +44,7 @@ func (c ctx) ociCapabilities(t *testing.T) {
 		},
 		{
 			name:      "DefaultRoot",
-			profile:   e2e.OCIRootProfile,
+			profiles:  []e2e.Profile{e2e.OCIRootProfile, e2e.OCIFakerootProfile},
 			expectInh: nullCapString,
 			expectPrm: ociDefaultCapString,
 			expectEff: ociDefaultCapString,
@@ -51,12 +52,13 @@ func (c ctx) ociCapabilities(t *testing.T) {
 			expectAmb: nullCapString,
 		},
 		{
-			name:      "DefaultFakeroot",
-			profile:   e2e.OCIRootProfile,
+			name:      "NoPrivs",
+			options:   []string{"--no-privs"},
+			profiles:  []e2e.Profile{e2e.OCIRootProfile, e2e.OCIFakerootProfile, e2e.OCIUserProfile},
 			expectInh: nullCapString,
-			expectPrm: ociDefaultCapString,
-			expectEff: ociDefaultCapString,
-			expectBnd: ociDefaultCapString,
+			expectPrm: nullCapString,
+			expectEff: nullCapString,
+			expectBnd: nullCapString,
 			expectAmb: nullCapString,
 		},
 	}
@@ -64,20 +66,22 @@ func (c ctx) ociCapabilities(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	for _, tt := range tests {
-		args := []string{imageRef, "grep", "^Cap...:", "/proc/self/status"}
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(tt.profile),
-			e2e.WithCommand("exec"),
-			e2e.WithArgs(args...),
-			e2e.ExpectExit(tt.expectExit,
-				e2e.ExpectOutput(e2e.ContainMatch, "CapInh:\t"+tt.expectInh),
-				e2e.ExpectOutput(e2e.ContainMatch, "CapPrm:\t"+tt.expectPrm),
-				e2e.ExpectOutput(e2e.ContainMatch, "CapEff:\t"+tt.expectEff),
-				e2e.ExpectOutput(e2e.ContainMatch, "CapBnd:\t"+tt.expectBnd),
-				e2e.ExpectOutput(e2e.ContainMatch, "CapAmb:\t"+tt.expectAmb),
-			),
-		)
+		for _, p := range tt.profiles {
+			args := append(tt.options, imageRef, "grep", "^Cap...:", "/proc/self/status")
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest(tt.name+"/"+p.String()),
+				e2e.WithProfile(p),
+				e2e.WithCommand("exec"),
+				e2e.WithArgs(args...),
+				e2e.ExpectExit(tt.expectExit,
+					e2e.ExpectOutput(e2e.ContainMatch, "CapInh:\t"+tt.expectInh),
+					e2e.ExpectOutput(e2e.ContainMatch, "CapPrm:\t"+tt.expectPrm),
+					e2e.ExpectOutput(e2e.ContainMatch, "CapEff:\t"+tt.expectEff),
+					e2e.ExpectOutput(e2e.ContainMatch, "CapBnd:\t"+tt.expectBnd),
+					e2e.ExpectOutput(e2e.ContainMatch, "CapAmb:\t"+tt.expectAmb),
+				),
+			)
+		}
 	}
 }
