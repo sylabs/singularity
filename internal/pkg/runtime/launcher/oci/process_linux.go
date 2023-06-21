@@ -19,6 +19,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/shell/interpreter"
+	"github.com/sylabs/singularity/pkg/util/capabilities"
 	"golang.org/x/term"
 )
 
@@ -65,9 +66,14 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, imag
 		noNewPrivs = true
 	}
 
+	caps, err := l.getProcessCapabilities(u.UID)
+	if err != nil {
+		return nil, err
+	}
+
 	p := specs.Process{
 		Args:            getProcessArgs(imgSpec, process, args),
-		Capabilities:    l.getProcessCapabilities(u.UID),
+		Capabilities:    caps,
 		Cwd:             cwd,
 		Env:             getProcessEnv(imgSpec, rtEnv),
 		NoNewPrivileges: noNewPrivs,
@@ -343,9 +349,23 @@ func envFileMap(ctx context.Context, f string) (map[string]string, error) {
 // getProcessCapabilities returns the capabilities that are enabled for the
 // container. These follow OCI specified defaults. A non-root container user has
 // no effective/permitted capabilities.
-func (l *Launcher) getProcessCapabilities(targetUID uint32) *specs.LinuxCapabilities {
+func (l *Launcher) getProcessCapabilities(targetUID uint32) (*specs.LinuxCapabilities, error) {
 	if l.cfg.NoPrivs {
-		return &specs.LinuxCapabilities{}
+		return &specs.LinuxCapabilities{}, nil
+	}
+
+	if l.cfg.KeepPrivs {
+		c, err := capabilities.GetProcessEffective()
+		if err != nil {
+			return nil, err
+		}
+
+		cStr := capabilities.ToStrings(c)
+		return &specs.LinuxCapabilities{
+			Bounding:  cStr,
+			Permitted: cStr,
+			Effective: cStr,
+		}, nil
 	}
 
 	if targetUID == 0 {
@@ -353,10 +373,10 @@ func (l *Launcher) getProcessCapabilities(targetUID uint32) *specs.LinuxCapabili
 			Bounding:  oci.DefaultCaps,
 			Permitted: oci.DefaultCaps,
 			Effective: oci.DefaultCaps,
-		}
+		}, nil
 	}
 
 	return &specs.LinuxCapabilities{
 		Bounding: oci.DefaultCaps,
-	}
+	}, nil
 }

@@ -56,6 +56,16 @@ func GetProcessInheritable() (uint64, error) {
 	return uint64(data[0].Inheritable) | uint64(data[1].Inheritable)<<32, nil
 }
 
+// GetProcessBounding returns bounding capabilities for
+// the current process.
+func GetProcessBounding() (uint64, error) {
+	data, err := getProcessCapabilities()
+	if err != nil {
+		return 0, err
+	}
+	return uint64(data[0].Inheritable) | uint64(data[1].Inheritable)<<32, nil
+}
+
 // SetProcessEffective set effective capabilities for the
 // the current process and returns previous effective set.
 func SetProcessEffective(caps uint64) (uint64, error) {

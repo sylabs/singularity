@@ -6,6 +6,7 @@
 package capabilities
 
 import (
+	"reflect"
 	"sort"
 	"testing"
 )
@@ -163,6 +164,37 @@ func TestRemoveDuplicated(t *testing.T) {
 				if tc.expect[i] != actual[i] {
 					t.Fatalf("expected %s at position %d, but got %s", tc.expect[i], i, actual[i])
 				}
+			}
+		})
+	}
+}
+
+func TestToStrings(t *testing.T) {
+	tests := []struct {
+		name string
+		c    uint64
+		want []string
+	}{
+		{
+			name: "Empty",
+			c:    0,
+			want: []string{},
+		},
+		{
+			name: "Single",
+			c:    0x8000000,
+			want: []string{"CAP_MKNOD"},
+		},
+		{
+			name: "Multi",
+			c:    0x8001001,
+			want: []string{"CAP_CHOWN", "CAP_MKNOD", "CAP_NET_ADMIN"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ToStrings(tt.c); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ToStrings() = %v, want %v", got, tt.want)
 			}
 		})
 	}
