@@ -27,6 +27,10 @@
   `enable overlay` no longer supports the `driver` option.
 - Bash completions are now install to the modern
   `share/bash-completion/completions` location, rather than under `etc`.
+- Default OCI config generated with `singularity mount` no longer sets any
+  inheritable / ambient capabilites, matching other OCI runtimes.
+- In OCI-mode, a container run as root, or with `--fakeroot` has OCI default
+  effective/permitted capabilities.
 
 ### New Features & Functionality
 

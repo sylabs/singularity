@@ -15,6 +15,7 @@ import (
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/fakeroot"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/shell/interpreter"
@@ -58,11 +59,12 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, imag
 	}
 
 	p := specs.Process{
-		Args:     getProcessArgs(imgSpec, process, args),
-		Cwd:      cwd,
-		Env:      getProcessEnv(imgSpec, rtEnv),
-		User:     u,
-		Terminal: getProcessTerminal(),
+		Args:         getProcessArgs(imgSpec, process, args),
+		Capabilities: getProcessCapabilities(u.UID),
+		Cwd:          cwd,
+		Env:          getProcessEnv(imgSpec, rtEnv),
+		User:         u,
+		Terminal:     getProcessTerminal(),
 	}
 
 	return &p, nil
@@ -328,4 +330,21 @@ func envFileMap(ctx context.Context, f string) (map[string]string, error) {
 	}
 
 	return envMap, nil
+}
+
+// getProcessCapabilities returns the capabilities that are enabled for the
+// container. These follow OCI specified defaults. A non-root container user has
+// no effective/permitted capabilities.
+func getProcessCapabilities(targetUID uint32) *specs.LinuxCapabilities {
+	if targetUID == 0 {
+		return &specs.LinuxCapabilities{
+			Bounding:  oci.DefaultCaps,
+			Permitted: oci.DefaultCaps,
+			Effective: oci.DefaultCaps,
+		}
+	}
+
+	return &specs.LinuxCapabilities{
+		Bounding: oci.DefaultCaps,
+	}
 }
