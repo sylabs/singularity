@@ -87,6 +87,8 @@
   container process, and enable the NoNewPrivileges flag.
 - OCI-mode now supports the `--keep-privs` flag to keep effective capabilities
   for the container process (bounding set only for non-root container users).
+- OCI-mode now supports the `--add-caps` and `--drop-caps` flags to modify
+  capabilities of the container process.
 
 ### Bug Fixes
 

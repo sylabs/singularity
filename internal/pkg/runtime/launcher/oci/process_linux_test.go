@@ -14,6 +14,10 @@ import (
 
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/samber/lo"
+	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
+	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
+	"github.com/sylabs/singularity/pkg/util/capabilities"
 )
 
 func TestSingularityEnvMap(t *testing.T) {
@@ -426,6 +430,211 @@ func TestLauncher_reverseMapByRange(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotGIDMap, tt.wantGIDMap) {
 				t.Errorf("Launcher.getReverseUserMaps() gotGidMap = %v, want %v", gotGIDMap, tt.wantGIDMap)
+			}
+		})
+	}
+}
+
+func TestLauncher_getBaseCapabilities(t *testing.T) {
+	currCaps, err := capabilities.GetProcessEffective()
+	if err != nil {
+		t.Fatal(err)
+	}
+	currCapStrings := capabilities.ToStrings(currCaps)
+
+	tests := []struct {
+		name      string
+		keepPrivs bool
+		noPrivs   bool
+		want      []string
+		wantErr   bool
+	}{
+		{
+			name:      "Default",
+			keepPrivs: false,
+			noPrivs:   false,
+			want:      oci.DefaultCaps,
+			wantErr:   false,
+		},
+		{
+			name:      "NoPrivs",
+			keepPrivs: false,
+			noPrivs:   true,
+			want:      []string{},
+			wantErr:   false,
+		},
+		{
+			name:      "NoPrivsPrecendence",
+			keepPrivs: true,
+			noPrivs:   true,
+			want:      []string{},
+			wantErr:   false,
+		},
+		{
+			name:      "KeepPrivs",
+			keepPrivs: true,
+			noPrivs:   false,
+			want:      currCapStrings,
+			wantErr:   false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l := &Launcher{
+				cfg: launcher.Options{
+					KeepPrivs: tt.keepPrivs,
+					NoPrivs:   tt.noPrivs,
+				},
+			}
+			got, err := l.getBaseCapabilities()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Launcher.getBaseCapabilities() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Launcher.getBaseCapabilities() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLauncher_getProcessCapabilities(t *testing.T) {
+	tests := []struct {
+		name     string
+		addCaps  string
+		dropCaps string
+		uid      uint32
+		want     *specs.LinuxCapabilities
+		wantErr  bool
+	}{
+		{
+			name:     "DefaultRoot",
+			addCaps:  "",
+			dropCaps: "",
+			uid:      0,
+			want: &specs.LinuxCapabilities{
+				Permitted:   oci.DefaultCaps,
+				Effective:   oci.DefaultCaps,
+				Bounding:    oci.DefaultCaps,
+				Inheritable: []string{},
+				Ambient:     []string{},
+			},
+			wantErr: false,
+		},
+		{
+			name:     "DefaultUser",
+			addCaps:  "",
+			dropCaps: "",
+			uid:      1000,
+			want: &specs.LinuxCapabilities{
+				Permitted:   []string{},
+				Effective:   []string{},
+				Bounding:    oci.DefaultCaps,
+				Inheritable: []string{},
+				Ambient:     []string{},
+			},
+			wantErr: false,
+		},
+		{
+			name:     "AddRoot",
+			addCaps:  "CAP_SYSLOG,CAP_WAKE_ALARM",
+			dropCaps: "",
+			uid:      0,
+			want: &specs.LinuxCapabilities{
+				Permitted:   append(oci.DefaultCaps, "CAP_SYSLOG", "CAP_WAKE_ALARM"),
+				Effective:   append(oci.DefaultCaps, "CAP_SYSLOG", "CAP_WAKE_ALARM"),
+				Bounding:    append(oci.DefaultCaps, "CAP_SYSLOG", "CAP_WAKE_ALARM"),
+				Inheritable: []string{},
+				Ambient:     []string{},
+			},
+			wantErr: false,
+		},
+		{
+			name:     "DropRoot",
+			addCaps:  "",
+			dropCaps: "CAP_SETUID,CAP_SETGID",
+			uid:      0,
+			want: &specs.LinuxCapabilities{
+				Permitted:   lo.Without(oci.DefaultCaps, "CAP_SETUID", "CAP_SETGID"),
+				Effective:   lo.Without(oci.DefaultCaps, "CAP_SETUID", "CAP_SETGID"),
+				Bounding:    lo.Without(oci.DefaultCaps, "CAP_SETUID", "CAP_SETGID"),
+				Inheritable: []string{},
+				Ambient:     []string{},
+			},
+			wantErr: false,
+		},
+		{
+			name:     "AddUser",
+			addCaps:  "CAP_SYSLOG,CAP_WAKE_ALARM",
+			dropCaps: "",
+			uid:      1000,
+			want: &specs.LinuxCapabilities{
+				Permitted:   []string{"CAP_SYSLOG", "CAP_WAKE_ALARM"},
+				Effective:   []string{"CAP_SYSLOG", "CAP_WAKE_ALARM"},
+				Bounding:    append(oci.DefaultCaps, "CAP_SYSLOG", "CAP_WAKE_ALARM"),
+				Inheritable: []string{"CAP_SYSLOG", "CAP_WAKE_ALARM"},
+				Ambient:     []string{"CAP_SYSLOG", "CAP_WAKE_ALARM"},
+			},
+			wantErr: false,
+		},
+		{
+			name:     "DropUser",
+			addCaps:  "",
+			dropCaps: "CAP_SETUID,CAP_SETGID",
+			uid:      1000,
+			want: &specs.LinuxCapabilities{
+				Permitted:   []string{},
+				Effective:   []string{},
+				Bounding:    lo.Without(oci.DefaultCaps, "CAP_SETUID", "CAP_SETGID"),
+				Inheritable: []string{},
+				Ambient:     []string{},
+			},
+			wantErr: false,
+		},
+		{
+			name:     "AddDropRoot",
+			addCaps:  "CAP_SYSLOG,CAP_WAKE_ALARM",
+			dropCaps: "CAP_SETUID,CAP_SETGID",
+			uid:      0,
+			want: &specs.LinuxCapabilities{
+				Permitted:   lo.Without(append(oci.DefaultCaps, "CAP_SYSLOG", "CAP_WAKE_ALARM"), "CAP_SETUID", "CAP_SETGID"),
+				Effective:   lo.Without(append(oci.DefaultCaps, "CAP_SYSLOG", "CAP_WAKE_ALARM"), "CAP_SETUID", "CAP_SETGID"),
+				Bounding:    lo.Without(append(oci.DefaultCaps, "CAP_SYSLOG", "CAP_WAKE_ALARM"), "CAP_SETUID", "CAP_SETGID"),
+				Inheritable: []string{},
+				Ambient:     []string{},
+			},
+			wantErr: false,
+		},
+		{
+			name:     "AddDropUser",
+			addCaps:  "CAP_SYSLOG,CAP_WAKE_ALARM",
+			dropCaps: "CAP_SETUID,CAP_SETGID",
+			uid:      1000,
+			want: &specs.LinuxCapabilities{
+				Permitted:   []string{"CAP_SYSLOG", "CAP_WAKE_ALARM"},
+				Effective:   []string{"CAP_SYSLOG", "CAP_WAKE_ALARM"},
+				Bounding:    lo.Without(append(oci.DefaultCaps, "CAP_SYSLOG", "CAP_WAKE_ALARM"), "CAP_SETUID", "CAP_SETGID"),
+				Inheritable: []string{"CAP_SYSLOG", "CAP_WAKE_ALARM"},
+				Ambient:     []string{"CAP_SYSLOG", "CAP_WAKE_ALARM"},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			l := &Launcher{
+				cfg: launcher.Options{
+					AddCaps:  tt.addCaps,
+					DropCaps: tt.dropCaps,
+				},
+			}
+			got, err := l.getProcessCapabilities(tt.uid)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Launcher.getProcessCapabilities() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Launcher.getProcessCapabilities() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -16,6 +16,11 @@ import (
 const (
 	// Default OCI capabilities as visible in /proc/status
 	ociDefaultCapString = "00000020a80425fb"
+	// DefaultOCI capabilities with CAP_CHOWN dropped
+	ociDropChownString = "00000020a80425fa"
+	// DefaultOCI capabilities with CAP_SYS_ADMIN added
+	ociAddSysAdminString = "00000020a82425fb"
+	capSysAdminString    = "0000000000200000"
 	// No capabilities, as visible in /proc/status
 	nullCapString = "0000000000000000"
 )
@@ -91,6 +96,46 @@ func (c ctx) ociCapabilities(t *testing.T) {
 			expectPrm: fullCapString,
 			expectEff: fullCapString,
 			expectBnd: fullCapString,
+			expectAmb: nullCapString,
+		},
+		{
+			name:      "DropChownUser",
+			options:   []string{"--drop-caps", "CAP_CHOWN"},
+			profiles:  []e2e.Profile{e2e.OCIUserProfile},
+			expectInh: nullCapString,
+			expectPrm: nullCapString,
+			expectEff: nullCapString,
+			expectBnd: ociDropChownString,
+			expectAmb: nullCapString,
+		},
+		{
+			name:      "DropChownRoot",
+			options:   []string{"--drop-caps", "CAP_CHOWN"},
+			profiles:  []e2e.Profile{e2e.OCIRootProfile, e2e.OCIFakerootProfile},
+			expectInh: nullCapString,
+			expectPrm: ociDropChownString,
+			expectEff: ociDropChownString,
+			expectBnd: ociDropChownString,
+			expectAmb: nullCapString,
+		},
+		{
+			name:      "AddSysAdminUser",
+			options:   []string{"--add-caps", "CAP_SYS_ADMIN"},
+			profiles:  []e2e.Profile{e2e.OCIUserProfile},
+			expectInh: capSysAdminString,
+			expectPrm: capSysAdminString,
+			expectEff: capSysAdminString,
+			expectBnd: ociAddSysAdminString,
+			expectAmb: capSysAdminString,
+		},
+		{
+			name:      "AddSysAdminRoot",
+			options:   []string{"--add-caps", "CAP_SYS_ADMIN"},
+			profiles:  []e2e.Profile{e2e.OCIRootProfile, e2e.OCIFakerootProfile},
+			expectInh: nullCapString,
+			expectPrm: ociAddSysAdminString,
+			expectEff: ociAddSysAdminString,
+			expectBnd: ociAddSysAdminString,
 			expectAmb: nullCapString,
 		},
 	}

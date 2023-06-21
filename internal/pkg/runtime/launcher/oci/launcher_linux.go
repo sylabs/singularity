@@ -137,12 +137,6 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "NetworkArgs")
 	}
 
-	if lo.AddCaps != "" {
-		badOpt = append(badOpt, "AddCaps")
-	}
-	if lo.DropCaps != "" {
-		badOpt = append(badOpt, "DropCaps")
-	}
 	if lo.AllowSUID {
 		badOpt = append(badOpt, "AllowSUID")
 	}
