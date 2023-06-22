@@ -14,6 +14,12 @@
 - Added `remote get-login-password` subcommand that allows the user to
   retrieve a CLI token to interact with the OCI registry of a
   Singularity Enterprise instance.
+- Added `--no-setgroups` flag for `--fakeroot` builds and run/shell/exec. This
+  prevents the `setgroups` syscall being used on the container process in the
+  fakeroot user namespace. Maintains access from within the user namespace to
+  files on the host that have permissions based on supplementary group
+  membership. Note that supplementary groups are mapped to `nobody` in the
+  container, and `chgrp`, `newgrp`, etc. cannot be used.
 
 ### Bug Fixes
 

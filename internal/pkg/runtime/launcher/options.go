@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -116,6 +116,8 @@ type Options struct {
 
 	// Fakeroot enables the fake root mode, using user namespaces and subuid / subgid mapping.
 	Fakeroot bool
+	// NoSetgroups disables calling setgroups for the fakeroot user namespace.
+	NoSetgroups bool
 	// Boot enables execution of /sbin/init on startup of an instance container.
 	Boot bool
 	// NoInit disables shim process when PID namespace is used.
@@ -415,6 +417,14 @@ func OptPwdPath(p string) Option {
 func OptFakeroot(b bool) Option {
 	return func(lo *Options) error {
 		lo.Fakeroot = b
+		return nil
+	}
+}
+
+// OptNoSetgroups disables calling setgroups for the fakeroot user namespace.
+func OptNoSetgroups(b bool) Option {
+	return func(lo *Options) error {
+		lo.NoSetgroups = b
 		return nil
 	}
 }

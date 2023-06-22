@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018-2019, Sylabs, Inc. All rights reserved.
+  Copyright (c) 2018-2023, Sylabs, Inc. All rights reserved.
 
   This software is licensed under a 3-clause BSD license.  Please
   consult LICENSE.md file distributed with the sources of this project regarding
@@ -113,6 +113,10 @@ struct privileges {
     char uidMap[MAX_MAP_SIZE];
     char gidMap[MAX_MAP_SIZE];
     bool allowSetgroups;
+    /* skip setgroups call even if allowed. May be used with fakeroot engine to
+    access files with pre-userns supplementary group membership.
+    See https://github.com/sylabs/singularity/issues/1748 */
+    bool noSetgroups;
 
     /* path to external newuidmap/newgidmap binaries */
     char newuidmapPath[MAX_PATH_SIZE];
