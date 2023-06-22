@@ -18,9 +18,6 @@
 - Bind mounts are now performed in the order of their occurrence on the command
   line, or within the value of the `SINGULARITY_BIND` environment variable.
   (Previously, image-mounts were always performed first, regardless of order.)
-- Add `xino=on` mount option for writable kernel overlay mount points to fix
-  inode numbers consistency after kernel cache flush (not applicable to
-  fuse-overlayfs).
 - Support for image driver plugins, deprecated at 3.11, has been removed.
   Unprivileged kernel overlay is supported without a plugin. In
   `singularity.conf`, the `image driver` directive has been removed, and
@@ -38,9 +35,6 @@
   removal of a private key by fingerprint.
 - Added `--private` as a synonym for `--secret` in `key list`, `key export`, and
   `key remove` subcommands.
-- Added `remote get-login-password` subcommand that allows the user to
-  retrieve a CLI token to interact with the OCI registry of a
-  Singularity Enterprise instance.
 - Added `--device` flag to "action" commands (`run`/`exec`/`shell`) when run in
   OCI mode (`--oci`). Currently supports passing one or more (comma-separated)
   fully-qualified CDI device names, and those devices will then be made
@@ -57,25 +51,14 @@
   `--overlay <arg>:ro` can be used, where `<arg>` is the path to a directory, to
   a squashfs image, or to an extfs image, to be mounted as a read-only overlay.
   Multiple overlays can be specified, but all but one must be read-only.
-- The `tap` CNI plugin, new to github.com/containernetworking/plugins v1.3.0,
-  is now provided.
 - OCI-mode now supports the `--workdir <workdir>` option. If this option is
   specified, `/tmp` and `/var/tmp` will be mapped, respectively, to
   `<workdir>/tmp` and `<workdir>/var_tmp` on the host, rather than to tmpfs
   storage. If `--scratch <scratchdir>` is used in conjunction with `--workdir`,
   scratch directories will be mapped to subdirectories nested under
   `<workdir>/scratch` on the host, rather than to tmpfs storage.
-- Added ability to set a custom config directory via the new
-  `SINGULARITY_CONFIGDIR` environment variable.
 - If kernel does not support unprivileged overlays, OCI-mode will attempt to use
   `fuse-overlayfs` and `fusermount` for overlay mounting and unmounting.
-- Added `--no-setgroups` flag, to prevent the `setgroups` syscall being called
-  when starting a container.  Applies to `--fakeroot` builds and actions in
-  native mode. Applies to all non-root actions in OCI-mode. Maintains access
-  from within the user namespace to files on the host that have permissions
-  based on supplementary group membership. Note that supplementary groups are
-  mapped to `nobody` in the container, and `chgrp`, `newgrp`, etc. cannot be
-  used.
 - OCI-mode now supports the `--no-home` flag, to prevent the container home
   directory from being mounted.
 - OCI-mode now supports the `--no-mount` flag to disable the `proc`, `sys`,
@@ -93,15 +76,45 @@
 ### Bug Fixes
 
 - Fix interaction between `--workdir` when given relative path and `--scratch`.
+- Set correct `$HOME` in `--oci` mode when `mount home = no` in
+  `singularity.conf`.
+
+## 3.11.4 \[2023-06-22\]
+
+### Changed defaults / behaviours
+
+- Add `xino=on` mount option for writable kernel overlay mount points to fix
+  inode numbers consistency after kernel cache flush.
+
+### New Features & Functionality
+
+- The `tap` CNI plugin, new to github.com/containernetworking/plugins v1.3.0,
+  is now provided.
+- Added `remote get-login-password` subcommand that allows the user to
+  retrieve a CLI token to interact with the OCI registry of a
+  Singularity Enterprise instance.
+- Added `--no-setgroups` flag for `--fakeroot` builds and run/shell/exec. This
+  prevents the `setgroups` syscall being used on the container process in the
+  fakeroot user namespace. Maintains access from within the user namespace to
+  files on the host that have permissions based on supplementary group
+  membership. Note that supplementary groups are mapped to `nobody` in the
+  container, and `chgrp`, `newgrp`, etc. cannot be used.
+- Added ability to set a custom user config directory (default
+  `$HOME/.singularity`) via the new `SINGULARITY_CONFIGDIR` environment
+  variable.
+
+### Bug Fixes
+
+- In `--oci` mode, do not attempt to use unprivileged overlay on systems that do
+  not support it.
 - Fix dropped "n" characters on some platforms in definition file stored as part
   of SIF metadata.
 - Pass STDIN to `--oci` containers correctly, to fix piping input to a container.
 - Fix compilation on 32-bit systems.
-- Set correct `$HOME` in `--oci` mode when `mount home = no` in
-  `singularity.conf`.
 - Fix seccomp filters to allow mknod/mknodat syscalls to create pipe/socket
   and character devices with device number 0 for fakeroot builds.
 - Fix freeze when copying files between stages in an unprivileged proot build.
+- Fix non-POSIX sh operator in mconfig.
 - Correct internal name for CAP_BLOCK_SUSPEND.
 
 ## 3.11.3 \[2023-05-04\]
