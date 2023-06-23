@@ -500,8 +500,8 @@ github.com/sigstore/fulcio v1.2.0 h1:I4H764cDbryKXkPtasUvo8bcix/7xLvkxWYWNp+JtWI
 github.com/sigstore/fulcio v1.2.0/go.mod h1:FS7qpBvOEqs0uEh1+hJxzxtJistWN29ybLtAzFNUi0c=
 github.com/sigstore/rekor v1.2.0 h1:ahlnoEY3zo8Vc+eZLPobamw6YfBTAbI0lthzUQd6qe4=
 github.com/sigstore/rekor v1.2.0/go.mod h1:zcFO54qIg2G1/i0sE/nvmELUOng/n0MPjTszRYByVPo=
-github.com/sigstore/sigstore v1.7.0 h1:0jLlzxX68LtirwSTWAwRPMKhulT0aWVLmFU5ofnbtYA=
-github.com/sigstore/sigstore v1.7.0/go.mod h1:0PmMzfJP2Y9+lugD0wer4e7TihR5tM7NcIs3bQNk5xg=
+github.com/sigstore/sigstore v1.7.1 h1:fCATemikcBK0cG4+NcM940MfoIgmioY1vC6E66hXxks=
+github.com/sigstore/sigstore v1.7.1/go.mod h1:0PmMzfJP2Y9+lugD0wer4e7TihR5tM7NcIs3bQNk5xg=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.3.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.4.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
