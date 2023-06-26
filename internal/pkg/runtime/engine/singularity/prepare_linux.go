@@ -1,5 +1,7 @@
-// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
+// Copyright (c) 2020, Control Command Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -128,11 +130,13 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 
 	uid := e.EngineConfig.GetTargetUID()
 	gids := e.EngineConfig.GetTargetGID()
+	useTargetIDs := e.EngineConfig.GetFakeroot()
 
 	if os.Getuid() == 0 && (uid != 0 || len(gids) > 0) {
 		starterConfig.SetTargetUID(uid)
 		starterConfig.SetTargetGID(gids)
 		e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
+		useTargetIDs = true
 	}
 
 	if e.EngineConfig.GetInstanceJoin() {
@@ -140,6 +144,8 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 			return err
 		}
 	} else {
+		e.setUserInfo(useTargetIDs)
+
 		if err := e.prepareContainerConfig(starterConfig); err != nil {
 			return err
 		}
@@ -1426,4 +1432,52 @@ func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, 
 	}
 
 	return imgObject, imgErr
+}
+
+func (e *EngineOperations) setUserInfo(useTargetIDs bool) {
+	var gids []int
+
+	pw, err := user.CurrentOriginal()
+	if err != nil {
+		return
+	}
+
+	e.EngineConfig.JSON.UserInfo.Home = pw.Dir
+
+	if useTargetIDs {
+		pw, err = user.GetPwUID(uint32(e.EngineConfig.GetTargetUID()))
+		if err == nil {
+			e.EngineConfig.JSON.UserInfo.Username = pw.Name
+			e.EngineConfig.JSON.UserInfo.Gecos = pw.Gecos
+			e.EngineConfig.JSON.UserInfo.UID = int(pw.UID)
+			e.EngineConfig.JSON.UserInfo.GID = int(pw.GID)
+		}
+	} else {
+		e.EngineConfig.JSON.UserInfo.Username = pw.Name
+		e.EngineConfig.JSON.UserInfo.Gecos = pw.Gecos
+		e.EngineConfig.JSON.UserInfo.UID = int(pw.UID)
+		e.EngineConfig.JSON.UserInfo.GID = int(pw.GID)
+	}
+
+	e.EngineConfig.JSON.UserInfo.Groups = make(map[int]string)
+
+	if useTargetIDs {
+		gids = e.EngineConfig.GetTargetGID()
+	} else {
+		gids, err = os.Getgroups()
+		if err != nil {
+			return
+		}
+	}
+
+	if pw != nil {
+		gids = append(gids, int(pw.GID))
+	}
+
+	for _, gid := range gids {
+		group, err := user.GetGrGID(uint32(gid))
+		if err == nil {
+			e.EngineConfig.JSON.UserInfo.Groups[gid] = group.Name
+		}
+	}
 }

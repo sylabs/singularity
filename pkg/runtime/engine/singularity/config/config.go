@@ -1,4 +1,6 @@
 // Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -58,6 +60,16 @@ type FuseMount struct {
 	FromContainer bool      `json:"fromContainer,omitempty"` // is FUSE driver program is run from container or from host
 	Daemon        bool      `json:"daemon,omitempty"`        // is FUSE driver program is run in daemon/background mode
 	Cmd           *exec.Cmd `json:"-"`                       // holds the process exec command when FUSE driver run in foreground mode
+}
+
+type UserInfo struct {
+	Username string         `json:"username,omitempty"`
+	Home     string         `json:"home,omitempty"`
+	UID      int            `json:"uid,omitempty"`
+	GID      int            `json:"gid,omitempty"`
+	Groups   map[int]string `json:"groups,omitempty"`
+	Gecos    string         `json:"gecos,omitempty"`
+	Shell    string         `json:"shell,omitempty"`
 }
 
 // JSONConfig stores engine specific configuration that is allowed to be set by the user.
@@ -127,6 +139,7 @@ type JSONConfig struct {
 	XdgRuntimeDir         string            `json:"xdgRuntimeDir,omitempty"`
 	DbusSessionBusAddress string            `json:"dbusSessionBusAddress,omitempty"`
 	NoEval                bool              `json:"noEval,omitempty"`
+	UserInfo              UserInfo          `json:"userInfo,omitempty"`
 	NoSetgroups           bool              `json:"noSetgroups,omitempty"`
 }
 

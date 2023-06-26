@@ -1,4 +1,6 @@
 // Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -20,11 +22,11 @@ func TestGroup(t *testing.T) {
 	var gids []int
 	uid := os.Getuid()
 
-	_, err := Group("/fake", uid, gids)
+	_, err := Group("/fake", uid, gids, nil)
 	if err == nil {
 		t.Errorf("should have failed with bad group file")
 	}
-	_, err = Group("/etc/group", uid, gids)
+	_, err = Group("/etc/group", uid, gids, nil)
 	if err != nil {
 		t.Errorf("should have passed with correct group file")
 	}
@@ -37,7 +39,7 @@ func TestGroup(t *testing.T) {
 	defer os.Remove(emptyGroup)
 	f.Close()
 
-	_, err = Group(emptyGroup, uid, gids)
+	_, err = Group(emptyGroup, uid, gids, nil)
 	if err != nil {
 		t.Error(err)
 	}

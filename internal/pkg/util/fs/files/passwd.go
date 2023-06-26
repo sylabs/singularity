@@ -1,4 +1,6 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -18,9 +20,15 @@ import (
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
+type UserGroupLookup interface {
+	GetPwUID(uint32) (*user.User, error)
+	GetGrGID(uint32) (*user.Group, error)
+	Getgroups() ([]int, error)
+}
+
 // Passwd creates a passwd template based on content of file provided in path,
 // updates content with current user information and returns content.
-func Passwd(path string, home string, uid int) (content []byte, err error) {
+func Passwd(path string, home string, uid int, customLookup UserGroupLookup) (content []byte, err error) {
 	sylog.Verbosef("Checking for template passwd file: %s", path)
 	if !fs.IsFile(path) {
 		return content, fmt.Errorf("passwd file doesn't exist in container, not updating")
@@ -39,7 +47,12 @@ func Passwd(path string, home string, uid int) (content []byte, err error) {
 	}
 	file.Close()
 
-	pwInfo, err := user.GetPwUID(uint32(uid))
+	getPwUID := user.GetPwUID
+	if customLookup != nil {
+		getPwUID = customLookup.GetPwUID
+	}
+
+	pwInfo, err := getPwUID(uint32(uid))
 	if err != nil {
 		return content, err
 	}
@@ -62,13 +75,17 @@ func Passwd(path string, home string, uid int) (content []byte, err error) {
 			return content, fmt.Errorf("failed to parse this /etc/passwd line in container: %#v (%s)", line, err)
 		}
 		if entry.Uid() == uid {
-			userExists = true
 			// If user already exists in container, rebuild their passwd info preserving their original shell value
-			lines[i] = makePasswdLine(pwInfo.Name, pwInfo.UID, pwInfo.GID, pwInfo.Gecos, homeDir, entry.Shell())
+			userExists = true
+			origLine := lines[i]
+			revisedLine := makePasswdLine(pwInfo.Name, pwInfo.UID, pwInfo.GID, pwInfo.Gecos, homeDir, entry.Shell())
+			sylog.Debugf("replacing line in passwd file: %q instead of %q", revisedLine, origLine)
+			lines[i] = revisedLine
 			break
 		}
 	}
 	if !userExists {
+		sylog.Debugf("appending new line to passwd file: %q", userInfo)
 		lines = append(lines, userInfo)
 	}
 

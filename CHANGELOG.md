@@ -28,6 +28,9 @@
   inheritable / ambient capabilites, matching other OCI runtimes.
 - In OCI-mode, a container run as root, or with `--fakeroot` has OCI default
   effective/permitted capabilities.
+- Lookup and store user/group information in stage one prior to entering any
+  namespaces to fix issue with winbind not correctly lookup user/group
+  information when using user namespace.
 
 ### New Features & Functionality
 
