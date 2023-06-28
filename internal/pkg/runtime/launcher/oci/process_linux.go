@@ -305,23 +305,18 @@ func envFileMap(ctx context.Context, f string) (map[string]string, error) {
 
 	// Use the embedded shell interpreter to evaluate the env file, with an empty starting environment.
 	// Shell takes care of comments, quoting etc. for us and keeps compatibility with native runtime.
-	env, err := interpreter.EvaluateEnv(ctx, content, []string{}, []string{})
+	shellEnv, err := interpreter.EvaluateEnv(ctx, content, []string{}, []string{})
 	if err != nil {
 		return envMap, fmt.Errorf("while processing %s: %w", f, err)
 	}
 
-	for _, envVar := range env {
+	for _, envVar := range shellEnv {
 		parts := strings.SplitN(envVar, "=", 2)
 		if len(parts) < 2 {
 			continue
 		}
 		// Strip out the runtime env vars set by the shell interpreter
-		if parts[0] == "GID" ||
-			parts[0] == "HOME" ||
-			parts[0] == "IFS" ||
-			parts[0] == "OPTIND" ||
-			parts[0] == "PWD" ||
-			parts[0] == "UID" {
+		if _, ok := env.ReadOnlyVars[parts[0]]; ok {
 			continue
 		}
 		envMap[parts[0]] = parts[1]

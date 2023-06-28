@@ -51,7 +51,7 @@ require (
 	golang.org/x/text v0.12.0
 	gopkg.in/yaml.v2 v2.4.0
 	gotest.tools/v3 v3.5.0
-	mvdan.cc/sh/v3 v3.6.0
+	mvdan.cc/sh/v3 v3.7.0
 	oras.land/oras-go v1.2.3
 )
 
