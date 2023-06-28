@@ -1,4 +1,6 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -24,7 +26,7 @@ var (
 	errInvalidSection  = errors.New("invalid section(s) specified")
 	errEmptyDefinition = errors.New("Empty definition file")
 	// Match space but not within double quotes
-	fileSplitter = regexp.MustCompile(`[^\s"']+|"([^"]*)"|'([^']*)`)
+	fileSplitter = regexp.MustCompile(`([^\s"']*{{\s*\w+\s*}}*[^\s{}"']*)+|([^\s"']+|"([^"]*)"|'([^']*))`)
 )
 
 // InvalidSectionError records an error and the sections that caused it.
@@ -312,10 +314,11 @@ func populateDefinition(sections map[string]*types.Script, files *[]types.Files,
 	}
 	d.BuildData.Files = *files
 	d.BuildData.Scripts = types.Scripts{
-		Pre:   *sections["pre"],
-		Setup: *sections["setup"],
-		Post:  *sections["post"],
-		Test:  *sections["test"],
+		Arguments: *sections["arguments"],
+		Pre:       *sections["pre"],
+		Setup:     *sections["setup"],
+		Post:      *sections["post"],
+		Test:      *sections["test"],
 	}
 
 	// remove standard sections from map
@@ -551,6 +554,7 @@ var validSections = map[string]bool{
 	"runscript":   true,
 	"test":        true,
 	"startscript": true,
+	"arguments":   true,
 }
 
 var appSections = map[string]bool{

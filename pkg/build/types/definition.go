@@ -1,4 +1,6 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -68,10 +70,11 @@ type Data struct {
 
 // Scripts defines scripts that are used at build time.
 type Scripts struct {
-	Pre   Script `json:"pre"`
-	Setup Script `json:"setup"`
-	Post  Script `json:"post"`
-	Test  Script `json:"test"`
+	Pre       Script `json:"pre"`
+	Setup     Script `json:"setup"`
+	Post      Script `json:"post"`
+	Test      Script `json:"test"`
+	Arguments Script `json:"arguments"`
 }
 
 // Files describes a %files section of a definition.
@@ -172,6 +175,21 @@ func NewDefinitionFromJSON(r io.Reader) (d Definition, err error) {
 	return d, nil
 }
 
+func UpdateDefinitionRaw(defs *[]Definition) {
+	var buf []byte
+	for _, def := range *defs {
+		var tmp bytes.Buffer
+		populateRaw(&def, &tmp)
+		def.Raw = tmp.Bytes()
+		buf = append(buf, tmp.Bytes()...)
+	}
+
+	for i := range *defs {
+		def := &(*defs)[i]
+		def.FullRaw = buf
+	}
+}
+
 func writeSectionIfExists(w io.Writer, ident string, s Script) {
 	if len(s.Script) > 0 {
 		fmt.Fprintf(w, "%%%s", ident)
@@ -238,4 +256,5 @@ func populateRaw(d *Definition, w io.Writer) {
 	writeSectionIfExists(w, "pre", d.BuildData.Pre)
 	writeSectionIfExists(w, "setup", d.BuildData.Setup)
 	writeSectionIfExists(w, "post", d.BuildData.Post)
+	writeSectionIfExists(w, "arguments", d.BuildData.Arguments)
 }

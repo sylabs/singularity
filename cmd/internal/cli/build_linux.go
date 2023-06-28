@@ -1,5 +1,7 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
 // Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -182,6 +184,10 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		sylog.Fatalf("Building encrypted container with the remote builder is not currently supported.")
 	}
 
+	if (len(buildArgs.buildVarArgs) > 1) || (buildArgs.buildVarArgFile != "") {
+		sylog.Fatalf("The remote builder does not currently support build-argument substitution (--build-arg / --build-arg-file).")
+	}
+
 	// TODO - the keyserver config needs to go to the remote builder for fingerprint verification at
 	// build time to be fully supported.
 
@@ -332,7 +338,11 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 	}
 
 	// parse definition to determine build source
-	defs, err := build.MakeAllDefs(spec)
+	buildArgsMap, err := build.ReadBuildArgs(buildArgs.buildVarArgs, buildArgs.buildVarArgFile)
+	if err != nil {
+		sylog.Fatalf("While processing the definition file: %v", err)
+	}
+	defs, err := build.MakeAllDefs(spec, buildArgsMap)
 	if err != nil {
 		sylog.Fatalf("Unable to build from %s: %v", spec, err)
 	}

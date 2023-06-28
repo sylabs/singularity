@@ -857,12 +857,6 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/klauspost/pgzip/blob/master/LICENSE>
 
-## github.com/kr/pty
-
-**License:** MIT
-
-**License URL:** <https://github.com/kr/pty/blob/master/LICENSE>
-
 ## github.com/mailru/easyjson
 
 **License:** MIT
