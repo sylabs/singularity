@@ -140,7 +140,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 		return fmt.Errorf("failed to upload build context: %w", err)
 	}
 
-	bi, err := rb.BuildClient.Submit(ctx, bytes.NewReader(rb.Definition.Raw),
+	bi, err := rb.BuildClient.Submit(ctx, bytes.NewReader(rb.Definition.FullRaw),
 		buildclient.OptBuildLibraryRef(libraryRef),
 		buildclient.OptBuildLibraryPullBaseURL(rb.LibraryURL),
 		buildclient.OptBuildArchitecture(rb.Arch),

@@ -76,6 +76,14 @@
 - OCI-mode now supports the `--add-caps` and `--drop-caps` flags to modify
   capabilities of the container process.
 
+### Developer / API
+
+- Changes in pkg/build/types.Definition struct. New `.FullRaw` field introduced,
+  which always contains the raw data for the entire definition file. Behavior of
+  `.Raw` field has changed: for multi-stage builds parsed with
+  pkg/build/types/parser.All(), `.Raw` contains the raw content of a single
+  build stage. Otherwise, it is equal to `.FullRaw`.
+
 ### Bug Fixes
 
 - Fix interaction between `--workdir` when given relative path and `--scratch`.
