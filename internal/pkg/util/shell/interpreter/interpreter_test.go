@@ -288,7 +288,7 @@ func TestEvaluateEnv(t *testing.T) {
 	}
 
 	// Since mvdan.cc/sh/v3@v3.4.0 some default vars will be set:
-	//    HOME IFS OPTIND PWD UID GID
+	//    HOME IFS OPTIND PWD UID GID EUID
 	// These don't adversely impact our downstream container environment, but
 	// must be accounted for here.
 	// https://github.com/mvdan/sh/commit/f4c774aa15046ef006508e182fde10c4b56876fa
@@ -303,6 +303,7 @@ func TestEvaluateEnv(t *testing.T) {
 		"OPTIND=1",
 		fmt.Sprintf("PWD=%s", pwd),
 		fmt.Sprintf("UID=%d", os.Getuid()),
+		fmt.Sprintf("EUID=%d", os.Geteuid()),
 		fmt.Sprintf("GID=%d", os.Getgid()),
 	}
 

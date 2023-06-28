@@ -14,6 +14,16 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/shell/interpreter"
 )
 
+var readonlyVars = map[string]bool{
+	"EUID":   true,
+	"GID":    true,
+	"HOME":   true,
+	"IFS":    true,
+	"OPTIND": true,
+	"PWD":    true,
+	"UID":    true,
+}
+
 // SetFromList sets environment variables from environ argument list.
 func SetFromList(environ []string) error {
 	for _, env := range environ {
@@ -73,14 +83,10 @@ func FileMap(ctx context.Context, f string, args []string, hostEnv []string) (ma
 		// Strip out the runtime env vars set by the shell interpreter so we
 		// don't attempt to overwrite bash builtin readonly vars.
 		// https://github.com/sylabs/singularity/issues/1263
-		if parts[0] == "GID" ||
-			parts[0] == "HOME" ||
-			parts[0] == "IFS" ||
-			parts[0] == "OPTIND" ||
-			parts[0] == "PWD" ||
-			parts[0] == "UID" {
+		if _, ok := readonlyVars[parts[0]]; ok {
 			continue
 		}
+
 		envMap[parts[0]] = parts[1]
 	}
 
