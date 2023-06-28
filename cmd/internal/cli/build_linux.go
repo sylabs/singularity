@@ -184,6 +184,10 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 		sylog.Fatalf("Building encrypted container with the remote builder is not currently supported.")
 	}
 
+	if (len(buildArgs.buildVarArgs) > 1) || (buildArgs.buildVarArgFile != "") {
+		sylog.Fatalf("The remote builder does not currently support build-argument substitution (--build-arg / --build-arg-file).")
+	}
+
 	// TODO - the keyserver config needs to go to the remote builder for fingerprint verification at
 	// build time to be fully supported.
 
