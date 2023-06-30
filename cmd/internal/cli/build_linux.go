@@ -21,6 +21,7 @@ import (
 	"github.com/spf13/cobra"
 	keyclient "github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/internal/pkg/build"
+	"github.com/sylabs/singularity/internal/pkg/build/args"
 	"github.com/sylabs/singularity/internal/pkg/build/remotebuilder"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cache"
@@ -338,7 +339,7 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 	}
 
 	// parse definition to determine build source
-	buildArgsMap, err := build.ReadBuildArgs(buildArgs.buildVarArgs, buildArgs.buildVarArgFile)
+	buildArgsMap, err := args.ReadBuildArgs(buildArgs.buildVarArgs, buildArgs.buildVarArgFile)
 	if err != nil {
 		sylog.Fatalf("While processing the definition file: %v", err)
 	}
