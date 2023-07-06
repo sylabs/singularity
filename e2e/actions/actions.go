@@ -81,39 +81,11 @@ func (c actionTests) actionRun(t *testing.T) {
 	}
 }
 
-// exec tests min fuctionality for singularity exec
+// actionExec tests min fuctionality for singularity exec
 func (c actionTests) actionExec(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	user := e2e.CurrentUser(t)
-
-	// Create a temp testfile
-	testdata, err := fs.MakeTmpDir(c.env.TestDir, "testdata", 0o755)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if !t.Failed() {
-			os.RemoveAll(testdata)
-		}
-	})
-
-	testdataTmp := filepath.Join(testdata, "tmp")
-	if err := os.Mkdir(testdataTmp, 0o755); err != nil {
-		t.Fatal(err)
-	}
-
-	// Create a temp testfile
-	tmpfile, err := fs.MakeTmpFile(testdataTmp, "testSingularityExec.", 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
-	tmpfile.Close()
-
-	basename := filepath.Base(tmpfile.Name())
-	tmpfilePath := filepath.Join("/tmp", basename)
-	vartmpfilePath := filepath.Join("/var/tmp", basename)
-	homePath := filepath.Join("/home", basename)
+	user := e2e.UserProfile.HostUser(t)
 
 	tests := []struct {
 		name        string
@@ -204,99 +176,9 @@ func (c actionTests) actionExec(t *testing.T) {
 			exit: 0,
 		},
 		{
-			name: "ContainOnly",
-			argv: []string{"--contain", c.env.ImagePath, "test", "-f", tmpfilePath},
-			exit: 1,
-		},
-		{
-			name: "WorkdirOnly",
-			argv: []string{"--workdir", testdata, c.env.ImagePath, "test", "-f", tmpfilePath},
-			exit: 1,
-		},
-		{
-			name: "WorkdirContain",
-			argv: []string{"--workdir", testdata, "--contain", c.env.ImagePath, "test", "-f", tmpfilePath},
-			exit: 0,
-		},
-		{
-			name: "CwdGood",
-			argv: []string{"--cwd", "/etc", c.env.ImagePath, "true"},
-			exit: 0,
-		},
-		{
-			name: "PwdGood",
-			argv: []string{"--pwd", "/etc", c.env.ImagePath, "true"},
-			exit: 0,
-		},
-		{
-			name: "Home",
-			argv: []string{"--home", "/myhomeloc", c.env.ImagePath, "env"},
-			wantOutputs: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.RegexMatch, `\bHOME=/myhomeloc\b`),
-			},
-			exit: 0,
-		},
-		{
-			name: "HomePath",
-			argv: []string{"--home", testdataTmp + ":/home", c.env.ImagePath, "test", "-f", homePath},
-			exit: 0,
-		},
-		{
-			name: "HomeTmp",
-			argv: []string{"--home", "/tmp", c.env.ImagePath, "true"},
-			exit: 0,
-		},
-		{
-			name: "HomeTmpExplicit",
-			argv: []string{"--home", "/tmp:/home", c.env.ImagePath, "true"},
-			exit: 0,
-		},
-		{
-			name: "UserBindTmp",
-			argv: []string{"--bind", testdataTmp + ":/tmp", c.env.ImagePath, "test", "-f", tmpfilePath},
-			exit: 0,
-		},
-		{
-			name: "UserBindVarTmp",
-			argv: []string{"--bind", testdataTmp + ":/var/tmp", c.env.ImagePath, "test", "-f", vartmpfilePath},
-			exit: 0,
-		},
-		{
 			name: "NoHome",
 			argv: []string{"--no-home", c.env.ImagePath, "ls", "-ld", user.Dir},
 			exit: 1,
-		},
-		{
-			name: "Hostname",
-			argv: []string{"--hostname", "whats-in-a-native-name", c.env.ImagePath, "hostname"},
-			exit: 0,
-			wantOutputs: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ExactMatch, "whats-in-a-native-name"),
-			},
-		},
-		{
-			name: "ResolvConfGoogle",
-			argv: []string{"--dns", "8.8.8.8,8.8.4.4", c.env.ImagePath, "nslookup", "w3.org"},
-			exit: 0,
-			wantOutputs: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.RegexMatch, `^(\s*)Server:(\s+)(8\.8\.8\.8|8\.8\.4\.4)(\s*)\n`),
-			},
-		},
-		{
-			name: "ResolvConfCloudflare",
-			argv: []string{"--dns", "1.1.1.1", c.env.ImagePath, "nslookup", "w3.org"},
-			exit: 0,
-			wantOutputs: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.RegexMatch, `^(\s*)Server:(\s+)(1\.1\.1\.1)(\s*)\n`),
-			},
-		},
-		{
-			name: "CustomHomePreservesRootShell",
-			argv: []string{"--home", "/tmp", c.env.ImagePath, "cat", "/etc/passwd"},
-			exit: 0,
-			wantOutputs: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.RegexMatch, `^root:x:0:0:root:[^:]*:/bin/ash\n`),
-			},
 		},
 	}
 
@@ -310,6 +192,153 @@ func (c actionTests) actionExec(t *testing.T) {
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit, tt.wantOutputs...),
 		)
+	}
+}
+
+// actionExecMultiProfile tests fuctionality using singularity exec under all native profiles that do not involve user namespaces.
+func (c actionTests) actionExecMultiProfile(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	for _, profile := range []e2e.Profile{e2e.RootProfile, e2e.FakerootProfile, e2e.UserProfile} {
+		t.Run(profile.String(), func(t *testing.T) {
+			// Create a temp testfile
+			testdata, err := fs.MakeTmpDir(c.env.TestDir, "testdata", 0o755)
+			if err != nil {
+				t.Fatal(err)
+			}
+			t.Cleanup(func() {
+				if !t.Failed() {
+					os.RemoveAll(testdata)
+				}
+			})
+
+			testdataTmp := filepath.Join(testdata, "tmp")
+			if err := os.Mkdir(testdataTmp, 0o755); err != nil {
+				t.Fatal(err)
+			}
+
+			// Create a temp testfile
+			tmpfile, err := fs.MakeTmpFile(testdataTmp, "testSingularityExec.", 0o644)
+			if err != nil {
+				t.Fatal(err)
+			}
+			tmpfile.Close()
+
+			basename := filepath.Base(tmpfile.Name())
+			tmpfilePath := filepath.Join("/tmp", basename)
+			vartmpfilePath := filepath.Join("/var/tmp", basename)
+			homePath := filepath.Join("/home", basename)
+
+			tests := []struct {
+				name        string
+				argv        []string
+				exit        int
+				wantOutputs []e2e.SingularityCmdResultOp
+			}{
+				{
+					name: "ContainOnly",
+					argv: []string{"--contain", c.env.ImagePath, "test", "-f", tmpfilePath},
+					exit: 1,
+				},
+				{
+					name: "WorkdirOnly",
+					argv: []string{"--workdir", testdata, c.env.ImagePath, "test", "-f", tmpfilePath},
+					exit: 1,
+				},
+				{
+					name: "WorkdirContain",
+					argv: []string{"--workdir", testdata, "--contain", c.env.ImagePath, "test", "-f", tmpfilePath},
+					exit: 0,
+				},
+				{
+					name: "CwdGood",
+					argv: []string{"--cwd", "/etc", c.env.ImagePath, "true"},
+					exit: 0,
+				},
+				{
+					name: "PwdGood",
+					argv: []string{"--pwd", "/etc", c.env.ImagePath, "true"},
+					exit: 0,
+				},
+				{
+					name: "Home",
+					argv: []string{"--home", "/myhomeloc", c.env.ImagePath, "env"},
+					wantOutputs: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.RegexMatch, `\bHOME=/myhomeloc\b`),
+					},
+					exit: 0,
+				},
+				{
+					name: "HomePath",
+					argv: []string{"--home", testdataTmp + ":/home", c.env.ImagePath, "test", "-f", homePath},
+					exit: 0,
+				},
+				{
+					name: "HomeTmp",
+					argv: []string{"--home", "/tmp", c.env.ImagePath, "true"},
+					exit: 0,
+				},
+				{
+					name: "HomeTmpExplicit",
+					argv: []string{"--home", "/tmp:/home", c.env.ImagePath, "true"},
+					exit: 0,
+				},
+				{
+					name: "UserBindTmp",
+					argv: []string{"--bind", testdataTmp + ":/tmp", c.env.ImagePath, "test", "-f", tmpfilePath},
+					exit: 0,
+				},
+				{
+					name: "UserBindVarTmp",
+					argv: []string{"--bind", testdataTmp + ":/var/tmp", c.env.ImagePath, "test", "-f", vartmpfilePath},
+					exit: 0,
+				},
+				{
+					name: "Hostname",
+					argv: []string{"--hostname", "whats-in-a-native-name", c.env.ImagePath, "hostname"},
+					exit: 0,
+					wantOutputs: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, "whats-in-a-native-name"),
+					},
+				},
+				{
+					name: "ResolvConfGoogle",
+					argv: []string{"--dns", "8.8.8.8,8.8.4.4", c.env.ImagePath, "nslookup", "w3.org"},
+					exit: 0,
+					wantOutputs: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.RegexMatch, `^(\s*)Server:(\s+)(8\.8\.8\.8|8\.8\.4\.4)(\s*)\n`),
+					},
+				},
+				{
+					name: "ResolvConfCloudflare",
+					argv: []string{"--dns", "1.1.1.1", c.env.ImagePath, "nslookup", "w3.org"},
+					exit: 0,
+					wantOutputs: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.RegexMatch, `^(\s*)Server:(\s+)(1\.1\.1\.1)(\s*)\n`),
+					},
+				},
+				{
+					name: "CustomHomePreservesRootShell",
+					argv: []string{"--home", "/tmp", c.env.ImagePath, "cat", "/etc/passwd"},
+					exit: 0,
+					wantOutputs: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.RegexMatch, `^root:x:0:0:root:[^:]*:/bin/ash\n`),
+					},
+				},
+			}
+
+			for _, tt := range tests {
+				c.env.RunSingularity(
+					t,
+					e2e.AsSubtest(tt.name),
+					e2e.WithProfile(e2e.UserProfile),
+					e2e.WithCommand("exec"),
+					e2e.WithDir("/tmp"),
+					e2e.WithArgs(tt.argv...),
+					e2e.ExpectExit(tt.exit, tt.wantOutputs...),
+				)
+			}
+		})
 	}
 }
 
@@ -2581,45 +2610,46 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	np := testhelper.NoParallel
 
 	return testhelper.Tests{
-		"action URI":                c.RunFromURI,               // action_URI
-		"exec":                      c.actionExec,               // singularity exec
-		"persistent overlay":        c.PersistentOverlay,        // Persistent Overlay
-		"persistent overlay unpriv": c.PersistentOverlayUnpriv,  // Persistent Overlay Unprivileged
-		"run":                       c.actionRun,                // singularity run
-		"shell":                     c.actionShell,              // shell interaction
-		"STDPIPE":                   c.STDPipe,                  // stdin/stdout pipe
-		"action basic profiles":     c.actionBasicProfiles,      // run basic action under different profiles
-		"issue 4488":                c.issue4488,                // https://github.com/sylabs/singularity/issues/4488
-		"issue 4587":                c.issue4587,                // https://github.com/sylabs/singularity/issues/4587
-		"issue 4755":                c.issue4755,                // https://github.com/sylabs/singularity/issues/4755
-		"issue 4768":                c.issue4768,                // https://github.com/sylabs/singularity/issues/4768
-		"issue 4797":                c.issue4797,                // https://github.com/sylabs/singularity/issues/4797
-		"issue 4823":                c.issue4823,                // https://github.com/sylabs/singularity/issues/4823
-		"issue 4836":                c.issue4836,                // https://github.com/sylabs/singularity/issues/4836
-		"issue 5211":                c.issue5211,                // https://github.com/sylabs/singularity/issues/5211
-		"issue 5228":                c.issue5228,                // https://github.com/sylabs/singularity/issues/5228
-		"issue 5271":                c.issue5271,                // https://github.com/sylabs/singularity/issues/5271
-		"issue 5307":                c.issue5307,                // https://github.com/sylabs/singularity/issues/5307
-		"issue 5399":                c.issue5399,                // https://github.com/sylabs/singularity/issues/5399
-		"issue 5455":                c.issue5455,                // https://github.com/sylabs/singularity/issues/5455
-		"issue 5465":                c.issue5465,                // https://github.com/sylabs/singularity/issues/5465
-		"issue 5599":                c.issue5599,                // https://github.com/sylabs/singularity/issues/5599
-		"issue 5631":                c.issue5631,                // https://github.com/sylabs/singularity/issues/5631
-		"issue 5690":                c.issue5690,                // https://github.com/sylabs/singularity/issues/5690
-		"network":                   c.actionNetwork,            // test basic networking
-		"binds":                     c.actionBinds,              // test various binds with --bind and --mount
-		"exit and signals":          c.exitSignals,              // test exit and signals propagation
-		"fuse mount":                c.fuseMount,                // test fusemount option
-		"bind image":                c.bindImage,                // test bind image with --bind and --mount
-		"no-mount":                  c.actionNoMount,            // test --no-mount
-		"no-setgroups":              c.actionNoSetgroups,        // test --no-setgroups
-		"compat":                    np(c.actionCompat),         // test --compat
-		"umask":                     np(c.actionUmask),          // test umask propagation
-		"invalidRemote":             np(c.invalidRemote),        // GHSA-5mv9-q7fq-9394
-		"SIFFUSE":                   np(c.actionSIFFUSE),        // test --sif-fuse
-		"NoSIFFUSE":                 np(c.actionNoSIFFUSE),      // test absence of squashfs and CleanupHost()
-		"relWorkdirScratch":         np(c.relWorkdirScratch),    // test relative --workdir with --scratch
-		"ociRelWorkdirScratch":      np(c.ociRelWorkdirScratch), // test relative --workdir with --scratch in OCI mode
+		"action URI":                   c.RunFromURI,               // action_URI
+		"exec":                         c.actionExec,               // singularity exec
+		"exec under multiple profiles": c.actionExecMultiProfile,   // singularity exec
+		"persistent overlay":           c.PersistentOverlay,        // Persistent Overlay
+		"persistent overlay unpriv":    c.PersistentOverlayUnpriv,  // Persistent Overlay Unprivileged
+		"run":                          c.actionRun,                // singularity run
+		"shell":                        c.actionShell,              // shell interaction
+		"STDPIPE":                      c.STDPipe,                  // stdin/stdout pipe
+		"action basic profiles":        c.actionBasicProfiles,      // run basic action under different profiles
+		"issue 4488":                   c.issue4488,                // https://github.com/sylabs/singularity/issues/4488
+		"issue 4587":                   c.issue4587,                // https://github.com/sylabs/singularity/issues/4587
+		"issue 4755":                   c.issue4755,                // https://github.com/sylabs/singularity/issues/4755
+		"issue 4768":                   c.issue4768,                // https://github.com/sylabs/singularity/issues/4768
+		"issue 4797":                   c.issue4797,                // https://github.com/sylabs/singularity/issues/4797
+		"issue 4823":                   c.issue4823,                // https://github.com/sylabs/singularity/issues/4823
+		"issue 4836":                   c.issue4836,                // https://github.com/sylabs/singularity/issues/4836
+		"issue 5211":                   c.issue5211,                // https://github.com/sylabs/singularity/issues/5211
+		"issue 5228":                   c.issue5228,                // https://github.com/sylabs/singularity/issues/5228
+		"issue 5271":                   c.issue5271,                // https://github.com/sylabs/singularity/issues/5271
+		"issue 5307":                   c.issue5307,                // https://github.com/sylabs/singularity/issues/5307
+		"issue 5399":                   c.issue5399,                // https://github.com/sylabs/singularity/issues/5399
+		"issue 5455":                   c.issue5455,                // https://github.com/sylabs/singularity/issues/5455
+		"issue 5465":                   c.issue5465,                // https://github.com/sylabs/singularity/issues/5465
+		"issue 5599":                   c.issue5599,                // https://github.com/sylabs/singularity/issues/5599
+		"issue 5631":                   c.issue5631,                // https://github.com/sylabs/singularity/issues/5631
+		"issue 5690":                   c.issue5690,                // https://github.com/sylabs/singularity/issues/5690
+		"network":                      c.actionNetwork,            // test basic networking
+		"binds":                        c.actionBinds,              // test various binds with --bind and --mount
+		"exit and signals":             c.exitSignals,              // test exit and signals propagation
+		"fuse mount":                   c.fuseMount,                // test fusemount option
+		"bind image":                   c.bindImage,                // test bind image with --bind and --mount
+		"no-mount":                     c.actionNoMount,            // test --no-mount
+		"no-setgroups":                 c.actionNoSetgroups,        // test --no-setgroups
+		"compat":                       np(c.actionCompat),         // test --compat
+		"umask":                        np(c.actionUmask),          // test umask propagation
+		"invalidRemote":                np(c.invalidRemote),        // GHSA-5mv9-q7fq-9394
+		"SIFFUSE":                      np(c.actionSIFFUSE),        // test --sif-fuse
+		"NoSIFFUSE":                    np(c.actionNoSIFFUSE),      // test absence of squashfs and CleanupHost()
+		"relWorkdirScratch":            np(c.relWorkdirScratch),    // test relative --workdir with --scratch
+		"ociRelWorkdirScratch":         np(c.ociRelWorkdirScratch), // test relative --workdir with --scratch in OCI mode
 		//
 		// OCI Runtime Mode
 		//
