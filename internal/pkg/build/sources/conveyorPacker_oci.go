@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,30 +7,19 @@
 package sources
 
 import (
-	"archive/tar"
-	"bufio"
 	"bytes"
-	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
 
-	"github.com/containers/image/v5/copy"
-	"github.com/containers/image/v5/docker"
-	dockerarchive "github.com/containers/image/v5/docker/archive"
-	dockerdaemon "github.com/containers/image/v5/docker/daemon"
-	ociarchive "github.com/containers/image/v5/oci/archive"
-	ocilayout "github.com/containers/image/v5/oci/layout"
-	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sylabs/singularity/internal/pkg/build/oci"
+	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/util/shell"
 	sytypes "github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
@@ -122,8 +111,6 @@ exec "$@"
 type OCIConveyorPacker struct {
 	srcRef    types.ImageReference
 	b         *sytypes.Bundle
-	tmpfsRef  types.ImageReference
-	policyCtx *signature.PolicyContext
 	imgConfig imgspecv1.ImageConfig
 	sysCtx    *types.SystemContext
 }
@@ -131,12 +118,6 @@ type OCIConveyorPacker struct {
 // Get downloads container information from the specified source
 func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err error) {
 	cp.b = b
-
-	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
-	cp.policyCtx, err = signature.NewPolicyContext(policy)
-	if err != nil {
-		return err
-	}
 
 	// DockerInsecureSkipTLSVerify is set only if --no-https is specified to honor
 	// configuration from /etc/containers/registries.conf because DockerInsecureSkipTLSVerify
@@ -157,7 +138,7 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 		cp.sysCtx.DockerInsecureSkipTLSVerify = types.NewOptionalBool(true)
 	}
 
-	// add registry and namespace to reference if specified
+	// Add registry and namespace to image reference if specified
 	ref := b.Recipe.Header["from"]
 	if b.Recipe.Header["namespace"] != "" {
 		ref = b.Recipe.Header["namespace"] + "/" + ref
@@ -165,68 +146,20 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 	if b.Recipe.Header["registry"] != "" {
 		ref = b.Recipe.Header["registry"] + "/" + ref
 	}
-	sylog.Debugf("Reference: %v", ref)
-
-	switch b.Recipe.Header["bootstrap"] {
-	case "docker":
+	// Docker sources are docker://<from>, not docker:<from>
+	if b.Recipe.Header["bootstrap"] == "docker" {
 		ref = "//" + ref
-		cp.srcRef, err = docker.ParseReference(ref)
-	case "docker-archive":
-		cp.srcRef, err = dockerarchive.ParseReference(ref)
-	case "docker-daemon":
-		cp.srcRef, err = dockerdaemon.ParseReference(ref)
-	case "oci":
-		cp.srcRef, err = ocilayout.ParseReference(ref)
-	case "oci-archive":
-		if os.Geteuid() == 0 {
-			// As root, the direct oci-archive handling will work
-			cp.srcRef, err = ociarchive.ParseReference(ref)
-		} else {
-			// As non-root we need to do a dumb tar extraction first
-			tmpDir, err := os.MkdirTemp(b.TmpDir, "temp-oci-")
-			if err != nil {
-				return fmt.Errorf("could not create temporary oci directory: %v", err)
-			}
-			defer os.RemoveAll(tmpDir)
-
-			refParts := strings.SplitN(b.Recipe.Header["from"], ":", 2)
-			err = cp.extractArchive(refParts[0], tmpDir)
-			if err != nil {
-				return fmt.Errorf("error extracting the OCI archive file: %v", err)
-			}
-			// We may or may not have had a ':tag' in the source to handle
-			if len(refParts) == 2 {
-				cp.srcRef, err = ocilayout.ParseReference(tmpDir + ":" + refParts[1])
-			} else {
-				cp.srcRef, err = ocilayout.ParseReference(tmpDir)
-			}
-
-			if err != nil {
-				return fmt.Errorf("error parsing reference: %v", err)
-			}
-		}
-
-	default:
-		return fmt.Errorf("oci conveyorPacker does not support %s", b.Recipe.Header["bootstrap"])
 	}
+	// Prefix bootstrap type to image reference
+	ref = b.Recipe.Header["bootstrap"] + ":" + ref
 
-	if err != nil {
-		return fmt.Errorf("invalid image source: %v", err)
-	}
-
+	var imgCache *cache.Handle
 	if !cp.b.Opts.NoCache {
-		// Grab the modified source ref from the cache
-		cp.srcRef, err = oci.ConvertReference(ctx, b.Opts.ImgCache, cp.srcRef, cp.sysCtx)
-		if err != nil {
-			return err
-		}
+		imgCache = cp.b.Opts.ImgCache
 	}
 
-	// To to do the RootFS extraction we also have to have a location that
-	// contains *only* this image
-	cp.tmpfsRef, err = ocilayout.ParseReference(cp.b.TmpDir + ":" + "tmp")
-
-	err = cp.fetch(ctx)
+	// Fetch the image into a temporary containers/image oci layout dir.
+	cp.srcRef, err = oci.FetchLayout(ctx, cp.sysCtx, imgCache, ref, b.TmpDir)
 	if err != nil {
 		return err
 	}
@@ -274,15 +207,6 @@ func (cp *OCIConveyorPacker) Pack(ctx context.Context) (*sytypes.Bundle, error) 
 	return cp.b, nil
 }
 
-func (cp *OCIConveyorPacker) fetch(ctx context.Context) error {
-	// cp.srcRef contains the cache source reference
-	_, err := copy.Image(ctx, cp.policyCtx, cp.tmpfsRef, cp.srcRef, &copy.Options{
-		ReportWriter: io.Discard,
-		SourceCtx:    cp.sysCtx,
-	})
-	return err
-}
-
 func (cp *OCIConveyorPacker) getConfig(ctx context.Context) (imgspecv1.ImageConfig, error) {
 	img, err := cp.srcRef.NewImage(ctx, cp.sysCtx)
 	if err != nil {
@@ -307,85 +231,42 @@ func (cp *OCIConveyorPacker) insertOCIConfig() error {
 	return nil
 }
 
-// Perform a dumb tar(gz) extraction with no chown, id remapping etc.
-// This is needed for non-root handling of `oci-archive` as the extraction
-// by containers/archive is failing when uid/gid don't match local machine
-// and we're not root
-func (cp *OCIConveyorPacker) extractArchive(src string, dst string) error {
-	f, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	r := bufio.NewReader(f)
-	header, err := r.Peek(10) // read a few bytes without consuming
-	if err != nil {
-		return err
-	}
-	gzipped := strings.Contains(http.DetectContentType(header), "x-gzip")
-
-	if gzipped {
-		r, err := gzip.NewReader(f)
-		if err != nil {
-			return err
-		}
-		defer r.Close()
-	}
-
-	tr := tar.NewReader(r)
-
-	for {
-		header, err := tr.Next()
-
-		switch {
-
-		// if no more files are found return
-		case err == io.EOF:
-			return nil
-
-		// return any other error
-		case err != nil:
-			return err
-
-		// if the header is nil, just skip it (not sure how this happens)
-		case header == nil:
-			continue
-		}
-
-		// ZipSlip protection - don't escape from dst
-		target := filepath.Join(dst, header.Name)
-		if !strings.HasPrefix(target, filepath.Clean(dst)+string(os.PathSeparator)) {
-			return fmt.Errorf("%s: illegal extraction path", target)
-		}
-
-		// check the file type
-		switch header.Typeflag {
-		// if its a dir and it doesn't exist create it
-		case tar.TypeDir:
-			if _, err := os.Stat(target); err != nil {
-				if err := os.MkdirAll(target, 0o755); err != nil {
-					return err
-				}
-			}
-		// if it's a file create it
-		case tar.TypeReg:
-			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
-			if err != nil {
-				return err
-			}
-			defer f.Close()
-
-			// copy over contents
-			if _, err := io.Copy(f, tr); err != nil {
-				return err
-			}
-		}
-	}
-}
-
 func (cp *OCIConveyorPacker) unpackTmpfs(ctx context.Context) error {
-	return unpackRootfs(ctx, cp.b, cp.tmpfsRef, cp.sysCtx)
+	imageSource, err := cp.srcRef.NewImageSource(ctx, cp.sysCtx)
+	if err != nil {
+		return fmt.Errorf("error creating image source: %s", err)
+	}
+	manifestData, mediaType, err := imageSource.GetManifest(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("error obtaining manifest source: %s", err)
+	}
+	if mediaType != imgspecv1.MediaTypeImageManifest {
+		return fmt.Errorf("error verifying manifest media type: %s", mediaType)
+	}
+	var manifest imgspecv1.Manifest
+	json.Unmarshal(manifestData, &manifest)
+
+	if err := oci.UnpackRootfs(ctx, cp.b.TmpDir, manifest, cp.b.RootfsPath); err != nil {
+		return err
+	}
+
+	// If the `--fix-perms` flag was used, then modify the permissions so that
+	// content has owner rwX and we're done
+	if cp.b.Opts.FixPerms {
+		sylog.Warningf("The --fix-perms option modifies the filesystem permissions on the resulting container.")
+		sylog.Debugf("Modifying permissions for file/directory owners")
+		return oci.FixPerms(cp.b.RootfsPath)
+	}
+
+	// If `--fix-perms` was not used and this is a sandbox, scan for restrictive
+	// perms that would stop the user doing an `rm` without a chmod first,
+	// and warn if they exist
+	if cp.b.Opts.SandboxTarget {
+		sylog.Debugf("Scanning for restrictive permissions")
+		return oci.CheckPerms(cp.b.RootfsPath)
+	}
+
+	return nil
 }
 
 func (cp *OCIConveyorPacker) insertBaseEnv() (err error) {

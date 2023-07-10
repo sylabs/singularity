@@ -11,23 +11,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
-	apexlog "github.com/apex/log"
-	"github.com/containers/image/v5/copy"
-	"github.com/containers/image/v5/docker"
-	dockerarchive "github.com/containers/image/v5/docker/archive"
-	dockerdaemon "github.com/containers/image/v5/docker/daemon"
-	ociarchive "github.com/containers/image/v5/oci/archive"
-	ocilayout "github.com/containers/image/v5/oci/layout"
-	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/opencontainers/umoci"
-	umocilayer "github.com/opencontainers/umoci/oci/layer"
-	"github.com/opencontainers/umoci/pkg/idtools"
 	"github.com/sylabs/singularity/internal/pkg/build/oci"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
@@ -123,16 +111,19 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 		return fmt.Errorf("failed to generate OCI bundle/config: %s", err)
 	}
 
-	// Get a reference to an OCI layout source for the image. If the cache is
-	// enabled, we pull through the blob cache layout, otherwise there will be a
-	// temp dir and image Copy to it.
-	layoutRef, layoutDir, cleanup, err := b.fetchLayout(ctx)
+	// Get a reference to an OCI layout source for the image, fetching the image
+	// through the cache if it is enabled.
+	tmpDir, err := os.MkdirTemp("", "oci-tmp")
 	if err != nil {
 		return err
 	}
-	if cleanup != nil {
-		defer cleanup()
+	defer os.RemoveAll(tmpDir)
+
+	layoutRef, err := oci.FetchLayout(ctx, b.sysCtx, b.imgCache, b.imageRef, tmpDir)
+	if err != nil {
+		return err
 	}
+
 	sylog.Debugf("Original imgref: %s, OCI layout: %s", b.imageRef, transports.ImageName(layoutRef))
 
 	// Get the Image Manifest and ImageSpec
@@ -160,7 +151,7 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	}
 
 	// Extract from temp oci layout into bundle rootfs
-	if err := b.extractImage(ctx, layoutDir, manifest); err != nil {
+	if err := oci.UnpackRootfs(ctx, tmpDir, manifest, tools.RootFs(b.bundlePath).Path()); err != nil {
 		return err
 	}
 	return b.writeConfig(g)
@@ -188,137 +179,4 @@ func (b *Bundle) Path() string {
 
 func (b *Bundle) writeConfig(g *generate.Generator) error {
 	return tools.SaveBundleConfig(b.bundlePath, g)
-}
-
-func (b *Bundle) fetchLayout(ctx context.Context) (layoutRef types.ImageReference, layoutDir string, cleanup func(), err error) {
-	if b.sysCtx == nil {
-		return nil, "", nil, fmt.Errorf("sysctx must be provided")
-	}
-
-	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
-	policyCtx, err := signature.NewPolicyContext(policy)
-	if err != nil {
-		return nil, "", nil, err
-	}
-
-	parts := strings.SplitN(b.imageRef, ":", 2)
-	if len(parts) < 2 {
-		return nil, "", nil, fmt.Errorf("could not parse image ref: %s", b.imageRef)
-	}
-	var srcRef types.ImageReference
-
-	switch parts[0] {
-	case "docker":
-		srcRef, err = docker.ParseReference(parts[1])
-	case "docker-archive":
-		srcRef, err = dockerarchive.ParseReference(parts[1])
-	case "docker-daemon":
-		srcRef, err = dockerdaemon.ParseReference(parts[1])
-	case "oci":
-		srcRef, err = ocilayout.ParseReference(parts[1])
-	case "oci-archive":
-		srcRef, err = ociarchive.ParseReference(parts[1])
-	default:
-		return nil, "", nil, fmt.Errorf("cannot create an OCI container from %s source", parts[0])
-	}
-
-	if err != nil {
-		return nil, "", nil, fmt.Errorf("invalid image source: %w", err)
-	}
-
-	// If the cache is enabled, then we transparently pull through an oci-layout in the cache.
-	if b.imgCache != nil && !b.imgCache.IsDisabled() {
-		// Grab the modified source ref from the cache
-		srcRef, err = oci.ConvertReference(ctx, b.imgCache, srcRef, b.sysCtx)
-		if err != nil {
-			return nil, "", nil, err
-		}
-		layoutDir, err := b.imgCache.GetOciCacheDir(cache.OciBlobCacheType)
-		if err != nil {
-			return nil, "", nil, err
-		}
-		return srcRef, layoutDir, nil, nil
-	}
-
-	// Otherwise we have to stage things in a temporary oci layout.
-	tmpDir, err := os.MkdirTemp("", "oci-tmp")
-	if err != nil {
-		return nil, "", nil, err
-	}
-	cleanup = func() {
-		os.RemoveAll(tmpDir)
-	}
-
-	tmpfsRef, err := ocilayout.ParseReference(tmpDir + ":" + "tmp")
-	if err != nil {
-		cleanup()
-		return nil, "", nil, err
-	}
-
-	_, err = copy.Image(ctx, policyCtx, tmpfsRef, srcRef, &copy.Options{
-		ReportWriter: sylog.Writer(),
-		SourceCtx:    b.sysCtx,
-	})
-	if err != nil {
-		cleanup()
-		return nil, "", nil, err
-	}
-
-	return tmpfsRef, tmpDir, cleanup, nil
-}
-
-func (b *Bundle) extractImage(ctx context.Context, layoutDir string, manifest imgspecv1.Manifest) error {
-	var mapOptions umocilayer.MapOptions
-
-	loggerLevel := sylog.GetLevel()
-	// set the apex log level, for umoci
-	if loggerLevel <= int(sylog.ErrorLevel) {
-		// silent option
-		apexlog.SetLevel(apexlog.ErrorLevel)
-	} else if loggerLevel <= int(sylog.LogLevel) {
-		// quiet option
-		apexlog.SetLevel(apexlog.WarnLevel)
-	} else if loggerLevel < int(sylog.DebugLevel) {
-		// verbose option(s) or default
-		apexlog.SetLevel(apexlog.InfoLevel)
-	} else {
-		// debug option
-		apexlog.SetLevel(apexlog.DebugLevel)
-	}
-
-	// Allow unpacking as non-root
-	if os.Geteuid() != 0 {
-		mapOptions.Rootless = true
-
-		uidMap, err := idtools.ParseMapping(fmt.Sprintf("0:%d:1", os.Geteuid()))
-		if err != nil {
-			return fmt.Errorf("error parsing uidmap: %s", err)
-		}
-		mapOptions.UIDMappings = append(mapOptions.UIDMappings, uidMap)
-
-		gidMap, err := idtools.ParseMapping(fmt.Sprintf("0:%d:1", os.Getegid()))
-		if err != nil {
-			return fmt.Errorf("error parsing gidmap: %s", err)
-		}
-		mapOptions.GIDMappings = append(mapOptions.GIDMappings, gidMap)
-	}
-
-	sylog.Debugf("Extracting manifest %s, from layout %s, to %s", manifest.Config.Digest, layoutDir, b.bundlePath)
-
-	engineExt, err := umoci.OpenLayout(layoutDir)
-	if err != nil {
-		return fmt.Errorf("error opening layout: %s", err)
-	}
-
-	// UnpackRootfs from umoci v0.4.2 expects a path to a non-existing directory
-	os.RemoveAll(tools.RootFs(b.bundlePath).Path())
-
-	// Unpack root filesystem
-	unpackOptions := umocilayer.UnpackOptions{MapOptions: mapOptions}
-	err = umocilayer.UnpackRootfs(ctx, engineExt, tools.RootFs(b.bundlePath).Path(), manifest, &unpackOptions)
-	if err != nil {
-		return fmt.Errorf("error unpacking rootfs: %s", err)
-	}
-
-	return nil
 }
