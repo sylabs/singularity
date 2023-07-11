@@ -159,7 +159,7 @@ func (s *sifBundle) Update(ctx context.Context, ociConfig *specs.Spec) error {
 }
 
 // Delete erases OCI bundle create from SIF image
-func (s *sifBundle) Delete() error {
+func (s *sifBundle) Delete(ctx context.Context) error {
 	if s.writable {
 		if err := tools.DeleteOverlay(s.bundlePath); err != nil {
 			return fmt.Errorf("delete error: %s", err)
