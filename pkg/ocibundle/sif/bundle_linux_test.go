@@ -11,9 +11,9 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/opencontainers/runtime-tools/validate"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/test"
+	ocitest "github.com/sylabs/singularity/internal/pkg/test/tool/oci"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
@@ -82,15 +82,7 @@ func TestFromSif(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			// Validate the bundle using OCI runtime-tools
-			// Run in non-host-specific mode. Our bundle is for the "linux" platform
-			v, err := validate.NewValidatorFromPath(bundlePath, false, "linux")
-			if err != nil {
-				t.Errorf("Could not create bundle validator: %v", err)
-			}
-			if err := v.CheckAll(); err != nil {
-				t.Errorf("Bundle not valid: %v", err)
-			}
+			ocitest.ValidateBundle(t, bundle.Path())
 
 			// Clean up
 			if err := bundle.Delete(context.Background()); err != nil {
