@@ -14,8 +14,8 @@ import (
 
 //nolint:maintidx
 func (c configTests) ociConfigGlobal(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
-	archiveRef := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	archiveRef := "oci-sif:" + c.env.OCISIFPath
 
 	setDirective := func(t *testing.T, directive, value string) {
 		c.env.RunSingularity(

@@ -413,6 +413,24 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/vishvananda/netns/blob/master/LICENSE>
 
+## github.com/xeipuuv/gojsonpointer
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/xeipuuv/gojsonpointer/blob/master/LICENSE-APACHE-2.0.txt>
+
+## github.com/xeipuuv/gojsonreference
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/xeipuuv/gojsonreference/blob/master/LICENSE-APACHE-2.0.txt>
+
+## github.com/xeipuuv/gojsonschema
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/xeipuuv/gojsonschema/blob/master/LICENSE-APACHE-2.0.txt>
+
 ## go.mongodb.org/mongo-driver
 
 **License:** Apache-2.0

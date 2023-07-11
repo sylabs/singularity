@@ -245,9 +245,9 @@ func (c ctx) issue1286(t *testing.T) {
 // https://github.com/sylabs/singularity/issues/1528
 // Check that host's TERM value gets passed to OCI container.
 func (c ctx) issue1528(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
+	e2e.EnsureOCISIF(t, c.env)
 
-	imageRef := "oci-archive:" + c.env.OCIArchivePath
+	imageRef := "oci-sif:" + c.env.OCISIFPath
 
 	_, wasHostTermSet := os.LookupEnv("TERM")
 	if !wasHostTermSet {

@@ -26,8 +26,8 @@ const (
 )
 
 func (c ctx) ociCapabilities(t *testing.T) {
-	e2e.EnsureOCIArchive(t, c.env)
-	imageRef := "oci-archive:" + c.env.OCIArchivePath
+	e2e.EnsureOCISIF(t, c.env)
+	imageRef := "oci-sif:" + c.env.OCISIFPath
 
 	var rootCaps uint64
 	var err error
