@@ -18,6 +18,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/container-orchestrated-devices/container-device-interface/pkg/cdi"
 	"github.com/google/uuid"
@@ -357,70 +358,141 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 		return err
 	}
 
+	// Handle container /etc/[group|passwd|resolv.conf]
+	if err := l.prepareEtc(b, spec, containerUser); err != nil {
+		return err
+	}
+
 	if err := b.Update(ctx, spec); err != nil {
 		return err
 	}
 
-	// Prepare DNS settings for the container.
-	if err := l.prepareResolvConf(tools.RootFs(b.Path()).Path()); err != nil {
+	return nil
+}
+
+// prepareEtc creates modified container-specific /etc files and adds them to
+// the spec mount list, to be bound into the assembled container. containerUser
+// should be set to true if the runtime user information will be derived from
+// the container's existing passwd/group files. spec.Process.User.[UG]ID must be
+// set correctly before calling.
+func (l *Launcher) prepareEtc(b ocibundle.Bundle, spec *specs.Spec, containerUser bool) error {
+	if err := os.Mkdir(filepath.Join(b.Path(), "etc"), 0o755); err != nil && !os.IsExist(err) {
 		return err
 	}
 
-	// If the container specifies a USER, we do not proceed to invoke l.updatePasswdGroup(). All we do is test for a conflicting --home option (in which case, we issue an error) and return
+	resolvMount, err := l.prepareResolvConf(b.Path())
+	if err != nil {
+		return err
+	}
+	if resolvMount != nil {
+		spec.Mounts = append(spec.Mounts, *resolvMount)
+	}
+
+	// If the container specifies a USER, we do not create a customized
+	// /etc/passwd|group. All we do is test for a conflicting --home option (in
+	// which case, we issue an error) and return
 	if containerUser {
 		if l.cfg.CustomHome {
 			return fmt.Errorf("a custom --home is not currently supported when running containers that declare a USER")
 		}
-
 		return nil
 	}
 
-	if err := l.updatePasswdGroup(tools.RootFs(b.Path()).Path(), targetUID, targetGID); err != nil {
+	passwdMount, err := l.preparePasswd(b.Path(), spec.Process.User.UID)
+	if err != nil {
 		return err
 	}
-
-	return nil
-}
-
-func (l *Launcher) updatePasswdGroup(rootfs string, uid, gid uint32) error {
-	containerPasswd := filepath.Join(rootfs, "etc", "passwd")
-	containerGroup := filepath.Join(rootfs, "etc", "group")
-
-	if l.singularityConf.ConfigPasswd {
-		sylog.Debugf("Updating passwd file: %s", containerPasswd)
-		content, err := files.Passwd(containerPasswd, l.homeDest, int(uid), nil)
-		if err != nil {
-			sylog.Warningf("%s", err)
-		} else if err := os.WriteFile(containerPasswd, content, 0o755); err != nil {
-			return fmt.Errorf("while writing passwd file: %w", err)
-		}
-	} else {
-		sylog.Debugf("Skipping update of %s due to singularity.conf", containerPasswd)
+	if passwdMount != nil {
+		spec.Mounts = append(spec.Mounts, *passwdMount)
 	}
 
-	if l.singularityConf.ConfigGroup {
-		sylog.Debugf("Updating group file: %s", containerGroup)
-		content, err := files.Group(containerGroup, int(uid), []int{int(gid)}, nil)
-		if err != nil {
-			sylog.Warningf("%s", err)
-		} else if err := os.WriteFile(containerGroup, content, 0o755); err != nil {
-			return fmt.Errorf("while writing passwd file: %w", err)
-		}
-	} else {
-		sylog.Debugf("Skipping update of %s due to singularity.conf", containerGroup)
+	groupMount, err := l.prepareGroup(b.Path(), spec.Process.User.UID, spec.Process.User.GID)
+	if err != nil {
+		return err
+	}
+	if groupMount != nil {
+		spec.Mounts = append(spec.Mounts, *groupMount)
 	}
 
 	return nil
 }
 
-func (l *Launcher) prepareResolvConf(rootfs string) error {
+// preparePasswd creates an `/etc/passwd` file in the bundle. This is based on
+// the passwd file from the pristine rootfs, modified to reflect the container
+// user configuration. An appropriate bind mount to use the create file is
+// returned on success.
+func (l *Launcher) preparePasswd(bundlePath string, uid uint32) (*specs.Mount, error) {
+	rootfs := tools.RootFs(bundlePath).Path()
+	rootfsPasswd := filepath.Join(rootfs, "etc", "passwd")
+	containerPasswd := filepath.Join(bundlePath, "etc", "passwd")
+
+	if !l.singularityConf.ConfigPasswd {
+		sylog.Debugf("Skipping creation of %s due to singularity.conf", containerPasswd)
+		return nil, nil
+	}
+
+	sylog.Debugf("Creating container passwd file: %s", containerPasswd)
+	content, err := files.Passwd(rootfsPasswd, l.homeDest, int(uid), nil)
+	if err != nil {
+		// E.g. container doesn't contain an /etc/passwd
+		sylog.Warningf("%s", err)
+		return nil, nil
+	}
+	if err := os.WriteFile(containerPasswd, content, 0o755); err != nil {
+		return nil, fmt.Errorf("while writing passwd file: %w", err)
+	}
+	passwdMount := specs.Mount{
+		Source:      containerPasswd,
+		Destination: "/etc/passwd",
+		Type:        "none",
+		Options:     []string{"bind"},
+	}
+	return &passwdMount, nil
+}
+
+// prepareGroup creates an `/etc/group` file in the bundle. This is based on
+// the group file from the pristine rootfs, modified to reflect the container
+// group configuration. An appropriate bind mount to use the create file is
+// returned on success.
+func (l *Launcher) prepareGroup(bundlePath string, uid, gid uint32) (*specs.Mount, error) {
+	rootfs := tools.RootFs(bundlePath).Path()
+	rootfsGroup := filepath.Join(rootfs, "etc", "group")
+	containerGroup := filepath.Join(bundlePath, "etc", "group")
+
+	if !l.singularityConf.ConfigGroup {
+		sylog.Debugf("Skipping creation of %s due to singularity.conf", containerGroup)
+		return nil, nil
+	}
+
+	sylog.Debugf("Creating container group file: %s", containerGroup)
+	content, err := files.Group(rootfsGroup, int(uid), []int{int(gid)}, nil)
+	if err != nil {
+		// E.g. container doesn't contain an /etc/group
+		sylog.Warningf("%s", err)
+		return nil, nil
+	} else if err := os.WriteFile(containerGroup, content, 0o755); err != nil {
+		return nil, fmt.Errorf("while writing passwd file: %w", err)
+	}
+	groupMount := specs.Mount{
+		Source:      containerGroup,
+		Destination: "/etc/group",
+		Type:        "none",
+		Options:     []string{"bind"},
+	}
+	return &groupMount, nil
+}
+
+// prepareResolvConfcreates `/etc/resolv.conf` in the bundle. An appropriate
+// bind mount to bind over the pristing rootfs `/etc/resolv.conf` is returned on
+// success.
+func (l *Launcher) prepareResolvConf(bundlePath string) (*specs.Mount, error) {
 	hostResolvConfPath := "/etc/resolv.conf"
-	containerEtc := filepath.Join(rootfs, "etc")
-	containerResolvConfPath := filepath.Join(rootfs, "etc", "resolv.conf")
+	containerEtc := filepath.Join(bundlePath, "etc")
+	containerResolvConfPath := filepath.Join(containerEtc, "resolv.conf")
 
 	if !l.singularityConf.ConfigResolvConf {
-		sylog.Debugf("Skipping update of %s due to singularity.conf", containerResolvConfPath)
-		return nil
+		sylog.Debugf("Skipping creation of %s due to singularity.conf", containerResolvConfPath)
+		return nil, nil
 	}
 
 	var resolvConfData []byte
@@ -430,7 +502,7 @@ func (l *Launcher) prepareResolvConf(rootfs string) error {
 		ips := strings.Split(dns, ",")
 		for _, ip := range ips {
 			if net.ParseIP(ip) == nil {
-				return fmt.Errorf("DNS nameserver %v is not a valid IP address", ip)
+				return nil, fmt.Errorf("DNS nameserver %v is not a valid IP address", ip)
 			}
 			line := fmt.Sprintf("nameserver %s\n", ip)
 			resolvConfData = append(resolvConfData, line...)
@@ -438,21 +510,22 @@ func (l *Launcher) prepareResolvConf(rootfs string) error {
 	} else {
 		resolvConfData, err = os.ReadFile(hostResolvConfPath)
 		if err != nil {
-			return fmt.Errorf("could not read host's resolv.conf file: %w", err)
+			return nil, fmt.Errorf("could not read host's resolv.conf file: %w", err)
 		}
 	}
 
-	stat, err := os.Stat(containerEtc)
-	if os.IsNotExist(err) || !stat.IsDir() {
-		sylog.Warningf("container does not contain an /etc directory; skipping resolv.conf configuration")
-		return nil
-	}
-
 	if err := os.WriteFile(containerResolvConfPath, resolvConfData, 0o755); err != nil {
-		return fmt.Errorf("while writing container's resolv.conf file: %v", err)
+		return nil, fmt.Errorf("while writing container's resolv.conf file: %v", err)
 	}
 
-	return nil
+	resolvMount := specs.Mount{
+		Source:      containerResolvConfPath,
+		Destination: "/etc/resolv.conf",
+		Type:        "none",
+		Options:     []string{"bind"},
+	}
+
+	return &resolvMount, nil
 }
 
 // Exec will interactively execute a container via the runc low-level runtime.
@@ -466,14 +539,18 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		return fmt.Errorf("launcher SysContext must be set for OCI image handling")
 	}
 
-	bundleDir, err := os.MkdirTemp("", "oci-bundle")
+	if err := l.mountSessionTmpfs(); err != nil {
+		return err
+	}
+
+	bundleDir, err := os.MkdirTemp(buildcfg.SESSIONDIR, "oci-bundle")
 	if err != nil {
 		return nil
 	}
 	defer func() {
 		sylog.Debugf("Removing OCI bundle at: %s", bundleDir)
-		if err := fs.ForceRemoveAll(bundleDir); err != nil {
-			sylog.Errorf("Couldn't remove OCI bundle %s: %v", bundleDir, err)
+		if cleanupErr := fs.ForceRemoveAll(bundleDir); cleanupErr != nil {
+			sylog.Errorf("Couldn't remove OCI bundle %s: %v", bundleDir, cleanupErr)
 		}
 	}()
 
@@ -519,8 +596,17 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		return fmt.Errorf("while generating container id: %w", err)
 	}
 
-	// Execution of runc/crun run, wrapped with prep / cleanup.
+	// Execution of runc/crun run, wrapped with overlay prep / cleanup.
 	err = RunWrapped(ctx, id.String(), b.Path(), "", l.cfg.OverlayPaths, l.singularityConf.SystemdCgroups)
+
+	// Unmounts pristine rootfs from bundle, and removes the bundle.
+	if cleanupErr := b.Delete(); cleanupErr != nil {
+		sylog.Errorf("Couldn't cleanup bundle: %v", err)
+	}
+
+	if err := l.unmountSessionTmpfs(); err != nil {
+		sylog.Errorf("Couldn't unmount session directory: %v", err)
+	}
 
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
@@ -540,6 +626,25 @@ func (l *Launcher) getCgroup() (path string, resources *specs.LinuxResources, er
 		return "", nil, err
 	}
 	return path, resources, nil
+}
+
+// mountSessionTmpfs mounts a tmpfs onto buildcfg.SESSIONDIR
+func (l *Launcher) mountSessionTmpfs() error {
+	sylog.Debugf("Mounting %d MiB tmpfs to %s", l.singularityConf.SessiondirMaxSize, buildcfg.SESSIONDIR)
+	options := fmt.Sprintf("mode=1777,size=%dm", l.singularityConf.SessiondirMaxSize)
+	if err := syscall.Mount("tmpfs", buildcfg.SESSIONDIR, "tmpfs", syscall.MS_NODEV, options); err != nil {
+		return fmt.Errorf("failed to mount session tmpfs %s: %w", buildcfg.SESSIONDIR, err)
+	}
+	return nil
+}
+
+// unmountSessionTmpfs mounts a tmpfs onto buildcfg.SESSIONDIR
+func (l *Launcher) unmountSessionTmpfs() error {
+	sylog.Debugf("Umounting tmpfs from %s", buildcfg.SESSIONDIR)
+	if err := syscall.Unmount(buildcfg.SESSIONDIR, syscall.MNT_DETACH); err != nil {
+		return fmt.Errorf("failed to unmount session tmpfs %s: %w", buildcfg.SESSIONDIR, err)
+	}
+	return nil
 }
 
 // crunNestCgroup will check whether we are using crun, and enter a cgroup if

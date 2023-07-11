@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/types"
@@ -19,6 +20,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/oci"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -38,8 +40,14 @@ type Bundle struct {
 	// Note that we only use the 'blob' cache section. The 'oci-tmp' cache section holds
 	// OCI->SIF conversions, which are not used here.
 	imgCache *cache.Handle
-	// process is the command to execute, which may override the image's ENTRYPOINT / CMD.
-	// Generic bundle properties
+	// tmpDir is the location for any temporary files that will be created outside of the
+	// assembled runtime bundle directory.
+	tmpDir string
+	// rootfsParentDir is the parent directory of the pristine rootfs, that will be mounted into the bundle.
+	// It is created and mounted to the bundlePath/rootfs during Create() and umounted and removed during Delete().
+	rootfsParentDir string
+	// rootfsMounted is set to true when the pristine rootfs has been bind mounted into the bundle.
+	rootfsMounted bool
 	ocibundle.Bundle
 }
 
@@ -81,6 +89,15 @@ func OptImgCache(ic *cache.Handle) Option {
 	}
 }
 
+// OptTempDir sets the parent temporary directory for temporary files generated
+// outside of the assembled bundle.
+func OptTmpDir(tmpDir string) Option {
+	return func(b *Bundle) error {
+		b.tmpDir = tmpDir
+		return nil
+	}
+}
+
 // New returns a bundle interface to create/delete an OCI bundle from an OCI image ref.
 func New(opts ...Option) (ocibundle.Bundle, error) {
 	b := Bundle{
@@ -100,6 +117,20 @@ func New(opts ...Option) (ocibundle.Bundle, error) {
 
 // Delete erases OCI bundle created an OCI image ref
 func (b *Bundle) Delete() error {
+	if b.rootfsMounted {
+		sylog.Debugf("Unmounting bundle rootfs %q", tools.RootFs(b.bundlePath).Path())
+		if err := syscall.Unmount(tools.RootFs(b.bundlePath).Path(), syscall.MNT_DETACH); err != nil {
+			return fmt.Errorf("while unmounting bundle rootfs bind mount: %w", err)
+		}
+	}
+
+	if b.rootfsParentDir != "" {
+		sylog.Debugf("Removing pristine rootfs %q", b.rootfsParentDir)
+		if err := fs.ForceRemoveAll(b.rootfsParentDir); err != nil {
+			return fmt.Errorf("while removing pristine rootfs %q: %w", b.rootfsParentDir, err)
+		}
+	}
+
 	return tools.DeleteBundle(b.bundlePath)
 }
 
@@ -113,13 +144,13 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 
 	// Get a reference to an OCI layout source for the image, fetching the image
 	// through the cache if it is enabled.
-	tmpDir, err := os.MkdirTemp("", "oci-tmp")
+	tmpLayout, err := os.MkdirTemp(b.tmpDir, "oci-tmp-layout")
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tmpDir)
+	defer os.RemoveAll(tmpLayout)
 
-	layoutRef, err := oci.FetchLayout(ctx, b.sysCtx, b.imgCache, b.imageRef, tmpDir)
+	layoutRef, err := oci.FetchLayout(ctx, b.sysCtx, b.imgCache, b.imageRef, tmpLayout)
 	if err != nil {
 		return err
 	}
@@ -150,10 +181,43 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 		return err
 	}
 
-	// Extract from temp oci layout into bundle rootfs
-	if err := oci.UnpackRootfs(ctx, tmpDir, manifest, tools.RootFs(b.bundlePath).Path()); err != nil {
+	// Extract from temp oci layout into a temporary pristine rootfs dir, outside of the bundle.
+	// The rootfs must be nested inside a parent directory, so extracting it does not
+	// open the tmpdir permissions.
+	b.rootfsParentDir, err = os.MkdirTemp(b.tmpDir, "oci-tmp-rootfs")
+	if err != nil {
 		return err
 	}
+	pristineRootfs := filepath.Join(b.rootfsParentDir, "rootfs")
+
+	if err := oci.UnpackRootfs(ctx, tmpLayout, manifest, pristineRootfs); err != nil {
+		return err
+	}
+
+	bundleRootfs := tools.RootFs(b.bundlePath).Path()
+	if err := os.Mkdir(bundleRootfs, 0o755); err != nil && !os.IsExist(err) {
+		return err
+	}
+
+	sylog.Debugf("Performing bind mount of pristine rootfs %q to bundle %q", pristineRootfs, bundleRootfs)
+	if err = syscall.Mount(pristineRootfs, bundleRootfs, "", syscall.MS_BIND, ""); err != nil {
+		return fmt.Errorf("failed to bind pristine rootfs to %q: %w", bundleRootfs, err)
+	}
+
+	defer func() {
+		if err != nil {
+			sylog.Debugf("Encountered error with rootfs bind mount; attempting to unmount %q", bundleRootfs)
+			syscall.Unmount(bundleRootfs, syscall.MNT_DETACH)
+		}
+	}()
+
+	sylog.Debugf("Performing remount of bundle rootfs %q", bundleRootfs)
+	if err = syscall.Mount("", bundleRootfs, "", syscall.MS_REMOUNT|syscall.MS_BIND|syscall.MS_RDONLY|syscall.MS_NODEV|syscall.MS_NOSUID, ""); err != nil {
+		return fmt.Errorf("failed to remount bundle rootfs %q: %w", bundleRootfs, err)
+	}
+
+	b.rootfsMounted = true
+
 	return b.writeConfig(g)
 }
 
