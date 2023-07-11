@@ -13,6 +13,7 @@ type TestEnv struct {
 	ImagePath         string // Path to the image that has to be used for the execution of a Singularity command
 	OrasTestImage     string // URI to SIF image pushed into local registry with ORAS
 	OCIArchivePath    string // Path to test OCI archive tar file
+	OCISIFPath        string // Path to test OCI-SIF file
 	DockerArchivePath string // Path to test Docker archive tar file
 	TestDir           string // Path to the directory from which a Singularity command needs to be executed
 	TestRegistry      string // Host:Port of local registry

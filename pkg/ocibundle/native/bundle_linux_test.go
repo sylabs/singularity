@@ -7,15 +7,13 @@ package native
 
 import (
 	"context"
-	"io"
-	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"testing"
 
-	"github.com/opencontainers/runtime-tools/validate"
 	"github.com/sylabs/singularity/internal/pkg/cache"
+	"github.com/sylabs/singularity/internal/pkg/test"
+	ocitest "github.com/sylabs/singularity/internal/pkg/test/tool/oci"
 )
 
 const (
@@ -34,44 +32,15 @@ func setupCache(t *testing.T) *cache.Handle {
 	return h
 }
 
-func getTestTar(url string) (path string, err error) {
-	dl, err := os.CreateTemp("", "oci-test")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer dl.Close()
-
-	r, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-	defer r.Body.Close()
-
-	_, err = io.Copy(dl, r.Body)
-	if err != nil {
-		return "", err
-	}
-
-	return dl.Name(), nil
-}
-
-func validateBundle(t *testing.T, bundlePath string) {
-	v, err := validate.NewValidatorFromPath(bundlePath, false, "linux")
-	if err != nil {
-		t.Errorf("Could not create bundle validator: %v", err)
-	}
-	if err := v.CheckAll(); err != nil {
-		t.Errorf("Bundle not valid: %v", err)
-	}
-}
-
 func TestFromImageRef(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
 
+	test.EnsurePrivilege(t)
+
 	// Prepare docker-archive source
-	dockerArchive, err := getTestTar(dockerArchiveURI)
+	dockerArchive, err := ocitest.GetTestImg(dockerArchiveURI)
 	if err != nil {
 		t.Fatalf("Could not download docker archive test file: %v", err)
 	}
@@ -90,7 +59,7 @@ func TestFromImageRef(t *testing.T) {
 		}
 	}
 	// Prepare oci-archive source
-	ociArchive, err := getTestTar(ociArchiveURI)
+	ociArchive, err := ocitest.GetTestImg(ociArchiveURI)
 	if err != nil {
 		t.Fatalf("Could not download oci archive test file: %v", err)
 	}
@@ -130,10 +99,14 @@ func TestFromImageRef(t *testing.T) {
 			}
 
 			if err := b.Create(context.Background(), nil); err != nil {
-				t.Fatalf("While creating bundle: %s", err)
+				t.Errorf("While creating bundle: %s", err)
 			}
 
-			validateBundle(t, bundleDir)
+			ocitest.ValidateBundle(t, bundleDir)
+
+			if err := b.Delete(context.Background()); err != nil {
+				t.Errorf("While deleting bundle: %s", err)
+			}
 		})
 	}
 }

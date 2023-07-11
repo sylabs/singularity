@@ -203,11 +203,11 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/go-openapi/validate/blob/master/LICENSE>
 
-## github.com/google/go-containerregistry/pkg/name
+## github.com/google/go-containerregistry
 
 **License:** Apache-2.0
 
-**License URL:** <https://github.com/google/go-containerregistry/blob/master/pkg/name/LICENSE>
+**License URL:** <https://github.com/google/go-containerregistry/blob/master/LICENSE>
 
 ## github.com/gosimple/unidecode
 
@@ -389,6 +389,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/stefanberger/go-pkcs11uri/blob/master/LICENSE>
 
+## github.com/sylabs/oci-tools/pkg/sif
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/sylabs/oci-tools/blob/master/pkg/sif/LICENSE>
+
 ## github.com/vbatts/go-mtree/pkg/govis
 
 **License:** Apache-2.0
@@ -406,6 +412,24 @@ The dependencies and their licenses are as follows:
 **License:** Apache-2.0
 
 **License URL:** <https://github.com/vishvananda/netns/blob/master/LICENSE>
+
+## github.com/xeipuuv/gojsonpointer
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/xeipuuv/gojsonpointer/blob/master/LICENSE-APACHE-2.0.txt>
+
+## github.com/xeipuuv/gojsonreference
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/xeipuuv/gojsonreference/blob/master/LICENSE-APACHE-2.0.txt>
+
+## github.com/xeipuuv/gojsonschema
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/xeipuuv/gojsonschema/blob/master/LICENSE-APACHE-2.0.txt>
 
 ## go.mongodb.org/mongo-driver
 

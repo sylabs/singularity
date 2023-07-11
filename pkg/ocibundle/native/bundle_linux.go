@@ -116,7 +116,7 @@ func New(opts ...Option) (ocibundle.Bundle, error) {
 }
 
 // Delete erases OCI bundle created an OCI image ref
-func (b *Bundle) Delete() error {
+func (b *Bundle) Delete(ctx context.Context) error {
 	if b.rootfsMounted {
 		sylog.Debugf("Unmounting bundle rootfs %q", tools.RootFs(b.bundlePath).Path())
 		if err := syscall.Unmount(tools.RootFs(b.bundlePath).Path(), syscall.MNT_DETACH); err != nil {

@@ -23,6 +23,7 @@ require (
 	github.com/docker/go-units v0.5.0
 	github.com/fatih/color v1.15.0
 	github.com/go-log/log v0.2.0
+	github.com/google/go-containerregistry v0.15.2
 	github.com/google/uuid v1.3.0
 	github.com/gosimple/slug v1.13.1
 	github.com/moby/term v0.5.0
@@ -43,10 +44,11 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.9.0
+	github.com/sylabs/oci-tools v0.2.0
 	github.com/sylabs/scs-build-client v0.8.0
 	github.com/sylabs/scs-key-client v0.7.3
 	github.com/sylabs/scs-library-client v1.4.5
-	github.com/sylabs/sif/v2 v2.11.5
+	github.com/sylabs/sif/v2 v2.11.6-0.20230615203820-9fe9b624c3fd
 	github.com/vbauerster/mpb/v8 v8.4.0
 	golang.org/x/crypto v0.11.0
 	golang.org/x/sys v0.10.0
@@ -109,7 +111,6 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
-	github.com/google/go-containerregistry v0.15.2 // indirect
 	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect

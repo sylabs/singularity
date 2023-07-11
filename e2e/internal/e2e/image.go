@@ -227,6 +227,37 @@ func EnsureOCIArchive(t *testing.T, env TestEnv) {
 	CopyOCIImage(t, env.TestRegistryImage, "oci-archive:"+env.OCIArchivePath, true, false)
 }
 
+// EnsureImage checks if e2e OCI-SIF file is available, and fetches it
+// otherwise.
+//
+// TODO - Temporary implementation. This should eventually be built here from an
+// OCI source, not downloaded.
+func EnsureOCISIF(t *testing.T, env TestEnv) {
+	ensureMutex.Lock()
+	defer ensureMutex.Unlock()
+
+	switch _, err := os.Stat(env.OCISIFPath); {
+	case err == nil:
+		// OK: file exists, return
+		return
+
+	case os.IsNotExist(err):
+		// OK: file does not exist, continue
+
+	default:
+		// FATAL: something else is wrong
+		t.Fatalf("Failed when checking image %q: %+v\n",
+			env.OCISIFPath,
+			err)
+	}
+
+	ociSifURI := "https://s3.amazonaws.com/singularity-ci-public/alpine-oci-sif-squashfs.sif"
+	t.Logf("Downloading %s to %s", ociSifURI, env.OCISIFPath)
+	if err := DownloadFile(ociSifURI, env.OCISIFPath); err != nil {
+		t.Fatalf("couldn't download oci-sif test image: %v", err)
+	}
+}
+
 // EnsureDockerArchive checks if e2e Docker test archive is available, and fetches
 // it otherwise.
 func EnsureDockerArchive(t *testing.T, env TestEnv) {
