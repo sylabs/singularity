@@ -17,6 +17,18 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/Netflix/go-expect/blob/master/LICENSE>
 
+## github.com/anchore/go-logger
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/anchore/go-logger/blob/master/LICENSE>
+
+## github.com/anchore/stereoscope
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/anchore/stereoscope/blob/master/LICENSE>
+
 ## github.com/container-orchestrated-devices/container-device-interface
 
 **License:** Apache-2.0
@@ -28,6 +40,12 @@ The dependencies and their licenses are as follows:
 **License:** Apache-2.0
 
 **License URL:** <https://github.com/containerd/containerd/blob/master/LICENSE>
+
+## github.com/containerd/stargz-snapshotter/estargz
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/containerd/stargz-snapshotter/blob/master/estargz/LICENSE>
 
 ## github.com/containernetworking/cni
 
@@ -89,11 +107,11 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/cyberphone/json-canonicalization/blob/master/go/src/webpki.org/jsoncanonicalizer/LICENSE>
 
-## github.com/docker/cli/cli/config
+## github.com/docker/cli/cli
 
 **License:** Apache-2.0
 
-**License URL:** <https://github.com/docker/cli/blob/master/cli/config/LICENSE>
+**License URL:** <https://github.com/docker/cli/blob/master/cli/LICENSE>
 
 ## github.com/docker/distribution
 
@@ -323,6 +341,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/opencontainers/umoci/blob/master/third_party/shared/COPYING>
 
+## github.com/pelletier/go-toml
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/pelletier/go-toml/blob/master/LICENSE>
+
 ## github.com/prometheus/client_golang/prometheus
 
 **License:** Apache-2.0
@@ -359,6 +383,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/safchain/ethtool/blob/master/LICENSE>
 
+## github.com/scylladb/go-set
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/scylladb/go-set/blob/master/LICENSE>
+
 ## github.com/sigstore/fulcio/pkg/certificate
 
 **License:** Apache-2.0
@@ -377,6 +407,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/sigstore/sigstore/blob/master/pkg/LICENSE>
 
+## github.com/spf13/afero
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/spf13/afero/blob/master/LICENSE.txt>
+
 ## github.com/spf13/cobra
 
 **License:** Apache-2.0
@@ -389,11 +425,11 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/stefanberger/go-pkcs11uri/blob/master/LICENSE>
 
-## github.com/sylabs/oci-tools/pkg/sif
+## github.com/sylabs/oci-tools/pkg
 
 **License:** Apache-2.0
 
-**License URL:** <https://github.com/sylabs/oci-tools/blob/master/pkg/sif/LICENSE>
+**License URL:** <https://github.com/sylabs/oci-tools/blob/master/pkg/LICENSE>
 
 ## github.com/vbatts/go-mtree/pkg/govis
 
@@ -593,6 +629,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/miekg/pkcs11/blob/master/LICENSE>
 
+## github.com/pierrec/lz4/v4
+
+**License:** BSD-3-Clause
+
+**License URL:** <https://github.com/pierrec/lz4/blob/master/v4/LICENSE>
+
 ## github.com/proglottis/gpgme
 
 **License:** BSD-3-Clause
@@ -743,6 +785,12 @@ The dependencies and their licenses are as follows:
 
 **Project URL:** <https://mvdan.cc/sh/v3>
 
+## github.com/therootcompany/xz
+
+**License:** CC0-1.0
+
+**License URL:** <https://github.com/therootcompany/xz/blob/master/LICENSE>
+
 ## github.com/BurntSushi/toml
 
 **License:** MIT
@@ -785,6 +833,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/astromechza/etcpwdparse/blob/master/LICENSE.md>
 
+## github.com/becheran/wildmatch-go
+
+**License:** MIT
+
+**License URL:** <https://github.com/becheran/wildmatch-go/blob/master/LICENSE>
+
 ## github.com/beorn7/perks/quantile
 
 **License:** MIT
@@ -796,6 +850,12 @@ The dependencies and their licenses are as follows:
 **License:** MIT
 
 **License URL:** <https://github.com/blang/semver/blob/master/v4/LICENSE>
+
+## github.com/bmatcuk/doublestar/v4
+
+**License:** MIT
+
+**License URL:** <https://github.com/bmatcuk/doublestar/blob/master/v4/LICENSE>
 
 ## github.com/buger/goterm
 
@@ -851,6 +911,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/felixge/httpsnoop/blob/master/LICENSE.txt>
 
+## github.com/gabriel-vasile/mimetype
+
+**License:** MIT
+
+**License URL:** <https://github.com/gabriel-vasile/mimetype/blob/master/LICENSE>
+
 ## github.com/go-log/log
 
 **License:** MIT
@@ -905,6 +971,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/mattn/go-runewidth/blob/master/LICENSE>
 
+## github.com/mitchellh/go-homedir
+
+**License:** MIT
+
+**License URL:** <https://github.com/mitchellh/go-homedir/blob/master/LICENSE>
+
 ## github.com/mitchellh/mapstructure
 
 **License:** MIT
@@ -953,6 +1025,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/sirupsen/logrus/blob/master/LICENSE>
 
+## github.com/sylabs/squashfs
+
+**License:** MIT
+
+**License URL:** <https://github.com/sylabs/squashfs/blob/master/LICENSE>
+
 ## github.com/titanous/rocacheck
 
 **License:** MIT
@@ -964,6 +1042,18 @@ The dependencies and their licenses are as follows:
 **License:** MIT
 
 **License URL:** <https://github.com/urfave/cli/blob/master/LICENSE>
+
+## github.com/wagoodman/go-partybus
+
+**License:** MIT
+
+**License URL:** <https://github.com/wagoodman/go-partybus/blob/master/LICENSE>
+
+## github.com/wagoodman/go-progress
+
+**License:** MIT
+
+**License URL:** <https://github.com/wagoodman/go-progress/blob/master/LICENSE>
 
 ## go.etcd.io/bbolt
 
