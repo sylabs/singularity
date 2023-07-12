@@ -18,6 +18,8 @@ import (
 )
 
 // pullSif will build a SIF image into the cache if directTo="", or a specific file if directTo is set.
+//
+//nolint:dupl
 func pullSif(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, opts PullOptions) (imagePath string, err error) {
 	sys := sysCtx(opts)
 	hash, err := oci.ImageDigest(ctx, pullFrom, sys)

@@ -25,6 +25,7 @@ type PullOptions struct {
 	DockerHost string
 	NoHTTPS    bool
 	NoCleanUp  bool
+	OciSif     bool
 }
 
 // sysCtx provides authentication and tempDir config for containers/image OCI operations
@@ -47,7 +48,7 @@ func sysCtx(opts PullOptions) *ocitypes.SystemContext {
 	return sysCtx
 }
 
-// Pull will build a SIF image to the cache or direct to a temporary file if cache is disabled
+// Pull will create a SIF / OCI-SIF image to the cache or direct to a temporary file if cache is disabled
 func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, opts PullOptions) (imagePath string, err error) {
 	directTo := ""
 
@@ -60,10 +61,14 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, opts Pul
 		sylog.Infof("Downloading library image to tmp cache: %s", directTo)
 	}
 
+	if opts.OciSif {
+		return pullOciSif(ctx, imgCache, directTo, pullFrom, opts)
+	}
+
 	return pullSif(ctx, imgCache, directTo, pullFrom, opts)
 }
 
-// PullToFile will build a SIF image from the specified oci URI and place it at the specified dest
+// PullToFile will create a SIF / OCI-SIF image from the specified oci URI and place it at the specified dest
 func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom string, opts PullOptions) (imagePath string, err error) {
 	directTo := ""
 	if imgCache.IsDisabled() {
@@ -71,7 +76,12 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom st
 		sylog.Debugf("Cache disabled, pulling directly to: %s", directTo)
 	}
 
-	src, err := pullSif(ctx, imgCache, directTo, pullFrom, opts)
+	src := ""
+	if opts.OciSif {
+		src, err = pullOciSif(ctx, imgCache, directTo, pullFrom, opts)
+	} else {
+		src, err = pullSif(ctx, imgCache, directTo, pullFrom, opts)
+	}
 	if err != nil {
 		return "", fmt.Errorf("error fetching image to cache: %v", err)
 	}

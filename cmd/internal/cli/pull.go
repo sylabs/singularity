@@ -52,6 +52,9 @@ var (
 	// pullArch is the architecture for which containers will be pulled from the
 	// SCS library.
 	pullArch string
+	// pullOci sets whether a pull from an OCI source should be converted to an
+	// OCI-SIF, rather than singularity's native SIF format.
+	pullOci bool
 )
 
 // --arch
@@ -129,6 +132,18 @@ var pullAllowUnauthenticatedFlag = cmdline.Flag{
 	Hidden:       true,
 }
 
+// --oci
+var pullOciFlag = cmdline.Flag{
+	ID:           "pullOciFlag",
+	Value:        &pullOci,
+	DefaultValue: false,
+	Name:         "oci",
+	ShortHand:    "",
+	Usage:        "pull to an OCI-SIF (OCI sources only)",
+	EnvKeys:      []string{"OCI"},
+	Hidden:       true,
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(PullCmd)
@@ -150,6 +165,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&pullAllowUnsignedFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&pullAllowUnauthenticatedFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&pullArchFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&pullOciFlag, PullCmd)
 	})
 }
 
@@ -273,6 +289,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			DockerHost: dockerHost,
 			NoHTTPS:    noHTTPS,
 			NoCleanUp:  buildArgs.noCleanUp,
+			OciSif:     pullOci,
 		}
 
 		_, err = oci.PullToFile(ctx, imgCache, pullTo, pullFrom, pullOpts)
