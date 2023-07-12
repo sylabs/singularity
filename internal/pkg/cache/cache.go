@@ -38,29 +38,35 @@ const (
 	LibraryCacheType = "library"
 	// OciTempCacheType specifies the cache holds SIF images created from OCI sources
 	OciTempCacheType = "oci-tmp"
-	// OciBlobCacheType specifies the cache holds OCI blobs (layers) pulled from OCI sources
-	OciBlobCacheType = "blob"
 	// ShubCacheType specifies the cache holds images pulled from Singularity Hub
 	ShubCacheType = "shub"
 	// OrasCacheType specifies the cache holds SIF images pulled from Oras sources
 	OrasCacheType = "oras"
 	// NetCacheType specifies the cache holds images pulled from http(s) internet sources
 	NetCacheType = "net"
+	// OciSifCachetType specifies cache holds OCI-SIF conversions of OCI sources.
+	OciSifCacheType = "oci-sif"
+
+	// OciBlobCacheType specifies the cache holds OCI blobs (layers) pulled from OCI sources
+	OciBlobCacheType = "blob"
 )
 
 var (
-	// FileCacheTypes specifies the file cache types.
+	// FileCacheTypes lists the file cache types, that store SIF or other single file images named by their hash.
 	FileCacheTypes = []string{
 		LibraryCacheType,
 		OciTempCacheType,
 		ShubCacheType,
 		OrasCacheType,
 		NetCacheType,
+		OciSifCacheType,
 	}
-	// OciCacheTypes specifies the OCI cache types.
+	// OciCacheTypes lists the OCI layout cache types, that store OCI blob content in a single OCI layout directory.
 	OciCacheTypes = []string{
 		OciBlobCacheType,
 	}
+	// AllCacheTypes lists both file and OCI layout cache types.
+	AllCacheTypes = append(FileCacheTypes, OciCacheTypes...)
 )
 
 // Config describes the requested configuration requested when a new handle is created,

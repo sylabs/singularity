@@ -41,7 +41,7 @@ var (
 		DefaultValue: []string{"all"},
 		Name:         "type",
 		ShortHand:    "T",
-		Usage:        "a list of cache types to clean (possible values: library, oci, shub, blob, net, oras, all)",
+		Usage:        "a list of cache types to clean, possible entries: all, " + strings.Join(cache.AllCacheTypes, ", "),
 	}
 
 	// -D|--days
