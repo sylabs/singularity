@@ -7,6 +7,7 @@ package cli
 
 import (
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
@@ -28,7 +29,7 @@ var cacheListTypesFlag = cmdline.Flag{
 	DefaultValue: []string{"all"},
 	Name:         "type",
 	ShortHand:    "T",
-	Usage:        "a list of cache types to display, possible entries: library, oci, shub, blob(s), all",
+	Usage:        "a list of cache types to display, possible entries: all, " + strings.Join(cache.AllCacheTypes, ", "),
 }
 
 // -s|--summary
