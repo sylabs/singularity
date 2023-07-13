@@ -28,7 +28,9 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/plugin"
 	"github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
+	ocilauncher "github.com/sylabs/singularity/internal/pkg/runtime/launcher/oci"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/internal/pkg/util/rootless"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
 	"github.com/sylabs/singularity/pkg/syfs"
@@ -333,6 +335,11 @@ func persistentPreRun(*cobra.Command, []string) error {
 		return fmt.Errorf("couldn't parse configuration file %s: %s", configurationFile, err)
 	}
 	singularityconf.SetCurrentConfig(config)
+
+	// If we need to enter a namespace (oci-mode) do the re-exec now, before any other handling happens.
+	if err := maybeReExec(); err != nil {
+		return err
+	}
 
 	// Handle the config dir (~/.singularity),
 	// then check the remove conf file permission.
@@ -688,4 +695,22 @@ func getBuilderClientConfig(uri string) (baseURI, authToken string, err error) {
 	}
 
 	return currentRemoteEndpoint.BuilderClientConfig(uri)
+}
+
+func maybeReExec() error {
+	sylog.Debugf("Checking whether to re-exec")
+	// The OCI runtime must always be launched where the effective uid/gid is 0 (root or fake-root).
+	if ociRuntime && !rootless.InNS() {
+		// If we need to, enter a new cgroup now, to workaround an issue with crun container cgroup creation (#1538).
+		if err := ocilauncher.CrunNestCgroup(); err != nil {
+			return fmt.Errorf("while applying crun cgroup workaround: %w", err)
+		}
+		// If we are root already, run the launcher in a new mount namespace only.
+		if os.Geteuid() == 0 {
+			return rootless.RunInMountNS(os.Args[1:])
+		}
+		// If we are not root, re-exec in a root-mapped user namespace and mount namespace.
+		return rootless.ExecWithFakeroot(os.Args[1:])
+	}
+	return nil
 }
