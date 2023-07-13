@@ -43,6 +43,7 @@ func (c actionTests) actionOciRun(t *testing.T) {
 	e2e.EnsureOCIArchive(t, c.env)
 	e2e.EnsureOCISIF(t, c.env)
 	e2e.EnsureDockerArchive(t, c.env)
+	e2e.EnsureORASOCISIF(t, c.env)
 
 	// Prepare oci source (oci directory layout)
 	ociLayout := t.TempDir()
@@ -66,6 +67,11 @@ func (c actionTests) actionOciRun(t *testing.T) {
 		{
 			name:     "oci-sif-http",
 			imageRef: "https://s3.amazonaws.com/singularity-ci-public/alpine-oci-sif-squashfs.sif",
+			exit:     0,
+		},
+		{
+			name:     "oci-sif-oras",
+			imageRef: c.env.OrasTestOCISIF,
 			exit:     0,
 		},
 		{

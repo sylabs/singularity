@@ -55,6 +55,7 @@ func (c ctx) testInvalidTransport(t *testing.T) {
 
 func (c ctx) testPushCmd(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
+	e2e.EnsureOCISIF(t, c.env)
 
 	// setup file and dir to use as invalid sources
 	orasInvalidDir, err := os.MkdirTemp(c.env.TestDir, "oras_push_dir-")
@@ -97,6 +98,12 @@ func (c ctx) testPushCmd(t *testing.T) {
 			desc:             "standard SIF push",
 			imagePath:        c.env.ImagePath,
 			dstURI:           fmt.Sprintf("oras://%s/standard_sif:test", c.env.TestRegistry),
+			expectedExitCode: 0,
+		},
+		{
+			desc:             "OCI-SIF push",
+			imagePath:        c.env.OCISIFPath,
+			dstURI:           fmt.Sprintf("oras://%s/oci-sif:test", c.env.TestRegistry),
 			expectedExitCode: 0,
 		},
 	}
