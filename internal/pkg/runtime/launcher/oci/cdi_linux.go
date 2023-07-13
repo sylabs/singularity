@@ -13,6 +13,7 @@ import (
 	"sync"
 
 	"github.com/container-orchestrated-devices/container-device-interface/pkg/cdi"
+	"github.com/container-orchestrated-devices/container-device-interface/pkg/parser"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
@@ -52,5 +53,5 @@ func addCDIDevices(spec *specs.Spec, cdiDevices []string, cdiRegOptions ...cdi.O
 
 // isCDIDevice checks whether a string is a valid CDI device selector.
 func isCDIDevice(str string) bool {
-	return cdi.IsQualifiedName(str)
+	return parser.IsQualifiedName(str)
 }

@@ -123,8 +123,8 @@ github.com/cncf/udpa/go v0.0.0-20191209042840-269d4d468f6f/go.mod h1:M8M6+tZqaGX
 github.com/cncf/udpa/go v0.0.0-20200629203442-efcf912fb354/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
 github.com/cncf/udpa/go v0.0.0-20201120205902-5459f2c99403/go.mod h1:WmhPx2Nbnhtbo57+VJT5O0JRkEi1Wbu0z5j0R8u5Hbk=
 github.com/codahale/rfc6979 v0.0.0-20141003034818-6a90f24967eb h1:EDmT6Q9Zs+SbUoc7Ik9EfrFqcylYqgPZ9ANSbTAntnE=
-github.com/container-orchestrated-devices/container-device-interface v0.5.4 h1:PqQGqJqQttMP5oJ/qNGEg8JttlHqGY3xDbbcKb5T9E8=
-github.com/container-orchestrated-devices/container-device-interface v0.5.4/go.mod h1:DjE95rfPiiSmG7uVXtg0z6MnPm/Lx4wxKCIts0ZE0vg=
+github.com/container-orchestrated-devices/container-device-interface v0.6.0 h1:aWwcz/Ep0Fd7ZuBjQGjU/jdPloM7ydhMW13h85jZNvk=
+github.com/container-orchestrated-devices/container-device-interface v0.6.0/go.mod h1:OQlgtJtDrOxSQ1BWODC8OZK1tzi9W69wek+Jy17ndzo=
 github.com/containerd/cgroups v1.1.0 h1:v8rEWFl6EoqHB+swVNjVoCJE8o3jX7e8nqBGPLaDFBM=
 github.com/containerd/containerd v1.7.2 h1:UF2gdONnxO8I6byZXDi5sXWiWvlW3D/sci7dTQimEJo=
 github.com/containerd/containerd v1.7.2/go.mod h1:afcz74+K10M/+cjGHIVQrCt3RAQhUSCAjJ9iMYhhkuI=
