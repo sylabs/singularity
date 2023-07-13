@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -74,16 +75,26 @@ func pullOciSif(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom 
 func createOciSif(ctx context.Context, imgCache *cache.Handle, imageSrc, imageDest string, opts PullOptions) error {
 	// Step 1 - Pull the OCI config and blobs to a standalone oci layout directory, through the cache if necessary.
 	sys := sysCtx(opts)
-	layoutDir, err := os.MkdirTemp(opts.TmpDir, "oci-sif-tmp-")
+	tmpDir, err := os.MkdirTemp(opts.TmpDir, "oci-sif-tmp-")
 	if err != nil {
 		return err
 	}
 	defer func() {
 		sylog.Infof("Cleaning up...")
-		if err := fs.ForceRemoveAll(layoutDir); err != nil {
-			sylog.Warningf("Couldn't remove oci-sif temporary layout %q: %v", layoutDir, err)
+		if err := fs.ForceRemoveAll(tmpDir); err != nil {
+			sylog.Warningf("Couldn't remove oci-sif temporary directory %q: %v", tmpDir, err)
 		}
 	}()
+
+	layoutDir := filepath.Join(tmpDir, "layout")
+	if err := os.Mkdir(layoutDir, 0o755); err != nil {
+		return err
+	}
+	workDir := filepath.Join(tmpDir, "work")
+	if err := os.Mkdir(workDir, 0o755); err != nil {
+		return err
+	}
+
 	sylog.Debugf("Fetching image to temporary layout %q", layoutDir)
 	layoutRef, err := buildoci.FetchLayout(ctx, sys, imgCache, imageSrc, layoutDir)
 	if err != nil {
@@ -106,12 +117,12 @@ func createOciSif(ctx context.Context, imgCache *cache.Handle, imageSrc, imageDe
 	}
 
 	// Step 3 - Convert the layout into a squashed, single squashfs-layer oci-sif image
-	return layoutToOciSif(layoutDir, digest, imageDest, opts.TmpDir)
+	return layoutToOciSif(layoutDir, digest, imageDest, workDir)
 }
 
 // layoutToOciSif will convert an image in an OCI layout to a squashed oci-sif with squashfs layer format.
 // The OCI layout can contain only a single image.
-func layoutToOciSif(layoutDir string, digest v1.Hash, imageDest, tmpDir string) error {
+func layoutToOciSif(layoutDir string, digest v1.Hash, imageDest, workDir string) error {
 	lp, err := layout.FromPath(layoutDir)
 	if err != nil {
 		return fmt.Errorf("while opening layout: %w", err)
@@ -134,7 +145,7 @@ func layoutToOciSif(layoutDir string, digest v1.Hash, imageDest, tmpDir string) 
 	if len(layers) != 1 {
 		return fmt.Errorf("%d > 1 layers remaining after squash operation", len(layers))
 	}
-	squashfsLayer, err := mutate.SquashfsLayer(layers[0], tmpDir)
+	squashfsLayer, err := mutate.SquashfsLayer(layers[0], workDir)
 	if err != nil {
 		return fmt.Errorf("while converting to squashfs format: %w", err)
 	}
