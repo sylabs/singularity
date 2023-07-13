@@ -64,6 +64,11 @@ func (c actionTests) actionOciRun(t *testing.T) {
 			exit:     0,
 		},
 		{
+			name:     "oci-sif-http",
+			imageRef: "https://s3.amazonaws.com/singularity-ci-public/alpine-oci-sif-squashfs.sif",
+			exit:     0,
+		},
+		{
 			name:     "docker-archive",
 			imageRef: "docker-archive:" + c.env.DockerArchivePath,
 			exit:     0,
