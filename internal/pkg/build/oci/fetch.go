@@ -88,7 +88,7 @@ func FetchLayout(ctx context.Context, sysCtx *types.SystemContext, imgCache *cac
 		return nil, fmt.Errorf("invalid image source: %v", err)
 	}
 
-	if imgCache != nil {
+	if imgCache != nil && !imgCache.IsDisabled() {
 		// Grab the modified source ref from the cache
 		srcRef, err = ConvertReference(ctx, imgCache, srcRef, sysCtx)
 		if err != nil {
