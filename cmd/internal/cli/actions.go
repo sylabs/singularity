@@ -48,19 +48,17 @@ func getCacheHandle(cfg cache.Config) *cache.Handle {
 }
 
 // actionPreRun will:
-//   - run replaceURIWithImage;
 //   - do the proper path unsetting;
 //   - and implement flag inferences for:
 //     --compat
 //     --hostname
+//   - run replaceURIWithImage;
 func actionPreRun(cmd *cobra.Command, args []string) {
 	// For compatibility - we still set USER_PATH so it will be visible in the
 	// container, and can be used there if needed. USER_PATH is not used by
 	// singularity itself in 3.9+
 	userPath := strings.Join([]string{os.Getenv("PATH"), defaultPath}, ":")
 	os.Setenv("USER_PATH", userPath)
-
-	replaceURIWithImage(cmd.Context(), cmd, args)
 
 	// --compat infers other options that give increased OCI / Docker compatibility
 	// Excludes uts/user/net namespaces as these are restrictive for many Singularity
@@ -77,6 +75,8 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 	if len(hostname) > 0 {
 		utsNamespace = true
 	}
+
+	replaceURIWithImage(cmd.Context(), cmd, args)
 }
 
 func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, pullFrom string) (string, error) {
@@ -90,6 +90,7 @@ func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, 
 		OciAuth:    ociAuth,
 		DockerHost: dockerHost,
 		NoHTTPS:    noHTTPS,
+		OciSif:     ociRuntime,
 	}
 
 	return oci.Pull(ctx, imgCache, pullFrom, pullOpts)
@@ -135,8 +136,9 @@ func handleNet(ctx context.Context, imgCache *cache.Handle, pullFrom string) (st
 }
 
 func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string) {
-	// If args[0] is not transport:ref (ex. instance://...) formatted return, not a URI
 	t, _ := uri.Split(args[0])
+	// If joining an instance (instance://xxx), or we have a bare filename then
+	// no retrieval / conversion is required.
 	if t == "instance" || t == "" {
 		return
 	}
@@ -148,14 +150,6 @@ func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string)
 	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
 	if imgCache == nil {
 		sylog.Fatalf("failed to create a new image cache handle")
-	}
-
-	// The OCI runtime launcher will handle OCI image sources directly.
-	if ociRuntime {
-		if oci.IsSupported(t) != t {
-			sylog.Fatalf("OCI runtime only supports OCI image sources. %s is not supported.", t)
-		}
-		return
 	}
 
 	switch t {
@@ -177,6 +171,11 @@ func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string)
 
 	if err != nil {
 		sylog.Fatalf("Unable to handle %s uri: %v", args[0], err)
+	}
+
+	// TODO - drop once we have implemented prefix-less oci-sif vs native sif detection.
+	if ociRuntime {
+		image = "oci-sif:" + image
 	}
 
 	args[0] = image
