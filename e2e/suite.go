@@ -230,6 +230,9 @@ func Run(t *testing.T) {
 	// Local registry ORAS SIF image, built on demand by e2e.EnsureORASImage
 	testenv.OrasTestImage = fmt.Sprintf("oras://%s/oras_test_sif:latest", testenv.TestRegistry)
 
+	// Local registry ORAS OCI-SIF image, built on demand by e2e.EnsureORASOCISIF
+	testenv.OrasTestOCISIF = fmt.Sprintf("oras://%s/oras_test_oci-sif:latest", testenv.TestRegistry)
+
 	t.Cleanup(func() {
 		if !t.Failed() {
 			os.Remove(imagePath)
