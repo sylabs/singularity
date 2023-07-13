@@ -120,5 +120,10 @@ func RunInMountNS(args []string) error {
 	if errors.As(err, &exitErr) {
 		os.Exit(exitErr.ExitCode())
 	}
+
+	if err == nil {
+		os.Exit(0)
+	}
+
 	return err
 }
