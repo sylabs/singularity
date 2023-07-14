@@ -31,7 +31,7 @@ require (
 	github.com/opencontainers/runtime-tools v0.9.1-0.20230317050512-e931285f4b69
 	github.com/opencontainers/selinux v1.11.0
 	github.com/opencontainers/umoci v0.4.7
-	github.com/pelletier/go-toml/v2 v2.0.8
+	github.com/pelletier/go-toml/v2 v2.0.9
 	github.com/pkg/errors v0.9.1
 	github.com/seccomp/libseccomp-golang v0.10.0
 	github.com/shopspring/decimal v1.3.1
