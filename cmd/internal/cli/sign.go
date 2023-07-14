@@ -12,7 +12,7 @@ import (
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/app/singularity"
+	sifsignature "github.com/sylabs/singularity/internal/pkg/signature"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/sypgp"
@@ -126,7 +126,7 @@ var SignCmd = &cobra.Command{
 }
 
 func doSignCmd(cmd *cobra.Command, cpath string) {
-	var opts []singularity.SignOpt
+	var opts []sifsignature.SignOpt
 
 	// Set key material.
 	switch {
@@ -137,7 +137,7 @@ func doSignCmd(cmd *cobra.Command, cpath string) {
 		if err != nil {
 			sylog.Fatalf("Failed to load key material: %v", err)
 		}
-		opts = append(opts, singularity.OptSignWithSigner(s))
+		opts = append(opts, sifsignature.OptSignWithSigner(s))
 
 	default:
 		sylog.Infof("Signing image with PGP key material")
@@ -150,21 +150,21 @@ func doSignCmd(cmd *cobra.Command, cpath string) {
 			f = selectEntityInteractive()
 		}
 		f = decryptSelectedEntityInteractive(f)
-		opts = append(opts, singularity.OptSignEntitySelector(f))
+		opts = append(opts, sifsignature.OptSignEntitySelector(f))
 	}
 
 	// Set group option, if applicable.
 	if cmd.Flag(signSifGroupIDFlag.Name).Changed || cmd.Flag(signOldSifGroupIDFlag.Name).Changed {
-		opts = append(opts, singularity.OptSignGroup(sifGroupID))
+		opts = append(opts, sifsignature.OptSignGroup(sifGroupID))
 	}
 
 	// Set object option, if applicable.
 	if cmd.Flag(signSifDescSifIDFlag.Name).Changed || cmd.Flag(signSifDescIDFlag.Name).Changed {
-		opts = append(opts, singularity.OptSignObjects(sifDescID))
+		opts = append(opts, sifsignature.OptSignObjects(sifDescID))
 	}
 
 	// Sign the image.
-	if err := singularity.Sign(cmd.Context(), cpath, opts...); err != nil {
+	if err := sifsignature.Sign(cmd.Context(), cpath, opts...); err != nil {
 		sylog.Fatalf("Failed to sign container: %v", err)
 	}
 	sylog.Infof("Signature created and applied to image '%v'", cpath)
