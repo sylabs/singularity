@@ -216,7 +216,7 @@ func ensureSIF(filepath string) error {
 	}
 	defer img.File.Close()
 
-	if img.Type != image.SIF {
+	if img.Type != image.SIF && img.Type != image.OCISIF {
 		return fmt.Errorf("%q is not a SIF", filepath)
 	}
 
