@@ -18,6 +18,7 @@ import (
 	keyclient "github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/sif/v2/pkg/sif"
+	"github.com/sylabs/singularity/internal/pkg/signature"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/vbauerster/mpb/v8"
@@ -96,7 +97,7 @@ func LibraryPush(ctx context.Context, pushSpec LibraryPushSpec, libraryConfig *c
 
 	if !pushSpec.AllowUnsigned {
 		// Check if the container has a valid signature.
-		if err := Verify(ctx, pushSpec.SourceFile, OptVerifyWithPGP(co...)); err != nil {
+		if err := signature.Verify(ctx, pushSpec.SourceFile, signature.OptVerifyWithPGP(co...)); err != nil {
 			sylog.Warningf("%v", err)
 			return ErrLibraryUnsigned
 		}

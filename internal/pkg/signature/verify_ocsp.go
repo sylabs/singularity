@@ -4,7 +4,7 @@
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
 
-package singularity
+package signature
 
 import (
 	"bytes"

@@ -16,9 +16,9 @@ import (
 	keyclient "github.com/sylabs/scs-key-client/client"
 	libclient "github.com/sylabs/scs-library-client/client"
 	scslibrary "github.com/sylabs/scs-library-client/client"
-	"github.com/sylabs/singularity/internal/app/singularity"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/client"
+	"github.com/sylabs/singularity/internal/pkg/signature"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"golang.org/x/term"
@@ -140,7 +140,7 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo string, pull
 		}
 	}
 
-	if err := singularity.Verify(ctx, pullTo, singularity.OptVerifyWithPGP(co...)); err != nil {
+	if err := signature.Verify(ctx, pullTo, signature.OptVerifyWithPGP(co...)); err != nil {
 		sylog.Warningf("%v", err)
 		return pullTo, ErrLibraryPullUnsigned
 	}
