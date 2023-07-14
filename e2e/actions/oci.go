@@ -65,6 +65,11 @@ func (c actionTests) actionOciRun(t *testing.T) {
 			exit:     0,
 		},
 		{
+			name:     "oci-sif bare",
+			imageRef: c.env.OCISIFPath,
+			exit:     0,
+		},
+		{
 			name:     "oci-sif-http",
 			imageRef: "https://s3.amazonaws.com/singularity-ci-public/alpine-oci-sif-squashfs.sif",
 			exit:     0,
@@ -100,6 +105,11 @@ func (c actionTests) actionOciRun(t *testing.T) {
 			imageRef: "oci:" + ociLayout,
 			argv:     []string{"false"},
 			exit:     1,
+		},
+		{
+			name:     "non-oci-sif",
+			imageRef: c.env.ImagePath,
+			exit:     255,
 		},
 	}
 
