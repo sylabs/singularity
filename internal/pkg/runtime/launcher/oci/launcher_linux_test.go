@@ -92,3 +92,61 @@ func TestNewLauncher(t *testing.T) {
 		})
 	}
 }
+
+func Test_normalizeImageRef(t *testing.T) {
+	tests := []struct {
+		name     string
+		imageRef string
+		want     string
+		wantErr  bool
+	}{
+		{
+			name:     "ext3 image",
+			imageRef: "../../../../../test/images/extfs-for-overlay.img",
+			want:     "",
+			wantErr:  true,
+		},
+		{
+			name:     "squashfs image",
+			imageRef: "../../../../../test/images/squashfs-for-overlay.img",
+			want:     "",
+			wantErr:  true,
+		},
+		{
+			name:     "sif image",
+			imageRef: "../../../../../test/images/empty.sif",
+			want:     "",
+			wantErr:  true,
+		},
+		{
+			name:     "oci ref",
+			imageRef: "oci:/my/layout",
+			want:     "oci:/my/layout",
+			wantErr:  false,
+		},
+		{
+			name:     "oci sif",
+			imageRef: "../../../../../test/images/empty.oci.sif",
+			want:     "oci-sif:../../../../../test/images/empty.oci.sif",
+			wantErr:  false,
+		},
+		{
+			name:     "oci sif prefixed",
+			imageRef: "oci-sif:../../../../../test/images/empty.oci.sif",
+			want:     "oci-sif:../../../../../test/images/empty.oci.sif",
+			wantErr:  false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := normalizeImageRef(tt.imageRef)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("normalizeImageRef() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("normalizeImageRef() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
