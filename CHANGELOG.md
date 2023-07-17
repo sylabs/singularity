@@ -31,6 +31,8 @@
 - Lookup and store user/group information in stage one prior to entering any
   namespaces to fix issue with winbind not correctly lookup user/group
   information when using user namespace.
+- The default process for an OCI bundle created with `singualrity oci mount` is now
+  `/singularity.d/runscript` instead of `/bin/sh`.
 
 ### New Features & Functionality
 

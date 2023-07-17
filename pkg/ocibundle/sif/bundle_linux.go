@@ -23,6 +23,8 @@ import (
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 )
 
+const singularityRunscript = "/.singularity.d/runscript"
+
 type sifBundle struct {
 	image      string
 	bundlePath string
@@ -120,6 +122,9 @@ func (s *sifBundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	if err != nil {
 		return fmt.Errorf("failed to generate OCI bundle/config: %s", err)
 	}
+
+	// By default, we should call the container runscript
+	g.SetProcessArgs([]string{singularityRunscript})
 
 	// associate SIF image with a block
 	loop, loopCloser, err := tools.CreateLoop(img.File, offset, size)
