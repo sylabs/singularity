@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -20,6 +19,7 @@ import (
 	ocisif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/squashfs"
 	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -82,7 +82,7 @@ func (b *Bundle) Delete(ctx context.Context) error {
 
 	if b.imageMounted {
 		sylog.Debugf("Unmounting squashfs rootfs image from %q", tools.RootFs(b.bundlePath).Path())
-		if err := unmountSquashFS(ctx, tools.RootFs(b.bundlePath).Path()); err != nil {
+		if err := squashfs.FUSEUnmount(ctx, tools.RootFs(b.bundlePath).Path()); err != nil {
 			return err
 		}
 	}
@@ -221,39 +221,5 @@ func mount(ctx context.Context, path, mountPath string, digest v1.Hash) error {
 	if err != nil {
 		return fmt.Errorf("failed to get partition descriptor: %w", err)
 	}
-	return mountSquashFS(ctx, d.Offset(), path, mountPath)
-}
-
-func mountSquashFS(ctx context.Context, offset int64, path, mountPath string) error {
-	args := []string{
-		"-o", fmt.Sprintf("ro,offset=%d,uid=%d,gid=%d", offset, os.Getuid(), os.Getgid()),
-		filepath.Clean(path),
-		filepath.Clean(mountPath),
-	}
-	//nolint:gosec // note (gosec exclusion) - we require callers to be able to specify squashfuse not on PATH
-	cmd := exec.CommandContext(ctx, "squashfuse", args...)
-
-	sylog.Debugf("Executing squashfuse %s", strings.Join(args, " "))
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to mount: %w", err)
-	}
-
-	return nil
-}
-
-func unmountSquashFS(ctx context.Context, mountPath string) error {
-	args := []string{
-		"-u",
-		filepath.Clean(mountPath),
-	}
-	cmd := exec.CommandContext(ctx, "fusermount", args...) //nolint:gosec
-
-	sylog.Debugf("Executing fusermount %s", strings.Join(args, " "))
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to unmount: %w", err)
-	}
-
-	return nil
+	return squashfs.FUSEMount(ctx, uint64(d.Offset()), path, mountPath)
 }

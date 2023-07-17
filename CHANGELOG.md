@@ -31,6 +31,8 @@
 - Lookup and store user/group information in stage one prior to entering any
   namespaces to fix issue with winbind not correctly lookup user/group
   information when using user namespace.
+- `singularity oci mount` now uses, and requires, `squashfuse` to mount a SIF
+  image to an OCI bundle.
 
 ### New Features & Functionality
 
