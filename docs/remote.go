@@ -1,5 +1,5 @@
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,11 +13,10 @@ const (
 	// remote command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RemoteUse   string = `remote [remote options...]`
-	RemoteShort string = `Manage singularity remote endpoints, keyservers and OCI/Docker registry credentials`
+	RemoteShort string = `Manage singularity remote endpoints and OCI/Docker registry credentials`
 	RemoteLong  string = `
-  The 'remote' command allows you to manage Singularity remote endpoints,
-  standalone keyservers and OCI/Docker registry credentials through its
-  subcommands.
+  The 'remote' command allows you to manage Singularity remote endpoints and 
+  OCI/Docker registry credentials through its subcommands.
 
   A 'remote endpoint' is the Sylabs Cloud, a Singularity Enterprise installation,
   or a compatible group of services. The remote endpoint is a single address,
@@ -85,9 +84,9 @@ const (
 	// remote list command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RemoteListUse   string = `list`
-	RemoteListShort string = `List all singularity remote endpoints, keyservers, and OCI credentials that are configured`
+	RemoteListShort string = `List all singularity remote endpoints and OCI credentials that are configured`
 	RemoteListLong  string = `
-  The 'remote list' command lists all remote endpoints, keyservers, and OCI registry
+  The 'remote list' command lists all remote endpoints and OCI registry
   credentials configured for use.
 
   The current remote is indicated by 'YES' in the 'ACTIVE' column and can be changed
@@ -98,10 +97,10 @@ const (
 	// remote login command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RemoteLoginUse   string = `login [login options...] <remote_name|registry_uri>`
-	RemoteLoginShort string = `Login to a singularity remote endpoint, an OCI/Docker registry or a keyserver using credentials`
+	RemoteLoginShort string = `Login to a singularity remote endpoint or an OCI/Docker registry using credentials`
 	RemoteLoginLong  string = `
-  The 'remote login' command allows you to set credentials for a specific endpoint,
-  an OCI/Docker registry or a keyserver.
+  The 'remote login' command allows you to set credentials for a specific endpoint or
+  an OCI/Docker registry.
 
   If no endpoint or registry is specified, the command will login to the currently
   active remote endpoint. This is cloud.sylabs.io by default.`
@@ -122,11 +121,11 @@ const (
 	// remote logout command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	RemoteLogoutUse   string = `logout <remote_name|registry_uri>`
-	RemoteLogoutShort string = `Log out from a singularity remote endpoint, an OCI/Docker registry or a keyserver`
+	RemoteLogoutShort string = `Log out from a singularity remote endpoint or an OCI/Docker registry`
 	RemoteLogoutLong  string = `
-  The 'remote logout' command allows you to log out from a singularity specific endpoint,
-  an OCI/Docker registry or a keyserver. If no endpoint or service is specified, it will
-  logout from the current active remote endpoint.
+  The 'remote logout' command allows you to log out from a singularity specific
+  endpoint or an OCI/Docker registry. If no endpoint or service is specified, it
+  will logout from the current active remote endpoint.
   `
 	RemoteLogoutExample string = `
   To log out from an endpoint
@@ -148,29 +147,4 @@ const (
   will be checked.`
 	RemoteStatusExample string = `
   $ singularity remote status SylabsCloud`
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// remote add-keyserver command
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RemoteAddKeyserverUse   string = `add-keyserver [options] [remoteName] <keyserver_url>`
-	RemoteAddKeyserverShort string = `Add a keyserver (root user only)`
-	RemoteAddKeyserverLong  string = `
-  The 'remote add-keyserver' command allows to define additional keyserver. The --order
-  option can define the order of the keyserver for all related key operations, therefore
-  when specifying '--order 1' the keyserver is becoming the primary keyserver. If no endpoint
-  is specified, it will use the default remote endpoint (SylabsCloud).`
-	RemoteAddKeyserverExample string = `
-  $ singularity remote add-keyserver https://keys.example.com
-
-  To add a keyserver to be used as the primary keyserver for the current endpoint
-  $ singularity remote add-keyserver --order 1 https://keys.example.com`
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	// remote remove-keyserver command
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RemoteRemoveKeyserverUse   string = `remove-keyserver [remoteName] <keyserver_url>`
-	RemoteRemoveKeyserverShort string = `Remove a keyserver (root user only)`
-	RemoteRemoveKeyserverLong  string = `
-  The 'remote remove-keyserver' command allows to remove a defined keyserver from a specific
-  endpoint. If no endpoint is specified, it will use the default remote endpoint (SylabsCloud).`
-	RemoteRemoveKeyserverExample string = `
-  $ singularity remote remove-keyserver https://keys.example.com`
 )

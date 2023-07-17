@@ -36,6 +36,9 @@
 - The `--vm` and related flags to start singularity inside a VM have been
   removed. This functionality was related to the retired Singularity Desktop /
   SyOS projects.
+- The keyserver-related commands that were under `remote` have been moved to
+  their own, dedicated `keyserver` command. Run `singularity help keyserver` for
+  more information.
 
 ### New Features & Functionality
 
