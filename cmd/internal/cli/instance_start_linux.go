@@ -41,11 +41,6 @@ var instanceStartCmd = &cobra.Command{
 		name := args[1]
 		containerCmd := "/.singularity.d/actions/start"
 		containerArgs := args[2:]
-		setVM(cmd)
-		if vm {
-			execVM(cmd, image, containerCmd, containerArgs)
-			return
-		}
 		if err := launchContainer(cmd, image, containerCmd, containerArgs, name); err != nil {
 			sylog.Fatalf("%s", err)
 		}

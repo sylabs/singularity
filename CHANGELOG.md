@@ -33,6 +33,9 @@
   information when using user namespace.
 - `singularity oci mount` now uses, and requires, `squashfuse` to mount a SIF
   image to an OCI bundle.
+- The `--vm` and related flags to start singularity inside a VM have been
+  removed. This functionality was related to the retired Singularity Desktop /
+  SyOS projects.
 
 ### New Features & Functionality
 
