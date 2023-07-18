@@ -6,10 +6,16 @@
 package squashfs
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/pkg/sylog"
 	"github.com/sylabs/singularity/pkg/util/singularityconf"
 )
 
@@ -55,4 +61,47 @@ func GetMem() (string, error) {
 	mem := c.MksquashfsMem
 
 	return mem, err
+}
+
+func FUSEMount(ctx context.Context, offset uint64, path, mountPath string) error {
+	args := []string{
+		"-o", fmt.Sprintf("ro,offset=%d,uid=%d,gid=%d", offset, os.Getuid(), os.Getgid()),
+		filepath.Clean(path),
+		filepath.Clean(mountPath),
+	}
+
+	squashfuse, err := bin.FindBin("squashfuse")
+	if err != nil {
+		return err
+	}
+	cmd := exec.CommandContext(ctx, squashfuse, args...) //nolint:gosec
+
+	sylog.Debugf("Executing %s %s", squashfuse, strings.Join(args, " "))
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to mount: %w", err)
+	}
+
+	return nil
+}
+
+func FUSEUnmount(ctx context.Context, mountPath string) error {
+	args := []string{
+		"-u",
+		filepath.Clean(mountPath),
+	}
+
+	fusermount, err := bin.FindBin("fusermount")
+	if err != nil {
+		return err
+	}
+	cmd := exec.CommandContext(ctx, fusermount, args...) //nolint:gosec
+
+	sylog.Debugf("Executing %s %s", fusermount, strings.Join(args, " "))
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to unmount: %w", err)
+	}
+
+	return nil
 }

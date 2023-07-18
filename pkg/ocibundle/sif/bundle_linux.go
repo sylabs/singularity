@@ -12,11 +12,12 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 
 	imageSpecs "github.com/opencontainers/image-spec/specs-go/v1"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/internal/pkg/util/fs/squashfs"
 
 	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/ocibundle"
@@ -113,7 +114,6 @@ func (s *sifBundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 		return fmt.Errorf("unsupported image fs type: %v", part.Type)
 	}
 	offset := part.Offset
-	size := part.Size
 
 	// generate OCI bundle directory and config
 	g, err := tools.GenerateBundleConfig(s.bundlePath, ociConfig)
@@ -121,31 +121,23 @@ func (s *sifBundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 		return fmt.Errorf("failed to generate OCI bundle/config: %s", err)
 	}
 
-	// associate SIF image with a block
-	loop, loopCloser, err := tools.CreateLoop(img.File, offset, size)
-	if err != nil {
-		tools.DeleteBundle(s.bundlePath)
-		return fmt.Errorf("failed to find loop device: %s", err)
-	}
-	defer loopCloser.Close()
-
 	rootFs := tools.RootFs(s.bundlePath).Path()
-	if err := syscall.Mount(loop, rootFs, "squashfs", syscall.MS_RDONLY, ""); err != nil {
+	if err := squashfs.FUSEMount(ctx, offset, s.image, rootFs); err != nil {
 		tools.DeleteBundle(s.bundlePath)
 		return fmt.Errorf("failed to mount SIF partition: %s", err)
 	}
 
 	if err := s.writeConfig(img, g); err != nil {
-		// best effort to release loop device
-		syscall.Unmount(rootFs, syscall.MNT_DETACH)
+		// best effort to release FUSE mount
+		squashfs.FUSEUnmount(ctx, rootFs)
 		tools.DeleteBundle(s.bundlePath)
 		return fmt.Errorf("failed to write OCI configuration: %s", err)
 	}
 
 	if s.writable {
 		if err := tools.CreateOverlay(s.bundlePath); err != nil {
-			// best effort to release loop device
-			syscall.Unmount(rootFs, syscall.MNT_DETACH)
+			// best effort to release FUSE mount
+			squashfs.FUSEUnmount(ctx, rootFs)
 			tools.DeleteBundle(s.bundlePath)
 			return fmt.Errorf("failed to create overlay: %s", err)
 		}
@@ -160,14 +152,15 @@ func (s *sifBundle) Update(ctx context.Context, ociConfig *specs.Spec) error {
 
 // Delete erases OCI bundle create from SIF image
 func (s *sifBundle) Delete(ctx context.Context) error {
-	if s.writable {
+	overlayExists := fs.IsDir(filepath.Join(s.bundlePath, "overlay"))
+	if s.writable && overlayExists {
 		if err := tools.DeleteOverlay(s.bundlePath); err != nil {
 			return fmt.Errorf("delete error: %s", err)
 		}
 	}
 	// Umount rootfs
 	rootFsDir := tools.RootFs(s.bundlePath).Path()
-	if err := syscall.Unmount(rootFsDir, syscall.MNT_DETACH); err != nil {
+	if err := squashfs.FUSEUnmount(ctx, rootFsDir); err != nil {
 		return fmt.Errorf("failed to unmount %s: %s", rootFsDir, err)
 	}
 	// delete bundle directory

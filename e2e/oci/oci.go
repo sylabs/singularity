@@ -80,6 +80,8 @@ func (c *ctx) checkOciState(t *testing.T, containerID, state string) {
 
 func genericOciMount(t *testing.T, c *ctx) (string, func()) {
 	require.Seccomp(t)
+	require.Command(t, "squashfuse")
+	require.Command(t, "fusermount")
 	require.Filesystem(t, "overlay")
 
 	bundleDir, err := os.MkdirTemp(c.env.TestDir, "bundle-")
