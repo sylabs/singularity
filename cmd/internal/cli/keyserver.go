@@ -106,7 +106,7 @@ var KeyserverRemoveCmd = &cobra.Command{
 			uri = args[1]
 		}
 
-		if err := singularity.RemoteRemoveKeyserver(name, uri); err != nil {
+		if err := singularity.KeyserverRemove(name, uri); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},

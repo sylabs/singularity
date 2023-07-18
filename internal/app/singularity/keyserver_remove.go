@@ -16,7 +16,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 )
 
-func RemoteRemoveKeyserver(name, uri string) error {
+func KeyserverRemove(name, uri string) error {
 	// Explicit handling of corner cases: name and uri must be valid strings
 	if strings.TrimSpace(uri) == "" {
 		return fmt.Errorf("invalid URI: cannot have empty URI")
