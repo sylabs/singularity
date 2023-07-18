@@ -115,8 +115,8 @@ func Test_normalizeImageRef(t *testing.T) {
 		{
 			name:     "sif image",
 			imageRef: "../../../../../test/images/empty.sif",
-			want:     "",
-			wantErr:  true,
+			want:     "sif:../../../../../test/images/empty.sif",
+			wantErr:  false,
 		},
 		{
 			name:     "oci ref",

@@ -103,11 +103,13 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 // This includes interactive containers, instances, and joining an existing instance.
 //
 //nolint:maintidx
-func (l *Launcher) Exec(ctx context.Context, image string, process string, args []string, instanceName string) error {
+func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 	var err error
 
-	// Native runtime expects command to execute as arg[0]
-	args = append([]string{process}, args...)
+	args, err := ep.ActionScriptArgs()
+	if err != nil {
+		return fmt.Errorf("while getting ProcessArgs: %w", err)
+	}
 
 	// Set arguments to pass to contained process.
 	l.generator.SetProcessArgs(args)
@@ -130,7 +132,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	}
 
 	// Set image to run, or instance to join, and SINGULARITY_CONTAINER/SINGULARITY_NAME env vars.
-	if err := l.setImageOrInstance(image, instanceName); err != nil {
+	if err := l.setImageOrInstance(ep.Image, ep.Instance); err != nil {
 		sylog.Errorf("While setting image/instance: %s", err)
 	}
 
@@ -276,7 +278,7 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 		}
 	}
 
-	l.setCgroups(instanceName)
+	l.setCgroups(ep.Instance)
 
 	// --boot flag requires privilege, so check for this.
 	err = launcher.WithPrivilege(l.cfg.Boot, "--boot", func() error { return nil })
@@ -296,8 +298,8 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	}
 
 	// Setup instance specific configuration if required.
-	if instanceName != "" {
-		l.generator.AddProcessEnv("SINGULARITY_INSTANCE", instanceName)
+	if ep.Instance != "" {
+		l.generator.AddProcessEnv("SINGULARITY_INSTANCE", ep.Instance)
 		l.cfg.Namespaces.PID = true
 		l.engineConfig.SetInstance(true)
 		l.engineConfig.SetBootInstance(l.cfg.Boot)
@@ -306,16 +308,16 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 			return fmt.Errorf("hidepid option set on /proc mount, require 'hidepid=0' to start instance with setuid workflow")
 		}
 
-		_, err := instance.Get(instanceName, instance.SingSubDir)
+		_, err := instance.Get(ep.Instance, instance.SingSubDir)
 		if err == nil {
-			return fmt.Errorf("instance %s already exists", instanceName)
+			return fmt.Errorf("instance %s already exists", ep.Instance)
 		}
 
 		if l.cfg.Boot {
 			l.cfg.Namespaces.UTS = true
 			l.cfg.Namespaces.Net = true
 			if len(l.cfg.Hostname) < 1 {
-				l.engineConfig.SetHostname(instanceName)
+				l.engineConfig.SetHostname(ep.Instance)
 			}
 			if !l.cfg.KeepPrivs {
 				l.engineConfig.SetDropCaps("CAP_SYS_BOOT,CAP_SYS_RAWIO")
@@ -336,13 +338,13 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	l.generator.AddProcessEnv("SINGULARITY_APPNAME", l.cfg.AppName)
 
 	// Get image ready to run, if needed, via FUSE mount / extraction / image driver handling.
-	if err := l.prepareImage(ctx, image); err != nil {
+	if err := l.prepareImage(ctx, ep.Image); err != nil {
 		return fmt.Errorf("while preparing image: %s", err)
 	}
 
 	// Call the starter binary using our prepared config.
 	if l.engineConfig.GetInstance() {
-		err = l.starterInstance(instanceName, useSuid)
+		err = l.starterInstance(ep.Instance, useSuid)
 	} else {
 		err = l.starterInteractive(useSuid)
 	}

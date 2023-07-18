@@ -107,9 +107,19 @@ func (c actionTests) actionOciRun(t *testing.T) {
 			exit:     1,
 		},
 		{
-			name:     "non-oci-sif",
+			name:     "native-sif",
 			imageRef: c.env.ImagePath,
-			exit:     255,
+			exit:     0,
+		},
+		{
+			name:     "native-sif-oras",
+			imageRef: c.env.OrasTestImage,
+			exit:     0,
+		},
+		{
+			name:     "native-sif-library",
+			imageRef: "library://busybox:1.31.1",
+			exit:     0,
 		},
 	}
 

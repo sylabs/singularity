@@ -154,7 +154,7 @@ func (s *sifBundle) Update(ctx context.Context, ociConfig *specs.Spec) error {
 	if err != nil {
 		return fmt.Errorf("failed to generate OCI bundle/config: %s", err)
 	}
-	return s.writeConfig(g)
+	return tools.SaveBundleConfig(s.bundlePath, g)
 }
 
 // Delete erases OCI bundle create from SIF image
