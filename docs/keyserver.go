@@ -28,10 +28,11 @@ const (
 	KeyserverAddUse   string = `add [options] [remoteName] <keyserver_url>`
 	KeyserverAddShort string = `Add a keyserver (root user only)`
 	KeyserverAddLong  string = `
-  The 'keyserver add' command allows to define additional keyserver. The --order
-  option can define the order of the keyserver for all related key operations, 
-  therefore when specifying '--order 1' the keyserver will become the primary 
-  keyserver. If no endpoint is specified, it will use the default remote
+  The 'keyserver add' command lets the user specify an additional keyserver.
+  The --order specifies the order of the new keyserver relative to the 
+  keyservers that have already been specified. Therefore, when specifying
+  '--order 1', the new keyserver will become the primary one. If no endpoint is
+  specified, the new keyserver will be associated with the default remote
   endpoint (SylabsCloud).`
 	KeyserverAddExample string = `
   $ singularity keyserver add https://keys.example.com
@@ -45,17 +46,20 @@ const (
 	KeyserverRemoveUse   string = `remove [remoteName] <keyserver_url>`
 	KeyserverRemoveShort string = `Remove a keyserver (root user only)`
 	KeyserverRemoveLong  string = `
-  The 'keyserver remove' command allows to remove a defined keyserver from a specific
-  endpoint. If no endpoint is specified, it will use the default remote endpoint (SylabsCloud).`
+  The 'keyserver remove' command lets the user remove a previously specified
+  keyserver from a specific endpoint. If no endpoint is specified, the default
+  remote endpoint (SylabsCloud) will be assumed.`
 	KeyserverRemoveExample string = `
   $ singularity keyserver remove https://keys.example.com`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// keyserver list command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	KeyserverListUse   string = `list`
+	KeyserverListUse   string = `list [remoteName]`
 	KeyserverListShort string = `List all keyservers that are configured`
 	KeyserverListLong  string = `
-  The 'keyserver list' command lists all keyservers configured for use.`
+  The 'keyserver list' command lists all keyservers configured for use with a
+  given remote endpoint. If no endpoint is specified, the default
+  remote endpoint (SylabsCloud) will be assumed.`
 	KeyserverListExample string = `
-  $ singularity remote list`
+  $ singularity keyserver list`
 )
