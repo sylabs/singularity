@@ -57,9 +57,6 @@ func KeyserverList(remoteName string, usrConfigFile string) (err error) {
 	}
 
 	fmt.Println()
-	fmt.Println("Keyservers")
-	fmt.Println("==========")
-
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", "URI", "GLOBAL?", "SECURE?", "ORDER")
 	order := 1
