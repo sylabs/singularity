@@ -121,6 +121,8 @@ type Section struct {
 	ID           uint32 `json:"id"`
 	Type         uint32 `json:"type"`
 	AllowedUsage Usage  `json:"allowed_usage"`
+	// Architecture is only known for system partitions in SIF files.
+	Architecture string `json:"architecture,omitempty"`
 }
 
 // Image describes an image object, an image is composed of one
