@@ -35,14 +35,14 @@ func (c ctx) keyserver(t *testing.T) {
 		profile    e2e.Profile
 	}{
 		{
-			name:       "add-keyserver non privileged",
+			name:       "add non privileged",
 			command:    addKeyserver,
 			args:       []string{testKeyserver},
 			expectExit: 255,
 			profile:    e2e.UserProfile,
 		},
 		{
-			name:    "add-keyserver without order",
+			name:    "add without order",
 			command: addKeyserver,
 			args:    []string{"--insecure", testKeyserver},
 			listLines: []string{
@@ -54,28 +54,28 @@ func (c ctx) keyserver(t *testing.T) {
 			profile:    e2e.RootProfile,
 		},
 		{
-			name:       "remove-keyserver previous",
+			name:       "remove previous",
 			command:    removeKeyserver,
 			args:       []string{testKeyserver},
 			expectExit: 0,
 			profile:    e2e.RootProfile,
 		},
 		{
-			name:       "remove-keyserver non-existent",
+			name:       "remove non-existent",
 			command:    removeKeyserver,
 			args:       []string{testKeyserver},
 			expectExit: 255,
 			profile:    e2e.RootProfile,
 		},
 		{
-			name:       "add-keyserver with order 0",
+			name:       "add with order 0",
 			command:    addKeyserver,
 			args:       []string{"--order", "0", testKeyserver},
 			expectExit: 255,
 			profile:    e2e.RootProfile,
 		},
 		{
-			name:    "add-keyserver with order 1",
+			name:    "add with order 1",
 			command: addKeyserver,
 			args:    []string{"--order", "1", testKeyserver},
 			listLines: []string{
@@ -87,14 +87,14 @@ func (c ctx) keyserver(t *testing.T) {
 			profile:    e2e.RootProfile,
 		},
 		{
-			name:       "add-keyserver duplicate",
+			name:       "add duplicate",
 			command:    addKeyserver,
 			args:       []string{testKeyserver},
 			expectExit: 255,
 			profile:    e2e.RootProfile,
 		},
 		{
-			name:    "remove-keyserver sylabs",
+			name:    "remove sylabs",
 			command: removeKeyserver,
 			args:    []string{sylabsKeyserver},
 			listLines: []string{
@@ -105,14 +105,14 @@ func (c ctx) keyserver(t *testing.T) {
 			profile:    e2e.RootProfile,
 		},
 		{
-			name:       "remove-keyserver primary KO",
+			name:       "remove primary KO",
 			command:    removeKeyserver,
 			args:       []string{testKeyserver},
 			expectExit: 255,
 			profile:    e2e.RootProfile,
 		},
 		{
-			name:    "add-keyserver restore sylabs",
+			name:    "add restore sylabs",
 			command: addKeyserver,
 			args:    []string{sylabsKeyserver},
 			listLines: []string{
@@ -124,7 +124,7 @@ func (c ctx) keyserver(t *testing.T) {
 			profile:    e2e.RootProfile,
 		},
 		{
-			name:    "remove-keyserver primary OK",
+			name:    "remove primary OK",
 			command: removeKeyserver,
 			args:    []string{testKeyserver},
 			listLines: []string{
@@ -135,7 +135,7 @@ func (c ctx) keyserver(t *testing.T) {
 			profile:    e2e.RootProfile,
 		},
 		{
-			name:       "add-keyserver out of order",
+			name:       "add out of order",
 			command:    addKeyserver,
 			args:       []string{"--order", "100", testKeyserver},
 			expectExit: 255,
