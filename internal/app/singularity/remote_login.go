@@ -1,5 +1,5 @@
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -56,25 +56,18 @@ func RemoteLogin(usrConfigFile string, args *LoginArgs) (err error) {
 		r, err = c.GetDefault()
 	} else {
 		r, err = c.GetRemote(args.Name)
-	}
-
-	if r != nil {
-		// endpoints (sylabs cloud, singularity enterprise etc.)
-		err := endPointLogin(r, args)
-		if err == ErrLoginAborted {
-			return nil
-		}
 		if err != nil {
 			return err
 		}
-	} else {
-		// services (oci registry, single keyserver etc.)
-		if args.Tokenfile != "" {
-			return fmt.Errorf("--tokenfile is only supported for login to a remote endpoint, not OCI (docker/oras) or keyservers")
-		}
-		if err := c.Login(args.Name, args.Username, args.Password, args.Insecure); err != nil {
-			return fmt.Errorf("while login to %s: %s", args.Name, err)
-		}
+	}
+
+	// endpoints (sylabs cloud, singularity enterprise etc.)
+	err = endPointLogin(r, args)
+	if err == ErrLoginAborted {
+		return nil
+	}
+	if err != nil {
+		return err
 	}
 
 	// truncating file before writing new contents and syncing to commit file
@@ -98,7 +91,7 @@ func RemoteLogin(usrConfigFile string, args *LoginArgs) (err error) {
 	return nil
 }
 
-// endPointLogin implements the flow to set a new token against a remote endpoing config.
+// endPointLogin implements the flow to set a new token against a remote endpoint config.
 // A token may be provided with a file, or through interactive prompts.
 func endPointLogin(ep *endpoint.Config, args *LoginArgs) error {
 	var (

@@ -44,6 +44,7 @@ import (
 	"github.com/sylabs/singularity/e2e/plugin"
 	"github.com/sylabs/singularity/e2e/pull"
 	"github.com/sylabs/singularity/e2e/push"
+	"github.com/sylabs/singularity/e2e/registry"
 	"github.com/sylabs/singularity/e2e/remote"
 	"github.com/sylabs/singularity/e2e/run"
 	"github.com/sylabs/singularity/e2e/runhelp"
@@ -88,6 +89,7 @@ var e2eGroups = map[string]testhelper.Group{
 	"PLUGIN":     plugin.E2ETests,
 	"PULL":       pull.E2ETests,
 	"PUSH":       push.E2ETests,
+	"REGISTRY":   registry.E2ETests,
 	"REMOTE":     remote.E2ETests,
 	"RUN":        run.E2ETests,
 	"RUNHELP":    runhelp.E2ETests,

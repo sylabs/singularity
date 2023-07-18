@@ -12,11 +12,11 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
+	"github.com/sylabs/singularity/pkg/sylog"
 )
 
-// RemoteLogout logs out from an endpoint.
-func RemoteLogout(usrConfigFile, name string) (err error) {
+// RegistryLogin logs in to an OCI/Docker registry.
+func RegistryLogin(usrConfigFile string, args *LoginArgs) (err error) {
 	// opening config file
 	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, 0o600)
 	if err != nil {
@@ -34,18 +34,9 @@ func RemoteLogout(usrConfigFile, name string) (err error) {
 		return err
 	}
 
-	var r *endpoint.Config
-	if name == "" {
-		r, err = c.GetDefault()
-	} else {
-		r, err = c.GetRemote(name)
-		if err != nil {
-			return err
-		}
+	if err := c.Login(args.Name, args.Username, args.Password, args.Insecure); err != nil {
+		return fmt.Errorf("while login to %s: %s", args.Name, err)
 	}
-
-	// Remove the token in question
-	r.Token = ""
 
 	// truncating file before writing new contents and syncing to commit file
 	if err := file.Truncate(0); err != nil {
@@ -64,5 +55,6 @@ func RemoteLogout(usrConfigFile, name string) (err error) {
 		return fmt.Errorf("failed to flush remote config file %s: %s", file.Name(), err)
 	}
 
+	sylog.Infof("Token stored in %s", file.Name())
 	return nil
 }

@@ -39,6 +39,9 @@
 - The keyserver-related commands that were under `remote` have been moved to
   their own, dedicated `keyserver` command. Run `singularity help keyserver` for
   more information.
+- The commands related to OCI/Docker registries that were under `remote` have
+  been moved to their own, dedicated `registry` command. Run
+  `singularity help registry` for more information.
 
 ### New Features & Functionality
 

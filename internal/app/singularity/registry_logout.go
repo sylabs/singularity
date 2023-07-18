@@ -12,11 +12,10 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 )
 
-// RemoteLogout logs out from an endpoint.
-func RemoteLogout(usrConfigFile, name string) (err error) {
+// RegistryLogout logs out from an OCI/Docker registry.
+func RegistryLogout(usrConfigFile, name string) (err error) {
 	// opening config file
 	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, 0o600)
 	if err != nil {
@@ -34,18 +33,10 @@ func RemoteLogout(usrConfigFile, name string) (err error) {
 		return err
 	}
 
-	var r *endpoint.Config
-	if name == "" {
-		r, err = c.GetDefault()
-	} else {
-		r, err = c.GetRemote(name)
-		if err != nil {
-			return err
-		}
+	// services
+	if err := c.Logout(name); err != nil {
+		return fmt.Errorf("while verifying token: %v", err)
 	}
-
-	// Remove the token in question
-	r.Token = ""
 
 	// truncating file before writing new contents and syncing to commit file
 	if err := file.Truncate(0); err != nil {
