@@ -48,7 +48,7 @@ func (c ctx) keyserver(t *testing.T) {
 			listLines: []string{
 				"URI                     GLOBAL?  SECURE?  ORDER",
 				sylabsKeyserver + "  ✓        ✓        1*",
-				testKeyserver + "  ✓                 2",
+				testKeyserver + "  ✓        ✗!       2",
 			},
 			expectExit: 0,
 			profile:    e2e.RootProfile,

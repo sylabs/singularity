@@ -66,7 +66,7 @@ func KeyserverList(remoteName string, usrConfigFile string) (err error) {
 		}
 		secure := "✓"
 		if kc.Insecure {
-			secure = ""
+			secure = "✗!"
 		}
 		fmt.Fprintf(tw, "%s\t✓\t%s\t%d", kc.URI, secure, order)
 		if !kc.External {
