@@ -44,7 +44,7 @@ func RegistryList(usrConfigFile string) (err error) {
 	for _, r := range c.Credentials {
 		secure := "✓"
 		if r.Insecure {
-			secure = ""
+			secure = "✗!"
 		}
 		fmt.Fprintf(tw, "%s\t%s\n", r.URI, secure)
 	}
