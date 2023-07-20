@@ -58,15 +58,15 @@ func (c ctx) testPushCmd(t *testing.T) {
 	e2e.EnsureOCISIF(t, c.env)
 
 	// setup file and dir to use as invalid sources
-	orasInvalidDir, err := os.MkdirTemp(c.env.TestDir, "oras_push_dir-")
+	invalidDir, err := os.MkdirTemp(c.env.TestDir, "push_dir-")
 	if err != nil {
-		err = errors.Wrap(err, "creating oras temporary directory")
+		err = errors.Wrap(err, "creating temporary directory")
 		t.Fatalf("unable to create src dir for push tests: %+v", err)
 	}
 
-	orasInvalidFile, err := e2e.WriteTempFile(orasInvalidDir, "oras_invalid_image-", "Invalid Image Contents")
+	invalidFile, err := e2e.WriteTempFile(invalidDir, "invalid_image-", "Invalid Image Contents")
 	if err != nil {
-		err = errors.Wrap(err, "creating oras temporary file")
+		err = errors.Wrap(err, "creating temporary file")
 		t.Fatalf("unable to create src file for push tests: %+v", err)
 	}
 
@@ -77,33 +77,63 @@ func (c ctx) testPushCmd(t *testing.T) {
 		expectedExitCode int    // expected exit code for the test
 	}{
 		{
-			desc:             "non existent image",
-			imagePath:        filepath.Join(orasInvalidDir, "not_an_existing_file.sif"),
-			dstURI:           fmt.Sprintf("oras://%s/non_existent:test", c.env.TestRegistry),
+			desc:             "oras non existent image",
+			imagePath:        filepath.Join(invalidDir, "not_an_existing_file.sif"),
+			dstURI:           fmt.Sprintf("oras://%s/oras_non_existent:test", c.env.TestRegistry),
 			expectedExitCode: 255,
 		},
 		{
-			desc:             "non SIF file",
-			imagePath:        orasInvalidFile,
-			dstURI:           fmt.Sprintf("oras://%s/non_sif:test", c.env.TestRegistry),
+			desc:             "oras non SIF file",
+			imagePath:        invalidFile,
+			dstURI:           fmt.Sprintf("oras://%s/oras_non_sif:test", c.env.TestRegistry),
 			expectedExitCode: 255,
 		},
 		{
-			desc:             "directory",
-			imagePath:        orasInvalidDir,
-			dstURI:           fmt.Sprintf("oras://%s/directory:test", c.env.TestRegistry),
+			desc:             "oras directory",
+			imagePath:        invalidDir,
+			dstURI:           fmt.Sprintf("oras://%s/oras_directory:test", c.env.TestRegistry),
 			expectedExitCode: 255,
 		},
 		{
-			desc:             "standard SIF push",
+			desc:             "oras standard SIF push",
 			imagePath:        c.env.ImagePath,
-			dstURI:           fmt.Sprintf("oras://%s/standard_sif:test", c.env.TestRegistry),
+			dstURI:           fmt.Sprintf("oras://%s/oras_standard_sif:test", c.env.TestRegistry),
 			expectedExitCode: 0,
 		},
 		{
-			desc:             "OCI-SIF push",
+			desc:             "oras OCI-SIF push",
 			imagePath:        c.env.OCISIFPath,
-			dstURI:           fmt.Sprintf("oras://%s/oci-sif:test", c.env.TestRegistry),
+			dstURI:           fmt.Sprintf("oras://%s/oras_oci-sif:test", c.env.TestRegistry),
+			expectedExitCode: 0,
+		},
+		{
+			desc:             "docker non existent image",
+			imagePath:        filepath.Join(invalidDir, "not_an_existing_file.sif"),
+			dstURI:           fmt.Sprintf("docker://%s/docker_non_existent:test", c.env.TestRegistry),
+			expectedExitCode: 255,
+		},
+		{
+			desc:             "docker non SIF file",
+			imagePath:        invalidFile,
+			dstURI:           fmt.Sprintf("docker://%s/docker_non_sif:test", c.env.TestRegistry),
+			expectedExitCode: 255,
+		},
+		{
+			desc:             "docker directory",
+			imagePath:        invalidDir,
+			dstURI:           fmt.Sprintf("docker://%s/docker_directory:test", c.env.TestRegistry),
+			expectedExitCode: 255,
+		},
+		{
+			desc:             "docker standard SIF push",
+			imagePath:        c.env.ImagePath,
+			dstURI:           fmt.Sprintf("docker://%s/docker_standard_sif:test", c.env.TestRegistry),
+			expectedExitCode: 255,
+		},
+		{
+			desc:             "docker OCI-SIF push",
+			imagePath:        c.env.OCISIFPath,
+			dstURI:           fmt.Sprintf("docker://%s/docker_oci-sif:test", c.env.TestRegistry),
 			expectedExitCode: 0,
 		},
 	}
