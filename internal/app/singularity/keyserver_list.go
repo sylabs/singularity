@@ -12,7 +12,6 @@ import (
 	"text/tabwriter"
 
 	"github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 )
 
 // KeyserverList prints information about remote configurations
@@ -39,47 +38,33 @@ func KeyserverList(remoteName string, usrConfigFile string) (err error) {
 		return err
 	}
 
-	var ep *endpoint.Config
-	if remoteName == "" {
-		ep, err = c.GetDefault()
-	} else {
-		ep, err = c.GetRemote(remoteName)
-	}
-
-	if err != nil {
-		return fmt.Errorf("endpoint not found: %w", err)
-	} else if !ep.System {
-		return fmt.Errorf("current endpoint is not a system defined endpoint")
-	}
-
-	if err := ep.UpdateKeyserversConfig(); err != nil {
-		return err
-	}
-
-	fmt.Println()
-	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", "URI", "GLOBAL?", "SECURE?", "ORDER")
-	order := 1
-	for _, kc := range ep.Keyservers {
-		if kc.Skip {
+	for epName, ep := range c.Remotes {
+		if !ep.System {
 			continue
 		}
-		secure := "✓"
-		if kc.Insecure {
-			secure = "✗!"
+		if err := ep.UpdateKeyserversConfig(); err != nil {
+			return err
 		}
-		fmt.Fprintf(tw, "%s\t✓\t%s\t%d", kc.URI, secure, order)
-		if !kc.External {
-			fmt.Fprintf(tw, "*\n")
-		} else {
-			fmt.Fprintf(tw, "\n")
+
+		fmt.Println()
+		fmt.Println(epName)
+		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+		order := 1
+		for _, kc := range ep.Keyservers {
+			if kc.Skip {
+				continue
+			}
+			secure := "🔒"
+			if kc.Insecure {
+				secure = ""
+			}
+			fmt.Fprintf(tw, " \t#%d\t%s\t%s\n", order, kc.URI, secure)
+			order++
 		}
-		order++
+		tw.Flush()
 	}
-	tw.Flush()
 
 	fmt.Println()
-	fmt.Println("* Active cloud services keyserver")
 
 	return nil
 }
