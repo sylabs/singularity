@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/client/library"
+	"github.com/sylabs/singularity/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/internal/pkg/signature"
@@ -166,6 +167,20 @@ var PushCmd = &cobra.Command{
 				sylog.Fatalf("Unable to push image to oci registry: %v", err)
 			}
 			sylog.Infof("Upload complete")
+
+		case DockerProtocol:
+			if cmd.Flag(pushDescriptionFlag.Name).Changed {
+				sylog.Warningf("Description is not supported for push to docker / OCI registries. Ignoring it.")
+			}
+			ociAuth, err := makeDockerCredentials(cmd)
+			if err != nil {
+				sylog.Fatalf("Unable to make docker oci credentials: %s", err)
+			}
+			if err := oci.Push(cmd.Context(), file, ref, ociAuth); err != nil {
+				sylog.Fatalf("Unable to push image to oci registry: %v", err)
+			}
+			sylog.Infof("Upload complete")
+
 		default:
 			sylog.Fatalf("Unsupported transport type: %s", transport)
 		}
