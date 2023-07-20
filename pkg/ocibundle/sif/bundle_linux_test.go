@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -17,6 +17,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/util/fs/proc"
+	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
 
 // We need a busybox SIF for these tests. We used to download it each time, but we have one
@@ -24,6 +25,7 @@ import (
 const busyboxSIF = "../../../e2e/testdata/busybox_" + runtime.GOARCH + ".sif"
 
 func TestFromSif(t *testing.T) {
+	useragent.InitValue("TestFromSif", "0.0.0")
 	test.EnsurePrivilege(t)
 
 	bundlePath := t.TempDir()

@@ -18,6 +18,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/internal/pkg/util/env"
 	"github.com/sylabs/singularity/internal/pkg/util/shell/interpreter"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -27,10 +28,14 @@ import (
 
 const singularityLibs = "/.singularity.d/libs"
 
-func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, image, bundle, process string, args []string, u specs.User) (*specs.Process, error) {
+// Script that can be run by /bin/sh to emulate native mode shell behavior.
+// Set Singularity> prompt, try bash --norc, fall back to sh.
+var ociShellScript = "export PS1='Singularity> '; test -x /bin/bash && exec /bin/bash --norc || exec /bin/sh"
+
+func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bundle string, ep launcher.ExecParams, u specs.User) (*specs.Process, error) {
 	// Assemble the runtime & user-requested environment, which will be merged
 	// with the image ENV and set in the container at runtime.
-	rtEnv := defaultEnv(image, bundle)
+	rtEnv := defaultEnv(ep.Image, bundle)
 
 	// Propagate TERM from host. Doing this here means it can be overridden by SINGULARITYENV_TERM.
 	hostTerm, isHostTermSet := os.LookupEnv("TERM")
@@ -73,8 +78,25 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, imag
 		return nil, err
 	}
 
+	var args []string
+	switch {
+	case l.nativeSIF:
+		// Native SIF image must run via in-container action script
+		args, err = ep.ActionScriptArgs()
+		if err != nil {
+			return nil, fmt.Errorf("while getting ProcessArgs: %w", err)
+		}
+		sylog.Debugf("Native SIF container process/args: %v", args)
+	case ep.Action == "shell":
+		// OCI-SIF shell handling to emulate native runtime shell
+		args = []string{"/bin/sh", "-c", ociShellScript}
+	default:
+		// OCI-SIF, inheriting from image config
+		args = getProcessArgs(imgSpec, ep)
+	}
+
 	p := specs.Process{
-		Args:            getProcessArgs(imgSpec, process, args),
+		Args:            args,
 		Capabilities:    caps,
 		Cwd:             cwd,
 		Env:             getProcessEnv(imgSpec, rtEnv),
@@ -94,23 +116,22 @@ func getProcessTerminal() bool {
 
 // getProcessArgs returns the process args for a container, with reference to the OCI Image Spec.
 // The process and image parameters may override the image CMD and/or ENTRYPOINT.
-func getProcessArgs(imageSpec imgspecv1.Image, process string, args []string) []string {
+func getProcessArgs(imageSpec imgspecv1.Image, ep launcher.ExecParams) []string {
 	var processArgs []string
 
-	if process != "" {
-		processArgs = []string{process}
+	if ep.Process != "" {
+		processArgs = []string{ep.Process}
 	} else {
 		processArgs = imageSpec.Config.Entrypoint
 	}
 
-	if len(args) > 0 {
-		processArgs = append(processArgs, args...)
+	if len(ep.Args) > 0 {
+		processArgs = append(processArgs, ep.Args...)
 	} else {
-		if process == "" {
+		if ep.Process == "" {
 			processArgs = append(processArgs, imageSpec.Config.Cmd...)
 		}
 	}
-
 	return processArgs
 }
 
