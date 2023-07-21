@@ -47,7 +47,7 @@
   and the output has been streamlined.
 - Adding a new remote endpoint using the `singularity remote add` command will
   now set the new endpoint as default. This behavior can be suppressed by
-  supplying the `--not-default` (or `-n`) flag to `remote add`.
+  supplying the `--no-default` (or `-n`) flag to `remote add`.
 
 ### New Features & Functionality
 

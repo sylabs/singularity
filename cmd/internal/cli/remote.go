@@ -147,7 +147,7 @@ var remoteAddNotDefaultFlag = cmdline.Flag{
 	ID:           "remoteAddNotDefaultFlag",
 	Value:        &remoteAddNotDefault,
 	DefaultValue: false,
-	Name:         "not-default",
+	Name:         "no-default",
 	ShortHand:    "n",
 	Usage:        "do not designate the newly-added remote endpoint as the default",
 }
