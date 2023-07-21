@@ -1,5 +1,5 @@
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -26,18 +26,16 @@ const (
 )
 
 var (
-	loginTokenFile          string
-	loginUsername           string
-	loginPassword           string
-	remoteConfig            string
-	remoteKeyserverOrder    uint32
-	remoteKeyserverInsecure bool
-	loginPasswordStdin      bool
-	loginInsecure           bool
-	remoteNoLogin           bool
-	global                  bool
-	remoteUseExclusive      bool
-	remoteAddInsecure       bool
+	loginTokenFile     string
+	loginUsername      string
+	loginPassword      string
+	remoteConfig       string
+	loginPasswordStdin bool
+	loginInsecure      bool
+	remoteNoLogin      bool
+	global             bool
+	remoteUseExclusive bool
+	remoteAddInsecure  bool
 )
 
 // assemble values of remoteConfig for user/sys locations
@@ -133,26 +131,6 @@ var remoteUseExclusiveFlag = cmdline.Flag{
 	Usage:        "set the endpoint as exclusive (root user only, imply --global)",
 }
 
-// -o|--order
-var remoteKeyserverOrderFlag = cmdline.Flag{
-	ID:           "remoteKeyserverOrderFlag",
-	Value:        &remoteKeyserverOrder,
-	DefaultValue: uint32(0),
-	Name:         "order",
-	ShortHand:    "o",
-	Usage:        "define the keyserver order",
-}
-
-// -i|--insecure
-var remoteKeyserverInsecureFlag = cmdline.Flag{
-	ID:           "remoteKeyserverInsecureFlag",
-	Value:        &remoteKeyserverInsecure,
-	DefaultValue: false,
-	Name:         "insecure",
-	ShortHand:    "i",
-	Usage:        "allow insecure connection to keyserver",
-}
-
 // -i|--insecure
 var remoteAddInsecureFlag = cmdline.Flag{
 	ID:           "remoteAddInsecureFlag",
@@ -173,8 +151,6 @@ func init() {
 		cmdManager.RegisterSubCmd(RemoteCmd, RemoteLoginCmd)
 		cmdManager.RegisterSubCmd(RemoteCmd, RemoteLogoutCmd)
 		cmdManager.RegisterSubCmd(RemoteCmd, RemoteStatusCmd)
-		cmdManager.RegisterSubCmd(RemoteCmd, RemoteAddKeyserverCmd)
-		cmdManager.RegisterSubCmd(RemoteCmd, RemoteRemoveKeyserverCmd)
 		cmdManager.RegisterSubCmd(RemoteCmd, RemoteGetLoginPasswordCmd)
 
 		// default location of the remote.yaml file is the user directory
@@ -193,9 +169,6 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&remoteLoginInsecureFlag, RemoteLoginCmd)
 
 		cmdManager.RegisterFlagForCmd(&remoteUseExclusiveFlag, RemoteUseCmd)
-
-		cmdManager.RegisterFlagForCmd(&remoteKeyserverOrderFlag, RemoteAddKeyserverCmd)
-		cmdManager.RegisterFlagForCmd(&remoteKeyserverInsecureFlag, RemoteAddKeyserverCmd)
 	})
 }
 
@@ -224,12 +197,6 @@ func setGlobalRemoteConfig(_ *cobra.Command, _ []string) {
 
 	// set remoteConfig value to the location of the global remote.yaml file
 	remoteConfig = remote.SystemConfigPath
-}
-
-func setKeyserver(_ *cobra.Command, _ []string) {
-	if uint32(os.Getuid()) != 0 {
-		sylog.Fatalf("Unable to modify keyserver configuration: not root user")
-	}
 }
 
 // RemoteGetLoginPasswordCmd singularity remote get-login-password
@@ -432,60 +399,6 @@ var RemoteStatusCmd = &cobra.Command{
 	Short:   docs.RemoteStatusShort,
 	Long:    docs.RemoteStatusLong,
 	Example: docs.RemoteStatusExample,
-
-	DisableFlagsInUseLine: true,
-}
-
-// RemoteAddKeyserverCmd singularity remote add-keyserver [option] [remoteName] <keyserver_url>
-var RemoteAddKeyserverCmd = &cobra.Command{
-	Args:   cobra.RangeArgs(1, 2),
-	PreRun: setKeyserver,
-	Run: func(cmd *cobra.Command, args []string) {
-		uri := args[0]
-		name := ""
-		if len(args) > 1 {
-			name = args[0]
-			uri = args[1]
-		}
-
-		if cmd.Flag(remoteKeyserverOrderFlag.Name).Changed && remoteKeyserverOrder == 0 {
-			sylog.Fatalf("order must be > 0")
-		}
-
-		if err := singularity.RemoteAddKeyserver(name, uri, remoteKeyserverOrder, remoteKeyserverInsecure); err != nil {
-			sylog.Fatalf("%s", err)
-		}
-	},
-
-	Use:     docs.RemoteAddKeyserverUse,
-	Short:   docs.RemoteAddKeyserverShort,
-	Long:    docs.RemoteAddKeyserverLong,
-	Example: docs.RemoteAddKeyserverExample,
-
-	DisableFlagsInUseLine: true,
-}
-
-// RemoteRemoveKeyserverCmd singularity remote remove-keyserver [remoteName] <keyserver_url>
-var RemoteRemoveKeyserverCmd = &cobra.Command{
-	Args:   cobra.RangeArgs(1, 2),
-	PreRun: setKeyserver,
-	Run: func(cmd *cobra.Command, args []string) {
-		uri := args[0]
-		name := ""
-		if len(args) > 1 {
-			name = args[0]
-			uri = args[1]
-		}
-
-		if err := singularity.RemoteRemoveKeyserver(name, uri); err != nil {
-			sylog.Fatalf("%s", err)
-		}
-	},
-
-	Use:     docs.RemoteRemoveKeyserverUse,
-	Short:   docs.RemoteRemoveKeyserverShort,
-	Long:    docs.RemoteRemoveKeyserverLong,
-	Example: docs.RemoteRemoveKeyserverExample,
 
 	DisableFlagsInUseLine: true,
 }

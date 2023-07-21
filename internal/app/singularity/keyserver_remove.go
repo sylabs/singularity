@@ -16,7 +16,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 )
 
-func RemoteAddKeyserver(name, uri string, order uint32, insecure bool) error {
+func KeyserverRemove(name, uri string) error {
 	// Explicit handling of corner cases: name and uri must be valid strings
 	if strings.TrimSpace(uri) == "" {
 		return fmt.Errorf("invalid URI: cannot have empty URI")
@@ -49,7 +49,7 @@ func RemoteAddKeyserver(name, uri string, order uint32, insecure bool) error {
 		return fmt.Errorf("current endpoint is not a system defined endpoint")
 	}
 
-	if err := ep.AddKeyserver(uri, order, insecure); err != nil {
+	if err := ep.RemoveKeyserver(uri); err != nil {
 		return err
 	}
 

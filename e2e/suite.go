@@ -38,6 +38,7 @@ import (
 	"github.com/sylabs/singularity/e2e/inspect"
 	"github.com/sylabs/singularity/e2e/instance"
 	"github.com/sylabs/singularity/e2e/key"
+	"github.com/sylabs/singularity/e2e/keyserver"
 	"github.com/sylabs/singularity/e2e/oci"
 	"github.com/sylabs/singularity/e2e/overlay"
 	"github.com/sylabs/singularity/e2e/plugin"
@@ -81,6 +82,7 @@ var e2eGroups = map[string]testhelper.Group{
 	"INSPECT":    inspect.E2ETests,
 	"INSTANCE":   instance.E2ETests,
 	"KEY":        key.E2ETests,
+	"KEYSERVER":  keyserver.E2ETests,
 	"OCI":        oci.E2ETests,
 	"OVERLAY":    overlay.E2ETests,
 	"PLUGIN":     plugin.E2ETests,

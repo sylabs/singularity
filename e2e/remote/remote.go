@@ -1,5 +1,5 @@
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -416,12 +416,12 @@ func (c ctx) remoteTestFlag(t *testing.T) {
 		{
 			name:           "list help",
 			cmdArgs:        []string{"list", "--help"},
-			expectedOutput: "List all singularity remote endpoints, keyservers, and OCI credentials that are configured",
+			expectedOutput: "List all singularity remote endpoints and OCI credentials that are configured",
 		},
 		{
 			name:           "login help",
 			cmdArgs:        []string{"login", "--help"},
-			expectedOutput: "Login to a singularity remote endpoint, an OCI/Docker registry or a keyserver using credentials",
+			expectedOutput: "Login to a singularity remote endpoint or an OCI/Docker registry using credentials",
 		},
 		{
 			name:           "remove help",
@@ -499,7 +499,7 @@ func (c ctx) remoteBasicLogin(t *testing.T) {
 			expectExit: 255,
 		},
 		{
-			name:       "login into non-existing keyserver",
+			name:       "login into non-existing remote",
 			command:    "remote login",
 			args:       []string{"http://localhost:11371"},
 			expectExit: 255,
@@ -649,160 +649,6 @@ func (c ctx) remoteLoginRepeated(t *testing.T) {
 	}
 }
 
-func (c ctx) remoteKeyserver(t *testing.T) {
-	var (
-		sylabsKeyserver = "https://keys.sylabs.io"
-		testKeyserver   = "http://localhost:11371"
-		addKeyserver    = "remote add-keyserver"
-		removeKeyserver = "remote remove-keyserver"
-	)
-
-	tests := []struct {
-		name       string
-		command    string
-		args       []string
-		listLines  []string
-		expectExit int
-		profile    e2e.Profile
-	}{
-		{
-			name:       "add-keyserver non privileged",
-			command:    addKeyserver,
-			args:       []string{testKeyserver},
-			expectExit: 255,
-			profile:    e2e.UserProfile,
-		},
-		{
-			name:    "add-keyserver without order",
-			command: addKeyserver,
-			args:    []string{"--insecure", testKeyserver},
-			listLines: []string{
-				"URI                     GLOBAL  INSECURE  ORDER",
-				sylabsKeyserver + "  YES     NO        1*",
-				testKeyserver + "  YES     YES       2",
-			},
-			expectExit: 0,
-			profile:    e2e.RootProfile,
-		},
-		{
-			name:       "remove-keyserver previous",
-			command:    removeKeyserver,
-			args:       []string{testKeyserver},
-			expectExit: 0,
-			profile:    e2e.RootProfile,
-		},
-		{
-			name:       "remove-keyserver non-existent",
-			command:    removeKeyserver,
-			args:       []string{testKeyserver},
-			expectExit: 255,
-			profile:    e2e.RootProfile,
-		},
-		{
-			name:       "add-keyserver with order 0",
-			command:    addKeyserver,
-			args:       []string{"--order", "0", testKeyserver},
-			expectExit: 255,
-			profile:    e2e.RootProfile,
-		},
-		{
-			name:    "add-keyserver with order 1",
-			command: addKeyserver,
-			args:    []string{"--order", "1", testKeyserver},
-			listLines: []string{
-				"URI                     GLOBAL  INSECURE  ORDER",
-				testKeyserver + "  YES     NO        1",
-				sylabsKeyserver + "  YES     NO        2*",
-			},
-			expectExit: 0,
-			profile:    e2e.RootProfile,
-		},
-		{
-			name:       "add-keyserver duplicate",
-			command:    addKeyserver,
-			args:       []string{testKeyserver},
-			expectExit: 255,
-			profile:    e2e.RootProfile,
-		},
-		{
-			name:    "remove-keyserver sylabs",
-			command: removeKeyserver,
-			args:    []string{sylabsKeyserver},
-			listLines: []string{
-				"URI                     GLOBAL  INSECURE  ORDER",
-				testKeyserver + "  YES     NO        1",
-			},
-			expectExit: 0,
-			profile:    e2e.RootProfile,
-		},
-		{
-			name:       "remove-keyserver primary KO",
-			command:    removeKeyserver,
-			args:       []string{testKeyserver},
-			expectExit: 255,
-			profile:    e2e.RootProfile,
-		},
-		{
-			name:    "add-keyserver restore sylabs",
-			command: addKeyserver,
-			args:    []string{sylabsKeyserver},
-			listLines: []string{
-				"URI                     GLOBAL  INSECURE  ORDER",
-				testKeyserver + "  YES     NO        1",
-				sylabsKeyserver + "  YES     NO        2*",
-			},
-			expectExit: 0,
-			profile:    e2e.RootProfile,
-		},
-		{
-			name:    "remove-keyserver primary OK",
-			command: removeKeyserver,
-			args:    []string{testKeyserver},
-			listLines: []string{
-				"URI                     GLOBAL  INSECURE  ORDER",
-				sylabsKeyserver + "  YES     NO        1*",
-			},
-			expectExit: 0,
-			profile:    e2e.RootProfile,
-		},
-		{
-			name:       "add-keyserver out of order",
-			command:    addKeyserver,
-			args:       []string{"--order", "100", testKeyserver},
-			expectExit: 255,
-			profile:    e2e.RootProfile,
-		},
-	}
-
-	for _, tt := range tests {
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(tt.profile),
-			e2e.WithCommand(tt.command),
-			e2e.WithArgs(tt.args...),
-			e2e.PostRun(func(t *testing.T) {
-				if t.Failed() || len(tt.listLines) == 0 {
-					return
-				}
-				c.env.RunSingularity(
-					t,
-					e2e.WithProfile(e2e.UserProfile),
-					e2e.WithCommand("remote list"),
-					e2e.ExpectExit(
-						0,
-						e2e.ExpectOutput(
-							e2e.ContainMatch,
-							strings.Join(tt.listLines, "\n"),
-						),
-					),
-				)
-			}),
-			e2e.ExpectExit(tt.expectExit),
-		)
-	}
-}
-
 func (c ctx) remoteUseExclusive(t *testing.T) {
 	var (
 		sylabsRemote = "SylabsCloud"
@@ -946,7 +792,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"oci login basic":        np(c.remoteBasicLogin),
 		"oci login push private": np(c.remoteLoginPushPrivate),
 		"oci login repeated":     np(c.remoteLoginRepeated),
-		"keyserver":              np(c.remoteKeyserver),
 		"use exclusive":          np(c.remoteUseExclusive),
 	}
 }
