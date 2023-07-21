@@ -7,11 +7,8 @@
 package remote
 
 import (
-	"fmt"
-	"io"
 	"log"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
@@ -402,7 +399,7 @@ func (c ctx) remoteList(t *testing.T) {
 	}
 }
 
-func (c ctx) remoteTestFlag(t *testing.T) {
+func (c ctx) remoteTestHelp(t *testing.T) {
 	tests := []struct {
 		name           string
 		cmdArgs        []string
@@ -416,12 +413,12 @@ func (c ctx) remoteTestFlag(t *testing.T) {
 		{
 			name:           "list help",
 			cmdArgs:        []string{"list", "--help"},
-			expectedOutput: "List all singularity remote endpoints and OCI credentials that are configured",
+			expectedOutput: "List all singularity remote endpoints that are configured",
 		},
 		{
 			name:           "login help",
 			cmdArgs:        []string{"login", "--help"},
-			expectedOutput: "Login to a singularity remote endpoint or an OCI/Docker registry using credentials",
+			expectedOutput: "Login to a singularity remote endpoint",
 		},
 		{
 			name:           "remove help",
@@ -451,200 +448,6 @@ func (c ctx) remoteTestFlag(t *testing.T) {
 				0,
 				e2e.ExpectOutput(e2e.RegexMatch, `^`+tt.expectedOutput),
 			),
-		)
-	}
-}
-
-func (c ctx) remoteBasicLogin(t *testing.T) {
-	var (
-		registry    = fmt.Sprintf("oras://%s", c.env.TestRegistry)
-		badRegistry = "oras://bad_registry:5000"
-	)
-
-	tests := []struct {
-		name       string
-		command    string
-		args       []string
-		stdin      io.Reader
-		expectExit int
-	}{
-		{
-			name:       "login username and empty password",
-			command:    "remote login",
-			args:       []string{"-u", e2e.DefaultUsername, "-p", "", registry},
-			expectExit: 255,
-		},
-		{
-			name:       "login empty username and empty password",
-			command:    "remote login",
-			args:       []string{"-p", "", registry},
-			expectExit: 255,
-		},
-		{
-			name:       "login empty username and bad password",
-			command:    "remote login",
-			args:       []string{"-p", "bad", registry},
-			expectExit: 255,
-		},
-		{
-			name:       "login KO",
-			command:    "remote login",
-			args:       []string{"-u", e2e.DefaultUsername, "-p", "bad", registry},
-			expectExit: 255,
-		},
-		{
-			name:       "login without scheme KO",
-			command:    "remote login",
-			args:       []string{"-u", e2e.DefaultUsername, "-p", e2e.DefaultPassword, c.env.TestRegistry},
-			expectExit: 255,
-		},
-		{
-			name:       "login into non-existing remote",
-			command:    "remote login",
-			args:       []string{"http://localhost:11371"},
-			expectExit: 255,
-		},
-		{
-			name:       "login OK",
-			command:    "remote login",
-			args:       []string{"-u", e2e.DefaultUsername, "-p", e2e.DefaultPassword, registry},
-			expectExit: 0,
-		},
-		{
-			name:       "login password-stdin",
-			command:    "remote login",
-			args:       []string{"-u", e2e.DefaultUsername, "--password-stdin", registry},
-			stdin:      strings.NewReader(e2e.DefaultPassword),
-			expectExit: 0,
-		},
-		{
-			name:       "logout KO",
-			command:    "remote logout",
-			args:       []string{badRegistry},
-			expectExit: 255,
-		},
-		{
-			name:       "logout OK",
-			command:    "remote logout",
-			args:       []string{registry},
-			expectExit: 0,
-		},
-	}
-
-	for _, tt := range tests {
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.UserProfile),
-			e2e.WithStdin(tt.stdin),
-			e2e.WithCommand(tt.command),
-			e2e.WithArgs(tt.args...),
-			e2e.ExpectExit(tt.expectExit),
-		)
-	}
-}
-
-func (c ctx) remoteLoginPushPrivate(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
-
-	var (
-		registry = fmt.Sprintf("oras://%s", c.env.TestRegistry)
-		repo     = fmt.Sprintf("oras://%s/private/e2e:1.0.0", c.env.TestRegistry)
-	)
-
-	tests := []struct {
-		name       string
-		command    string
-		args       []string
-		expectExit int
-	}{
-		{
-			name:       "push before login",
-			command:    "push",
-			args:       []string{c.env.ImagePath, repo},
-			expectExit: 255,
-		},
-		{
-			name:       "login",
-			command:    "remote login",
-			args:       []string{"-u", e2e.DefaultUsername, "-p", e2e.DefaultPassword, registry},
-			expectExit: 0,
-		},
-		{
-			name:       "push after login",
-			command:    "push",
-			args:       []string{c.env.ImagePath, repo},
-			expectExit: 0,
-		},
-		{
-			name:       "logout",
-			command:    "remote logout",
-			args:       []string{registry},
-			expectExit: 0,
-		},
-	}
-
-	for _, tt := range tests {
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.UserProfile),
-			e2e.WithCommand(tt.command),
-			e2e.WithArgs(tt.args...),
-			e2e.ExpectExit(tt.expectExit),
-		)
-	}
-}
-
-// Repeated logins with same URI should not create duplicate remote.yaml entries.
-// If we login twice, and logout once we should not see the URI in list.
-// See https://github.com/sylabs/singularity/issues/214
-func (c ctx) remoteLoginRepeated(t *testing.T) {
-	e2e.EnsureImage(t, c.env)
-
-	registry := fmt.Sprintf("oras://%s", c.env.TestRegistry)
-
-	tests := []struct {
-		name       string
-		command    string
-		args       []string
-		expectExit int
-		resultOp   e2e.SingularityCmdResultOp
-	}{
-		{
-			name:       "FirstLogin",
-			command:    "remote login",
-			args:       []string{"-u", e2e.DefaultUsername, "-p", e2e.DefaultPassword, registry},
-			expectExit: 0,
-		},
-		{
-			name:       "SecondLogin",
-			command:    "remote login",
-			args:       []string{"-u", e2e.DefaultUsername, "-p", e2e.DefaultPassword, registry},
-			expectExit: 0,
-		},
-		{
-			name:       "logout",
-			command:    "remote logout",
-			args:       []string{registry},
-			expectExit: 0,
-		},
-		{
-			name:       "list",
-			command:    "remote list",
-			expectExit: 0,
-			resultOp:   e2e.ExpectOutput(e2e.UnwantedContainMatch, registry),
-		},
-	}
-
-	for _, tt := range tests {
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.UserProfile),
-			e2e.WithCommand(tt.command),
-			e2e.WithArgs(tt.args...),
-			e2e.ExpectExit(tt.expectExit, tt.resultOp),
 		)
 	}
 }
@@ -783,15 +586,12 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	np := testhelper.NoParallel
 
 	return testhelper.Tests{
-		"add":                    c.remoteAdd,
-		"list":                   c.remoteList,
-		"remove":                 c.remoteRemove,
-		"status":                 c.remoteStatus,
-		"test flag":              c.remoteTestFlag,
-		"use":                    c.remoteUse,
-		"oci login basic":        np(c.remoteBasicLogin),
-		"oci login push private": np(c.remoteLoginPushPrivate),
-		"oci login repeated":     np(c.remoteLoginRepeated),
-		"use exclusive":          np(c.remoteUseExclusive),
+		"add":           c.remoteAdd,
+		"list":          c.remoteList,
+		"remove":        c.remoteRemove,
+		"status":        c.remoteStatus,
+		"test help":     c.remoteTestHelp,
+		"use":           c.remoteUse,
+		"use exclusive": np(c.remoteUseExclusive),
 	}
 }

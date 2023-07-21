@@ -87,23 +87,5 @@ func RemoteList(usrConfigFile string) (err error) {
 	}
 	tw.Flush()
 
-	if len(c.Credentials) > 0 {
-		fmt.Println()
-		fmt.Println("Authenticated Logins")
-		fmt.Println("=================================")
-		fmt.Println()
-
-		tw = tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintf(tw, "%s\t%s\n", "URI", "INSECURE")
-		for _, r := range c.Credentials {
-			insecure := "NO"
-			if r.Insecure {
-				insecure = "YES"
-			}
-			fmt.Fprintf(tw, "%s\t%s\n", r.URI, insecure)
-		}
-		tw.Flush()
-	}
-
 	return nil
 }

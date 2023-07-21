@@ -86,7 +86,7 @@ var remoteLoginUsernameFlag = cmdline.Flag{
 	DefaultValue: "",
 	Name:         "username",
 	ShortHand:    "u",
-	Usage:        "username to authenticate with (required for Docker/OCI registry login)",
+	Usage:        "username to authenticate with",
 	EnvKeys:      []string{"LOGIN_USERNAME"},
 }
 
