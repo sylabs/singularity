@@ -7,10 +7,6 @@
 package cli
 
 import (
-	"io"
-	"os"
-	"strings"
-
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
@@ -91,25 +87,7 @@ var RegistryCmd = &cobra.Command{
 var RegistryLoginCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		loginArgs := new(singularity.LoginArgs)
-
-		loginArgs.Name = args[0]
-
-		loginArgs.Username = loginUsername
-		loginArgs.Password = loginPassword
-		loginArgs.Tokenfile = loginTokenFile
-		loginArgs.Insecure = loginInsecure
-
-		if loginPasswordStdin {
-			p, err := io.ReadAll(os.Stdin)
-			if err != nil {
-				sylog.Fatalf("Failed to read password from stdin: %s", err)
-			}
-			loginArgs.Password = strings.TrimSuffix(string(p), "\n")
-			loginArgs.Password = strings.TrimSuffix(loginArgs.Password, "\r")
-		}
-
-		if err := singularity.RegistryLogin(remoteConfig, loginArgs); err != nil {
+		if err := singularity.RegistryLogin(remoteConfig, ObtainLoginArgs(args[0])); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
