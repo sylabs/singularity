@@ -39,16 +39,14 @@ func KeyserverList(remoteName string, usrConfigFile string) (err error) {
 	}
 
 	for epName, ep := range c.Remotes {
-		if !ep.System {
-			continue
-		}
-		if err := ep.UpdateKeyserversConfig(); err != nil {
-			return err
-		}
-
 		fmt.Println()
 		fmt.Println(epName)
+
 		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
+		if err := ep.UpdateKeyserversConfig(); err != nil {
+			fmt.Fprintln(tw, " \t(unable to fetch associated keyserver info for this endpoint)")
+		}
+
 		order := 1
 		for _, kc := range ep.Keyservers {
 			if kc.Skip {
