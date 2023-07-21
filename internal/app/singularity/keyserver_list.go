@@ -40,7 +40,11 @@ func KeyserverList(remoteName string, usrConfigFile string) (err error) {
 
 	for epName, ep := range c.Remotes {
 		fmt.Println()
-		fmt.Println(epName)
+		isSystem := ""
+		if ep.System {
+			isSystem = "*"
+		}
+		fmt.Printf("%s%s\n", epName, isSystem)
 
 		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		if err := ep.UpdateKeyserversConfig(); err != nil {
@@ -63,6 +67,7 @@ func KeyserverList(remoteName string, usrConfigFile string) (err error) {
 	}
 
 	fmt.Println()
+	fmt.Println("(* = system endpoint)")
 
 	return nil
 }
