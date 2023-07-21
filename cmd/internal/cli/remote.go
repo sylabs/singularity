@@ -26,16 +26,17 @@ const (
 )
 
 var (
-	loginTokenFile     string
-	loginUsername      string
-	loginPassword      string
-	remoteConfig       string
-	loginPasswordStdin bool
-	loginInsecure      bool
-	remoteNoLogin      bool
-	global             bool
-	remoteUseExclusive bool
-	remoteAddInsecure  bool
+	loginTokenFile      string
+	loginUsername       string
+	loginPassword       string
+	remoteConfig        string
+	loginPasswordStdin  bool
+	loginInsecure       bool
+	remoteNoLogin       bool
+	global              bool
+	remoteUseExclusive  bool
+	remoteAddInsecure   bool
+	remoteAddNotDefault bool
 )
 
 // assemble values of remoteConfig for user/sys locations
@@ -141,6 +142,16 @@ var remoteAddInsecureFlag = cmdline.Flag{
 	Usage:        "allow connection to an insecure http remote",
 }
 
+// -i|--insecure
+var remoteAddNotDefaultFlag = cmdline.Flag{
+	ID:           "remoteAddNotDefaultFlag",
+	Value:        &remoteAddNotDefault,
+	DefaultValue: false,
+	Name:         "no-default",
+	ShortHand:    "n",
+	Usage:        "do not designate the newly-added remote endpoint as the default",
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(RemoteCmd)
@@ -162,6 +173,7 @@ func init() {
 		// add --insecure, --no-login flags to add command
 		cmdManager.RegisterFlagForCmd(&remoteNoLoginFlag, RemoteAddCmd)
 		cmdManager.RegisterFlagForCmd(&remoteAddInsecureFlag, RemoteAddCmd)
+		cmdManager.RegisterFlagForCmd(&remoteAddNotDefaultFlag, RemoteAddCmd)
 
 		cmdManager.RegisterFlagForCmd(&remoteLoginUsernameFlag, RemoteLoginCmd)
 		cmdManager.RegisterFlagForCmd(&remoteLoginPasswordFlag, RemoteLoginCmd)
@@ -233,7 +245,8 @@ var RemoteAddCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		name := args[0]
 		uri := args[1]
-		if err := singularity.RemoteAdd(remoteConfig, name, uri, global, remoteAddInsecure); err != nil {
+		makeDefault := !remoteAddNotDefault
+		if err := singularity.RemoteAdd(remoteConfig, name, uri, global, remoteAddInsecure, makeDefault); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 		sylog.Infof("Remote %q added.", name)

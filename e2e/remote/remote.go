@@ -7,6 +7,7 @@
 package remote
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"testing"
@@ -68,6 +69,91 @@ func (c ctx) remoteAdd(t *testing.T) {
 			e2e.WithCommand("remote"),
 			e2e.WithArgs(argv...),
 			e2e.ExpectExit(255),
+		)
+	}
+}
+
+// remoteDefaultOrNot checks that the `--no-default` flag, or its absence
+// (meaning the newly-added remote should be made default), are respected when a
+// new remote endpoint is added.
+func (c ctx) remoteDefaultOrNot(t *testing.T) {
+	config, err := os.CreateTemp(c.env.TestDir, "testConfig-")
+	if err != nil {
+		log.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(config.Name())
+		}
+	})
+
+	tests := []struct {
+		testName        string
+		remoteName      string
+		remoteURI       string
+		addFlags        []string
+		shouldBeDefault bool
+	}{
+		{
+			testName:        "AddNoDefault",
+			remoteName:      "SomeCloudND",
+			remoteURI:       "somecloud.example.com",
+			addFlags:        []string{"--no-default"},
+			shouldBeDefault: false,
+		},
+		{
+			testName:        "AddNoDefaultShort",
+			remoteName:      "SomeCloudND2",
+			remoteURI:       "somecloud2.example.com",
+			addFlags:        []string{"-n"},
+			shouldBeDefault: false,
+		},
+		{
+			testName:        "AddDefault",
+			remoteName:      "SomeCloudD",
+			remoteURI:       "somecloud3.example.com",
+			addFlags:        []string{},
+			shouldBeDefault: true,
+		},
+	}
+
+	for _, tt := range tests {
+		args := append(append([]string{"--config", config.Name(), "add", "--no-login"}, tt.addFlags...), []string{tt.remoteName, tt.remoteURI}...)
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.testName),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(args...),
+			e2e.ExpectExit(0),
+		)
+
+		args = []string{"--config", config.Name(), "list"}
+		expectedDefaultIndicator := "✓"
+		if !tt.shouldBeDefault {
+			expectedDefaultIndicator = " "
+		}
+
+		// The latter portion of the following regular expression includes
+		// enough spaces so that it guarantees a that the last %s, corresponding
+		// to expectedDefaultIndicator, will fall right below the "DEFAULT?"
+		// heading in the output table of `remote list`. The test that has
+		// tt.shouldBeDefault set to true ensures that this is so, otherwise
+		// that one will fail to match this regexp.
+		expectedOutput := fmt.Sprintf("%s[ ]+%s[ ]+%s                              ✓", tt.remoteName, tt.remoteURI, expectedDefaultIndicator)
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.testName),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(args...),
+			e2e.ExpectExit(
+				0,
+				e2e.ExpectOutput(
+					e2e.RegexMatch,
+					expectedOutput,
+				),
+			),
 		)
 	}
 }
@@ -586,12 +672,13 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	np := testhelper.NoParallel
 
 	return testhelper.Tests{
-		"add":           c.remoteAdd,
-		"list":          c.remoteList,
-		"remove":        c.remoteRemove,
-		"status":        c.remoteStatus,
-		"test help":     c.remoteTestHelp,
-		"use":           c.remoteUse,
-		"use exclusive": np(c.remoteUseExclusive),
+		"add":            c.remoteAdd,
+		"list":           c.remoteList,
+		"default or not": c.remoteDefaultOrNot,
+		"remove":         c.remoteRemove,
+		"status":         c.remoteStatus,
+		"test help":      c.remoteTestHelp,
+		"use":            c.remoteUse,
+		"use exclusive":  np(c.remoteUseExclusive),
 	}
 }
