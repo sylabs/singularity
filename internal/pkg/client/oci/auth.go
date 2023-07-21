@@ -84,8 +84,6 @@ func (sk *singularityKeychain) Resolve(target authn.Resource) (authn.Authenticat
 		}
 	}
 
-	sylog.Warningf("%v", cfg)
-
 	if cfg == empty {
 		return authn.Anonymous, nil
 	}
