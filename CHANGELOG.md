@@ -42,6 +42,9 @@
 - The commands related to OCI/Docker registries that were under `remote` have
   been moved to their own, dedicated `registry` command. Run
   `singularity help registry` for more information.
+- The the `remote list` subcommand now outputs only remote endpoints (with
+  keyservers and OCI/Docker registries having been moved to separate commands),
+  and the output has been streamlined.
 
 ### New Features & Functionality
 
