@@ -99,7 +99,7 @@ func (sk *singularityKeychain) Resolve(target authn.Resource) (authn.Authenticat
 	}), nil
 }
 
-func authOptn(ociAuth *ocitypes.DockerAuthConfig) remote.Option {
+func AuthOptn(ociAuth *ocitypes.DockerAuthConfig) remote.Option {
 	// By default we use auth from ~/.singularity/docker-config.json
 	authOptn := remote.WithAuthFromKeychain(&singularityKeychain{})
 

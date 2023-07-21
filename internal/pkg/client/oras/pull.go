@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -18,7 +18,7 @@ import (
 
 // pull will pull an oras image into the cache if directTo="", or a specific file if directTo is set.
 func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, ociAuth *ocitypes.DockerAuthConfig) (imagePath string, err error) {
-	hash, err := ImageSHA(ctx, pullFrom, ociAuth)
+	hash, err := RefHash(ctx, pullFrom, ociAuth)
 	if err != nil {
 		return "", fmt.Errorf("failed to get checksum for %s: %s", pullFrom, err)
 	}
@@ -31,7 +31,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 		imagePath = directTo
 
 	} else {
-		cacheEntry, err := imgCache.GetEntry(cache.OrasCacheType, hash)
+		cacheEntry, err := imgCache.GetEntry(cache.OrasCacheType, hash.String())
 		if err != nil {
 			return "", fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
 		}

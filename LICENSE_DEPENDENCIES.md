@@ -149,18 +149,6 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/docker/libtrust/blob/master/LICENSE>
 
-## github.com/go-logr/logr
-
-**License:** Apache-2.0
-
-**License URL:** <https://github.com/go-logr/logr/blob/master/LICENSE>
-
-## github.com/go-logr/stdr
-
-**License:** Apache-2.0
-
-**License URL:** <https://github.com/go-logr/stdr/blob/master/LICENSE>
-
 ## github.com/go-openapi/analysis
 
 **License:** Apache-2.0
@@ -244,12 +232,6 @@ The dependencies and their licenses are as follows:
 **License:** Apache-2.0
 
 **License URL:** <https://github.com/matttproud/golang_protobuf_extensions/blob/master/pbutil/LICENSE>
-
-## github.com/moby/locker
-
-**License:** Apache-2.0
-
-**License URL:** <https://github.com/moby/locker/blob/master/LICENSE>
 
 ## github.com/moby/patternmatcher
 
@@ -473,18 +455,6 @@ The dependencies and their licenses are as follows:
 
 **Project URL:** <https://go.mongodb.org/mongo-driver>
 
-## go.opentelemetry.io/otel
-
-**License:** Apache-2.0
-
-**Project URL:** <https://go.opentelemetry.io/otel>
-
-## go.opentelemetry.io/otel/trace
-
-**License:** Apache-2.0
-
-**Project URL:** <https://go.opentelemetry.io/otel/trace>
-
 ## google.golang.org/genproto/googleapis/rpc/status
 
 **License:** Apache-2.0
@@ -520,12 +490,6 @@ The dependencies and their licenses are as follows:
 **License:** Apache-2.0
 
 **Project URL:** <https://gotest.tools/v3>
-
-## oras.land/oras-go/pkg
-
-**License:** Apache-2.0
-
-**Project URL:** <https://oras.land/oras-go/pkg>
 
 ## github.com/godbus/dbus/v5
 
@@ -982,12 +946,6 @@ The dependencies and their licenses are as follows:
 **License:** MIT
 
 **License URL:** <https://github.com/mitchellh/mapstructure/blob/master/LICENSE>
-
-## github.com/morikuni/aec
-
-**License:** MIT
-
-**License URL:** <https://github.com/morikuni/aec/blob/master/LICENSE>
 
 ## github.com/pelletier/go-toml/v2
 

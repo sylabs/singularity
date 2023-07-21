@@ -1,3 +1,4 @@
+// Copyright (c) 2023, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -6,14 +7,15 @@
 package e2e
 
 import (
-	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/docker/cli/cli/config/configfile"
+	"github.com/docker/cli/cli/config/types"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
 	"github.com/sylabs/singularity/pkg/syfs"
-	auth "oras.land/oras-go/pkg/auth/docker"
 )
 
 const dockerHub = "docker.io"
@@ -39,11 +41,20 @@ func SetupDockerHubCredentials(t *testing.T) {
 
 func writeDockerHubCredentials(t *testing.T, dir, username, pass string) {
 	configPath := filepath.Join(dir, ".singularity", syfs.DockerConfFile)
-	cli, err := auth.NewClient(configPath)
+
+	cf := configfile.ConfigFile{
+		AuthConfigs: map[string]types.AuthConfig{
+			dockerHub: {
+				Username: username,
+				Password: pass,
+			},
+		},
+	}
+
+	configData, err := json.Marshal(cf)
 	if err != nil {
-		t.Fatalf("failed to get docker auth client: %v", err)
+		t.Error(err)
 	}
-	if err := cli.Login(context.Background(), dockerHub, username, pass, false); err != nil {
-		t.Fatalf("failed to login to dockerhub: %v", err)
-	}
+
+	os.WriteFile(configPath, configData, 0o600)
 }
