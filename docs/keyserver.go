@@ -52,6 +52,26 @@ const (
 	KeyserverRemoveExample string = `
   $ singularity keyserver remove https://keys.example.com`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// keyserver login command
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeyserverLoginUse   string = `login [login options...] <keyserver>`
+	KeyserverLoginShort string = `Login to a keyserver`
+	KeyserverLoginLong  string = `
+  The 'keyserver login' command allows you to login to a specific keyserver.`
+	KeyserverLoginExample string = `
+  To login in to a keyserver:
+  $ singularity keyserver login --username foo https://mykeyserver.example.com`
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// keyserver logout command
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeyserverLogoutUse   string = `logout <keyserver>`
+	KeyserverLogoutShort string = `Logout from a keyserver`
+	KeyserverLogoutLong  string = `
+  The 'keyserver logout' command allows you to log out from a keyserver.`
+	KeyserverLogoutExample string = `
+  To log out from a keyserver:
+  $ singularity keyserver logout https://mykeyserver.example.com`
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// keyserver list command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyserverListUse   string = `list [remoteName]`

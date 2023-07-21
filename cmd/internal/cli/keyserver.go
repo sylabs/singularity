@@ -7,7 +7,9 @@
 package cli
 
 import (
+	"io"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
@@ -41,15 +43,52 @@ var keyserverOrderFlag = cmdline.Flag{
 	Usage:        "define the keyserver order",
 }
 
+// -u|--username
+var keyserverLoginUsernameFlag = cmdline.Flag{
+	ID:           "keyserverLoginUsernameFlag",
+	Value:        &loginUsername,
+	DefaultValue: "",
+	Name:         "username",
+	ShortHand:    "u",
+	Usage:        "username to authenticate with (required for Docker/OCI registry login)",
+	EnvKeys:      []string{"LOGIN_USERNAME"},
+}
+
+// -p|--password
+var keyserverLoginPasswordFlag = cmdline.Flag{
+	ID:           "keyserverLoginPasswordFlag",
+	Value:        &loginPassword,
+	DefaultValue: "",
+	Name:         "password",
+	ShortHand:    "p",
+	Usage:        "password / token to authenticate with",
+	EnvKeys:      []string{"LOGIN_PASSWORD"},
+}
+
+// --password-stdin
+var keyserverLoginPasswordStdinFlag = cmdline.Flag{
+	ID:           "keyserverLoginPasswordStdinFlag",
+	Value:        &loginPasswordStdin,
+	DefaultValue: false,
+	Name:         "password-stdin",
+	Usage:        "take password from standard input",
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(KeyserverCmd)
 		cmdManager.RegisterSubCmd(KeyserverCmd, KeyserverAddCmd)
 		cmdManager.RegisterSubCmd(KeyserverCmd, KeyserverRemoveCmd)
+		cmdManager.RegisterSubCmd(KeyserverCmd, KeyserverLoginCmd)
+		cmdManager.RegisterSubCmd(KeyserverCmd, KeyserverLogoutCmd)
 		cmdManager.RegisterSubCmd(KeyserverCmd, KeyserverListCmd)
 
 		cmdManager.RegisterFlagForCmd(&keyserverOrderFlag, KeyserverAddCmd)
 		cmdManager.RegisterFlagForCmd(&keyserverInsecureFlag, KeyserverAddCmd)
+
+		cmdManager.RegisterFlagForCmd(&keyserverLoginUsernameFlag, KeyserverLoginCmd)
+		cmdManager.RegisterFlagForCmd(&keyserverLoginPasswordFlag, KeyserverLoginCmd)
+		cmdManager.RegisterFlagForCmd(&keyserverLoginPasswordStdinFlag, KeyserverLoginCmd)
 	})
 }
 
@@ -123,6 +162,65 @@ func setKeyserver(_ *cobra.Command, _ []string) {
 	if uint32(os.Getuid()) != 0 {
 		sylog.Fatalf("Unable to modify keyserver configuration: not root user")
 	}
+}
+
+// KeyserverLoginCmd singularity registry login [option] <registry_url>
+var KeyserverLoginCmd = &cobra.Command{
+	Args: cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		loginArgs := new(singularity.LoginArgs)
+
+		loginArgs.Name = args[0]
+
+		loginArgs.Username = loginUsername
+		loginArgs.Password = loginPassword
+		loginArgs.Tokenfile = loginTokenFile
+		loginArgs.Insecure = loginInsecure
+
+		if loginPasswordStdin {
+			p, err := io.ReadAll(os.Stdin)
+			if err != nil {
+				sylog.Fatalf("Failed to read password from stdin: %s", err)
+			}
+			loginArgs.Password = strings.TrimSuffix(string(p), "\n")
+			loginArgs.Password = strings.TrimSuffix(loginArgs.Password, "\r")
+		}
+
+		if err := singularity.KeyserverLogin(remoteConfig, loginArgs); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+	},
+
+	Use:     docs.KeyserverLoginUse,
+	Short:   docs.KeyserverLoginShort,
+	Long:    docs.KeyserverLoginLong,
+	Example: docs.KeyserverLoginExample,
+
+	DisableFlagsInUseLine: true,
+}
+
+// KeyserverLogoutCmd singularity remote logout [remoteName|serviceURI]
+var KeyserverLogoutCmd = &cobra.Command{
+	Args: cobra.RangeArgs(0, 1),
+	Run: func(cmd *cobra.Command, args []string) {
+		// default to empty string to signal to KeyserverLogin to use default remote
+		name := ""
+		if len(args) > 0 {
+			name = args[0]
+		}
+
+		if err := singularity.KeyserverLogout(remoteConfig, name); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+		sylog.Infof("Logout succeeded")
+	},
+
+	Use:     docs.KeyserverLogoutUse,
+	Short:   docs.KeyserverLogoutShort,
+	Long:    docs.KeyserverLogoutLong,
+	Example: docs.KeyserverLogoutExample,
+
+	DisableFlagsInUseLine: true,
 }
 
 // KeyserverListCmd singularity remote list
