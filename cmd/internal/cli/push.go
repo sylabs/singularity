@@ -126,7 +126,13 @@ var PushCmd = &cobra.Command{
 				}
 			}
 
-			resp, err := library.Push(cmd.Context(), file, destRef, pushDescription, lc)
+			pushCfg := library.PushOptions{
+				Description:   pushDescription,
+				Endpoint:      currentRemoteEndpoint,
+				LibraryConfig: lc,
+			}
+
+			resp, err := library.Push(cmd.Context(), file, destRef, pushCfg)
 			if err != nil {
 				sylog.Fatalf("Unable to push image to library: %v", err)
 			}

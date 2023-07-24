@@ -17,8 +17,8 @@ import (
 	"github.com/containers/image/v5/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/build/oci"
 	"github.com/sylabs/singularity/internal/pkg/cache"
+	"github.com/sylabs/singularity/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/ocibundle"
@@ -150,7 +150,7 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	}
 	defer os.RemoveAll(tmpLayout)
 
-	layoutRef, err := oci.FetchLayout(ctx, b.sysCtx, b.imgCache, b.imageRef, tmpLayout)
+	layoutRef, err := ociimage.FetchLayout(ctx, b.sysCtx, b.imgCache, b.imageRef, tmpLayout)
 	if err != nil {
 		return err
 	}
@@ -190,7 +190,7 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	}
 	pristineRootfs := filepath.Join(b.rootfsParentDir, "rootfs")
 
-	if err := oci.UnpackRootfs(ctx, tmpLayout, manifest, pristineRootfs); err != nil {
+	if err := ociimage.UnpackRootfs(ctx, tmpLayout, manifest, pristineRootfs); err != nil {
 		return err
 	}
 

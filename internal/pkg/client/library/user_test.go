@@ -10,7 +10,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	scslibclient "github.com/sylabs/scs-library-client/client"
+	scslibrary "github.com/sylabs/scs-library-client/client"
 	"gotest.tools/v3/assert"
 )
 
@@ -90,7 +90,7 @@ func TestGetOCIToken(t *testing.T) {
 			}))
 			defer srv.Close()
 
-			config := &scslibclient.Config{
+			config := &scslibrary.Config{
 				BaseURL:   srv.URL,
 				AuthToken: tt.authToken,
 			}

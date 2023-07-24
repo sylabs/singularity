@@ -16,27 +16,51 @@ import (
 	scslibrary "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/client"
+	"github.com/sylabs/singularity/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/pkg/sylog"
 	"golang.org/x/term"
 )
 
+// PushOptions provides options/configuration that determine the behavior of a
+// push to the library.
+type PushOptions struct {
+	// Description sets the optional description for an image pushed via the
+	// library's own API.
+	Description string
+	// Endpoint is the active remote endpoint, against which the OCI registry
+	// backing the library can be discovered.
+	Endpoint *endpoint.Config
+	// LibraryConfig configures operations against the library using its native
+	// API, via sylabs/scs-library-client.
+	LibraryConfig *scslibrary.Config
+}
+
 // Push will upload an image file to the library.
-// Returns the upload completion response on success, containing container path and quota usage.
-func Push(ctx context.Context, sourceFile string, destRef *scslibrary.Ref, desc string, libraryConfig *scslibrary.Config) (uploadResponse *scslibrary.UploadImageComplete, err error) {
-	fi, err := os.Stat(sourceFile)
+// Returns the upload completion response on success, if available, containing
+// container path and quota usage for v1 libraries.
+func Push(ctx context.Context, sourceFile string, destRef *scslibrary.Ref, opts PushOptions) (uploadResponse *scslibrary.UploadImageComplete, err error) {
+	f, err := sif.LoadContainerFromPath(sourceFile, sif.OptLoadWithFlag(os.O_RDONLY))
 	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf("unable to open: %v: %v", sourceFile, err)
-		}
-		return nil, err
+		return nil, fmt.Errorf("unable to open: %v: %w", sourceFile, err)
+	}
+	defer f.UnloadContainer()
+
+	if _, err := f.GetDescriptor(sif.WithDataType(sif.DataOCIRootIndex)); err == nil {
+		return nil, pushOCI(ctx, sourceFile, destRef, opts)
 	}
 
+	return pushNative(ctx, sourceFile, destRef, opts)
+}
+
+// pushNative pushes a non-OCI SIF image, as a SIF, using the library client.
+func pushNative(ctx context.Context, sourceFile string, destRef *scslibrary.Ref, opts PushOptions) (uploadResponse *scslibrary.UploadImageComplete, err error) {
 	arch, err := sifArch(sourceFile)
 	if err != nil {
 		return nil, err
 	}
 
-	libraryClient, err := scslibrary.NewClient(libraryConfig)
+	libraryClient, err := scslibrary.NewClient(opts.LibraryConfig)
 	if err != nil {
 		return nil, fmt.Errorf("error initializing library client: %v", err)
 	}
@@ -52,19 +76,27 @@ func Push(ctx context.Context, sourceFile string, destRef *scslibrary.Ref, desc 
 	}
 	defer f.Close()
 
+	// Get file size by seeking to end and back
+	fSize, err := f.Seek(0, 2)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := f.Seek(0, 0); err != nil {
+		return nil, err
+	}
+
 	var progressBar scslibrary.UploadCallback
 	if term.IsTerminal(2) {
 		progressBar = &client.UploadProgressBar{}
 	}
 
-	resp, err := libraryClient.UploadImage(ctx, f, destRef.Path, arch, destRef.Tags, desc, progressBar)
 	defer func(t time.Time) {
-		if err == nil && resp != nil && progressBar == nil {
-			sylog.Infof("Uploaded %d bytes in %v\n", fi.Size(), time.Since(t))
+		if err == nil && progressBar == nil {
+			sylog.Infof("Uploaded %d bytes in %v\n", fSize, time.Since(t))
 		}
 	}(time.Now())
 
-	return resp, err
+	return libraryClient.UploadImage(ctx, f, destRef.Path, arch, destRef.Tags, opts.Description, progressBar)
 }
 
 func sifArch(filename string) (string, error) {
@@ -79,4 +111,21 @@ func sifArch(filename string) (string, error) {
 		return arch, fmt.Errorf("unknown architecture in SIF file")
 	}
 	return arch, nil
+}
+
+// pushOCI pushes an OCI SIF image, as an OCI image, using the ocisif client.
+func pushOCI(ctx context.Context, sourceFile string, destRef *scslibrary.Ref, opts PushOptions) error {
+	sylog.Infof("Pushing an OCI-SIF to the library OCI registry. Use `--oci` to pull this image.")
+	lr, err := newLibraryRegistry(opts.Endpoint, opts.LibraryConfig)
+	if err != nil {
+		return err
+	}
+
+	pushRef, err := lr.convertRef(*destRef)
+	if err != nil {
+		return err
+	}
+
+	sylog.Debugf("Pushing to OCI registry at: %s", pushRef)
+	return ocisif.PushOCISIF(ctx, sourceFile, pushRef, lr.authConfig())
 }

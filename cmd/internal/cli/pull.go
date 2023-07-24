@@ -252,7 +252,15 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Unable to get keyserver client configuration: %v", err)
 		}
 
-		_, err = library.PullToFile(ctx, imgCache, pullTo, ref, pullArch, tmpDir, lc, co)
+		pullOpts := library.PullOptions{
+			Architecture:  pullArch,
+			Endpoint:      currentRemoteEndpoint,
+			KeyClientOpts: co,
+			LibraryConfig: lc,
+			RequireOciSif: pullOci,
+			TmpDir:        tmpDir,
+		}
+		_, err = library.PullToFile(ctx, imgCache, pullTo, ref, pullOpts)
 		if err != nil && err != library.ErrLibraryPullUnsigned {
 			sylog.Fatalf("While pulling library image: %v", err)
 		}

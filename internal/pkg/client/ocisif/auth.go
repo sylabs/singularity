@@ -21,16 +21,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package oci
+package ocisif
 
 import (
 	"os"
 	"sync"
 
+	ocitypes "github.com/containers/image/v5/types"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
@@ -95,4 +97,20 @@ func (sk *singularityKeychain) Resolve(target authn.Resource) (authn.Authenticat
 		IdentityToken: cfg.IdentityToken,
 		RegistryToken: cfg.RegistryToken,
 	}), nil
+}
+
+func authOptn(ociAuth *ocitypes.DockerAuthConfig) remote.Option {
+	// By default we use auth from ~/.singularity/docker-config.json
+	authOptn := remote.WithAuthFromKeychain(&singularityKeychain{})
+
+	// If explicit credentials in ociAuth were passed in, use those instead.
+	if ociAuth != nil {
+		auth := authn.FromConfig(authn.AuthConfig{
+			Username:      ociAuth.Username,
+			Password:      ociAuth.Password,
+			IdentityToken: ociAuth.IdentityToken,
+		})
+		authOptn = remote.WithAuth(auth)
+	}
+	return authOptn
 }

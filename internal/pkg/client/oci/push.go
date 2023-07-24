@@ -10,6 +10,7 @@ import (
 	"fmt"
 
 	ocitypes "github.com/containers/image/v5/types"
+	"github.com/sylabs/singularity/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/pkg/image"
 )
 
@@ -24,7 +25,7 @@ func Push(ctx context.Context, sourceFile string, destRef string, ociAuth *ocity
 
 	switch img.Type {
 	case image.OCISIF:
-		return pushOCISIF(ctx, sourceFile, destRef, ociAuth)
+		return ocisif.PushOCISIF(ctx, sourceFile, destRef, ociAuth)
 	case image.SIF:
 		return fmt.Errorf("non OCI SIF images can only be pushed to OCI registries via oras://")
 	}

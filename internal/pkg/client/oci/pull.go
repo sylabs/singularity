@@ -13,6 +13,7 @@ import (
 
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/sylabs/singularity/internal/pkg/cache"
+	"github.com/sylabs/singularity/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -61,12 +62,18 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, opts Pul
 		directTo = file.Name()
 		sylog.Infof("Downloading library image to tmp cache: %s", directTo)
 	}
-
 	if opts.OciSif {
-		return pullOciSif(ctx, imgCache, directTo, pullFrom, opts)
+		ocisifOpts := ocisif.PullOptions{
+			TmpDir:     opts.TmpDir,
+			OciAuth:    opts.OciAuth,
+			DockerHost: opts.DockerHost,
+			NoHTTPS:    opts.NoHTTPS,
+			NoCleanUp:  opts.NoCleanUp,
+		}
+		return ocisif.PullOCISIF(ctx, imgCache, directTo, pullFrom, ocisifOpts)
 	}
 
-	return pullSif(ctx, imgCache, directTo, pullFrom, opts)
+	return pullNativeSIF(ctx, imgCache, directTo, pullFrom, opts)
 }
 
 // PullToFile will create a SIF / OCI-SIF image from the specified oci URI and place it at the specified dest
@@ -76,12 +83,18 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom st
 		directTo = pullTo
 		sylog.Debugf("Cache disabled, pulling directly to: %s", directTo)
 	}
-
 	src := ""
 	if opts.OciSif {
-		src, err = pullOciSif(ctx, imgCache, directTo, pullFrom, opts)
+		ocisifOpts := ocisif.PullOptions{
+			TmpDir:     opts.TmpDir,
+			OciAuth:    opts.OciAuth,
+			DockerHost: opts.DockerHost,
+			NoHTTPS:    opts.NoHTTPS,
+			NoCleanUp:  opts.NoCleanUp,
+		}
+		src, err = ocisif.PullOCISIF(ctx, imgCache, directTo, pullFrom, ocisifOpts)
 	} else {
-		src, err = pullSif(ctx, imgCache, directTo, pullFrom, opts)
+		src, err = pullNativeSIF(ctx, imgCache, directTo, pullFrom, opts)
 	}
 	if err != nil {
 		return "", fmt.Errorf("error fetching image to cache: %v", err)

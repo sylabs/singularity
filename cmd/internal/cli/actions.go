@@ -124,7 +124,16 @@ func handleLibrary(ctx context.Context, imgCache *cache.Handle, pullFrom string)
 	if err != nil {
 		return "", err
 	}
-	return library.Pull(ctx, imgCache, r, runtime.GOARCH, tmpDir, c)
+
+	pullOpts := library.PullOptions{
+		Architecture:  runtime.GOARCH,
+		Endpoint:      currentRemoteEndpoint,
+		LibraryConfig: c,
+		// false to allow OCI execution of native SIF from library
+		RequireOciSif: false,
+		TmpDir:        tmpDir,
+	}
+	return library.Pull(ctx, imgCache, r, pullOpts)
 }
 
 func handleShub(ctx context.Context, imgCache *cache.Handle, pullFrom string) (string, error) {

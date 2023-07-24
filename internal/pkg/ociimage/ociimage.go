@@ -3,8 +3,9 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-// Package oci provides transparent caching of oci-like refs
-package oci
+// Package ociimage provides functions related to retrieving and manipulating
+// OCI images, used in pull/push and build operations.
+package ociimage
 
 import (
 	"context"
