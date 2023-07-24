@@ -102,9 +102,12 @@
 - The `pull` command now accepts a new flag `--oci` for OCI image sources. This
   will create an OCI-SIF image rather than convert to Singularity's native
   container format.
-- OCI-mode now supports running OCI-SIF images directly from http/https and oras
-  URIs.
-- OCI-SIF images can be pushed/pulled to/from oras URIs.
+- OCI-mode now supports running OCI-SIF images directly from `docker://`,
+  `http://`, `https://` and `oras://`. URIs.
+- OCI-SIF images can be pushed/pulled to/from OCI registries as single file
+  artifacts using `oras://` URIs.
+- OCI-SIF images can be pushed/pulled to/from OCI registries as single layer,
+  squashfs layer format OCI images using `docker://` URIs.
 
 ### Developer / API
 
