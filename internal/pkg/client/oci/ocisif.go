@@ -20,9 +20,9 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
-	"github.com/google/go-containerregistry/pkg/v1/match"
 	ggcrmutate "github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/sylabs/oci-tools/pkg/mutate"
 	ocisif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
@@ -32,6 +32,9 @@ import (
 	"github.com/sylabs/singularity/pkg/sylog"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
+
+// TODO - Replace when exported from SIF / oci-tools
+const SquashfsLayerMediaType types.MediaType = "application/vnd.sylabs.image.layer.v1.squashfs"
 
 // pull will create an OCI-SIF image in the cache if directTo="", or a specific file if directTo is set.
 //
@@ -44,7 +47,6 @@ func pullOciSif(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom 
 	}
 
 	if directTo != "" {
-		sylog.Infof("Converting OCI image to OCI-SIF format")
 		if err := createOciSif(ctx, imgCache, pullFrom, directTo, opts); err != nil {
 			return "", fmt.Errorf("while creating OCI-SIF: %v", err)
 		}
@@ -57,8 +59,6 @@ func pullOciSif(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom 
 		}
 		defer cacheEntry.CleanTmp()
 		if !cacheEntry.Exists {
-			sylog.Infof("Converting OCI image to OCI-SIF format")
-
 			if err := createOciSif(ctx, imgCache, pullFrom, cacheEntry.TmpPath, opts); err != nil {
 				return "", fmt.Errorf("while creating OCI-SIF: %v", err)
 			}
@@ -86,7 +86,7 @@ func createOciSif(ctx context.Context, imgCache *cache.Handle, imageSrc, imageDe
 		return err
 	}
 	defer func() {
-		sylog.Infof("Cleaning up...")
+		sylog.Infof("Cleaning up.")
 		if err := fs.ForceRemoveAll(tmpDir); err != nil {
 			sylog.Warningf("Couldn't remove oci-sif temporary directory %q: %v", tmpDir, err)
 		}
@@ -107,28 +107,55 @@ func createOciSif(ctx context.Context, imgCache *cache.Handle, imageSrc, imageDe
 		return fmt.Errorf("while fetching OCI image: %w", err)
 	}
 
-	// Step 2 - Work from containers/image ImageReference -> gocontainerregistry digest
+	// Step 2 - Work from containers/image ImageReference -> gocontainerregistry digest & manifest
 	layoutSrc, err := layoutRef.NewImageSource(ctx, sys)
 	if err != nil {
 		return err
 	}
 	defer layoutSrc.Close()
-	imgManifest, _, err := layoutSrc.GetManifest(ctx, nil)
+	rawManifest, _, err := layoutSrc.GetManifest(ctx, nil)
 	if err != nil {
 		return err
 	}
-	digest, _, err := v1.SHA256(bytes.NewBuffer(imgManifest))
+	digest, _, err := v1.SHA256(bytes.NewBuffer(rawManifest))
+	if err != nil {
+		return err
+	}
+	mf, err := v1.ParseManifest(bytes.NewBuffer(rawManifest))
 	if err != nil {
 		return err
 	}
 
-	// Step 3 - Convert the layout into a squashed, single squashfs-layer oci-sif image
-	return layoutToOciSif(layoutDir, digest, imageDest, workDir)
+	// If the image has a single squashfs layer, then we can write it directly to oci-sif.
+	if (len(mf.Layers)) == 1 && (mf.Layers[0].MediaType == SquashfsLayerMediaType) {
+		sylog.Infof("Writing OCI-SIF image")
+		return writeLayoutToOciSif(layoutDir, digest, imageDest, workDir)
+	}
+
+	// Otherwise, squashing and converting layers to squashfs is required.
+	sylog.Infof("Converting OCI image to OCI-SIF format")
+	return convertLayoutToOciSif(layoutDir, digest, imageDest, workDir)
 }
 
-// layoutToOciSif will convert an image in an OCI layout to a squashed oci-sif with squashfs layer format.
+// writeLayoutToOciSif will write an image from an OCI layout to an oci-sif without applying any mutations.
+func writeLayoutToOciSif(layoutDir string, digest v1.Hash, imageDest, workDir string) error {
+	lp, err := layout.FromPath(layoutDir)
+	if err != nil {
+		return fmt.Errorf("while opening layout: %w", err)
+	}
+	img, err := lp.Image(digest)
+	if err != nil {
+		return fmt.Errorf("while retrieving image: %w", err)
+	}
+	ii := ggcrmutate.AppendManifests(empty.Index, ggcrmutate.IndexAddendum{
+		Add: img,
+	})
+	return ocisif.Write(imageDest, ii)
+}
+
+// convertLayoutToOciSif will convert an image in an OCI layout to a squashed oci-sif with squashfs layer format.
 // The OCI layout can contain only a single image.
-func layoutToOciSif(layoutDir string, digest v1.Hash, imageDest, workDir string) error {
+func convertLayoutToOciSif(layoutDir string, digest v1.Hash, imageDest, workDir string) error {
 	lp, err := layout.FromPath(layoutDir)
 	if err != nil {
 		return fmt.Errorf("while opening layout: %w", err)
@@ -138,7 +165,7 @@ func layoutToOciSif(layoutDir string, digest v1.Hash, imageDest, workDir string)
 		return fmt.Errorf("while retrieving image: %w", err)
 	}
 
-	sylog.Infof("Squashing image to single layer...")
+	sylog.Infof("Squashing image to single layer")
 	img, err = mutate.Squash(img)
 	if err != nil {
 		return fmt.Errorf("while squashing image: %w", err)
@@ -168,10 +195,7 @@ func layoutToOciSif(layoutDir string, digest v1.Hash, imageDest, workDir string)
 		return fmt.Errorf("while replacing layers: %w", err)
 	}
 
-	sylog.Infof("Writing oci-sif image...")
-	if err := lp.ReplaceImage(img, match.Digests(digest)); err != nil {
-		return fmt.Errorf("while replacing image: %w", err)
-	}
+	sylog.Infof("Writing OCI-SIF image")
 	ii := ggcrmutate.AppendManifests(empty.Index, ggcrmutate.IndexAddendum{
 		Add: img,
 	})

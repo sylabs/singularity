@@ -237,6 +237,9 @@ func Run(t *testing.T) {
 	// Local registry ORAS OCI-SIF image, built on demand by e2e.EnsureORASOCISIF
 	testenv.OrasTestOCISIF = fmt.Sprintf("oras://%s/oras_test_oci-sif:latest", testenv.TestRegistry)
 
+	// OCI-SIF image pushed as OCI image to local registry
+	testenv.TestRegistryOCISIF = fmt.Sprintf("docker://%s/registry_test_oci-sif:latest", testenv.TestRegistry)
+
 	t.Cleanup(func() {
 		if !t.Failed() {
 			os.Remove(imagePath)

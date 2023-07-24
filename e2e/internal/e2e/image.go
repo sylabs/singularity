@@ -204,6 +204,29 @@ func EnsureORASOCISIF(t *testing.T, env TestEnv) {
 	})
 }
 
+var registryOCISIFOnce sync.Once
+
+func EnsureRegistryOCISIF(t *testing.T, env TestEnv) {
+	EnsureOCISIF(t, env)
+
+	ensureMutex.Lock()
+	defer ensureMutex.Unlock()
+
+	registryOCISIFOnce.Do(func() {
+		t.Logf("Pushing %s to %s", env.OCISIFPath, env.TestRegistryOCISIF)
+		env.RunSingularity(
+			t,
+			WithProfile(UserProfile),
+			WithCommand("push"),
+			WithArgs(env.OCISIFPath, env.TestRegistryOCISIF),
+			ExpectExit(0),
+		)
+		if t.Failed() {
+			t.Fatalf("failed to push oci-sif image to local registry %q", env.TestRegistryOCISIF)
+		}
+	})
+}
+
 func DownloadFile(url string, path string) error {
 	dl, err := os.Create(path)
 	if err != nil {

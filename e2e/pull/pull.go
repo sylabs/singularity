@@ -24,6 +24,7 @@ import (
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	syoras "github.com/sylabs/singularity/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
+	"github.com/sylabs/singularity/pkg/image"
 	"golang.org/x/sys/unix"
 	"oras.land/oras-go/pkg/content"
 	"oras.land/oras-go/pkg/oras"
@@ -36,12 +37,12 @@ type ctx struct {
 type testStruct struct {
 	desc             string // case description
 	srcURI           string // source URI for image
-	library          string // use specific library, XXX(mem): not tested yet
+	library          string // use specific library server URI
 	arch             string // architecture to force, if any
 	force            bool   // pass --force
 	createDst        bool   // create destination file before pull
 	unauthenticated  bool   // pass --allow-unauthenticated
-	setImagePath     bool   // pass destination path
+	setImagePath     bool   // pass destination path (singularity pull <image path> <source>)
 	setPullDir       bool   // pass --dir
 	oci              bool   // pass --oci
 	noHTTPS          bool   // pass --no-https
@@ -113,7 +114,6 @@ func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 
 	c.env.RunSingularity(
 		t,
-		e2e.AsSubtest(tt.desc),
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithEnv(tt.envVars),
 		e2e.WithDir(tt.workDir),
@@ -140,6 +140,8 @@ func getImageNameFromURI(imgURI string) string {
 func (c *ctx) setup(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 	e2e.EnsureOCISIF(t, c.env)
+	e2e.EnsureORASOCISIF(t, c.env)
+	e2e.EnsureRegistryOCISIF(t, c.env)
 
 	// setup file and dir to use as invalid images
 	orasInvalidDir, err := os.MkdirTemp(c.env.TestDir, "oras_push_dir-")
@@ -197,23 +199,25 @@ func (c *ctx) setup(t *testing.T) {
 
 func (c ctx) testPullCmd(t *testing.T) {
 	tests := []testStruct{
+		//
+		// library:// URIs
+		// SCS / Singularity Enterprise & compatible.
+		//
 		{
-			desc:             "non existent image",
+			desc:             "library non-existent",
 			srcURI:           "library://sylabs/tests/does_not_exist:0",
 			expectedExitCode: 255,
 		},
-
 		// --allow-unauthenticated tests
 		{
-			desc:             "unsigned image allow unauthenticated",
+			desc:             "library allow-unauthenticated",
 			srcURI:           "library://sylabs/tests/unsigned:1.0.0",
 			unauthenticated:  true,
 			expectedExitCode: 0,
 		},
-
 		// --force tests
 		{
-			desc:             "force existing file",
+			desc:             "library force existing",
 			srcURI:           "library://alpine:3.11.5",
 			force:            true,
 			createDst:        true,
@@ -221,7 +225,7 @@ func (c ctx) testPullCmd(t *testing.T) {
 			expectedExitCode: 0,
 		},
 		{
-			desc:             "force non-existing file",
+			desc:             "library force non-existing",
 			srcURI:           "library://alpine:3.11.5",
 			force:            true,
 			createDst:        false,
@@ -230,31 +234,29 @@ func (c ctx) testPullCmd(t *testing.T) {
 		},
 		{
 			// --force should not have an effect on --allow-unauthenticated=false
-			desc:             "unsigned image force require authenticated",
+			desc:             "library force allow-unauthenticated",
 			srcURI:           "library://sylabs/tests/unsigned:1.0.0",
 			force:            true,
 			unauthenticated:  false,
 			expectedExitCode: 0,
 		},
-
 		// test version specifications
 		{
-			desc:             "image with specific hash",
+			desc:             "library hash",
 			srcURI:           "library://alpine:sha256.03883ca565b32e58fa0a496316d69de35741f2ef34b5b4658a6fec04ed8149a8",
 			arch:             "amd64",
 			unauthenticated:  true,
 			expectedExitCode: 0,
 		},
 		{
-			desc:             "latest tag",
+			desc:             "library tag",
 			srcURI:           "library://alpine:latest",
 			unauthenticated:  true,
 			expectedExitCode: 0,
 		},
-
 		// --dir tests
 		{
-			desc:             "dir no image path",
+			desc:             "library dir",
 			srcURI:           "library://alpine:3.11.5",
 			unauthenticated:  true,
 			setPullDir:       true,
@@ -269,22 +271,59 @@ func (c ctx) testPullCmd(t *testing.T) {
 			// /tmp/a/b/image.sif, the code expects to find /tmp/a/b/c/tmp/a/b/image.sif. Since
 			// the directory /tmp/a/b/c/tmp/a/b does not exist, it fails to create the file
 			// image.sif in there.
-			desc:             "dir image path",
+			desc:             "library dir with image path",
 			srcURI:           "library://alpine:3.11.5",
 			unauthenticated:  true,
 			setPullDir:       true,
 			setImagePath:     true,
 			expectedExitCode: 255,
 		},
-
-		// transport tests
+		// default transport should be library
 		{
-			desc:             "bare image name",
+			desc:             "library default transport",
 			srcURI:           "alpine:3.11.5",
 			force:            true,
 			unauthenticated:  true,
 			expectedExitCode: 0,
 		},
+		// pulling with library URI argument
+		{
+			desc:             "library bad library flag",
+			srcURI:           "library://busybox:1.31.1",
+			library:          "https://bad-library.sylabs.io",
+			expectedExitCode: 255,
+		},
+		{
+			desc:             "library default library flag",
+			srcURI:           "library://busybox:1.31.1",
+			library:          "https://library.sylabs.io",
+			force:            true,
+			expectedExitCode: 0,
+		},
+		// pulling with library URI containing host name and library argument
+		{
+			desc:             "library URI containing host name and library argument",
+			srcURI:           "library://notlibrary.sylabs.io/library/default/busybox:1.31.1",
+			library:          "https://notlibrary.sylabs.io",
+			expectedExitCode: 255,
+		},
+		// pulling with library URI containing host name
+		{
+			desc:             "library URI containing bad host name",
+			srcURI:           "library://notlibrary.sylabs.io/library/default/busybox:1.31.1",
+			expectedExitCode: 255,
+		},
+		{
+			desc:             "library URI containing host name",
+			srcURI:           "library://library.sylabs.io/library/default/busybox:1.31.1",
+			force:            true,
+			expectedExitCode: 0,
+		},
+
+		//
+		// shub:// URIs
+		// Singularity Hub (retired) and compatible.
+		//
 		// TODO(mem): reenable this; disabled while shub is down
 		// {
 		// 	desc:            "image from shub",
@@ -293,6 +332,11 @@ func (c ctx) testPullCmd(t *testing.T) {
 		// 	unauthenticated: false,
 		// 	expectSuccess:   true,
 		// },
+
+		//
+		// oras:// URIs
+		// SIF file as ORAS / OCI artifact.
+		//
 		// Finalized v1 layer mediaType (3.7 and onward)
 		{
 			desc:             "oras transport for SIF from registry",
@@ -316,8 +360,7 @@ func (c ctx) testPullCmd(t *testing.T) {
 			force:            true,
 			expectedExitCode: 0,
 		},
-
-		// pulling of invalid images with oras
+		// Invalid (non-SIF) artifacts
 		{
 			desc:             "oras pull of non SIF file",
 			srcURI:           "oras://" + c.env.TestRegistry + "/pull_test_:latest",
@@ -331,49 +374,45 @@ func (c ctx) testPullCmd(t *testing.T) {
 			expectedExitCode: 255,
 		},
 
-		// pulling with library URI argument
+		//
+		// docker:// URIs
+		// Standard OCI images, and OCI-SIF single layer squashfs images, in an OCI distribution-spec registry.
+		//
+		// pulling a standard OCI image from local registry to a native SIF
 		{
-			desc:             "bad library URI",
-			srcURI:           "library://busybox:1.31.1",
-			library:          "https://bad-library.sylabs.io",
-			expectedExitCode: 255,
-		},
-		{
-			desc:             "default library URI",
-			srcURI:           "library://busybox:1.31.1",
-			library:          "https://library.sylabs.io",
+			desc:             "docker oci to sif",
+			srcURI:           c.env.TestRegistryImage,
+			oci:              false,
+			noHTTPS:          true,
 			force:            true,
 			expectedExitCode: 0,
 		},
-
-		// pulling with library URI containing host name and library argument
+		// pulling a standard OCI image from local registry to an OCI-SIF
 		{
-			desc:             "library URI containing host name and library argument",
-			srcURI:           "library://notlibrary.sylabs.io/library/default/busybox:1.31.1",
-			library:          "https://notlibrary.sylabs.io",
-			expectedExitCode: 255,
-		},
-
-		// pulling with library URI containing host name
-		{
-			desc:             "library URI containing bad host name",
-			srcURI:           "library://notlibrary.sylabs.io/library/default/busybox:1.31.1",
-			expectedExitCode: 255,
-		},
-		{
-			desc:             "library URI containing host name",
-			srcURI:           "library://library.sylabs.io/library/default/busybox:1.31.1",
-			force:            true,
-			expectedExitCode: 0,
-		},
-		// pulling from local registry to OCI-SIF
-		{
-			desc:             "local registry oci-sif",
+			desc:             "docker oci to oci-sif",
 			srcURI:           c.env.TestRegistryImage,
 			oci:              true,
 			noHTTPS:          true,
 			force:            true,
 			expectedExitCode: 0,
+		},
+		// pulling an OCI-SIF image from local registry to an OCI-SIF
+		{
+			desc:             "docker oci-sif to oci-sif",
+			srcURI:           c.env.TestRegistryOCISIF,
+			oci:              true,
+			noHTTPS:          true,
+			force:            true,
+			expectedExitCode: 0,
+		},
+		// pulling an OCI-SIF image from local registry to a native SIF (not implemented)
+		{
+			desc:             "docker oci-sif to sif",
+			srcURI:           c.env.TestRegistryOCISIF,
+			oci:              false,
+			noHTTPS:          true,
+			force:            true,
+			expectedExitCode: 255,
 		},
 	}
 	for _, tt := range tests {
@@ -444,12 +483,24 @@ func checkPullResult(t *testing.T, tt testStruct) {
 			t.Errorf("unable to stat image at %q: %+v\n", tt.expectedImage, err)
 		}
 
-		// XXX(mem): This is running a bunch of commands in the downloaded
-		// images. Do we really want this here? If yes, we need to have a
-		// way to do this in a generic fashion, as it's going to be shared
-		// with build as well.
-
-		// imageVerify(t, tt.imagePath, false)
+		// Verify the image is a valid SIF or OCI-SIF
+		img, err := image.Init(tt.expectedImage, false)
+		if err != nil {
+			t.Fatalf("while checking image: %v", err)
+		}
+		defer img.File.Close()
+		switch img.Type {
+		case image.SIF:
+			if tt.oci {
+				t.Errorf("Native SIF pulled, but --oci specified")
+			}
+		case image.OCISIF:
+			if !tt.oci {
+				t.Errorf("OCI-SIF pulled, but --oci not specified")
+			}
+		default:
+			t.Errorf("Unexpected image type %d", img.Type)
+		}
 	}
 }
 
