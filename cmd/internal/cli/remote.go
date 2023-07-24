@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/app/singularity"
+	"github.com/sylabs/singularity/internal/pkg/client/library"
 	"github.com/sylabs/singularity/internal/pkg/remote"
 	"github.com/sylabs/singularity/pkg/cmdline"
 	"github.com/sylabs/singularity/pkg/syfs"
@@ -228,7 +229,7 @@ var RemoteGetLoginPasswordCmd = &cobra.Command{
 			sylog.Errorf("Error initializing config: %v", err)
 		}
 
-		password, err := singularity.RemoteGetLoginPassword(config)
+		password, err := library.GetOCIToken(config)
 		if err != nil {
 			sylog.Errorf("error: %v", err)
 		}
