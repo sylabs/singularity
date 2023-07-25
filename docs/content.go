@@ -616,22 +616,36 @@ Enterprise Performance Computing (EPC)`
   shub: Pull an image from Singularity Hub
       shub://user/image:tag
 
-  oras: Pull a SIF image from an OCI registry that supports ORAS.
+  oras: Pull an image from an OCI registry that supports ORAS / OCI artifacts.
       oras://registry/namespace/image:tag
 
   http, https: Pull an image using the http(s?) protocol
-      https://library.sylabs.io/v1/imagefile/library/default/alpine:latest`
+      https://example.com/containers/mycontainer.sif
+  
+  By default, images from a library URI will be pulled in the same format they
+  were uploaded. If the --oci flag is specified then the pull is required
+  to result in an OCI-SIF image.
+
+  By default, images pulled from docker and other oci URIs will be converted
+  into a singularity native SIF image. If the --oci flag is specified then they
+  will be encapsulated in an OCI-SIF image.
+
+  Images pulled from a shub/oras/http/https URI are always directly downloaded,
+  in the same format as they were uploaded.`
 	PullExample string = `
   From Sylabs cloud library
   $ singularity pull alpine.sif library://alpine:latest
 
-  From Docker
+  From Docker to a singularity native SIF image
   $ singularity pull tensorflow.sif docker://tensorflow/tensorflow:latest
+
+  From Docker to an OCI-SIF image
+  $ singularity pull --oci tensorflow.oci.sif docker://tensorflow/tensorflow:latest
 
   From Shub
   $ singularity pull singularity-images.sif shub://vsoch/singularity-images
 
-  From supporting OCI registry (e.g. Azure Container Registry)
+  From an OCI registry supporting ORAS / OCI artifacts
   $ singularity pull image.sif oras://<username>.azurecr.io/namespace/image:tag`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

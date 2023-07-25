@@ -141,9 +141,8 @@ var pullOciFlag = cmdline.Flag{
 	DefaultValue: false,
 	Name:         "oci",
 	ShortHand:    "",
-	Usage:        "pull to an OCI-SIF (OCI sources only)",
+	Usage:        "pull to an OCI-SIF image (library and docker/OCI sources)",
 	EnvKeys:      []string{"OCI"},
-	Hidden:       true,
 }
 
 func init() {
@@ -268,11 +267,17 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Warningf("Skipping container verification")
 		}
 	case ShubProtocol:
+		if pullOci {
+			sylog.Fatalf("Pull from shub:// to OCI-SIF (--oci) is not supported.")
+		}
 		_, err := shub.PullToFile(ctx, imgCache, pullTo, pullFrom, tmpDir, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("While pulling shub image: %v\n", err)
 		}
 	case OrasProtocol:
+		if pullOci {
+			sylog.Warningf("Pull from oras:// URIs is a direct download, --oci has no effect.")
+		}
 		ociAuth, err := makeDockerCredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
@@ -283,6 +288,9 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While pulling image from oci registry: %v", err)
 		}
 	case HTTPProtocol, HTTPSProtocol:
+		if pullOci {
+			sylog.Warningf("Pull from http[s]:// URIs is a direct download, --oci has no effect.")
+		}
 		_, err := net.PullToFile(ctx, imgCache, pullTo, pullFrom, tmpDir)
 		if err != nil {
 			sylog.Fatalf("While pulling from image from http(s): %v\n", err)
