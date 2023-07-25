@@ -12,12 +12,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
-	"github.com/sylabs/singularity/pkg/ociruntime"
 )
 
 func randomContainerID(t *testing.T) string {
@@ -34,11 +33,11 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-func (c *ctx) checkOciState(t *testing.T, containerID, state string) {
+func (c *ctx) checkOciState(t *testing.T, containerID string, state specs.ContainerState) {
 	ok := false
 
 	checkStateFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
-		s := &ociruntime.State{}
+		s := &specs.State{}
 		if err := json.Unmarshal(r.Stdout, s); err != nil {
 			err = errors.Wrapf(err, "unmarshaling OCI state from JSON: %s", r.Stdout)
 			t.Errorf("can't unmarshal oci state output: %+v", err)
@@ -169,7 +168,7 @@ func (c ctx) testOciAttach(t *testing.T) {
 		e2e.ConsoleRun(),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				c.checkOciState(t, containerID, ociruntime.Created)
+				c.checkOciState(t, containerID, specs.StateCreated)
 			}
 		}),
 		e2e.ExpectExit(0),
@@ -183,7 +182,7 @@ func (c ctx) testOciAttach(t *testing.T) {
 		e2e.WithArgs(containerID),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				c.checkOciState(t, containerID, ociruntime.Running)
+				c.checkOciState(t, containerID, specs.StateRunning)
 			}
 		}),
 		e2e.ExpectExit(0),
@@ -202,7 +201,7 @@ func (c ctx) testOciAttach(t *testing.T) {
 		),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				c.checkOciState(t, containerID, ociruntime.Stopped)
+				c.checkOciState(t, containerID, specs.StateStopped)
 			}
 		}),
 		e2e.ExpectExit(0),
@@ -240,7 +239,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 		e2e.ConsoleRun(),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				c.checkOciState(t, containerID, ociruntime.Created)
+				c.checkOciState(t, containerID, specs.StateCreated)
 			}
 		}),
 		e2e.ExpectExit(0),
@@ -254,7 +253,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 		e2e.WithArgs(containerID),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				c.checkOciState(t, containerID, ociruntime.Running)
+				c.checkOciState(t, containerID, specs.StateRunning)
 			}
 		}),
 		e2e.ExpectExit(0),
@@ -272,7 +271,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 		}),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				c.checkOciState(t, containerID, ociruntime.Paused)
+				c.checkOciState(t, containerID, specs.ContainerState("paused"))
 			}
 		}),
 		e2e.ExpectExit(0),
@@ -290,7 +289,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 		}),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				c.checkOciState(t, containerID, ociruntime.Running)
+				c.checkOciState(t, containerID, specs.StateRunning)
 			}
 		}),
 		e2e.ExpectExit(0),
@@ -323,7 +322,7 @@ func (c ctx) testOciBasic(t *testing.T) {
 		e2e.WithArgs(containerID, "KILL"),
 		e2e.PostRun(func(t *testing.T) {
 			if !t.Failed() {
-				c.checkOciState(t, containerID, ociruntime.Stopped)
+				c.checkOciState(t, containerID, specs.StateStopped)
 			}
 		}),
 		e2e.ExpectExit(0),
