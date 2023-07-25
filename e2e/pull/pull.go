@@ -198,6 +198,7 @@ func (c *ctx) setup(t *testing.T) {
 	}
 }
 
+//nolint:maintidx
 func (c ctx) testPullCmd(t *testing.T) {
 	tests := []testStruct{
 		//

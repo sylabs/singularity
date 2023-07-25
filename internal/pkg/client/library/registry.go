@@ -21,7 +21,7 @@ import (
 type libraryRegistry struct {
 	library  string
 	registry string
-	ud       userData
+	ud       *userData
 }
 
 // newLibraryRegisty retrieves URI and authentication information for the
@@ -47,17 +47,20 @@ func newLibraryRegistry(ep *endpoint.Config, LibraryConfig *scslibrary.Config) (
 	}
 	registry := strings.TrimSuffix(ru.Host+ru.Path, "/")
 
-	sylog.Debugf("Fetching OCI registry token")
-	ud, err := getUserData(LibraryConfig)
-	if err != nil {
-		return nil, err
-	}
-
 	lr := libraryRegistry{
 		library:  LibraryConfig.BaseURL,
 		registry: registry,
-		ud:       *ud,
 	}
+
+	if ep.Token != "" {
+		sylog.Debugf("Fetching OCI registry token")
+		ud, err := getUserData(LibraryConfig)
+		if err != nil {
+			return nil, err
+		}
+		lr.ud = ud
+	}
+
 	return &lr, nil
 }
 
@@ -78,8 +81,11 @@ func (lr *libraryRegistry) convertRef(libraryRef scslibrary.Ref) (string, error)
 }
 
 // authConfig returns a DockerAuthConfig with current token to authenticate
-// against the library's backing OCI registry.
+// against the library's backing OCI registry, if logged in - nil otherwise.
 func (lr *libraryRegistry) authConfig() *types.DockerAuthConfig {
+	if lr.ud == nil {
+		return nil
+	}
 	return &types.DockerAuthConfig{
 		Username: lr.ud.Username,
 		Password: lr.ud.OidcMeta.Secret,
