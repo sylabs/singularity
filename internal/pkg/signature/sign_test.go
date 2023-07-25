@@ -18,7 +18,7 @@ import (
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sylabs/sif/v2/pkg/integrity"
-	"github.com/sylabs/singularity/pkg/sypgp"
+	"github.com/sylabs/singularity/internal/pkg/sypgp"
 )
 
 // getTestSigner returns a fixed test Signer.

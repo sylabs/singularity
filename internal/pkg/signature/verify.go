@@ -22,8 +22,8 @@ import (
 	"github.com/sylabs/sif/v2/pkg/integrity"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/internal/pkg/sypgp"
 	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 // TODO - error overlaps with ECL - should probably become part of a common errors package at some point.

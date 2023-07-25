@@ -22,9 +22,9 @@ import (
 	"github.com/sylabs/sif/v2/pkg/integrity"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	sifsignature "github.com/sylabs/singularity/internal/pkg/signature"
+	"github.com/sylabs/singularity/internal/pkg/sypgp"
 	"github.com/sylabs/singularity/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 var (

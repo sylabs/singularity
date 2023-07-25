@@ -12,8 +12,8 @@ import (
 
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/syecl"
+	"github.com/sylabs/singularity/internal/pkg/sypgp"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/sypgp"
 	"golang.org/x/sys/unix"
 )
 
