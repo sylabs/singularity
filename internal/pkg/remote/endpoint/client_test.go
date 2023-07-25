@@ -7,6 +7,8 @@
 package endpoint
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -268,5 +270,27 @@ func TestBuilderClientConfig(t *testing.T) {
 				t.Errorf("unexpected token returned: %s", authToken)
 			}
 		})
+	}
+}
+
+func TestConfig_RegistryURI(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "../../../../test/remote/config.example.json")
+	}))
+	t.Cleanup(srv.Close)
+
+	ep := Config{
+		URI:      srv.URL,
+		Insecure: true,
+	}
+
+	expectRegistry := "https://registry.example.com"
+	rURI, err := ep.RegistryURI()
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	if rURI != expectRegistry {
+		t.Errorf("expected %q, got %q", expectRegistry, rURI)
 	}
 }

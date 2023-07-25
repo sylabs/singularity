@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -24,13 +24,19 @@ const defaultTimeout = 10 * time.Second
 
 // Default Sylabs cloud service endpoints.
 const (
-	SCSDefaultCloudURI     = "cloud.sylabs.io"
-	SCSDefaultLibraryURI   = "https://library.sylabs.io"
+	// SCSConfigPath is the path to the exposed configuration information of an SCS / Singularity Enterprise instance.
+	SCSConfigPath = "/assets/config/config.prod.json"
+	// SCSDefaultCloudURI is the primary hostname for Sylabs Singularity Container Services.
+	SCSDefaultCloudURI = "cloud.sylabs.io"
+	// SCSDefaultLibraryURI is the URI for the library service in SCS.
+	SCSDefaultLibraryURI = "https://library.sylabs.io"
+	// SCSDefaultKeyserverURI is the URI for the keyserver service in SCS.
 	SCSDefaultKeyserverURI = "https://keys.sylabs.io"
-	SCSDefaultBuilderURI   = "https://build.sylabs.io"
+	// SCSDefaultBuilderURI is the URI for the remote build service in SCS.
+	SCSDefaultBuilderURI = "https://build.sylabs.io"
 )
 
-// SCS cloud services
+// SCS cloud services - suffixed with 'API' in config.prod.json.
 const (
 	Consent   = "consent"
 	Token     = "token"
@@ -39,6 +45,9 @@ const (
 	Keyserver = "keyserver"
 	Builder   = "builder"
 )
+
+// RegistryURIConfigKey is the config key for the library OCI registry URI
+const RegistryURIConfigKey = "registryUri"
 
 var errorCodeMap = map[int]string{
 	404: "Invalid Credentials",
@@ -49,19 +58,22 @@ var errorCodeMap = map[int]string{
 // a service which doesn't support SCS status check.
 var ErrStatusNotSupported = errors.New("status not supported")
 
-// Service defines a simple service interface which can be exposed
-// to retrieve service URI and check the service status.
+// Service represents a remote service, accessible at Service.URI
 type Service interface {
+	// URI returns the URI used to access the remote service.
 	URI() string
+	// Status returns the status of the remote service, if supported.
 	Status() (string, error)
-}
-
-func newService(config *ServiceConfig) Service {
-	return &service{cfg: config}
+	// configKey returns the value of a requested configuration key, if set.
+	configVal(string) string
 }
 
 type service struct {
+	// cfg holds the serializable service configuration.
 	cfg *ServiceConfig
+	// configMap holds additional specific service configuration key/val pairs.
+	// e.g. `registryURI` most be known for the SCS/Enterprise library service to facilitate OCI-SIF push/pull/
+	configMap map[string]string
 }
 
 // URI returns the service URI.
@@ -109,6 +121,12 @@ func (s *service) Status() (version string, err error) {
 	return vRes.Version, nil
 }
 
+// configVal returns the value of the specified key (if present), in the
+// service's additional known configuration.
+func (s *service) configVal(key string) string {
+	return s.configMap[key]
+}
+
 func (ep *Config) GetAllServices() (map[string][]Service, error) {
 	if ep.services != nil {
 		return ep.services, nil
@@ -125,7 +143,7 @@ func (ep *Config) GetAllServices() (map[string][]Service, error) {
 		return nil, err
 	}
 
-	configURL := epURL + "/assets/config/config.prod.json"
+	configURL := epURL + SCSConfigPath
 
 	req, err := http.NewRequest(http.MethodGet, configURL, nil)
 	if err != nil {
@@ -170,20 +188,35 @@ func (ep *Config) GetAllServices() (map[string][]Service, error) {
 			continue
 		}
 
-		serviceConfig := &ServiceConfig{
+		sConfig := &ServiceConfig{
 			URI: uri,
 			credential: &credential.Config{
 				URI:  uri,
 				Auth: credential.TokenPrefix + ep.Token,
 			},
 		}
+		sConfigMap := map[string]string{}
 
+		// If the SCS/Enterprise instance reports a service called 'keystore'
+		// then override this to 'keyserver', as Singularity uses 'keyserver'
+		// internally.
 		if s == Keystore {
 			s = Keyserver
 		}
 
+		// Store the backing OCI registry URI for the library service (if any).
+		if s == Library {
+			registryURI, ok := v[RegistryURIConfigKey].(string)
+			if ok {
+				sConfigMap[RegistryURIConfigKey] = registryURI
+			}
+		}
+
 		ep.services[s] = []Service{
-			newService(serviceConfig),
+			&service{
+				cfg:       sConfig,
+				configMap: sConfigMap,
+			},
 		}
 	}
 
@@ -206,4 +239,18 @@ func (ep *Config) GetServiceURI(service string) (string, error) {
 	}
 
 	return s[0].URI(), nil
+}
+
+// getServiceConfigVal returns the value for the additional config key associated with service.
+func (ep *Config) getServiceConfigVal(service, key string) (string, error) {
+	services, err := ep.GetAllServices()
+	if err != nil {
+		return "", err
+	}
+
+	s, ok := services[service]
+	if !ok || len(s) == 0 {
+		return "", fmt.Errorf("%v is not a service at endpoint", service)
+	}
+	return s[0].configVal(key), nil
 }
