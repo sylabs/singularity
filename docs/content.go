@@ -1,4 +1,6 @@
-// Copyright (c) 2017-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -836,6 +838,7 @@ Enterprise Performance Computing (EPC)`
       SCIF_APPBIN        is the bin folder for the app, which is automatically added to the $PATH when the app is active
       SCIF_APPLIB        is the application's library folder that is added to the LD_LIBRARY_PATH
       SCIF_APPRUN        is the runscript
+      SCIF_APPSTART      is the startscript
       SCIF_APPHELP       is the help file for the runscript
       SCIF_APPTEST       is the testing script (test.sh) associated with the application
       SCIF_APPNAME       the name for the active application

@@ -1,4 +1,6 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -172,7 +174,11 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 	}
 
 	// Verify any apps
-	for _, app := range dfd.Apps {
+	appDetailImageVerify(t, cmdPath, imagePath, dfd.Apps)
+}
+
+func appDetailImageVerify(t *testing.T, cmdPath, imagePath string, apps []AppDetail) {
+	for _, app := range apps {
 		// %apphelp
 		if app.Help != nil {
 			helpPath := filepath.Join(imagePath, `/scif/apps/`, app.Name, `/scif/runscript.help`)
@@ -225,6 +231,18 @@ func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileD
 			}
 
 			if err := verifyScript(t, scriptPath, app.Run); err != nil {
+				t.Fatalf("unexpected failure in app %v: runscript: %v", app.Name, err)
+			}
+		}
+
+		// %appStart
+		if app.Start != nil {
+			scriptPath := filepath.Join(imagePath, "/scif/apps/", app.Name, "scif/startscript")
+			if !fs.IsFile(scriptPath) {
+				t.Fatalf("unexpected failure in app %v: Script %v does not exist in app", app.Name, scriptPath)
+			}
+
+			if err := verifyScript(t, scriptPath, app.Start); err != nil {
 				t.Fatalf("unexpected failure in app %v: runscript: %v", app.Name, err)
 			}
 		}

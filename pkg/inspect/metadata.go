@@ -1,4 +1,6 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,6 +15,7 @@ type AppAttributes struct {
 	Environment map[string]string `json:"environment,omitempty"`
 	Labels      map[string]string `json:"labels,omitempty"`
 	Runscript   string            `json:"runscript,omitempty"`
+	Startscript string            `json:"startscript,omitempty"`
 	Test        string            `json:"test,omitempty"`
 	Helpfile    string            `json:"helpfile,omitempty"`
 }

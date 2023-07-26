@@ -112,4 +112,5 @@ The following have contributed code and/or documentation to this repository.
 - Onur Yılmaz <csonuryilmaz@gmail.com>
 - Pranathi Locula <locula@deshaw.com>
 - Filip Gorczyca <filip.gorczyca141@gmail.com>
+- Carmelo Piccione <carmelo.piccione@gmail.com>
 ```

@@ -1,4 +1,6 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -309,7 +311,11 @@ func (c *command) setAttribute(section, value, file string) error {
 			c.metadata.Data.Attributes.Runscript = value
 		}
 	case "startscript":
-		c.metadata.Data.Attributes.Startscript = value
+		if app != "" {
+			c.metadata.Data.Attributes.Apps[app].Startscript = value
+		} else {
+			c.metadata.Data.Attributes.Startscript = value
+		}
 	case "environment":
 		if app != "" {
 			c.metadata.Data.Attributes.Apps[app].Environment[file] = value
@@ -458,7 +464,12 @@ func (c *command) addStartscriptCommand() {
 		return
 	}
 
-	if c.appName == "" {
+	if c.appName != "" {
+		if c.sifMetadata.Attributes.Apps[c.appName] != nil {
+			c.metadata.AddApp(c.appName)
+			c.metadata.Attributes.Apps[c.appName].Startscript = c.sifMetadata.Attributes.Apps[c.appName].Startscript
+		}
+	} else {
 		c.metadata.Attributes.Startscript = c.sifMetadata.Attributes.Startscript
 	}
 }
@@ -666,10 +677,8 @@ var InspectCmd = &cobra.Command{
 		}
 
 		if startscript || allData {
-			if appName == "" {
-				sylog.Debugf("Inspection of startscript selected.")
-				inspectCmd.addStartscriptCommand()
-			}
+			sylog.Debugf("Inspection of startscript selected.")
+			inspectCmd.addStartscriptCommand()
 		}
 
 		if testfile || allData {
@@ -721,6 +730,8 @@ var InspectCmd = &cobra.Command{
 			}
 			if inspectData.Data.Attributes.Startscript != "" {
 				fmt.Printf("%s\n", inspectData.Data.Attributes.Startscript)
+			} else if appAttr != nil && appAttr.Startscript != "" {
+				fmt.Printf("%s\n", appAttr.Startscript)
 			}
 			if inspectData.Data.Attributes.Test != "" {
 				fmt.Printf("%s\n", inspectData.Data.Attributes.Test)

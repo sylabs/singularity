@@ -112,6 +112,10 @@
   artifacts using `oras://` URIs.
 - OCI-SIF images can be pushed/pulled to/from OCI registries as single layer,
   squashfs layer format OCI images using `docker://` URIs.
+- The `instance start` command now accepts an optional `--app <name>` argument
+  which invokes start script within the `%appstart <name>` section in the
+  definition file. The `instance stop` command still only requires the instance
+  name.
 
 ### Developer / API
 
