@@ -31,3 +31,14 @@ func findFromConfigOnly(name string) (path string, err error) {
 func findConmon(name string) (path string, err error) {
 	return findOnPath(name)
 }
+
+// findSquashfuse looks for squashfuse_ll / squashfuse on PATH.
+func findSquashfuse(name string) (path string, err error) {
+	// squashfuse_ll if found on PATH
+	llPath, err := findOnPath("squashfuse_ll")
+	if err == nil {
+		return llPath, nil
+	}
+	// squashfuse if found on PATH
+	return findOnPath(name)
+}

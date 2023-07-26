@@ -85,7 +85,7 @@ commands:
             <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q update
       - run:
           name: Install dependencies
-          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>DEBIAN_FRONTEND=noninteractive apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin libglib2.0-dev squashfuse dbus-user-session uidmap
+          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>DEBIAN_FRONTEND=noninteractive apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin libfuse-dev libglib2.0-dev dbus-user-session uidmap
       - run:
           name: Install proot
           command: |-
@@ -180,7 +180,7 @@ jobs:
       - checkout
       - run:
           name: Fetch deps
-          command: apk add -q --no-cache git alpine-sdk automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup libseccomp-dev glib-dev
+          command: apk add -q --no-cache git alpine-sdk autoconf automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup libseccomp-dev glib-dev fuse-dev
       - update-submodules
       - build-singularity
 

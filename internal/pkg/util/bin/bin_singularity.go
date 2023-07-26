@@ -105,3 +105,19 @@ func findConmon(name string) (path string, err error) {
 	}
 	return findOnPath(name)
 }
+
+// findSquashfuse returns either the bundled squashfuse_ll (if built), or looks
+// for squashfuse_ll / squashfuse on PATH.
+func findSquashfuse(name string) (path string, err error) {
+	// Bundled squashfuse_ll if it was built
+	if buildcfg.SQUASHFUSE_LIBEXEC == 1 {
+		return filepath.Join(buildcfg.LIBEXECDIR, "singularity", "bin", "squashfuse_ll"), nil
+	}
+	// squashfuse_ll if found on PATH
+	llPath, err := findOnPath("squashfuse_ll")
+	if err == nil {
+		return llPath, nil
+	}
+	// squashfuse if found on PATH
+	return findOnPath(name)
+}
