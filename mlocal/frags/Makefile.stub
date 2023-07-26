@@ -24,7 +24,7 @@ check: codegen
 	@echo "       PASS"
 
 .PHONY: dist
-dist: conmon_CLEAN
+dist: conmon_CLEAN squashfuse_CLEAN
 	$(V) if test -e '$(SOURCEDIR)/vendor' ; then \
 		echo 'E: There is a vendor directory in $(SOURCEDIR).' ; \
 		echo 'E: This is unexpected. Abort.' ; \

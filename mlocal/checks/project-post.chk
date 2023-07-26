@@ -52,6 +52,7 @@ config_add_def SESSIONDIR LOCALSTATEDIR \"/singularity/mnt/session\"
 config_add_def SINGULARITY_SUID_INSTALL $with_suid
 config_add_def PLUGIN_ROOTDIR LIBEXECDIR \"/singularity/plugin\"
 config_add_def CONMON_LIBEXEC $with_conmon 
+config_add_def SQUASHFUSE_LIBEXEC $with_squashfuse 
 
 # engine configuration constants
 engine_config_env="ENGINE_CONFIG"
@@ -375,6 +376,38 @@ if [ "$with_conmon" = "1" ]; then
    fi
 fi
 
+########################
+# squashfuse deps
+########################
+if [ "$with_squashfuse" = "1" ]; then
+
+   printf " checking: squashfuse source... "
+   if [ ! -f "$sourcedir/third_party/squashfuse/autogen.sh" ]; then
+      echo "no"
+      echo
+      echo "squashfuse source not found"
+      echo
+      echo "Unless you are building --without-squashfuse you must 'git clone --recurse-submodules'"
+      echo "or 'git submodule update --init'."
+      echo
+      exit 2
+   fi
+   echo "yes"
+
+   printf " checking: squashfuse libfuse headers... "
+   fuse_iflags=`pkg-config --cflags fuse 2>/dev/null || true`
+   fuse_lflags=`pkg-config --libs fuse 2>/dev/null || true`
+   if ! printf "#include <fuse.h>\nint main() { }" | \
+      $tgtcc $user_cflags $ldflags $fuse_iflags -x c -o /dev/null - $fuse_lflags >/dev/null 2>&1; then  
+      echo "no"
+      echo
+      echo "libfuse headers are required to build squashfuse."
+      echo
+      exit 2
+   else
+   echo "yes"
+   fi
+fi
 
 ################################
 # Configurable external programs

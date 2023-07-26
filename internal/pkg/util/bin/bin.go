@@ -41,8 +41,11 @@ func FindBin(name string) (path string, err error) {
 		return findFromConfigOnly(name)
 	// distro provided squashfuse and fusermount for unpriv SIF mount and
 	// OCI-mode bare-image overlay
-	case "squashfuse", "fusermount":
+	case "fusermount":
 		return findOnPath(name)
+	case "squashfuse":
+		// Behavior depends on buildcfg - whether to use bundled squashfuse_ll or external squashfuse_ll/squashfuse
+		return findSquashfuse(name)
 	// fuse2fs for OCI-mode bare-image overlay
 	case "fuse2fs":
 		return findOnPath(name)

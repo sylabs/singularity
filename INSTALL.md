@@ -20,6 +20,7 @@ sudo apt-get install -y \
     build-essential \
     libseccomp-dev \
     libglib2.0-dev \
+    libfuse-dev \
     pkg-config \
     squashfs-tools \
     cryptsetup \
@@ -37,6 +38,7 @@ sudo yum groupinstall -y 'Development Tools'
 # Install RPM packages for dependencies
 sudo yum install -y \
     libseccomp-devel \
+    fuse-devel \
     glib2-devel \
     squashfs-tools \
     cryptsetup \
@@ -53,6 +55,7 @@ sudo yum groupinstall -y 'Development Tools'
 # Install RPM packages for dependencies
 sudo yum install -y \
     libseccomp-devel \
+    fuse-devel \
     glib2-devel \
     squashfs-tools \
     cryptsetup \
