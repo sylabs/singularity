@@ -53,6 +53,7 @@ config_add_def SINGULARITY_SUID_INSTALL $with_suid
 config_add_def PLUGIN_ROOTDIR LIBEXECDIR \"/singularity/plugin\"
 config_add_def CONMON_LIBEXEC $with_conmon 
 config_add_def SQUASHFUSE_LIBEXEC $with_squashfuse 
+config_add_def SQFSTAR_LIBEXEC $with_sqfstar 
 
 # engine configuration constants
 engine_config_env="ENGINE_CONFIG"
@@ -407,6 +408,25 @@ if [ "$with_squashfuse" = "1" ]; then
    else
    echo "yes"
    fi
+fi
+
+########################
+# sqfstar deps
+########################
+if [ "$with_sqfstar" = "1" ]; then
+
+   printf " checking: squashfs-tools source... "
+   if [ ! -f "$sourcedir/third_party/squashfs-tools/squashfs-tools/Makefile" ]; then
+      echo "no"
+      echo
+      echo "squashfs-tools source not found"
+      echo
+      echo "Unless you are building --without-sqfstar you must 'git clone --recurse-submodules'"
+      echo "or 'git submodule update --init'."
+      echo
+      exit 2
+   fi
+   echo "yes"
 fi
 
 ################################

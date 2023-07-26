@@ -46,6 +46,9 @@ func FindBin(name string) (path string, err error) {
 	case "squashfuse":
 		// Behavior depends on buildcfg - whether to use bundled squashfuse_ll or external squashfuse_ll/squashfuse
 		return findSquashfuse(name)
+	case "sqfstar":
+		// Behavior depends on buildcfg - whether to use bundled sqfstar or external sqfstar/tar2sqfs
+		return findSqfstar(name)
 	// fuse2fs for OCI-mode bare-image overlay
 	case "fuse2fs":
 		return findOnPath(name)

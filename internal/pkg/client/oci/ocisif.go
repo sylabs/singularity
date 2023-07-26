@@ -28,6 +28,7 @@ import (
 	"github.com/sylabs/sif/v2/pkg/sif"
 	buildoci "github.com/sylabs/singularity/internal/pkg/build/oci"
 	"github.com/sylabs/singularity/internal/pkg/cache"
+	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/pkg/sylog"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
@@ -178,7 +179,11 @@ func convertLayoutToOciSif(layoutDir string, digest v1.Hash, imageDest, workDir 
 	if len(layers) != 1 {
 		return fmt.Errorf("%d > 1 layers remaining after squash operation", len(layers))
 	}
-	squashfsLayer, err := mutate.SquashfsLayer(layers[0], workDir)
+	sqfsLayerConv, err := bin.FindBin("sqfstar")
+	if err != nil {
+		return fmt.Errorf("couldn't find appropriate utility for converting layer into squashfs format: %w", err)
+	}
+	squashfsLayer, err := mutate.SquashfsLayer(layers[0], workDir, mutate.OptSquashfsLayerConverter(sqfsLayerConv))
 	if err != nil {
 		return fmt.Errorf("while converting to squashfs format: %w", err)
 	}

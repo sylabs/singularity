@@ -4,3 +4,6 @@
 [submodule "third_party/squashfuse"]
 	path = third_party/squashfuse
 	url = https://github.com/vasi/squashfuse
+[submodule "third_party/squashfs-tools"]
+	path = third_party/squashfs-tools
+	url = https://github.com/plougher/squashfs-tools

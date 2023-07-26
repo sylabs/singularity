@@ -52,6 +52,9 @@
   submodule unless `--without-squashfuse` is specified as an argument to
   `mconfig`. When built with `--without-squashfuse`, `squashfuse_ll` or
   `squashfuse` will be located on `PATH`. Version 0.2.0 or later is required.
+- Singularity uses `sqfstar`, which is built from a git submodule unless
+  `--without-sqfstar` is specified as an argument to `mconfig`. When built with
+  `--without-sqfstar`, `sqfstar` or `tar2sqfs` will be located on `PATH`.
 
 ### New Features & Functionality
 

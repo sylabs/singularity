@@ -58,6 +58,7 @@ fi
 with_network=1
 with_conmon=1
 with_squashfuse=1
+with_sqfstar=1
 with_suid=1
 with_seccomp_check=1
 
@@ -120,6 +121,7 @@ usage_args () {
   echo "  Third-party dependencies:"
   echo "     --without-conmon      do not build conmon, use distro provided version"
   echo "     --without-squashfuse  do not build squashfuse, use distro provided version"
+  echo "     --without-sqfstar     do not build sqfstar, use distro provided version"
 	echo
 	echo "  Path modification options:"
 	echo "     --prefix         install project in \`prefix'"
@@ -381,6 +383,8 @@ while [ $# -ne 0 ]; do
    with_conmon=0; shift;;
   --without-squashfuse)
    with_squashfuse=0; shift;;
+  --without-sqfstar)
+   with_sqfstar=0; shift;;
   --reproducible)
    reproducible=1; shift;;
   -V)
@@ -848,6 +852,11 @@ if [ "$with_squashfuse" = 1 ]; then
     cat $makeit_fragsdir/build_squashfuse.mk >> $makeit_makefile
 fi
 
+if [ "$with_sqfstar" = 1 ]; then
+    drawline $makeit_fragsdir/build_sqfstar.mk
+    cat $makeit_fragsdir/build_sqfstar.mk >> $makeit_makefile
+fi
+
 if [ "$build_runtime" = 1 ]; then
 	drawline $makeit_fragsdir/build_runtime.mk
 	cat $makeit_fragsdir/build_runtime.mk >> $makeit_makefile
@@ -935,6 +944,11 @@ if [ "$with_squashfuse" = 0 ]; then
 	echo "    - Build squashfuse: no"
 else
 	echo "    - Build squashfuse: yes"
+fi
+if [ "$with_sqfstar" = 0 ]; then
+	echo "    - Build sqfstar: no"
+else
+	echo "    - Build sqfstar: yes"
 fi
 echo "      ---"
 if [ "$verbose" = 1 ]; then

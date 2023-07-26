@@ -42,3 +42,20 @@ func findSquashfuse(name string) (path string, err error) {
 	// squashfuse if found on PATH
 	return findOnPath(name)
 }
+
+// findSqfstar looks for sqfstar / tar2sqfs on PATH.
+func findSqfstar(name string) (path string, err error) {
+	// sqfstar if found on PATH
+	llPath, sqfstarErr := findOnPath("sqfstar")
+	if sqfstarErr == nil {
+		return llPath, nil
+	}
+
+	// tar2sqfs if found on PATH
+	llPath, tar2sqfsErr := findOnPath("tar2sqfs")
+	if tar2sqfsErr == nil {
+		return llPath, nil
+	}
+
+	return "", fmt.Errorf("could not find sqfstar or tar2sqfs on path: %w", sqfstarErr)
+}
