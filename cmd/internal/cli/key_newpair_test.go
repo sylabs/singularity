@@ -13,7 +13,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/sylabs/singularity/pkg/sypgp"
+	"github.com/sylabs/singularity/internal/pkg/sypgp"
 
 	"gotest.tools/v3/assert"
 )

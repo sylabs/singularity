@@ -14,8 +14,8 @@ import (
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/docs"
 	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
+	"github.com/sylabs/singularity/internal/pkg/sypgp"
 	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/sypgp"
 )
 
 // KeySearchCmd is 'singularity key search' and look for public keys from a key server
