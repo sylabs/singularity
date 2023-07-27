@@ -85,7 +85,20 @@ commands:
             <<# parameters.sudo >>sudo <</ parameters.sudo >>apt-get -q update
       - run:
           name: Install dependencies
-          command: <<# parameters.sudo >>sudo <</ parameters.sudo >>DEBIAN_FRONTEND=noninteractive apt-get -q install -y build-essential squashfs-tools libseccomp-dev libssl-dev uuid-dev cryptsetup-bin libfuse-dev libglib2.0-dev dbus-user-session uidmap
+          command: |-
+            <<# parameters.sudo >>sudo <</ parameters.sudo >>DEBIAN_FRONTEND=noninteractive apt-get -q install -y autoconf \
+              automake \
+              build-essential \
+              cryptsetup \
+              git \
+              libfuse-dev \
+              libglib2.0-dev \
+              libseccomp-dev \
+              libtool \
+              pkg-config \
+              squashfs-tools \
+              uidmap \
+              zlib1g-dev
       - run:
           name: Install proot
           command: |-
@@ -180,7 +193,19 @@ jobs:
       - checkout
       - run:
           name: Fetch deps
-          command: apk add -q --no-cache git alpine-sdk autoconf automake libtool linux-headers libarchive-dev util-linux-dev libuuid openssl-dev gawk sed cryptsetup libseccomp-dev glib-dev fuse-dev
+          command: |-
+            apk add -q --no-cache alpine-sdk \
+              autoconf \
+              automake \
+              cryptsetup \
+              fuse3-dev \
+              gawk \
+              git \
+              glib-dev \
+              libseccomp-dev \
+              libtool \
+              sed \
+              squashfs-tools
       - update-submodules
       - build-singularity
 
@@ -270,7 +295,15 @@ jobs:
           name: Install dependencies
           command: |-
             yum groupinstall -q -y 'Development Tools'
-            yum install -q -y cryptsetup libseccomp-devel squashfs-tools glib2-devel
+            yum install -q -y autoconf \
+             automake \
+             cryptsetup \
+             fuse3-devel \
+             glib2-devel \
+             libseccomp-devel \
+             libtool \
+             squashfs-tools \
+             zlib-devel
       - run:
           name: Install Go
           command: |-
@@ -301,7 +334,22 @@ jobs:
           name: Install dependencies
           command: |-
             apt-get update
-            DEBIAN_FRONTEND=noninteractive apt-get install -y build-essential git libseccomp-dev pkg-config squashfs-tools cryptsetup dh-golang devscripts fakeroot libglib2.0-dev
+            DEBIAN_FRONTEND=noninteractive apt-get install -y autoconf \
+              automake \
+              build-essential \
+              cryptsetup \
+              devscripts \
+              dh-golang \
+              fakeroot \
+              git \
+              libfuse-dev \
+              libglib2.0-dev \
+              libseccomp-dev \
+              libtool \
+              pkg-config \
+              squashfs-tools \
+              uidmap \
+              zlib1g-dev
       - run:
           name: Install Go
           command: |-

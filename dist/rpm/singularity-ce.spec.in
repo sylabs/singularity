@@ -44,6 +44,7 @@ Source: %{name}-@PACKAGE_VERSION@.tar.gz
 # mock. Distro packages derived from this spec need to require it.
 BuildRequires: gcc
 BuildRequires: make
+BuildRequires: /usr/bin/pkg-config
 # Paths to runtime dependencies detected by mconfig, so must be present at build time.
 BuildRequires: cryptsetup
 %if "%{_target_vendor}" == "suse"
@@ -54,6 +55,12 @@ BuildRequires: squashfs-tools
 # Required for building bundled conmon
 BuildRequires: libseccomp-devel
 BuildRequires: glib2-devel
+# Required for building bundled squashfuse
+BuildRequires: autoconf
+BuildRequires: automake
+BuildRequires: fuse3-devel
+BuildRequires: libtool
+BuildRequires: zlib-devel
 
 # crun requirement not satisfied on EL7 or SLES default repos - use runc there.
 %if "%{_target_vendor}" == "suse" || 0%{?rhel} < 8
@@ -68,6 +75,7 @@ Requires: shadow-utils
 Requires: squashfs-tools
 %endif
 Requires: cryptsetup
+Requires: fuse3
 
 Provides: %{name}-runtime
 
@@ -119,6 +127,7 @@ container platform designed to be simple, fast, and secure.
 %dir %{_libexecdir}/singularity
 %dir %{_libexecdir}/singularity/bin
 %{_libexecdir}/singularity/bin/conmon
+%{_libexecdir}/singularity/bin/squashfuse_ll
 %{_libexecdir}/singularity/bin/starter
 %dir %{_libexecdir}/singularity/cni
 %{_libexecdir}/singularity/cni/*

@@ -394,19 +394,38 @@ if [ "$with_squashfuse" = "1" ]; then
    fi
    echo "yes"
 
-   printf " checking: squashfuse libfuse headers... "
+   has_fuse3=0
+   has_fuse=0
+
+   printf " checking: squashfuse fuse3 headers... "
+   fuse_iflags=`pkg-config --cflags fuse3 2>/dev/null || true`
+   fuse_lflags=`pkg-config --libs fuse3 2>/dev/null || true`
+   if printf "#include <fuse.h>\nint main() { }" | \
+      $tgtcc -DFUSE_USE_VERSION=32 $user_cflags $ldflags $fuse_iflags -x c -o /dev/null - $fuse_lflags >/dev/null  2>&1; then
+      echo "yes"
+      has_fuse3=1
+   else
+      echo "no"
+   fi
+
+   printf " checking: squashfuse fuse headers... "
    fuse_iflags=`pkg-config --cflags fuse 2>/dev/null || true`
    fuse_lflags=`pkg-config --libs fuse 2>/dev/null || true`
-   if ! printf "#include <fuse.h>\nint main() { }" | \
-      $tgtcc $user_cflags $ldflags $fuse_iflags -x c -o /dev/null - $fuse_lflags >/dev/null 2>&1; then  
+   if printf "#include <fuse.h>\nint main() { }" | \
+      $tgtcc $user_cflags $ldflags $fuse_iflags -x c -o /dev/null - $fuse_lflags  >/dev/null 2>&1; then
+      echo "yes"
+      has_fuse=1
+   else
       echo "no"
+   fi
+
+   if [ $has_fuse3 -eq 0 -a $has_fuse -eq 0 ]; then
       echo
-      echo "libfuse headers are required to build squashfuse."
+      echo "fuse / fuse3 (libfuse / libfuse3) headers are required to build squashfuse."
       echo
       exit 2
-   else
-   echo "yes"
    fi
+
 fi
 
 ################################
