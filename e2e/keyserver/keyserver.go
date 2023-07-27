@@ -46,7 +46,7 @@ func (c ctx) keyserver(t *testing.T) {
 			command: addKeyserver,
 			args:    []string{"--insecure", testKeyserver},
 			listLines: []string{
-				"SylabsCloud*",
+				"SylabsCloud*^",
 				"   #1  https://keys.sylabs.io  🔒",
 				"   #2  http://localhost:11371",
 			},
@@ -79,7 +79,7 @@ func (c ctx) keyserver(t *testing.T) {
 			command: addKeyserver,
 			args:    []string{"--order", "1", testKeyserver},
 			listLines: []string{
-				"SylabsCloud*",
+				"SylabsCloud*^",
 				"   #1  http://localhost:11371  🔒",
 				"   #2  https://keys.sylabs.io  🔒",
 			},
@@ -98,7 +98,7 @@ func (c ctx) keyserver(t *testing.T) {
 			command: removeKeyserver,
 			args:    []string{sylabsKeyserver},
 			listLines: []string{
-				"SylabsCloud*",
+				"SylabsCloud*^",
 				"   #1  http://localhost:11371  🔒",
 			},
 			expectExit: 0,
@@ -116,7 +116,7 @@ func (c ctx) keyserver(t *testing.T) {
 			command: addKeyserver,
 			args:    []string{sylabsKeyserver},
 			listLines: []string{
-				"SylabsCloud*",
+				"SylabsCloud*^",
 				"   #1  http://localhost:11371  🔒",
 				"   #2  https://keys.sylabs.io  🔒",
 			},
@@ -128,7 +128,7 @@ func (c ctx) keyserver(t *testing.T) {
 			command: removeKeyserver,
 			args:    []string{testKeyserver},
 			listLines: []string{
-				"SylabsCloud*",
+				"SylabsCloud*^",
 				"   #1  https://keys.sylabs.io  🔒",
 			},
 			expectExit: 0,

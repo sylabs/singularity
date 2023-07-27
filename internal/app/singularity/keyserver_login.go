@@ -30,10 +30,6 @@ func KeyserverLogin(usrConfigFile string, args *LoginArgs) (err error) {
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	if err := syncSysConfig(c); err != nil {
-		return err
-	}
-
 	if err := c.Login(args.Name, args.Username, args.Password, args.Insecure); err != nil {
 		return fmt.Errorf("while login to %s: %s", args.Name, err)
 	}

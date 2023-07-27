@@ -560,7 +560,7 @@ func sylabsRemote() (*endpoint.Config, error) {
 		c = cSys
 	} else {
 		// sync cUsr with system config cSys
-		if err := cUsr.SyncFrom(cSys); err != nil {
+		if err := cUsr.CheckForRemoteCollisions(cSys); err != nil {
 			return nil, err
 		}
 		c = cUsr

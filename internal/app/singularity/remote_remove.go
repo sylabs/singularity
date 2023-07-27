@@ -28,6 +28,10 @@ func RemoteRemove(configFile, name string) (err error) {
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
+	if name == c.DefaultRemote {
+		return fmt.Errorf("cannot remove remote endpoint %q while it is set to default; please use the 'remote use' command to choose another default remote before removing this one (and remember that '--global' must be used to change the system-wide default endpoint)", name)
+	}
+
 	if err := c.Remove(name); err != nil {
 		return err
 	}

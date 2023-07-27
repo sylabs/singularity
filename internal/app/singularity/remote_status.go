@@ -56,10 +56,6 @@ func RemoteStatus(usrConfigFile, name string) (err error) {
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	if err := syncSysConfig(c); err != nil {
-		return err
-	}
-
 	var e *endpoint.Config
 	if name == "" {
 		e, err = c.GetDefault()

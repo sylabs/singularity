@@ -12,13 +12,15 @@ import (
 	"sort"
 	"text/tabwriter"
 
+	"github.com/samber/lo"
 	"github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
 )
 
 const listLine = "%s\t%s\t%s\t%s\t%s\t%s\n"
 
 // RemoteList prints information about remote configurations
-func RemoteList(usrConfigFile string) (err error) {
+func RemoteList(usrConfigFile string) error {
 	c := &remote.Config{}
 
 	// opening config file
@@ -37,50 +39,57 @@ func RemoteList(usrConfigFile string) (err error) {
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	if err := syncSysConfig(c); err != nil {
-		return err
+	// get system remote-endpoint configuration
+	cSys, err := remote.GetSysConfig()
+	if err != nil {
+		return fmt.Errorf("while trying to access system remote-endpoint config: %w", err)
 	}
 
-	// list in alphanumeric order
-	names := make([]string, 0, len(c.Remotes))
-	for n := range c.Remotes {
-		names = append(names, n)
+	// get default remote endpoint
+	defaultRemote, err := c.GetDefaultWithSys(cSys)
+	if err != nil {
+		return fmt.Errorf("error getting default remote-endpoint: %w", err)
 	}
-	sort.Slice(names, func(i, j int) bool {
-		iName, jName := names[i], names[j]
 
-		if c.Remotes[iName].System && !c.Remotes[jName].System {
-			return true
-		} else if !c.Remotes[iName].System && c.Remotes[jName].System {
-			return false
-		}
+	// list remote-endpoints in alphanumeric order
+	remoteNames := lo.Keys(c.Remotes)[:]
+	sysRemoteNames := []string{}
+	if cSys != nil {
+		sysRemoteNames = lo.Keys(cSys.Remotes)
+	}
 
-		return names[i] < names[j]
-	})
-	sort.Strings(names)
+	sort.Strings(remoteNames)
+	sort.Strings(sysRemoteNames)
 
 	fmt.Println()
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintf(tw, listLine, "NAME", "URI", "DEFAULT?", "GLOBAL?", "EXCLUSIVE?", "SECURE?")
-	for _, n := range names {
-		sys := ""
-		if c.Remotes[n].System {
-			sys = "✓"
+	printLine := func(name string, r *endpoint.Config, isGlobal bool) {
+		globalStr := ""
+		if isGlobal {
+			globalStr = "✓"
 		}
 		excl := ""
-		if c.Remotes[n].Exclusive {
+		if r.Exclusive {
 			excl = "✓"
 		}
 		secure := "✓"
-		if c.Remotes[n].Insecure {
+		if r.Insecure {
 			secure = "✗!"
 		}
 		isDefault := ""
-		if c.DefaultRemote != "" && c.DefaultRemote == n {
+		if r == defaultRemote {
 			isDefault = "✓"
 		}
 
-		fmt.Fprintf(tw, listLine, n, c.Remotes[n].URI, isDefault, sys, excl, secure)
+		fmt.Fprintf(tw, listLine, name, r.URI, isDefault, globalStr, excl, secure)
+	}
+
+	for _, n := range remoteNames {
+		printLine(n, c.Remotes[n], false)
+	}
+	for _, n := range sysRemoteNames {
+		printLine(n, cSys.Remotes[n], true)
 	}
 	tw.Flush()
 

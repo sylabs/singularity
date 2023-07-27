@@ -43,7 +43,7 @@ func TestRemoteRemove(t *testing.T) {
 			name:       "valid config file; valid remote name; default",
 			cfgFile:    validCfgFile,
 			remoteName: "cloud_testing",
-			shallPass:  true,
+			shallPass:  false, // should not pass because of attempt to remove default endpoint
 		},
 		{
 			name:       "valid config file; valid remote name; not default",

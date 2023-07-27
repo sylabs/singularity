@@ -29,10 +29,6 @@ func RegistryLogout(usrConfigFile, name string) (err error) {
 		return fmt.Errorf("while parsing configuration data: %s", err)
 	}
 
-	if err := syncSysConfig(c); err != nil {
-		return err
-	}
-
 	// services
 	if err := c.Logout(name); err != nil {
 		return fmt.Errorf("while verifying token: %v", err)

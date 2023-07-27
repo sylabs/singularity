@@ -34,10 +34,6 @@ func RegistryList(usrConfigFile string) (err error) {
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	if err := syncSysConfig(c); err != nil {
-		return err
-	}
-
 	fmt.Println()
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintf(tw, "%s\t%s\n", "URI", "SECURE?")

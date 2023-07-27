@@ -30,10 +30,6 @@ func RemoteLogout(usrConfigFile, name string) (err error) {
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	if err := syncSysConfig(c); err != nil {
-		return err
-	}
-
 	var r *endpoint.Config
 	if name == "" {
 		r, err = c.GetDefault()

@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/internal/pkg/remote"
 )
 
 // If a remote is set to a different endpoint we should be able to pull
@@ -29,7 +30,7 @@ func (c ctx) issue5808(t *testing.T) {
 	defer cleanup(t)
 
 	// Add another endpoint
-	argv := []string{"add", "--no-login", testEndpoint, testEndpointURI}
+	argv := []string{"add", "--no-login", "--no-default", testEndpoint, testEndpointURI}
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("remote add"),
@@ -40,6 +41,17 @@ func (c ctx) issue5808(t *testing.T) {
 	)
 	// Remove test remote when we are done here
 	defer func(t *testing.T) {
+		// Set default back to SylabsCloud
+		argv = []string{"use", remote.DefaultRemoteName}
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest("remote use"),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("remote"),
+			e2e.WithArgs(argv...),
+			e2e.ExpectExit(0),
+		)
+
 		argv := []string{"remove", testEndpoint}
 		c.env.RunSingularity(
 			t,

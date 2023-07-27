@@ -162,6 +162,7 @@ func (c ctx) remoteDefaultOrNot(t *testing.T) {
 // 1. Adds remote endpoints
 // 2. Deletes the already added entries
 // 3. Verfies that removing an invalid entry results in a failure
+// nolint:dupl
 func (c ctx) remoteRemove(t *testing.T) {
 	config, err := os.CreateTemp(c.env.TestDir, "testConfig-")
 	if err != nil {
@@ -197,7 +198,6 @@ func (c ctx) remoteRemove(t *testing.T) {
 		remote string
 	}{
 		{"RemoveCloud", "cloud"},
-		{"RemoveOther", "other"},
 	}
 
 	for _, tt := range testPass {
@@ -216,6 +216,7 @@ func (c ctx) remoteRemove(t *testing.T) {
 		name   string
 		remote string
 	}{
+		{"RemoveOtherWhichIsDefault", "other"},
 		{"RemoveNonExistingRemote", "cloud"},
 	}
 
@@ -309,6 +310,7 @@ func (c ctx) remoteUse(t *testing.T) {
 // 1. Adds remote endpoints
 // 2. Verifies that remote status command succeeds on existing endpoints
 // 3. Verifies that remote status command fails on non-existing endpoints
+// nolint:dupl
 func (c ctx) remoteStatus(t *testing.T) {
 	config, err := os.CreateTemp(c.env.TestDir, "testConfig-")
 	if err != nil {
@@ -580,6 +582,13 @@ func (c ctx) remoteUseExclusive(t *testing.T) {
 			profile:    e2e.UserProfile,
 		},
 		{
+			name:       "use remote SylabsCloud globally",
+			command:    "remote use",
+			args:       []string{"--global", sylabsRemote},
+			expectExit: 0,
+			profile:    e2e.RootProfile,
+		},
+		{
 			name:       "remove e2e remote",
 			command:    "remote remove",
 			args:       []string{"--global", testRemote},
@@ -603,13 +612,6 @@ func (c ctx) remoteUseExclusive(t *testing.T) {
 		{
 			name:       "use remote exclusive without global as root",
 			command:    "remote use",
-			args:       []string{"--exclusive", testRemote},
-			expectExit: 0,
-			profile:    e2e.RootProfile,
-		},
-		{
-			name:       "use remote SylabsCloud as exclusive",
-			command:    "remote use",
 			args:       []string{"--exclusive", sylabsRemote},
 			expectExit: 0,
 			profile:    e2e.RootProfile,
@@ -629,17 +631,17 @@ func (c ctx) remoteUseExclusive(t *testing.T) {
 			profile:    e2e.UserProfile,
 		},
 		{
-			name:       "remove e2e remote",
-			command:    "remote remove",
-			args:       []string{"--global", testRemote},
+			name:       "use remote SylabsCloud globally",
+			command:    "remote use",
+			args:       []string{"--global", sylabsRemote},
 			expectExit: 0,
 			profile:    e2e.RootProfile,
 		},
 		{
-			name:       "no default remote set",
-			command:    "key search",
-			args:       []string{"@"},
-			expectExit: 255,
+			name:       "remove e2e remote",
+			command:    "remote remove",
+			args:       []string{"--global", testRemote},
+			expectExit: 0,
 			profile:    e2e.RootProfile,
 		},
 		{

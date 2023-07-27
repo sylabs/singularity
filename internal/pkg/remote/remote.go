@@ -31,16 +31,6 @@ const (
 	DefaultRemoteName = "SylabsCloud"
 )
 
-// DefaultRemoteConfig holds the default remote configuration
-// if there is no remote.yaml present both in user home directory
-// and in system location.
-var DefaultRemoteConfig = &Config{
-	DefaultRemote: DefaultRemoteName,
-	Remotes: map[string]*endpoint.Config{
-		DefaultRemoteName: endpoint.DefaultEndpointConfig,
-	},
-}
-
 // SystemConfigPath holds the path to the remote system configuration.
 var SystemConfigPath = filepath.Join(buildcfg.SYSCONFDIR, "singularity", syfs.RemoteConfFile)
 
@@ -101,43 +91,14 @@ func (c *Config) WriteTo(w io.Writer) (int64, error) {
 	return int64(n), err
 }
 
-// SyncFrom updates c with the remotes specified in sys. Typically, this is used
-// to sync a globally-configured remote.Config into a user-specific remote.Config.
-// Currently, SyncFrom will return a name-collision error if there is an EndPoint
-// name which exists in both c & sys, and the EndPoint in c has System == false.
-func (c *Config) SyncFrom(sys *Config) error {
-	for name, eSys := range sys.Remotes {
+// CheckForRemoteCollisions will return a name-collision error if there is an
+// EndPoint name which exists in both c & sys.
+func (c *Config) CheckForRemoteCollisions(sys *Config) error {
+	for name := range sys.Remotes {
 		eUsr, err := c.GetRemote(name)
 		if err == nil && !eUsr.System { // usr & sys name collision
 			return fmt.Errorf("name collision while syncing: %s", name)
-		} else if err == nil {
-			eUsr.URI = eSys.URI // update URI just in case
-			eUsr.Exclusive = eSys.Exclusive
-			if eSys.Exclusive {
-				c.DefaultRemote = name
-			}
-			eUsr.Keyservers = eSys.Keyservers
-			continue
 		}
-
-		if eSys.Exclusive {
-			c.DefaultRemote = name
-		}
-		e := &endpoint.Config{
-			URI:        eSys.URI,
-			System:     true,
-			Exclusive:  eSys.Exclusive,
-			Keyservers: eSys.Keyservers,
-		}
-
-		if err := c.Add(name, e); err != nil {
-			return err
-		}
-	}
-
-	// set system default to user default if no user default specified
-	if c.DefaultRemote == "" && sys.DefaultRemote != "" {
-		c.DefaultRemote = sys.DefaultRemote
 	}
 
 	return nil
@@ -145,40 +106,87 @@ func (c *Config) SyncFrom(sys *Config) error {
 
 // SetDefault sets default remote endpoint or returns an error if it does not exist.
 // A remote endpoint can also be set as exclusive.
-func (c *Config) SetDefault(name string, exclusive bool) error {
-	r, ok := c.Remotes[name]
-	if !ok {
-		return fmt.Errorf("%s is not a remote", name)
-	}
-	if !c.system && exclusive {
+func (c *Config) SetDefault(name string, makeExclusive bool) error {
+	if !c.system && makeExclusive {
 		return fmt.Errorf("exclusive can't be set by user")
-	} else if name != c.DefaultRemote {
-		for n, r := range c.Remotes {
-			if r.Exclusive && !c.system {
-				return fmt.Errorf(
-					"could not use %s: remote %s has been set exclusive by the system administrator",
-					name, n,
-				)
+	}
+
+	// get system remote-endpoint configuration
+	cSys, err := GetSysConfig()
+	if err != nil {
+		return fmt.Errorf("while trying to access system remote-endpoint config: %w", err)
+	}
+
+	var exclusive *endpoint.Config
+	var prevExclusiveName string
+	for name, r := range cSys.Remotes {
+		if r.Exclusive {
+			if exclusive != nil {
+				return fmt.Errorf("internal error: encountered more than one 'exclusive' remote-endpoint: %s and %s", exclusive.URI, r.URI)
 			}
+			exclusive = r
+			prevExclusiveName = name
 		}
 	}
 
-	dr, ok := c.Remotes[c.DefaultRemote]
-	if ok && c.DefaultRemote != name && exclusive {
-		dr.Exclusive = false
+	if (exclusive != nil) && !c.system {
+		return fmt.Errorf("cannot set another remote endpoint as default when a system endpoint is set as 'exclusive'")
 	}
-	r.Exclusive = exclusive
 
+	r, ok := c.Remotes[name]
+	if !ok {
+		r, ok = cSys.Remotes[name]
+		if !ok {
+			return fmt.Errorf("%s is not a remote", name)
+		}
+	}
+
+	if exclusive != nil {
+		prevExclusive, ok := c.Remotes[prevExclusiveName]
+		if !ok {
+			return fmt.Errorf("internal error: unable to retrieve exclusive remote-endpoint %q from config", prevExclusiveName)
+		}
+		prevExclusive.Exclusive = false
+	}
+
+	r.Exclusive = makeExclusive
 	c.DefaultRemote = name
 	return nil
 }
 
 // GetDefault returns default remote endpoint or an error
 func (c *Config) GetDefault() (*endpoint.Config, error) {
-	if c.DefaultRemote == "" {
-		return nil, ErrNoDefault
+	cSys, err := GetSysConfig()
+	if err != nil {
+		return nil, fmt.Errorf("while trying to access system remote-endpoint config: %w", err)
 	}
-	return c.GetRemote(c.DefaultRemote)
+
+	return c.GetDefaultWithSys(cSys)
+}
+
+// GetDefault returns default remote endpoint or an error using the cSys
+// variable as a pre-read system endpoint configuration.
+func (c *Config) GetDefaultWithSys(cSys *Config) (*endpoint.Config, error) {
+	if (cSys == nil) || (cSys.DefaultRemote == "") {
+		if c.DefaultRemote == "" {
+			return endpoint.DefaultEndpointConfig, nil
+		}
+	} else {
+		sysDefault, err := cSys.GetRemote(cSys.DefaultRemote)
+		if err != nil {
+			return nil, fmt.Errorf("error resolving default system remote-endpoint: %w", err)
+		}
+		if sysDefault.Exclusive || c.DefaultRemote == "" {
+			return sysDefault, nil
+		}
+	}
+
+	defRemote, err := c.GetRemoteWithSys(c.DefaultRemote, cSys)
+	if err != nil {
+		return nil, fmt.Errorf("error resolving default user-level remote-endpoint: %w", err)
+	}
+
+	return defRemote, nil
 }
 
 // Add a new remote endpoint
@@ -211,11 +219,30 @@ func (c *Config) Remove(name string) error {
 }
 
 // GetRemote returns a reference to an existing endpoint
-// returns error if remote does not exist
 func (c *Config) GetRemote(name string) (*endpoint.Config, error) {
 	r, ok := c.Remotes[name]
 	if !ok {
-		return nil, fmt.Errorf("%s is not a remote", name)
+		cSys, err := GetSysConfig()
+		if err != nil {
+			return nil, fmt.Errorf("while trying to access system remote-endpoint config: %w", err)
+		}
+
+		return c.GetRemoteWithSys(name, cSys)
+	}
+
+	r.SetCredentials(c.Credentials)
+	return r, nil
+}
+
+// GetRemote returns a reference to an existing endpoint using the cSys
+// variable as a pre-read system endpoint configuration.
+func (c *Config) GetRemoteWithSys(name string, cSys *Config) (*endpoint.Config, error) {
+	r, ok := c.Remotes[name]
+	if !ok {
+		r, ok = cSys.Remotes[name]
+		if !ok {
+			return nil, fmt.Errorf("%s is not a remote", name)
+		}
 	}
 	r.SetCredentials(c.Credentials)
 	return r, nil
@@ -308,4 +335,24 @@ func (c *Config) Rename(name, newName string) error {
 	c.Remotes[newName] = c.Remotes[name]
 	delete(c.Remotes, name)
 	return nil
+}
+
+// GetSysConfig returns the system remote-endpoint configuration.
+func GetSysConfig() (*Config, error) {
+	// opening system config file
+	f, err := os.OpenFile(SystemConfigPath, os.O_RDONLY, 0o600)
+	if err != nil && os.IsNotExist(err) {
+		return nil, nil
+	} else if err != nil {
+		return nil, fmt.Errorf("while opening remote config file: %s", err)
+	}
+	defer f.Close()
+
+	// read file contents to config struct
+	cSys, err := ReadFrom(f)
+	if err != nil {
+		return nil, fmt.Errorf("while parsing remote config data: %s", err)
+	}
+
+	return cSys, nil
 }

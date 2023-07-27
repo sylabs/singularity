@@ -14,29 +14,9 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/remote"
 )
 
-func syncSysConfig(cUsr *remote.Config) error {
-	// opening system config file
-	f, err := os.OpenFile(remote.SystemConfigPath, os.O_RDONLY, 0o600)
-	if err != nil && os.IsNotExist(err) {
-		return nil
-	} else if err != nil {
-		return fmt.Errorf("while opening remote config file: %s", err)
-	}
-	defer f.Close()
-
-	// read file contents to config struct
-	cSys, err := remote.ReadFrom(f)
-	if err != nil {
-		return fmt.Errorf("while parsing remote config data: %s", err)
-	}
-
-	// sync cUsr with system config cSys
-	return cUsr.SyncFrom(cSys)
-}
-
 // RemoteUse sets remote to use
-func RemoteUse(usrConfigFile, name string, global, exclusive bool) (err error) {
-	if exclusive {
+func RemoteUse(usrConfigFile, name string, global, makeExclusive bool) (err error) {
+	if makeExclusive {
 		if os.Getuid() != 0 {
 			return fmt.Errorf("unable to set endpoint as exclusive: not root user")
 		}
@@ -63,13 +43,7 @@ func RemoteUse(usrConfigFile, name string, global, exclusive bool) (err error) {
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	if !global {
-		if err := syncSysConfig(c); err != nil {
-			return err
-		}
-	}
-
-	if err := c.SetDefault(name, exclusive); err != nil {
+	if err := c.SetDefault(name, makeExclusive); err != nil {
 		return err
 	}
 

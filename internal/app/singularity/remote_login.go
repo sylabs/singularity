@@ -47,10 +47,6 @@ func RemoteLogin(usrConfigFile string, args *LoginArgs) (err error) {
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	if err := syncSysConfig(c); err != nil {
-		return err
-	}
-
 	var r *endpoint.Config
 	if args.Name == "" {
 		r, err = c.GetDefault()

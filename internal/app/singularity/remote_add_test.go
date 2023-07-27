@@ -688,13 +688,19 @@ func TestRemoteAdd(t *testing.T) {
 			}
 
 			if tt.shallPass == false && err == nil {
-				restoreSysConfig()
+				RemoteUse(tt.cfgfile, "cloud", false, false)
 				RemoteRemove(tt.cfgfile, tt.remoteName)
+				restoreSysConfig()
 				t.Fatal("invalid case passed")
 			}
 
 			if tt.shallPass == true && err == nil {
-				RemoteRemove(tt.cfgfile, tt.remoteName)
+				if err = RemoteUse(tt.cfgfile, "cloud", false, false); err != nil {
+					t.Fatalf("error while trying to set remote %q as default: %s", "cloud", err)
+				}
+				if err = RemoteRemove(tt.cfgfile, tt.remoteName); err != nil {
+					t.Fatalf("error while trying to remove remote %q: %s", tt.remoteName, err)
+				}
 				restoreSysConfig()
 			}
 		})

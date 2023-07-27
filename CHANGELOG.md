@@ -52,6 +52,11 @@
   submodule unless `--without-squashfuse` is specified as an argument to
   `mconfig`. When built with `--without-squashfuse`, `squashfuse_ll` or
   `squashfuse` will be located on `PATH`. Version 0.2.0 or later is required.
+- The way Singularity negotiates the relation between system remote-endpoints
+  (added and configured using the `--global` flag) and the user's
+  remote-endpoints has changed. It is now negotiated dynamically, and no longer
+  relies on the correctness of the state stored in the user's
+  `~/.singularity/remote.yaml` file.
 
 ### New Features & Functionality
 

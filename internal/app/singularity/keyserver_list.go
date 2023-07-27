@@ -11,6 +11,7 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/samber/lo"
 	"github.com/sylabs/singularity/internal/pkg/remote"
 )
 
@@ -34,17 +35,33 @@ func KeyserverList(remoteName string, usrConfigFile string) (err error) {
 		return fmt.Errorf("while parsing remote config data: %s", err)
 	}
 
-	if err := syncSysConfig(c); err != nil {
-		return err
+	remotes := c.Remotes
+
+	cSys, err := remote.GetSysConfig()
+	if err != nil {
+		return fmt.Errorf("while trying to access system remote-endpoint config: %w", err)
 	}
 
-	for epName, ep := range c.Remotes {
+	if cSys != nil {
+		remotes = lo.Assign(remotes, cSys.Remotes)
+	}
+
+	defaultRemote, err := c.GetDefaultWithSys(cSys)
+	if err != nil {
+		return fmt.Errorf("error getting default remote-endpoint: %w", err)
+	}
+
+	for epName, ep := range remotes {
 		fmt.Println()
 		isSystem := ""
 		if ep.System {
 			isSystem = "*"
 		}
-		fmt.Printf("%s%s\n", epName, isSystem)
+		isDefault := ""
+		if ep == defaultRemote {
+			isDefault = "^"
+		}
+		fmt.Printf("%s%s%s\n", epName, isSystem, isDefault)
 
 		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		if err := ep.UpdateKeyserversConfig(); err != nil {
@@ -67,7 +84,7 @@ func KeyserverList(remoteName string, usrConfigFile string) (err error) {
 	}
 
 	fmt.Println()
-	fmt.Println("(* = system endpoint)")
+	fmt.Println("(* = system endpoint, ^ = default endpoint)")
 
 	return nil
 }
