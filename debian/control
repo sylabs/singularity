@@ -5,12 +5,16 @@ Maintainer: Sylabs Community Packaging <community@sylabs.io>
 Uploaders:
   Sylabs Community Packaging <community@sylabs.io>
 Build-Depends:
+ autoconf,
  cryptsetup,
  git,
- libseccomp-dev,
+ libfuse-dev,
  libglib2.0-dev,
+ libseccomp-dev,
+ libtool,
  pkg-config,
- squashfs-tools
+ squashfs-tools,
+ zlib1g-dev
 Standards-Version: 3.9.8
 Homepage: https://sylabs.io/singularity
 Vcs-Git: https://github.com/sylabs/singularity.git
@@ -21,8 +25,9 @@ Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends},
   crun | runc,
   cryptsetup-bin,
-  libseccomp2,
+  fuse,
   libglib2.0-0,
+  libseccomp2,
   squashfs-tools,
   uidmap
 Conflicts:

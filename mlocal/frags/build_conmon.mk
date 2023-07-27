@@ -5,8 +5,8 @@ conmon_dir := $(SOURCEDIR)/third_party/conmon/
 conmon_src := $(SOURCEDIR)/third_party/conmon/Makefile
 conmon_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/conmon
 
-# conmon currently fails to build with theses warnings as errors,
-# which are enforced for our own CGO compilations.
+# conmon currently fails to build with these warnings as errors,
+# which are enforced by our own flags for CGO, or by distributions.
 conmon_CFLAGS := $(filter-out -Wstrict-prototypes,$(CFLAGS))
 conmon_CFLAGS := $(filter-out -Wframe-larger-than=2047,$(conmon_CFLAGS))
 conmon_CFLAGS := $(filter-out -Wpointer-arith,$(conmon_CFLAGS))

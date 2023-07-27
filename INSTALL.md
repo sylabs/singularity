@@ -10,58 +10,68 @@ For full instructions on installation, including building RPMs, please check the
 
 You must first install development tools and libraries to your host.
 
-On Debian-based systems, including Ubuntu 20.04 and above:
+**On Debian-based systems, including Ubuntu 20.04 and above:**
 
 ```sh
 # Ensure repositories are up-to-date
 sudo apt-get update
 # Install debian packages for dependencies
 sudo apt-get install -y \
-    build-essential \
-    libseccomp-dev \
-    libglib2.0-dev \
+    autoconf \
+    automake \
+    cryptsetup \
+    git \
     libfuse-dev \
+    libglib2.0-dev \
+    libseccomp-dev \
+    libtool \
     pkg-config \
-    squashfs-tools \
-    cryptsetup \
-    crun \
-    uidmap \
-    git \
-    wget
-```
-
-On CentOS/RHEL 8 and above:
-
-```sh
-# Install basic tools for compiling
-sudo yum groupinstall -y 'Development Tools'
-# Install RPM packages for dependencies
-sudo yum install -y \
-    libseccomp-devel \
-    fuse-devel \
-    glib2-devel \
-    squashfs-tools \
-    cryptsetup \
-    crun \
-    git \
-    wget
-```
-
-On CentOS/RHEL 7:
-
-```sh
-# Install basic tools for compiling
-sudo yum groupinstall -y 'Development Tools'
-# Install RPM packages for dependencies
-sudo yum install -y \
-    libseccomp-devel \
-    fuse-devel \
-    glib2-devel \
-    squashfs-tools \
-    cryptsetup \
     runc \
+    squashfs-tools \
+    wget \
+    zlib1g-dev \
+```
+
+**On RHEL / AlmaLinux / RockyLinux / CentOS Stream 8 and above:**
+
+```sh
+# Install basic tools for compiling
+sudo yum groupinstall -y 'Development Tools'
+# Install RPM packages for dependencies
+sudo yum install -y \
+    autoconf \
+    automake \
+    crun \
+    cryptsetup \
+    fuse3-devel \
     git \
-    wget
+    glib2-devel \
+    libseccomp-devel \
+    libtool \
+    squashfs-tools \
+    wget \
+    zlib-devel
+```
+
+**On CentOS/RHEL 7:**
+
+```sh
+# Install basic tools for compiling
+sudo yum groupinstall -y 'Development Tools'
+# Install RPM packages for dependencies
+sudo yum install -y \
+    autoconf \
+    automake \
+    cryptsetup \
+    fuse3-devel \
+    git \
+    glib2-devel \
+    libseccomp-devel \
+    libtool \
+    runc \
+    squashfs-tools \
+    wget \
+    zlib-devel
 ```
 
 _Note - `crun` / `runc` can be omitted if you will not use the `singularity oci`
