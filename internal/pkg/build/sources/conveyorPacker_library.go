@@ -72,7 +72,12 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 		Logger:    (golog.Logger)(sylog.DebugLogger{}),
 	}
 
-	imagePath, err := library.Pull(ctx, b.Opts.ImgCache, imageRef, runtime.GOARCH, cp.b.TmpDir, libraryConfig)
+	pullOpts := library.PullOptions{
+		Architecture:  runtime.GOARCH,
+		LibraryConfig: libraryConfig,
+		TmpDir:        cp.b.TmpDir,
+	}
+	imagePath, err := library.Pull(ctx, b.Opts.ImgCache, imageRef, pullOpts)
 	if err != nil {
 		return fmt.Errorf("while fetching library image: %v", err)
 	}

@@ -18,8 +18,8 @@ import (
 
 	"github.com/containers/image/v5/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/sylabs/singularity/internal/pkg/build/oci"
 	"github.com/sylabs/singularity/internal/pkg/cache"
+	"github.com/sylabs/singularity/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/internal/pkg/util/shell"
 	sytypes "github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/image"
@@ -159,7 +159,7 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 	}
 
 	// Fetch the image into a temporary containers/image oci layout dir.
-	cp.srcRef, err = oci.FetchLayout(ctx, cp.sysCtx, imgCache, ref, b.TmpDir)
+	cp.srcRef, err = ociimage.FetchLayout(ctx, cp.sysCtx, imgCache, ref, b.TmpDir)
 	if err != nil {
 		return err
 	}
@@ -246,7 +246,7 @@ func (cp *OCIConveyorPacker) unpackTmpfs(ctx context.Context) error {
 	var manifest imgspecv1.Manifest
 	json.Unmarshal(manifestData, &manifest)
 
-	if err := oci.UnpackRootfs(ctx, cp.b.TmpDir, manifest, cp.b.RootfsPath); err != nil {
+	if err := ociimage.UnpackRootfs(ctx, cp.b.TmpDir, manifest, cp.b.RootfsPath); err != nil {
 		return err
 	}
 
@@ -255,7 +255,7 @@ func (cp *OCIConveyorPacker) unpackTmpfs(ctx context.Context) error {
 	if cp.b.Opts.FixPerms {
 		sylog.Warningf("The --fix-perms option modifies the filesystem permissions on the resulting container.")
 		sylog.Debugf("Modifying permissions for file/directory owners")
-		return oci.FixPerms(cp.b.RootfsPath)
+		return ociimage.FixPerms(cp.b.RootfsPath)
 	}
 
 	// If `--fix-perms` was not used and this is a sandbox, scan for restrictive
@@ -263,7 +263,7 @@ func (cp *OCIConveyorPacker) unpackTmpfs(ctx context.Context) error {
 	// and warn if they exist
 	if cp.b.Opts.SandboxTarget {
 		sylog.Debugf("Scanning for restrictive permissions")
-		return oci.CheckPerms(cp.b.RootfsPath)
+		return ociimage.CheckPerms(cp.b.RootfsPath)
 	}
 
 	return nil

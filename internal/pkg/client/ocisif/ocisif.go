@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package oci
+package ocisif
 
 import (
 	"bytes"
@@ -15,7 +15,6 @@ import (
 	"time"
 
 	ocitypes "github.com/containers/image/v5/types"
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
@@ -26,9 +25,10 @@ import (
 	"github.com/sylabs/oci-tools/pkg/mutate"
 	ocisif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
-	buildoci "github.com/sylabs/singularity/internal/pkg/build/oci"
 	"github.com/sylabs/singularity/internal/pkg/cache"
+	"github.com/sylabs/singularity/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/pkg/syfs"
 	"github.com/sylabs/singularity/pkg/sylog"
 	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
 )
@@ -36,12 +36,39 @@ import (
 // TODO - Replace when exported from SIF / oci-tools
 const SquashfsLayerMediaType types.MediaType = "application/vnd.sylabs.image.layer.v1.squashfs"
 
-// pull will create an OCI-SIF image in the cache if directTo="", or a specific file if directTo is set.
-//
-//nolint:dupl
-func pullOciSif(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, opts PullOptions) (imagePath string, err error) {
+type PullOptions struct {
+	TmpDir     string
+	OciAuth    *ocitypes.DockerAuthConfig
+	DockerHost string
+	NoHTTPS    bool
+	NoCleanUp  bool
+}
+
+// sysCtx provides authentication and tempDir config for containers/image OCI operations
+func sysCtx(opts PullOptions) *ocitypes.SystemContext {
+	// DockerInsecureSkipTLSVerify is set only if --no-https is specified to honor
+	// configuration from /etc/containers/registries.conf because DockerInsecureSkipTLSVerify
+	// can have three possible values true/false and undefined, so we left it as undefined instead
+	// of forcing it to false in order to delegate decision to /etc/containers/registries.conf:
+	// https://github.com/sylabs/singularity/issues/5172
+	sysCtx := &ocitypes.SystemContext{
+		OCIInsecureSkipTLSVerify: opts.NoHTTPS,
+		DockerAuthConfig:         opts.OciAuth,
+		AuthFilePath:             syfs.DockerConf(),
+		DockerRegistryUserAgent:  useragent.Value(),
+		BigFilesTemporaryDir:     opts.TmpDir,
+		DockerDaemonHost:         opts.DockerHost,
+	}
+	if opts.NoHTTPS {
+		sysCtx.DockerInsecureSkipTLSVerify = ocitypes.NewOptionalBool(true)
+	}
+	return sysCtx
+}
+
+// PullOCISIF will create an OCI-SIF image in the cache if directTo="", or a specific file if directTo is set.
+func PullOCISIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, opts PullOptions) (imagePath string, err error) {
 	sys := sysCtx(opts)
-	hash, err := buildoci.ImageDigest(ctx, pullFrom, sys)
+	hash, err := ociimage.ImageDigest(ctx, pullFrom, sys)
 	if err != nil {
 		return "", fmt.Errorf("failed to get checksum for %s: %s", pullFrom, err)
 	}
@@ -52,7 +79,6 @@ func pullOciSif(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom 
 		}
 		imagePath = directTo
 	} else {
-
 		cacheEntry, err := imgCache.GetEntry(cache.OciSifCacheType, hash)
 		if err != nil {
 			return "", fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
@@ -102,7 +128,7 @@ func createOciSif(ctx context.Context, imgCache *cache.Handle, imageSrc, imageDe
 	}
 
 	sylog.Debugf("Fetching image to temporary layout %q", layoutDir)
-	layoutRef, err := buildoci.FetchLayout(ctx, sys, imgCache, imageSrc, layoutDir)
+	layoutRef, err := ociimage.FetchLayout(ctx, sys, imgCache, imageSrc, layoutDir)
 	if err != nil {
 		return fmt.Errorf("while fetching OCI image: %w", err)
 	}
@@ -202,12 +228,13 @@ func convertLayoutToOciSif(layoutDir string, digest v1.Hash, imageDest, workDir 
 	return ocisif.Write(imageDest, ii)
 }
 
-// pushOCISIF pushes a single image from an OCI SIF to the OCI registry destination ref.
-func pushOCISIF(ctx context.Context, sourceFile, dest string, ociAuth *ocitypes.DockerAuthConfig) error {
-	dest = strings.TrimPrefix(dest, "//")
-	ref, err := name.ParseReference(dest)
+// PushOCISIF pushes a single image from sourceFile to the OCI registry destRef.
+func PushOCISIF(ctx context.Context, sourceFile, destRef string, ociAuth *ocitypes.DockerAuthConfig) error {
+	destRef = strings.TrimPrefix(destRef, "docker://")
+	destRef = strings.TrimPrefix(destRef, "//")
+	ref, err := name.ParseReference(destRef)
 	if err != nil {
-		return fmt.Errorf("invalid reference %q: %w", dest, err)
+		return fmt.Errorf("invalid reference %q: %w", destRef, err)
 	}
 
 	fi, err := sif.LoadContainerFromPath(sourceFile, sif.OptLoadWithFlag(os.O_RDONLY))
@@ -234,18 +261,5 @@ func pushOCISIF(ctx context.Context, sourceFile, dest string, ociAuth *ocitypes.
 		return fmt.Errorf("while obtaining image: %w", err)
 	}
 
-	// By default we use auth from ~/.singularity/docker-config.json
-	authOptn := remote.WithAuthFromKeychain(&singularityKeychain{})
-
-	// If explicit credentials in ociAuth were passed in, use those instead.
-	if ociAuth != nil {
-		auth := authn.FromConfig(authn.AuthConfig{
-			Username:      ociAuth.Username,
-			Password:      ociAuth.Password,
-			IdentityToken: ociAuth.IdentityToken,
-		})
-		authOptn = remote.WithAuth(auth)
-	}
-
-	return remote.Write(ref, image, authOptn, remote.WithUserAgent(useragent.Value()))
+	return remote.Write(ref, image, authOptn(ociAuth), remote.WithUserAgent(useragent.Value()))
 }

@@ -51,6 +51,7 @@ type testStruct struct {
 	pullDir          string
 	imagePath        string
 	expectedImage    string
+	expectedOCI      bool
 	envVars          []string
 }
 
@@ -197,6 +198,7 @@ func (c *ctx) setup(t *testing.T) {
 	}
 }
 
+//nolint:maintidx
 func (c ctx) testPullCmd(t *testing.T) {
 	tests := []testStruct{
 		//
@@ -319,6 +321,23 @@ func (c ctx) testPullCmd(t *testing.T) {
 			force:            true,
 			expectedExitCode: 0,
 		},
+		// pulling an OCI-SIF image from library backing registry
+		{
+			desc:   "library oci-sif fallback",
+			srcURI: "library://sylabs/tests/alpine-oci-sif:latest",
+			// will try library protocol first, should then attempt oci pull
+			oci:              false,
+			expectedOCI:      true,
+			expectedExitCode: 0,
+		},
+		{
+			desc:   "library oci-sif direct",
+			srcURI: "library://sylabs/tests/alpine-oci-sif:latest",
+			// direct oci pull
+			oci:              true,
+			expectedOCI:      true,
+			expectedExitCode: 0,
+		},
 
 		//
 		// shub:// URIs
@@ -383,6 +402,7 @@ func (c ctx) testPullCmd(t *testing.T) {
 			desc:             "docker oci to sif",
 			srcURI:           c.env.TestRegistryImage,
 			oci:              false,
+			expectedOCI:      false,
 			noHTTPS:          true,
 			force:            true,
 			expectedExitCode: 0,
@@ -392,6 +412,7 @@ func (c ctx) testPullCmd(t *testing.T) {
 			desc:             "docker oci to oci-sif",
 			srcURI:           c.env.TestRegistryImage,
 			oci:              true,
+			expectedOCI:      true,
 			noHTTPS:          true,
 			force:            true,
 			expectedExitCode: 0,
@@ -401,6 +422,7 @@ func (c ctx) testPullCmd(t *testing.T) {
 			desc:             "docker oci-sif to oci-sif",
 			srcURI:           c.env.TestRegistryOCISIF,
 			oci:              true,
+			expectedOCI:      true,
 			noHTTPS:          true,
 			force:            true,
 			expectedExitCode: 0,
@@ -410,6 +432,7 @@ func (c ctx) testPullCmd(t *testing.T) {
 			desc:             "docker oci-sif to sif",
 			srcURI:           c.env.TestRegistryOCISIF,
 			oci:              false,
+			expectedOCI:      false,
 			noHTTPS:          true,
 			force:            true,
 			expectedExitCode: 255,
@@ -491,11 +514,11 @@ func checkPullResult(t *testing.T, tt testStruct) {
 		defer img.File.Close()
 		switch img.Type {
 		case image.SIF:
-			if tt.oci {
+			if tt.expectedOCI {
 				t.Errorf("Native SIF pulled, but --oci specified")
 			}
 		case image.OCISIF:
-			if !tt.oci {
+			if !tt.expectedOCI {
 				t.Errorf("OCI-SIF pulled, but --oci not specified")
 			}
 		default:
@@ -586,9 +609,15 @@ func (c ctx) testPullDisableCacheCmd(t *testing.T) {
 		noHTTPS   bool
 	}{
 		{
-			name:      "library",
+			name:      "library native",
 			imagePath: filepath.Join(c.env.TestDir, "nocache-library.sif"),
 			imageSrc:  "library://alpine:latest",
+		},
+		{
+			name:      "library oci-sif",
+			imagePath: filepath.Join(c.env.TestDir, "nocache-library.oci.sif"),
+			imageSrc:  "library://sylabs/tests/alpine-oci-sif:latest",
+			oci:       true,
 		},
 		{
 			name:      "oras",
@@ -596,8 +625,8 @@ func (c ctx) testPullDisableCacheCmd(t *testing.T) {
 			imageSrc:  "oras://" + c.env.TestRegistry + "/pull_test_sif:latest",
 		},
 		{
-			name:      "oci-sif",
-			imagePath: filepath.Join(c.env.TestDir, "nocache-oci-sif.sif"),
+			name:      "docker oci-sif",
+			imagePath: filepath.Join(c.env.TestDir, "nocache-docker.oci.sif"),
 			imageSrc:  c.env.TestRegistryImage,
 			oci:       true,
 			noHTTPS:   true,

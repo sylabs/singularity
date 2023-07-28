@@ -11,18 +11,16 @@ import (
 	"fmt"
 
 	"github.com/sylabs/singularity/internal/pkg/build"
-	"github.com/sylabs/singularity/internal/pkg/build/oci"
 	"github.com/sylabs/singularity/internal/pkg/cache"
+	"github.com/sylabs/singularity/internal/pkg/ociimage"
 	buildtypes "github.com/sylabs/singularity/pkg/build/types"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
 
-// pullSif will build a SIF image into the cache if directTo="", or a specific file if directTo is set.
-//
-//nolint:dupl
-func pullSif(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, opts PullOptions) (imagePath string, err error) {
+// pullNativeSIF will build a SIF image into the cache if directTo="", or a specific file if directTo is set.
+func pullNativeSIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, opts PullOptions) (imagePath string, err error) {
 	sys := sysCtx(opts)
-	hash, err := oci.ImageDigest(ctx, pullFrom, sys)
+	hash, err := ociimage.ImageDigest(ctx, pullFrom, sys)
 	if err != nil {
 		return "", fmt.Errorf("failed to get checksum for %s: %s", pullFrom, err)
 	}
@@ -34,7 +32,6 @@ func pullSif(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom str
 		}
 		imagePath = directTo
 	} else {
-
 		cacheEntry, err := imgCache.GetEntry(cache.OciTempCacheType, hash)
 		if err != nil {
 			return "", fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
