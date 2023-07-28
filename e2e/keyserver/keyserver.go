@@ -47,8 +47,8 @@ func (c ctx) keyserver(t *testing.T) {
 			args:    []string{"--insecure", testKeyserver},
 			listLines: []string{
 				"SylabsCloud *^",
-				"   #1  https://keys.sylabs.io  🔒  ",
-				"   #2  http://localhost:11371",
+				"   #1  https://keys.sylabs.io  TLS     ",
+				"   #2  http://localhost:11371  no TLS  ",
 			},
 			expectExit: 0,
 			profile:    e2e.RootProfile,
@@ -80,8 +80,8 @@ func (c ctx) keyserver(t *testing.T) {
 			args:    []string{"--order", "1", testKeyserver},
 			listLines: []string{
 				"SylabsCloud *^",
-				"   #1  http://localhost:11371  🔒  ",
-				"   #2  https://keys.sylabs.io  🔒  ",
+				"   #1  http://localhost:11371  TLS  ",
+				"   #2  https://keys.sylabs.io  TLS  ",
 			},
 			expectExit: 0,
 			profile:    e2e.RootProfile,
@@ -99,7 +99,7 @@ func (c ctx) keyserver(t *testing.T) {
 			args:    []string{sylabsKeyserver},
 			listLines: []string{
 				"SylabsCloud *^",
-				"   #1  http://localhost:11371  🔒  ",
+				"   #1  http://localhost:11371  TLS  ",
 			},
 			expectExit: 0,
 			profile:    e2e.RootProfile,
@@ -117,8 +117,8 @@ func (c ctx) keyserver(t *testing.T) {
 			args:    []string{sylabsKeyserver},
 			listLines: []string{
 				"SylabsCloud *^",
-				"   #1  http://localhost:11371  🔒  ",
-				"   #2  https://keys.sylabs.io  🔒  ",
+				"   #1  http://localhost:11371  TLS  ",
+				"   #2  https://keys.sylabs.io  TLS  ",
 			},
 			expectExit: 0,
 			profile:    e2e.RootProfile,
@@ -129,7 +129,7 @@ func (c ctx) keyserver(t *testing.T) {
 			args:    []string{testKeyserver},
 			listLines: []string{
 				"SylabsCloud *^",
-				"   #1  https://keys.sylabs.io  🔒  ",
+				"   #1  https://keys.sylabs.io  TLS  ",
 			},
 			expectExit: 0,
 			profile:    e2e.RootProfile,

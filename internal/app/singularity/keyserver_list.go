@@ -82,9 +82,9 @@ func KeyserverList(remoteName string, usrConfigFile string) (err error) {
 			if kc.Skip {
 				continue
 			}
-			secure := "🔒"
+			secure := "TLS"
 			if kc.Insecure {
-				secure = ""
+				secure = "no TLS"
 			}
 			loggedInStr := ""
 			if _, ok := keyserverCredentials[kc.URI]; ok {
