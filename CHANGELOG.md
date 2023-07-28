@@ -54,6 +54,7 @@
   `squashfuse` will be located on `PATH`. Version 0.2.0 or later is required.
 - When `singularity registry login` is used to login to a public OCI registry,
   the password is not verified at login time.
+- Improved the clarity of `singularity key list` output.
 
 ### New Features & Functionality
 
