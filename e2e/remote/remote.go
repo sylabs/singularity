@@ -680,5 +680,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"test help":      c.remoteTestHelp,
 		"use":            c.remoteUse,
 		"use exclusive":  np(c.remoteUseExclusive),
+		"issue 1948":     np(c.issue1948),
 	}
 }

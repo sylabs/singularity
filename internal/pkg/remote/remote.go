@@ -135,6 +135,18 @@ func (c *Config) SyncFrom(sys *Config) error {
 		}
 	}
 
+	// Remove synced remotes in the user's config if they are designated as
+	// system remotes but the corresponding system remote no longer exists
+	for name, e := range c.Remotes {
+		if !e.System {
+			continue
+		}
+
+		if _, ok := sys.Remotes[name]; !ok {
+			delete(c.Remotes, name)
+		}
+	}
+
 	// set system default to user default if no user default specified
 	if c.DefaultRemote == "" && sys.DefaultRemote != "" {
 		c.DefaultRemote = sys.DefaultRemote

@@ -130,6 +130,9 @@
 - Fix interaction between `--workdir` when given relative path and `--scratch`.
 - Set correct `$HOME` in `--oci` mode when `mount home = no` in
   `singularity.conf`.
+- Fixed a bug where records of deleted global remote-endpoints would persist in
+  the user's config, showing up in `singularity remote list`, and would not be
+  removable through the CLI.
 
 ## 3.11.4 \[2023-06-22\]
 
