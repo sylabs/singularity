@@ -261,5 +261,5 @@ func PushOCISIF(ctx context.Context, sourceFile, destRef string, ociAuth *ocityp
 		return fmt.Errorf("while obtaining image: %w", err)
 	}
 
-	return remote.Write(ref, image, authOptn(ociAuth), remote.WithUserAgent(useragent.Value()))
+	return remote.Write(ref, image, AuthOptn(ociAuth), remote.WithUserAgent(useragent.Value()))
 }

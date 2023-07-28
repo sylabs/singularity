@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,7 +9,6 @@
 package pull
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -18,16 +17,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/containerd/containerd/reference"
-	"github.com/containerd/containerd/remotes/docker"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/sylabs/singularity/e2e/internal/e2e"
 	"github.com/sylabs/singularity/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/internal/pkg/client/oras"
 	syoras "github.com/sylabs/singularity/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/pkg/image"
 	"golang.org/x/sys/unix"
-	"oras.land/oras-go/pkg/content"
-	"oras.land/oras-go/pkg/oras"
 )
 
 type ctx struct {
@@ -144,13 +143,7 @@ func (c *ctx) setup(t *testing.T) {
 	e2e.EnsureORASOCISIF(t, c.env)
 	e2e.EnsureRegistryOCISIF(t, c.env)
 
-	// setup file and dir to use as invalid images
-	orasInvalidDir, err := os.MkdirTemp(c.env.TestDir, "oras_push_dir-")
-	if err != nil {
-		t.Fatalf("unable to create src dir for push tests: %v", err)
-	}
-
-	orasInvalidFile, err := e2e.WriteTempFile(orasInvalidDir, "oras_invalid_image-", "Invalid Image Contents")
+	orasInvalidFile, err := e2e.WriteTempFile(c.env.TestDir, "oras_invalid_image-", "Invalid Image Contents")
 	if err != nil {
 		t.Fatalf("unable to create src file for push tests: %v", err)
 	}
@@ -172,11 +165,6 @@ func (c *ctx) setup(t *testing.T) {
 			srcPath:        c.env.ImagePath,
 			uri:            fmt.Sprintf("%s/pull_test_sif_mediatypeproto:latest", c.env.TestRegistry),
 			layerMediaType: syoras.SifLayerMediaTypeProto,
-		},
-		{
-			srcPath:        orasInvalidDir,
-			uri:            fmt.Sprintf("%s/pull_test_dir:latest", c.env.TestRegistry),
-			layerMediaType: syoras.SifLayerMediaTypeV1,
 		},
 		{
 			srcPath:        orasInvalidFile,
@@ -533,56 +521,24 @@ func checkPullResult(t *testing.T, tt testStruct) {
 // We can also set the layer mediaType - so we can push images with older media types
 // to verify that they can still be pulled.
 func orasPushNoCheck(path, ref, layerMediaType string) error {
+	ref = strings.TrimPrefix(ref, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
-	spec, err := reference.Parse(ref)
+	// Get reference to image in the remote
+	ir, err := name.ParseReference(ref,
+		name.WithDefaultTag(name.DefaultTag),
+		name.WithDefaultRegistry(name.DefaultRegistry),
+	)
 	if err != nil {
-		return fmt.Errorf("unable to parse oci reference: %w", err)
+		return err
 	}
 
-	// Hostname() will panic if there is no '/' in the locator
-	// explicitly check for this and fail in order to prevent panic
-	// this case will only occur for incorrect uris
-	if !strings.Contains(spec.Locator, "/") {
-		return fmt.Errorf("not a valid oci object uri: %s", ref)
-	}
-
-	// append default tag if no object exists
-	if spec.Object == "" {
-		spec.Object = "latest"
-	}
-
-	resolver := docker.NewResolver(docker.ResolverOptions{})
-
-	store := content.NewFile("")
-	defer store.Close()
-
-	// Get the filename from path and use it as the name in the file store
-	name := filepath.Base(path)
-
-	desc, err := store.Add(name, layerMediaType, path)
+	im, err := oras.NewImageFromSIF(path, types.MediaType(layerMediaType))
 	if err != nil {
-		return fmt.Errorf("unable to add SIF to store: %w", err)
+		return err
 	}
 
-	manifest, manifestDesc, config, configDesc, err := content.GenerateManifestAndConfig(nil, nil, desc)
-	if err != nil {
-		return fmt.Errorf("unable to generate manifest and config: %w", err)
-	}
-
-	if err := store.Load(configDesc, config); err != nil {
-		return fmt.Errorf("unable to load config: %w", err)
-	}
-
-	if err := store.StoreManifest(spec.String(), manifestDesc, manifest); err != nil {
-		return fmt.Errorf("unable to store manifest: %w", err)
-	}
-
-	if _, err := oras.Copy(context.Background(), store, spec.String(), resolver, ""); err != nil {
-		return fmt.Errorf("unable to push: %w", err)
-	}
-
-	return nil
+	return remote.Write(ir, im, remote.WithUserAgent("singularity e2e-test"))
 }
 
 func (c ctx) testPullDisableCacheCmd(t *testing.T) {

@@ -52,6 +52,8 @@
   submodule unless `--without-squashfuse` is specified as an argument to
   `mconfig`. When built with `--without-squashfuse`, `squashfuse_ll` or
   `squashfuse` will be located on `PATH`. Version 0.2.0 or later is required.
+- When `singularity registry login` is used to login to a public OCI registry,
+  the password is not verified at login time.
 
 ### New Features & Functionality
 
