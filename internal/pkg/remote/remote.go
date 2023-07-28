@@ -138,7 +138,7 @@ func (c *Config) SyncFrom(sys *Config) error {
 	// Remove synced remotes in the user's config if they are designated as
 	// system remotes but the corresponding system remote no longer exists
 	for name, e := range c.Remotes {
-		if !e.System {
+		if (!e.System) || (name == c.DefaultRemote) {
 			continue
 		}
 
