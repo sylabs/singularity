@@ -8,10 +8,13 @@ package singularity
 
 import (
 	"fmt"
+	"net/url"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/credential"
 )
 
 // KeyserverList prints information about remote configurations
@@ -38,6 +41,19 @@ func KeyserverList(remoteName string, usrConfigFile string) (err error) {
 		return err
 	}
 
+	keyserverCredentials := make(map[string]*credential.Config)
+	for _, cred := range c.Credentials {
+		u, err := url.Parse(cred.URI)
+		if err != nil {
+			return err
+		}
+
+		switch u.Scheme {
+		case "http", "https":
+			keyserverCredentials[cred.URI] = cred
+		}
+	}
+
 	defaultRemote, err := c.GetDefault()
 	if err != nil {
 		return fmt.Errorf("error getting default remote-endpoint: %w", err)
@@ -53,30 +69,39 @@ func KeyserverList(remoteName string, usrConfigFile string) (err error) {
 		if ep == defaultRemote {
 			isDefault = "^"
 		}
-		fmt.Printf("%s%s%s\n", epName, isSystem, isDefault)
+		fmt.Printf("%s %s%s\n", epName, isSystem, isDefault)
 
-		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		if err := ep.UpdateKeyserversConfig(); err != nil {
-			fmt.Fprintln(tw, " \t(unable to fetch associated keyserver info for this endpoint)")
+			fmt.Println("(unable to fetch associated keyserver info for this endpoint)")
+			continue
 		}
 
 		order := 1
+		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		for _, kc := range ep.Keyservers {
 			if kc.Skip {
 				continue
 			}
-			secure := "🔒"
+			secure := "TLS"
 			if kc.Insecure {
-				secure = ""
+				secure = "no TLS"
 			}
-			fmt.Fprintf(tw, " \t#%d\t%s\t%s\n", order, kc.URI, secure)
+			loggedInStr := ""
+			if _, ok := keyserverCredentials[kc.URI]; ok {
+				loggedInStr = "+"
+			}
+			fmt.Fprintf(tw, " \t#%d\t%s\t%s\t%s\n", order, kc.URI, secure, loggedInStr)
 			order++
 		}
 		tw.Flush()
 	}
 
 	fmt.Println()
-	fmt.Println("(* = system endpoint, ^ = default endpoint)")
+	fmt.Print(strings.Join([]string{
+		"(* = system endpoint, ^ = default endpoint,",
+		" + = user is logged in directly to this keyserver)",
+	}, "\n"))
+	fmt.Println()
 
 	return nil
 }

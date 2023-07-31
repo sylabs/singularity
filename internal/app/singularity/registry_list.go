@@ -8,10 +8,12 @@ package singularity
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"text/tabwriter"
 
 	"github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/internal/pkg/remote/credential"
 )
 
 // RegistryList prints information about remote configurations
@@ -38,10 +40,31 @@ func RegistryList(usrConfigFile string) (err error) {
 		return err
 	}
 
+	var registryCredentials []*credential.Config
+	for _, cred := range c.Credentials {
+		u, err := url.Parse(cred.URI)
+		if err != nil {
+			return err
+		}
+
+		switch u.Scheme {
+		case "oras", "docker":
+			registryCredentials = append(registryCredentials, cred)
+		}
+	}
+
+	if len(registryCredentials) < 1 {
+		fmt.Println()
+		fmt.Println("(no registries with stored login information found)")
+		fmt.Println()
+
+		return nil
+	}
+
 	fmt.Println()
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 	fmt.Fprintf(tw, "%s\t%s\n", "URI", "SECURE?")
-	for _, r := range c.Credentials {
+	for _, r := range registryCredentials {
 		secure := "✓"
 		if r.Insecure {
 			secure = "✗!"
@@ -49,6 +72,7 @@ func RegistryList(usrConfigFile string) (err error) {
 		fmt.Fprintf(tw, "%s\t%s\n", r.URI, secure)
 	}
 	tw.Flush()
+	fmt.Println()
 
 	return nil
 }
