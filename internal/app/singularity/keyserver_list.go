@@ -38,13 +38,22 @@ func KeyserverList(remoteName string, usrConfigFile string) (err error) {
 		return err
 	}
 
+	defaultRemote, err := c.GetDefault()
+	if err != nil {
+		return fmt.Errorf("error getting default remote-endpoint: %w", err)
+	}
+
 	for epName, ep := range c.Remotes {
 		fmt.Println()
 		isSystem := ""
 		if ep.System {
 			isSystem = "*"
 		}
-		fmt.Printf("%s%s\n", epName, isSystem)
+		isDefault := ""
+		if ep == defaultRemote {
+			isDefault = "^"
+		}
+		fmt.Printf("%s%s%s\n", epName, isSystem, isDefault)
 
 		tw := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		if err := ep.UpdateKeyserversConfig(); err != nil {
@@ -67,7 +76,7 @@ func KeyserverList(remoteName string, usrConfigFile string) (err error) {
 	}
 
 	fmt.Println()
-	fmt.Println("(* = system endpoint)")
+	fmt.Println("(* = system endpoint, ^ = default endpoint)")
 
 	return nil
 }
