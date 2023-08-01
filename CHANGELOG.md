@@ -55,6 +55,12 @@
 - When `singularity registry login` is used to login to a public OCI registry,
   the password is not verified at login time.
 - Improved the clarity of `singularity key list` output.
+- Do not mount current working directory when its path in the container and on
+  the host contain symlinks to different locations.
+- Create current working directory in container when it doesn't exist, so that
+  it can be entered. You must now specify `--no-mount home,cwd` instead of just
+  `--no-mount home` to avoid mounting from `$HOME` if you run `singularity` from
+  inside `$HOME`.
 
 ### New Features & Functionality
 
