@@ -211,28 +211,6 @@ func Run(ctx context.Context, containerID, bundlePath, pidFile string, systemdCg
 	return cmd.Run()
 }
 
-// RunWrapped runs a container via the OCI runtime, wrapped with prep / cleanup steps.
-func RunWrapped(ctx context.Context, containerID, bundlePath, pidFile string, overlayPaths []string, systemdCgroups bool) error {
-	absBundle, err := filepath.Abs(bundlePath)
-	if err != nil {
-		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
-	}
-
-	if err := os.Chdir(absBundle); err != nil {
-		return fmt.Errorf("failed to change directory to %s: %s", absBundle, err)
-	}
-
-	runFunc := func() error {
-		return Run(ctx, containerID, absBundle, pidFile, systemdCgroups)
-	}
-
-	if len(overlayPaths) > 0 {
-		return WrapWithOverlays(runFunc, absBundle, overlayPaths)
-	}
-
-	return WrapWithWritableTmpFs(runFunc, absBundle)
-}
-
 // Start starts a previously created container
 func Start(containerID string, systemdCgroups bool) error {
 	runtimeBin, err := runtime()

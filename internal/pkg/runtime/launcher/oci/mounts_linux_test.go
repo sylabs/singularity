@@ -24,6 +24,7 @@ func Test_addBindMount(t *testing.T) {
 	tests := []struct {
 		name       string
 		b          bind.Path
+		allowSUID  bool
 		wantMounts *[]specs.Mount
 		wantErr    bool
 	}{
@@ -38,7 +39,7 @@ func Test_addBindMount(t *testing.T) {
 					Source:      "/tmp",
 					Destination: "/tmp",
 					Type:        "none",
-					Options:     []string{"rbind", "nosuid", "nodev"},
+					Options:     []string{"rbind", "nodev", "nosuid"},
 				},
 			},
 		},
@@ -54,7 +55,24 @@ func Test_addBindMount(t *testing.T) {
 					Source:      "/tmp",
 					Destination: "/tmp",
 					Type:        "none",
-					Options:     []string{"rbind", "nosuid", "nodev", "ro"},
+					Options:     []string{"rbind", "nodev", "ro", "nosuid"},
+				},
+			},
+		},
+		{
+			name: "ValidSUID",
+			b: bind.Path{
+				Source:      "/tmp",
+				Destination: "/tmp",
+				Options:     map[string]*bind.Option{"ro": {}},
+			},
+			allowSUID: true,
+			wantMounts: &[]specs.Mount{
+				{
+					Source:      "/tmp",
+					Destination: "/tmp",
+					Type:        "none",
+					Options:     []string{"rbind", "nodev", "ro"},
 				},
 			},
 		},
@@ -100,7 +118,7 @@ func Test_addBindMount(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mounts := &[]specs.Mount{}
-			err := addBindMount(mounts, tt.b)
+			err := addBindMount(mounts, tt.b, tt.allowSUID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("addBindMount() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -116,6 +134,7 @@ func TestLauncher_addBindMounts(t *testing.T) {
 		name       string
 		cfg        launcher.Options
 		userbind   bool
+		allowSUID  bool
 		wantMounts *[]specs.Mount
 		wantErr    bool
 	}{
@@ -138,7 +157,7 @@ func TestLauncher_addBindMounts(t *testing.T) {
 					Source:      "/tmp",
 					Destination: "/tmp",
 					Type:        "none",
-					Options:     []string{"rbind", "nosuid", "nodev"},
+					Options:     []string{"rbind", "nodev", "nosuid"},
 				},
 			},
 			wantErr: false,
@@ -154,7 +173,7 @@ func TestLauncher_addBindMounts(t *testing.T) {
 					Source:      "/tmp",
 					Destination: "/mnt",
 					Type:        "none",
-					Options:     []string{"rbind", "nosuid", "nodev"},
+					Options:     []string{"rbind", "nodev", "nosuid"},
 				},
 			},
 			wantErr: false,
@@ -170,7 +189,24 @@ func TestLauncher_addBindMounts(t *testing.T) {
 					Source:      "/tmp",
 					Destination: "/mnt",
 					Type:        "none",
-					Options:     []string{"rbind", "nosuid", "nodev", "ro"},
+					Options:     []string{"rbind", "nodev", "ro", "nosuid"},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "ValidBindSUID",
+			cfg: launcher.Options{
+				BindPaths: []string{"/tmp:/mnt"},
+			},
+			userbind:  true,
+			allowSUID: true,
+			wantMounts: &[]specs.Mount{
+				{
+					Source:      "/tmp",
+					Destination: "/mnt",
+					Type:        "none",
+					Options:     []string{"rbind", "nodev"},
 				},
 			},
 			wantErr: false,
@@ -222,7 +258,7 @@ func TestLauncher_addBindMounts(t *testing.T) {
 					Source:      "/tmp",
 					Destination: "/mnt",
 					Type:        "none",
-					Options:     []string{"rbind", "nosuid", "nodev"},
+					Options:     []string{"rbind", "nodev", "nosuid"},
 				},
 			},
 			wantErr: false,
@@ -238,10 +274,27 @@ func TestLauncher_addBindMounts(t *testing.T) {
 					Source:      "/tmp",
 					Destination: "/mnt",
 					Type:        "none",
-					Options:     []string{"rbind", "nosuid", "nodev", "ro"},
+					Options:     []string{"rbind", "nodev", "ro", "nosuid"},
 				},
 			},
 			wantErr: false,
+		},
+		{
+			name: "ValidMountSUID",
+			cfg: launcher.Options{
+				Mounts: []string{"type=bind,source=/tmp,destination=/mnt"},
+			},
+			userbind: true,
+			wantMounts: &[]specs.Mount{
+				{
+					Source:      "/tmp",
+					Destination: "/mnt",
+					Type:        "none",
+					Options:     []string{"rbind", "nodev"},
+				},
+			},
+			allowSUID: true,
+			wantErr:   false,
 		},
 		{
 			name: "UnsupportedMountID",
@@ -270,6 +323,9 @@ func TestLauncher_addBindMounts(t *testing.T) {
 			}
 			if tt.userbind {
 				l.singularityConf.UserBindControl = true
+			}
+			if tt.allowSUID {
+				l.cfg.AllowSUID = true
 			}
 			mounts := &[]specs.Mount{}
 			err := l.addBindMounts(mounts)
@@ -339,7 +395,7 @@ func TestLauncher_addLibrariesMounts(t *testing.T) {
 					Source:      lib1,
 					Destination: "/.singularity.d/libs/lib1.so",
 					Type:        "none",
-					Options:     []string{"rbind", "nosuid", "nodev", "ro"},
+					Options:     []string{"rbind", "nodev", "ro", "nosuid"},
 				},
 			},
 			wantErr: false,
@@ -355,13 +411,13 @@ func TestLauncher_addLibrariesMounts(t *testing.T) {
 					Source:      lib1,
 					Destination: "/.singularity.d/libs/lib1.so",
 					Type:        "none",
-					Options:     []string{"rbind", "nosuid", "nodev", "ro"},
+					Options:     []string{"rbind", "nodev", "ro", "nosuid"},
 				},
 				{
 					Source:      lib2,
 					Destination: "/.singularity.d/libs/lib2.so",
 					Type:        "none",
-					Options:     []string{"rbind", "nosuid", "nodev", "ro"},
+					Options:     []string{"rbind", "nodev", "ro", "nosuid"},
 				},
 			},
 			wantErr: false,

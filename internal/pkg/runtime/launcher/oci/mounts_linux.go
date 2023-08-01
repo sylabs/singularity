@@ -106,29 +106,28 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
 			return fmt.Errorf("failed to create %s: %s", vartmpSrc, err)
 		}
 
+		opts := []string{
+			"rbind",
+			"relatime",
+			"mode=777",
+		}
+		if !l.cfg.AllowSUID {
+			opts = append(opts, "nosuid")
+		}
+
 		*mounts = append(*mounts,
 
 			specs.Mount{
 				Destination: tmpDest,
 				Type:        "none",
 				Source:      tmpSrc,
-				Options: []string{
-					"rbind",
-					"nosuid",
-					"relatime",
-					"mode=777",
-				},
+				Options:     opts,
 			},
 			specs.Mount{
 				Destination: vartmpDest,
 				Type:        "none",
 				Source:      vartmpSrc,
-				Options: []string{
-					"rbind",
-					"nosuid",
-					"relatime",
-					"mode=777",
-				},
+				Options:     opts,
 			},
 		)
 
@@ -244,6 +243,7 @@ func (l *Launcher) addProcMount(mounts *[]specs.Mount) {
 			Source:      "proc",
 			Destination: "/proc",
 			Type:        "proc",
+			Options:     []string{"nosuid", "noexec", "nodev"},
 		})
 }
 
@@ -306,18 +306,22 @@ func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
 
 	// If l.homeSrc is set, then we are simply bind mounting from the host.
 	if l.homeSrc != "" {
-		return addBindMount(mounts, bind.Path{
-			Source:      l.homeSrc,
-			Destination: l.homeDest,
-		})
+		return addBindMount(mounts,
+			bind.Path{
+				Source:      l.homeSrc,
+				Destination: l.homeDest,
+			},
+			l.cfg.AllowSUID)
 	}
 
 	// Otherwise we setup a tmpfs, mounted onto l.homeDst.
 	tmpfsOpt := []string{
-		"nosuid",
 		"relatime",
 		"mode=755",
 		fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
+	}
+	if !l.cfg.AllowSUID {
+		tmpfsOpt = append(tmpfsOpt, "nosuid")
 	}
 
 	// If we aren't using fakeroot, ensure the tmpfs ownership is correct for our real uid/gid.
@@ -368,33 +372,41 @@ func (l *Launcher) addScratchMounts(mounts *[]specs.Mount) error {
 				return fmt.Errorf("failed to create %s: %s", scratchDirPath, err)
 			}
 
+			opts := []string{
+				"rbind",
+				"relatime",
+				"nodev",
+			}
+			if !l.cfg.AllowSUID {
+				opts = append(opts, "nosuid")
+			}
+
 			*mounts = append(*mounts,
 				specs.Mount{
 					Destination: s,
 					Type:        "",
 					Source:      scratchDirPath,
-					Options: []string{
-						"rbind",
-						"nosuid",
-						"relatime",
-						"nodev",
-					},
+					Options:     opts,
 				},
 			)
 		}
 	} else {
+		opts := []string{
+			"relatime",
+			"nodev",
+			fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
+		}
+		if !l.cfg.AllowSUID {
+			opts = append(opts, "nosuid")
+		}
+
 		for _, s := range l.cfg.ScratchDirs {
 			*mounts = append(*mounts,
 				specs.Mount{
 					Destination: s,
 					Type:        "tmpfs",
 					Source:      "tmpfs",
-					Options: []string{
-						"nosuid",
-						"relatime",
-						"nodev",
-						fmt.Sprintf("size=%dm", l.singularityConf.SessiondirMaxSize),
-					},
+					Options:     opts,
 				},
 			)
 		}
@@ -423,21 +435,24 @@ func (l *Launcher) addBindMounts(mounts *[]specs.Mount) error {
 			sylog.Warningf("Ignoring bind mount request: user bind control disabled by system administrator")
 			return nil
 		}
-		if err := addBindMount(mounts, b); err != nil {
+		if err := addBindMount(mounts, b, l.cfg.AllowSUID); err != nil {
 			return fmt.Errorf("while adding mount %q: %w", b.Source, err)
 		}
 	}
 	return nil
 }
 
-func addBindMount(mounts *[]specs.Mount, b bind.Path) error {
+func addBindMount(mounts *[]specs.Mount, b bind.Path, allowSUID bool) error {
 	if b.ID() != "" || b.ImageSrc() != "" {
 		return fmt.Errorf("image binds are not yet supported by the OCI runtime")
 	}
 
-	opts := []string{"rbind", "nosuid", "nodev"}
+	opts := []string{"rbind", "nodev"}
 	if b.Readonly() {
 		opts = append(opts, "ro")
+	}
+	if !allowSUID {
+		opts = append(opts, "nosuid")
 	}
 
 	absSource, err := filepath.Abs(b.Source)
@@ -519,7 +534,7 @@ func (l *Launcher) addRocmMounts(mounts *[]specs.Mount) error {
 			Destination: containerBinary,
 			Options:     map[string]*bind.Option{"ro": {}},
 		}
-		if err := addBindMount(mounts, bind); err != nil {
+		if err := addBindMount(mounts, bind, false); err != nil {
 			return err
 		}
 	}
@@ -531,7 +546,7 @@ func (l *Launcher) addRocmMounts(mounts *[]specs.Mount) error {
 			Destination: containerLib,
 			Options:     map[string]*bind.Option{"ro": {}},
 		}
-		if err := addBindMount(mounts, bind); err != nil {
+		if err := addBindMount(mounts, bind, false); err != nil {
 			return err
 		}
 	}
@@ -583,7 +598,7 @@ func (l *Launcher) addNvidiaMounts(mounts *[]specs.Mount) error {
 			Destination: containerBinary,
 			Options:     map[string]*bind.Option{"ro": {}},
 		}
-		if err := addBindMount(mounts, bind); err != nil {
+		if err := addBindMount(mounts, bind, false); err != nil {
 			return err
 		}
 	}
@@ -595,7 +610,7 @@ func (l *Launcher) addNvidiaMounts(mounts *[]specs.Mount) error {
 			Destination: containerLib,
 			Options:     map[string]*bind.Option{"ro": {}},
 		}
-		if err := addBindMount(mounts, bind); err != nil {
+		if err := addBindMount(mounts, bind, false); err != nil {
 			return err
 		}
 	}
@@ -605,7 +620,7 @@ func (l *Launcher) addNvidiaMounts(mounts *[]specs.Mount) error {
 			Source:      ipc,
 			Destination: ipc,
 		}
-		if err := addBindMount(mounts, bind); err != nil {
+		if err := addBindMount(mounts, bind, false); err != nil {
 			return err
 		}
 	}
@@ -636,7 +651,7 @@ func (l *Launcher) addLibrariesMounts(mounts *[]specs.Mount) error {
 			Destination: containerLib,
 			Options:     map[string]*bind.Option{"ro": {}},
 		}
-		if err := addBindMount(mounts, bind); err != nil {
+		if err := addBindMount(mounts, bind, false); err != nil {
 			return err
 		}
 	}

@@ -144,9 +144,6 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "NetworkArgs")
 	}
 
-	if lo.AllowSUID {
-		badOpt = append(badOpt, "AllowSUID")
-	}
 	if len(lo.SecurityOpts) > 0 {
 		badOpt = append(badOpt, "SecurityOpts")
 	}
@@ -628,7 +625,7 @@ func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 	}
 
 	// Execution of runc/crun run, wrapped with overlay prep / cleanup.
-	err = RunWrapped(ctx, id.String(), b.Path(), "", l.cfg.OverlayPaths, l.singularityConf.SystemdCgroups)
+	err = l.RunWrapped(ctx, id.String(), b.Path(), "")
 
 	// Unmounts pristine rootfs from bundle, and removes the bundle.
 	if cleanupErr := b.Delete(ctx); cleanupErr != nil {
@@ -644,6 +641,28 @@ func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 		os.Exit(exitErr.ExitCode())
 	}
 	return err
+}
+
+// RunWrapped runs a container via the OCI runtime, wrapped with prep / cleanup steps.
+func (l *Launcher) RunWrapped(ctx context.Context, containerID, bundlePath, pidFile string) error {
+	absBundle, err := filepath.Abs(bundlePath)
+	if err != nil {
+		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
+	}
+
+	if err := os.Chdir(absBundle); err != nil {
+		return fmt.Errorf("failed to change directory to %s: %s", absBundle, err)
+	}
+
+	runFunc := func() error {
+		return Run(ctx, containerID, absBundle, pidFile, l.singularityConf.SystemdCgroups)
+	}
+
+	if len(l.cfg.OverlayPaths) > 0 {
+		return WrapWithOverlays(runFunc, absBundle, l.cfg.OverlayPaths, l.cfg.AllowSUID)
+	}
+
+	return WrapWithWritableTmpFs(runFunc, absBundle, l.cfg.AllowSUID)
 }
 
 // getCgroup will return a cgroup path and resources for the runtime to create.

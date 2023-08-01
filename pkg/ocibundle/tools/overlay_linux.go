@@ -58,7 +58,7 @@ func DeleteOverlay(bundlePath string) error {
 }
 
 // CreateOverlay creates a writable overlay using tmpfs.
-func CreateOverlayTmpfs(bundlePath string, sizeMiB int) (string, error) {
+func CreateOverlayTmpfs(bundlePath string, sizeMiB int, allowSetuid bool) (string, error) {
 	var err error
 
 	oldumask := syscall.Umask(0)
@@ -78,7 +78,13 @@ func CreateOverlayTmpfs(bundlePath string, sizeMiB int) (string, error) {
 	}()
 
 	options := fmt.Sprintf("mode=1777,size=%dm", sizeMiB)
-	err = syscall.Mount("tmpfs", olDir, "tmpfs", syscall.MS_NODEV, options)
+
+	var flags uintptr = syscall.MS_NODEV
+	if !allowSetuid {
+		flags |= syscall.MS_NOSUID
+	}
+
+	err = syscall.Mount("tmpfs", olDir, "tmpfs", flags, options)
 	if err != nil {
 		return "", fmt.Errorf("failed to bind %s: %s", olDir, err)
 	}
@@ -90,11 +96,13 @@ func CreateOverlayTmpfs(bundlePath string, sizeMiB int) (string, error) {
 		}
 	}()
 
-	olSet := overlay.Set{WritableOverlay: &overlay.Item{
+	oi := overlay.Item{
 		SourcePath: olDir,
 		Type:       image.SANDBOX,
 		Writable:   true,
-	}}
+	}
+	oi.SetAllowSetuid(allowSetuid)
+	olSet := overlay.Set{WritableOverlay: &oi}
 
 	err = olSet.Mount(RootFs(bundlePath).Path())
 	if err != nil {
