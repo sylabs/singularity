@@ -12,8 +12,8 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/remote/credential"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential"
 )
 
 // RegistryList prints information about remote configurations

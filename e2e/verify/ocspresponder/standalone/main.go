@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sylabs/singularity/e2e/verify/ocspresponder"
+	"github.com/sylabs/singularity/v4/e2e/verify/ocspresponder"
 )
 
 func main() {

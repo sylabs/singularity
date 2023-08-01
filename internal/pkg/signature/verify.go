@@ -21,9 +21,9 @@ import (
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/sif/v2/pkg/integrity"
 	"github.com/sylabs/sif/v2/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/sypgp"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/sypgp"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // TODO - error overlaps with ECL - should probably become part of a common errors package at some point.

@@ -9,8 +9,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/pkg/cmdline"
 )
 
 func init() {

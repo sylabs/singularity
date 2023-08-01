@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
 )
 
 func TestGetProcess(t *testing.T) {

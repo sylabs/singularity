@@ -16,13 +16,13 @@ import (
 
 	keyclient "github.com/sylabs/scs-key-client/client"
 	scslibrary "github.com/sylabs/scs-library-client/client"
-	"github.com/sylabs/singularity/internal/pkg/cache"
-	"github.com/sylabs/singularity/internal/pkg/client"
-	"github.com/sylabs/singularity/internal/pkg/client/ocisif"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
-	"github.com/sylabs/singularity/internal/pkg/signature"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/cache"
+	"github.com/sylabs/singularity/v4/internal/pkg/client"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
+	"github.com/sylabs/singularity/v4/internal/pkg/signature"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/term"
 )
 

@@ -15,14 +15,14 @@ import (
 	"strings"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/internal/pkg/util/gpu"
-	"github.com/sylabs/singularity/internal/pkg/util/rootless"
-	"github.com/sylabs/singularity/internal/pkg/util/user"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/bind"
-	"github.com/sylabs/singularity/pkg/util/slice"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/gpu"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/bind"
+	"github.com/sylabs/singularity/v4/pkg/util/slice"
 )
 
 const containerLibDir = "/.singularity.d/libs"

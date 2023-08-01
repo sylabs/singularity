@@ -14,17 +14,17 @@ import (
 	"io"
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/fatih/color"
 	"github.com/sylabs/sif/v2/pkg/integrity"
 	"github.com/sylabs/sif/v2/pkg/sif"
-	sifsignature "github.com/sylabs/singularity/internal/pkg/signature"
-	"github.com/sylabs/singularity/internal/pkg/sypgp"
-	"github.com/sylabs/singularity/internal/pkg/util/interactive"
-	"github.com/sylabs/singularity/pkg/sylog"
+	sifsignature "github.com/sylabs/singularity/v4/internal/pkg/signature"
+	"github.com/sylabs/singularity/v4/internal/pkg/sypgp"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/interactive"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 var (

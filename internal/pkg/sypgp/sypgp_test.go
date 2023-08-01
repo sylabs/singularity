@@ -21,8 +21,8 @@ import (
 	"github.com/ProtonMail/go-crypto/openpgp/armor"
 	"github.com/ProtonMail/go-crypto/openpgp/packet"
 	"github.com/sylabs/scs-key-client/client"
-	"github.com/sylabs/singularity/internal/pkg/test"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
 const (

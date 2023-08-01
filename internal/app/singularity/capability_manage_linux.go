@@ -11,9 +11,9 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/util/user"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/capabilities"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/capabilities"
 )
 
 // CapManageConfig specifies what capability set to edit in the capability file

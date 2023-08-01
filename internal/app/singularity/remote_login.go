@@ -12,11 +12,11 @@ import (
 	"io"
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
-	"github.com/sylabs/singularity/internal/pkg/util/auth"
-	"github.com/sylabs/singularity/internal/pkg/util/interactive"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/auth"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/interactive"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 type LoginArgs struct {

@@ -31,7 +31,7 @@ import (
 	_ "github.com/docker/distribution/registry/storage/driver/middleware/redirect"
 	"github.com/sirupsen/logrus"
 
-	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
+	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/exec"
 )
 
 const registryConfigTemplate = `

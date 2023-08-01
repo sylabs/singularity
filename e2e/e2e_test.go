@@ -25,7 +25,7 @@ import (
 	// and will restore identity to the original user but will retain privileges for
 	// Privileged method enabling the execution of a function with root privileges
 	// when required
-	_ "github.com/sylabs/singularity/e2e/internal/e2e/init"
+	_ "github.com/sylabs/singularity/v4/e2e/internal/e2e/init"
 
 	"golang.org/x/sys/unix"
 )

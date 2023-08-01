@@ -10,8 +10,8 @@ import (
 	"net"
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 func CleanupHost(cleanupSocket int, e *engine.Engine) {

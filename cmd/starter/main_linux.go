@@ -17,14 +17,14 @@ import (
 	"runtime"
 	"unsafe"
 
-	"github.com/sylabs/singularity/internal/app/starter"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
-	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/config/starter"
-	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/app/starter"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine"
+	starterConfig "github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/starter"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/mainthread"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 
 	// register engines
-	_ "github.com/sylabs/singularity/cmd/starter/engines"
+	_ "github.com/sylabs/singularity/v4/cmd/starter/engines"
 )
 
 func getEngine(jsonConfig []byte) *engine.Engine {

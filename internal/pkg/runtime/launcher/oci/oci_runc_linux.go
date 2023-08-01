@@ -15,7 +15,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // Delete deletes container resources

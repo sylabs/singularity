@@ -8,10 +8,10 @@ package oci
 import (
 	"fmt"
 
-	"github.com/sylabs/singularity/internal/pkg/util/fs/overlay"
-	"github.com/sylabs/singularity/pkg/ocibundle/tools"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/overlay"
+	"github.com/sylabs/singularity/v4/pkg/ocibundle/tools"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
 )
 
 // WrapWithWritableTmpFs runs a function wrapped with prep / cleanup steps for a writable tmpfs.

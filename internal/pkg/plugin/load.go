@@ -12,8 +12,8 @@ import (
 	"strings"
 	"sync"
 
-	callback "github.com/sylabs/singularity/internal/pkg/plugin/callback"
-	pluginapi "github.com/sylabs/singularity/pkg/plugin"
+	callback "github.com/sylabs/singularity/v4/internal/pkg/plugin/callback"
+	pluginapi "github.com/sylabs/singularity/v4/pkg/plugin"
 )
 
 type loadedPlugins struct {

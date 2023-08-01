@@ -14,7 +14,7 @@ import (
 
 	"github.com/docker/go-units"
 	"github.com/shopspring/decimal"
-	"github.com/sylabs/singularity/internal/pkg/cgroups"
+	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
 	"golang.org/x/sys/unix"
 )
 

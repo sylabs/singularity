@@ -15,9 +15,9 @@ import (
 	"testing"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
-	"github.com/sylabs/singularity/pkg/util/bind"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
+	"github.com/sylabs/singularity/v4/pkg/util/bind"
+	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
 )
 
 func Test_addBindMount(t *testing.T) {

@@ -11,7 +11,7 @@ import (
 
 	da "github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/idtools"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // CopyWithTar is a wrapper around the docker pkg/archive/copy CopyWithTar allowing unprivileged use.

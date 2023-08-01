@@ -13,11 +13,11 @@ import (
 	"fmt"
 
 	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/runtime/launcher/oci"
-	ocibundle "github.com/sylabs/singularity/pkg/ocibundle/sif"
-	"github.com/sylabs/singularity/pkg/util/namespaces"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/oci"
+	ocibundle "github.com/sylabs/singularity/v4/pkg/ocibundle/sif"
+	"github.com/sylabs/singularity/v4/pkg/util/namespaces"
+	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
 )
 
 // OciArgs contains CLI arguments

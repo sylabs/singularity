@@ -21,8 +21,8 @@ import (
 	"testing"
 
 	"github.com/containernetworking/cni/libcni"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
 )
 
 var confFiles = []struct {

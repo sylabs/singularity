@@ -28,7 +28,7 @@ import (
 	"os"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/pkg/util/capabilities"
+	"github.com/sylabs/singularity/v4/pkg/util/capabilities"
 	"golang.org/x/sys/unix"
 )
 

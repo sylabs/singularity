@@ -11,11 +11,11 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/build/assemblers"
-	"github.com/sylabs/singularity/internal/pkg/build/sources"
-	"github.com/sylabs/singularity/internal/pkg/cache"
-	testCache "github.com/sylabs/singularity/internal/pkg/test/tool/cache"
-	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/v4/internal/pkg/build/assemblers"
+	"github.com/sylabs/singularity/v4/internal/pkg/build/sources"
+	"github.com/sylabs/singularity/v4/internal/pkg/cache"
+	testCache "github.com/sylabs/singularity/v4/internal/pkg/test/tool/cache"
+	"github.com/sylabs/singularity/v4/pkg/build/types"
 )
 
 const (

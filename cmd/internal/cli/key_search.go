@@ -12,10 +12,10 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/scs-key-client/client"
-	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
-	"github.com/sylabs/singularity/internal/pkg/sypgp"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/docs"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
+	"github.com/sylabs/singularity/v4/internal/pkg/sypgp"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // KeySearchCmd is 'singularity key search' and look for public keys from a key server

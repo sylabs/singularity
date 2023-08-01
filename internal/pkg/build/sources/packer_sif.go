@@ -10,10 +10,10 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/sylabs/singularity/internal/pkg/image/unpacker"
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/image/unpacker"
+	"github.com/sylabs/singularity/v4/pkg/build/types"
+	"github.com/sylabs/singularity/v4/pkg/image"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // SIFPacker holds the locations of where to pack from and to.

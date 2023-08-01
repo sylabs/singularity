@@ -10,9 +10,9 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/pkg/build/types"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/pkg/build/types"
+	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
 func TestMain(m *testing.M) {

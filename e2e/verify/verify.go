@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sylabs/singularity/e2e/verify/ocspresponder"
+	"github.com/sylabs/singularity/v4/e2e/verify/ocspresponder"
 
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
+	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 )
 
 type ctx struct {

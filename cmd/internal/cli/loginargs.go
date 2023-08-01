@@ -11,8 +11,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sylabs/singularity/internal/app/singularity"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/app/singularity"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 func ObtainLoginArgs(name string) *singularity.LoginArgs {

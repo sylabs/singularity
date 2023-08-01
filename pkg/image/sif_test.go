@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/sif/v2/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 const testSquash = "./testdata/squashfs.v4"

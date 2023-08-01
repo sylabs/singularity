@@ -10,8 +10,8 @@ import (
 	"fmt"
 
 	ocitypes "github.com/containers/image/v5/types"
-	"github.com/sylabs/singularity/internal/pkg/client/ocisif"
-	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/v4/pkg/image"
 )
 
 // Push pushes an image into an OCI registry, as an OCI image (not an ORAS artifact).

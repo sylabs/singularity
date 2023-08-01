@@ -20,12 +20,12 @@ import (
 	"testing"
 
 	"github.com/opencontainers/runc/libcontainer/cgroups"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/security/seccomp"
-	"github.com/sylabs/singularity/internal/pkg/util/rpm"
-	"github.com/sylabs/singularity/pkg/network"
-	"github.com/sylabs/singularity/pkg/util/fs/proc"
-	"github.com/sylabs/singularity/pkg/util/slice"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/security/seccomp"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/rpm"
+	"github.com/sylabs/singularity/v4/pkg/network"
+	"github.com/sylabs/singularity/v4/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/v4/pkg/util/slice"
 )
 
 var (

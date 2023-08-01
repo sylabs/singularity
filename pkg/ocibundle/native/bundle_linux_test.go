@@ -11,9 +11,9 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/cache"
-	"github.com/sylabs/singularity/internal/pkg/test"
-	ocitest "github.com/sylabs/singularity/internal/pkg/test/tool/oci"
+	"github.com/sylabs/singularity/v4/internal/pkg/cache"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	ocitest "github.com/sylabs/singularity/v4/internal/pkg/test/tool/oci"
 )
 
 const (

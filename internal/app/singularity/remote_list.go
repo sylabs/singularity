@@ -12,7 +12,7 @@ import (
 	"sort"
 	"text/tabwriter"
 
-	"github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote"
 )
 
 const listLine = "%s\t%s\t%s\t%s\t%s\t%s\n"

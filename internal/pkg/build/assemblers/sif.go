@@ -16,12 +16,12 @@ import (
 	"syscall"
 
 	"github.com/sylabs/sif/v2/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/image/packer"
-	"github.com/sylabs/singularity/internal/pkg/util/crypt"
-	"github.com/sylabs/singularity/internal/pkg/util/machine"
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/cryptkey"
+	"github.com/sylabs/singularity/v4/internal/pkg/image/packer"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/crypt"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/machine"
+	"github.com/sylabs/singularity/v4/pkg/build/types"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/cryptkey"
 )
 
 // SIFAssembler doesn't store anything.

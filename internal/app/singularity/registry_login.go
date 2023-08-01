@@ -11,8 +11,8 @@ import (
 	"io"
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // RegistryLogin logs in to an OCI/Docker registry.

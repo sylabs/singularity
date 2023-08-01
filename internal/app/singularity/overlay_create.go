@@ -15,8 +15,8 @@ import (
 	"strings"
 
 	"github.com/sylabs/sif/v2/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/util/bin"
-	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/v4/pkg/image"
 	"golang.org/x/sys/unix"
 )
 

@@ -127,6 +127,8 @@
   `.Raw` field has changed: for multi-stage builds parsed with
   pkg/build/types/parser.All(), `.Raw` contains the raw content of a single
   build stage. Otherwise, it is equal to `.FullRaw`.
+- The SingularityCE go module is now `github.com/sylabs/singularity/v4`,
+  reflecting the major version of the application.
 
 ### Bug Fixes
 

@@ -15,8 +15,8 @@ import (
 	"time"
 
 	"github.com/gosimple/slug"
-	"github.com/sylabs/singularity/internal/pkg/remote/credential"
-	"github.com/sylabs/singularity/pkg/syfs"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential"
+	"github.com/sylabs/singularity/v4/pkg/syfs"
 )
 
 var cacheDuration = 720 * time.Hour

@@ -16,8 +16,8 @@ import (
 	"github.com/opencontainers/umoci"
 	umocilayer "github.com/opencontainers/umoci/oci/layer"
 	"github.com/opencontainers/umoci/pkg/idtools"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // UnpackRootfs extracts all of the layers of the given image manifest from an

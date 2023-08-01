@@ -11,8 +11,8 @@ import (
 	"io"
 
 	"github.com/sylabs/sif/v2/pkg/sif"
-	"github.com/sylabs/singularity/pkg/image"
-	pluginapi "github.com/sylabs/singularity/pkg/plugin"
+	"github.com/sylabs/singularity/v4/pkg/image"
+	pluginapi "github.com/sylabs/singularity/v4/pkg/plugin"
 )
 
 const (

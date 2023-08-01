@@ -17,11 +17,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 
 	imageSpecs "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/sylabs/singularity/internal/pkg/image/unpacker"
+	"github.com/sylabs/singularity/v4/internal/pkg/image/unpacker"
 )
 
 // We need a busybox SIF for these tests. We used to download it each time, but we have one

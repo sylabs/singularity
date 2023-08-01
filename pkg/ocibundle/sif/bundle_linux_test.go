@@ -11,13 +11,13 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
-	"github.com/sylabs/singularity/internal/pkg/test"
-	ocitest "github.com/sylabs/singularity/internal/pkg/test/tool/oci"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/ocibundle/tools"
-	"github.com/sylabs/singularity/pkg/util/fs/proc"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	ocitest "github.com/sylabs/singularity/v4/internal/pkg/test/tool/oci"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/pkg/ocibundle/tools"
+	"github.com/sylabs/singularity/v4/pkg/util/fs/proc"
+	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
 // We need a busybox SIF for these tests. We used to download it each time, but we have one

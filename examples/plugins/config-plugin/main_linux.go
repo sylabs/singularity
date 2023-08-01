@@ -8,12 +8,12 @@ package main
 import (
 	"log"
 
-	"github.com/sylabs/singularity/internal/pkg/cgroups"
-	pluginapi "github.com/sylabs/singularity/pkg/plugin"
-	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
-	singularity "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
+	pluginapi "github.com/sylabs/singularity/v4/pkg/plugin"
+	clicallback "github.com/sylabs/singularity/v4/pkg/plugin/callback/cli"
+	"github.com/sylabs/singularity/v4/pkg/runtime/engine/config"
+	singularity "github.com/sylabs/singularity/v4/pkg/runtime/engine/singularity/config"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // Plugin is the only variable which a plugin MUST export.

@@ -20,12 +20,12 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/types"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/e2e/internal/testhelper"
-	"github.com/sylabs/singularity/internal/pkg/client/oras"
-	syoras "github.com/sylabs/singularity/internal/pkg/client/oras"
-	"github.com/sylabs/singularity/internal/pkg/util/uri"
-	"github.com/sylabs/singularity/pkg/image"
+	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
+	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
+	syoras "github.com/sylabs/singularity/v4/internal/pkg/client/oras"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/uri"
+	"github.com/sylabs/singularity/v4/pkg/image"
 	"golang.org/x/sys/unix"
 )
 

@@ -9,9 +9,9 @@ import (
 	"net"
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
-	starterConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/config/starter"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine"
+	starterConfig "github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/starter"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // StageOne validates and prepares container configuration which is
