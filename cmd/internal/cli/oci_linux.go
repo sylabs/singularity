@@ -33,17 +33,6 @@ var ociBundleFlag = cmdline.Flag{
 	EnvKeys:      []string{"BUNDLE"},
 }
 
-// -o|--overlay
-var ociOverlayFlag = cmdline.Flag{
-	ID:           "ociOverlayFlag",
-	Value:        &ociArgs.OverlayPaths,
-	DefaultValue: []string{},
-	Name:         "overlay",
-	ShortHand:    "o",
-	Usage:        "specify an overlay dir to use in lieu of a writable tmpfs",
-	Tag:          "<path>",
-}
-
 // -l|--log-path
 var ociLogPathFlag = cmdline.Flag{
 	ID:           "ociLogPathFlag",
@@ -118,7 +107,6 @@ func init() {
 		cmdManager.RegisterSubCmd(OciCmd, OciStartCmd)
 		cmdManager.RegisterSubCmd(OciCmd, OciCreateCmd)
 		cmdManager.RegisterSubCmd(OciCmd, OciRunCmd)
-		cmdManager.RegisterSubCmd(OciCmd, OciRunWrappedCmd)
 		cmdManager.RegisterSubCmd(OciCmd, OciDeleteCmd)
 		cmdManager.RegisterSubCmd(OciCmd, OciKillCmd)
 		cmdManager.RegisterSubCmd(OciCmd, OciStateCmd)
@@ -130,14 +118,13 @@ func init() {
 		cmdManager.RegisterSubCmd(OciCmd, OciMountCmd)
 		cmdManager.RegisterSubCmd(OciCmd, OciUmountCmd)
 
-		cmdManager.SetCmdGroup("create_run", OciCreateCmd, OciRunCmd, OciRunWrappedCmd)
+		cmdManager.SetCmdGroup("create_run", OciCreateCmd, OciRunCmd)
 		createRunCmd := cmdManager.GetCmdGroup("create_run")
 
 		cmdManager.RegisterFlagForCmd(&ociBundleFlag, createRunCmd...)
 		cmdManager.RegisterFlagForCmd(&ociLogPathFlag, createRunCmd...)
 		cmdManager.RegisterFlagForCmd(&ociLogFormatFlag, createRunCmd...)
 		cmdManager.RegisterFlagForCmd(&ociPidFileFlag, createRunCmd...)
-		cmdManager.RegisterFlagForCmd(&ociOverlayFlag, OciRunWrappedCmd)
 		cmdManager.RegisterFlagForCmd(&ociKillForceFlag, OciKillCmd)
 		cmdManager.RegisterFlagForCmd(&ociKillSignalFlag, OciKillCmd)
 		cmdManager.RegisterFlagForCmd(&ociUpdateFromFileFlag, OciUpdateCmd)
@@ -178,25 +165,6 @@ var OciRunCmd = &cobra.Command{
 	Short:   docs.OciRunShort,
 	Long:    docs.OciRunLong,
 	Example: docs.OciRunExample,
-}
-
-// OciRunWrappedCmd is for internal OCI launcher use.
-// Executes an oci run, wrapped with preparation / cleanup code.
-var OciRunWrappedCmd = &cobra.Command{
-	Args:                  cobra.ExactArgs(1),
-	DisableFlagsInUseLine: true,
-	PreRun:                CheckRoot,
-	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.OciRunWrapped(cmd.Context(), args[0], &ociArgs); err != nil {
-			var exitErr *exec.ExitError
-			if errors.As(err, &exitErr) {
-				os.Exit(exitErr.ExitCode())
-			}
-			sylog.Fatalf("%s", err)
-		}
-	},
-	Use:    docs.OciRunWrappedUse,
-	Hidden: true,
 }
 
 // OciStartCmd represents oci start command.
