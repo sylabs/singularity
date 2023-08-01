@@ -557,23 +557,23 @@ func (l *Launcher) addNvidiaMounts(mounts *[]specs.Mount) error {
 	gpuConfFile := filepath.Join(buildcfg.SINGULARITY_CONFDIR, "nvliblist.conf")
 	libs, bins, err := gpu.NvidiaPaths(gpuConfFile)
 	if err != nil {
-		sylog.Warningf("While finding Nvidia bind points: %v", err)
+		sylog.Warningf("While finding NVIDIA bind points: %v", err)
 	}
 	if len(libs) == 0 {
-		sylog.Warningf("Could not find any Nvidia libraries on this host!")
+		sylog.Warningf("Could not find any NVIDIA libraries on this host!")
 	}
 
 	ipcs, err := gpu.NvidiaIpcsPath()
 	if err != nil {
-		sylog.Warningf("While finding Nvidia IPCs: %v", err)
+		sylog.Warningf("While finding NVIDIA IPCs: %v", err)
 	}
 
 	devs, err := gpu.NvidiaDevices(true)
 	if err != nil {
-		sylog.Warningf("While finding Nvidia devices: %v", err)
+		sylog.Warningf("While finding NVIDIA devices: %v", err)
 	}
 	if len(devs) == 0 {
-		sylog.Warningf("Could not find any ROCm devices on this host!")
+		sylog.Warningf("Could not find any NVIDIA devices on this host!")
 	}
 
 	for _, binary := range bins {
