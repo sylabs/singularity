@@ -9,9 +9,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/archive"
+	"github.com/sylabs/singularity/v4/pkg/build/types"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/archive"
 )
 
 // SandboxPacker holds the locations of where to pack from and to

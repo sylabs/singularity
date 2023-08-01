@@ -14,9 +14,9 @@ import (
 	"syscall"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
-	"github.com/sylabs/singularity/internal/pkg/util/passwdfile"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/passwdfile"
 )
 
 // RootFs is the default root path for OCI bundle

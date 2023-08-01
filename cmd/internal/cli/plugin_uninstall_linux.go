@@ -9,9 +9,9 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/app/singularity"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/docs"
+	"github.com/sylabs/singularity/v4/internal/app/singularity"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // PluginUninstallCmd takes the name of a plugin and uninstalls it from the

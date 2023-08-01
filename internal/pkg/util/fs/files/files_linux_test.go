@@ -12,7 +12,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
 )
 
 func TestGroup(t *testing.T) {

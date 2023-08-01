@@ -10,14 +10,14 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 const mainGo = `package main
 
 import (
-	pluginapi "github.com/sylabs/singularity/pkg/plugin"
+	pluginapi "github.com/sylabs/singularity/v4/pkg/plugin"
 )
 
 // Plugin is the only variable which a plugin MUST export.

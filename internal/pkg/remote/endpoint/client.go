@@ -14,9 +14,9 @@ import (
 	golog "github.com/go-log/log"
 	keyclient "github.com/sylabs/scs-key-client/client"
 	libclient "github.com/sylabs/scs-library-client/client"
-	remoteutil "github.com/sylabs/singularity/internal/pkg/remote/util"
-	"github.com/sylabs/singularity/pkg/sylog"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	remoteutil "github.com/sylabs/singularity/v4/internal/pkg/remote/util"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
 func (ep *Config) KeyserverClientOpts(uri string, op KeyserverOp) ([]keyclient.Option, error) {

@@ -15,11 +15,11 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	fakerootConfig "github.com/sylabs/singularity/internal/pkg/runtime/engine/fakeroot/config"
-	"github.com/sylabs/singularity/internal/pkg/util/starter"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	fakerootConfig "github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/fakeroot/config"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/starter"
+	"github.com/sylabs/singularity/v4/pkg/runtime/engine/config"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 const (

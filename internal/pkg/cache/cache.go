@@ -15,9 +15,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/syfs"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/pkg/syfs"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 var errInvalidCacheType = errors.New("invalid cache type")

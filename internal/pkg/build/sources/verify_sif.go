@@ -9,8 +9,8 @@ import (
 	"context"
 
 	scskeyclient "github.com/sylabs/scs-key-client/client"
-	"github.com/sylabs/singularity/internal/pkg/signature"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/signature"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // checkSIFFingerprint checks whether a bootstrap SIF image verifies, and was signed with a specified fingerprint

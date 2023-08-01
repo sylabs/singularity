@@ -9,8 +9,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine"
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
 )
 
 // TODO: actually we can't really test Master function which is

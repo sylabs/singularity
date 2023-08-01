@@ -13,8 +13,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/fs/lock"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/fs/lock"
 	"golang.org/x/sys/unix"
 )
 

@@ -16,7 +16,7 @@ import (
 
 	"gotest.tools/v3/assert"
 
-	"github.com/sylabs/singularity/pkg/build/types/parser"
+	"github.com/sylabs/singularity/v4/pkg/build/types/parser"
 )
 
 func TestGetKeyVal(t *testing.T) {

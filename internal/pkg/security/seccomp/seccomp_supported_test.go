@@ -16,8 +16,8 @@ import (
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	lseccomp "github.com/seccomp/libseccomp-golang"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
 )
 
 func defaultProfile() *specs.LinuxSeccomp {

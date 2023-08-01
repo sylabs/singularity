@@ -8,8 +8,8 @@
 package loop
 
 import (
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
 )
 
 func GetMaxLoopDevices() int {

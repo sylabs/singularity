@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 )
 
 const instanceStartPort = 11372

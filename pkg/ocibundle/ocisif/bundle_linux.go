@@ -18,11 +18,11 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	ocisif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
-	"github.com/sylabs/singularity/internal/pkg/util/fs/squashfs"
-	"github.com/sylabs/singularity/pkg/ocibundle"
-	"github.com/sylabs/singularity/pkg/ocibundle/tools"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/squashfs"
+	"github.com/sylabs/singularity/v4/pkg/ocibundle"
+	"github.com/sylabs/singularity/v4/pkg/ocibundle/tools"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // Bundle is a native OCI bundle, created from imageRef.

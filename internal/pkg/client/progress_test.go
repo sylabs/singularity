@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 func TestProgressCallback(t *testing.T) {

@@ -10,8 +10,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/fs/proc"
 )
 
 // WithPrivilege calls fn if cond is satisfied, and we are uid 0.

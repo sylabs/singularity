@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
 )
 
 var (

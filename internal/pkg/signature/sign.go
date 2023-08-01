@@ -11,7 +11,7 @@ import (
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sylabs/sif/v2/pkg/integrity"
 	"github.com/sylabs/sif/v2/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/sypgp"
+	"github.com/sylabs/singularity/v4/internal/pkg/sypgp"
 )
 
 type signer struct {

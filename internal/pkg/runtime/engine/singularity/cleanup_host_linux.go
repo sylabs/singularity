@@ -11,8 +11,8 @@ import (
 	"os"
 
 	sifuser "github.com/sylabs/sif/v2/pkg/user"
-	"github.com/sylabs/singularity/internal/pkg/util/bin"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // CleanupHost cleans up a SIF FUSE mount and temporary directory. It is called

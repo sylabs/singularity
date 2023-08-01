@@ -16,8 +16,8 @@ import (
 	"testing"
 
 	"github.com/buger/jsonparser"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/exec"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/exec"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 // ImageVerify checks for an image integrity.

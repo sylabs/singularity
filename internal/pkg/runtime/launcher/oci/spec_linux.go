@@ -11,9 +11,9 @@ import (
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
-	"github.com/sylabs/singularity/internal/pkg/util/rootless"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // defaultNamespaces matching native runtime with --compat / --containall.

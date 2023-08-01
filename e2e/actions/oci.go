@@ -20,10 +20,10 @@ import (
 	"text/template"
 
 	cdispecs "github.com/container-orchestrated-devices/container-device-interface/specs-go"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/dirs"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
+	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/dirs"
+	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"gotest.tools/v3/assert"
 )
 

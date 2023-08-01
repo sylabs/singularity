@@ -15,7 +15,7 @@ import (
 
 	"github.com/ProtonMail/go-crypto/openpgp"
 	"github.com/sylabs/scs-key-client/client"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // PublicKeyRing retrieves the Singularity public KeyRing.

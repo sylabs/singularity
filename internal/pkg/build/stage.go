@@ -12,10 +12,10 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/build/files"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/build/files"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/pkg/build/types"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // stage represents the process of constructing a root filesystem.

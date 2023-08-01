@@ -17,11 +17,11 @@ import (
 	"strings"
 
 	"github.com/sylabs/sif/v2/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/plugin"
-	"github.com/sylabs/singularity/internal/pkg/util/bin"
-	pluginapi "github.com/sylabs/singularity/pkg/plugin"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/plugin"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
+	pluginapi "github.com/sylabs/singularity/v4/pkg/plugin"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // source file that should be present in a valid Singularity source tree

@@ -15,10 +15,10 @@ import (
 
 	scslibrary "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/sif/v2/pkg/sif"
-	"github.com/sylabs/singularity/internal/pkg/client"
-	"github.com/sylabs/singularity/internal/pkg/client/ocisif"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/client"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/term"
 )
 

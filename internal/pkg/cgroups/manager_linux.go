@@ -18,8 +18,8 @@ import (
 	lcconfigs "github.com/opencontainers/runc/libcontainer/configs"
 	lcspecconv "github.com/opencontainers/runc/libcontainer/specconv"
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/util/env"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 var ErrUnitialized = errors.New("cgroups manager is not initialized")

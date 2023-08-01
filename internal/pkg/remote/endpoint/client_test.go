@@ -11,7 +11,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
 func init() {

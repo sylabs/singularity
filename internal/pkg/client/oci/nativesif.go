@@ -10,11 +10,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/sylabs/singularity/internal/pkg/build"
-	"github.com/sylabs/singularity/internal/pkg/cache"
-	"github.com/sylabs/singularity/internal/pkg/ociimage"
-	buildtypes "github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/build"
+	"github.com/sylabs/singularity/v4/internal/pkg/cache"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
+	buildtypes "github.com/sylabs/singularity/v4/pkg/build/types"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // pullNativeSIF will build a SIF image into the cache if directTo="", or a specific file if directTo is set.

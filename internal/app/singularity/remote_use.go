@@ -11,7 +11,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote"
 )
 
 func syncSysConfig(cUsr *remote.Config) error {

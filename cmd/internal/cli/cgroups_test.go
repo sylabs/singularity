@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/cgroups"
+	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
 )
 
 func Test_getBlkioLimits(t *testing.T) {

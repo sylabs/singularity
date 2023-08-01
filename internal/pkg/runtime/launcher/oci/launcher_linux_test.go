@@ -10,9 +10,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
-	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
 )
 
 func TestNewLauncher(t *testing.T) {

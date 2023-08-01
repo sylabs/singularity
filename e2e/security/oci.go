@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/pkg/util/capabilities"
+	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
+	"github.com/sylabs/singularity/v4/pkg/util/capabilities"
 )
 
 const (

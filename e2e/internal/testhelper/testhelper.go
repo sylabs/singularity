@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/sylabs/singularity/e2e/internal/e2e"
+	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 )
 
 // TestRunner returns a function that when called runs the provided list

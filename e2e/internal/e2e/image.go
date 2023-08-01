@@ -26,8 +26,8 @@ import (
 	ocilayout "github.com/containers/image/v5/oci/layout"
 	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/types"
-	"github.com/sylabs/singularity/pkg/syfs"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	"github.com/sylabs/singularity/v4/pkg/syfs"
+	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
 var (

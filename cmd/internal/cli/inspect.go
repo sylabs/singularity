@@ -22,12 +22,12 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/v2/pkg/sif"
-	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/util/env"
-	"github.com/sylabs/singularity/pkg/cmdline"
-	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/inspect"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/docs"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
+	"github.com/sylabs/singularity/v4/pkg/cmdline"
+	"github.com/sylabs/singularity/v4/pkg/image"
+	"github.com/sylabs/singularity/v4/pkg/inspect"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 var (

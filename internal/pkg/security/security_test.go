@@ -11,10 +11,10 @@ import (
 	"testing"
 
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/security/apparmor"
-	"github.com/sylabs/singularity/internal/pkg/security/selinux"
-	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/internal/pkg/util/mainthread"
+	"github.com/sylabs/singularity/v4/internal/pkg/security/apparmor"
+	"github.com/sylabs/singularity/v4/internal/pkg/security/selinux"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/mainthread"
 )
 
 func TestGetParam(t *testing.T) {

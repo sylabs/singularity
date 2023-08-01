@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
 )
 
 func TestSystem(t *testing.T) {

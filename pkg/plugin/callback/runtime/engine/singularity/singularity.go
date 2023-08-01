@@ -9,7 +9,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
+	"github.com/sylabs/singularity/v4/pkg/runtime/engine/config"
 )
 
 // MonitorContainer callback allows to monitor container process.

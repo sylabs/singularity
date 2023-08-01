@@ -9,8 +9,8 @@ import (
 	"os/user"
 	"strconv"
 
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/slice"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/slice"
 )
 
 // UIDInList returns true if the user with supplied uid is in list (match by uid or username).

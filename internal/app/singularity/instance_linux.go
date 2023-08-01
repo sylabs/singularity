@@ -25,10 +25,10 @@ import (
 	"github.com/buger/goterm"
 	units "github.com/docker/go-units"
 	libcgroups "github.com/opencontainers/runc/libcontainer/cgroups"
-	"github.com/sylabs/singularity/internal/pkg/cgroups"
-	"github.com/sylabs/singularity/internal/pkg/instance"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
+	"github.com/sylabs/singularity/v4/internal/pkg/instance"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/fs/proc"
 )
 
 type instanceInfo struct {

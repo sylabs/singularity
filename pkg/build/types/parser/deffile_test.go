@@ -13,8 +13,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"gotest.tools/v3/assert"
 )
 

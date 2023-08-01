@@ -10,7 +10,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/sylabs/singularity/pkg/util/loop"
+	"github.com/sylabs/singularity/v4/pkg/util/loop"
 	"golang.org/x/sys/unix"
 )
 

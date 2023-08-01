@@ -12,9 +12,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/remote/credential"
-	remoteutil "github.com/sylabs/singularity/internal/pkg/remote/util"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential"
+	remoteutil "github.com/sylabs/singularity/v4/internal/pkg/remote/util"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // KeyserverOp represents a keyserver operation type.

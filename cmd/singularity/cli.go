@@ -6,9 +6,9 @@
 package main
 
 import (
-	"github.com/sylabs/singularity/cmd/internal/cli"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	"github.com/sylabs/singularity/v4/cmd/internal/cli"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
 func main() {

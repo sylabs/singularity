@@ -11,7 +11,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/pkg/util/capabilities"
+	"github.com/sylabs/singularity/v4/pkg/util/capabilities"
 )
 
 // CapListConfig instructs CapabilityList on what to list

@@ -10,10 +10,10 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/pkg/cmdline"
-	pluginapi "github.com/sylabs/singularity/pkg/plugin"
-	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
+	"github.com/sylabs/singularity/v4/pkg/cmdline"
+	pluginapi "github.com/sylabs/singularity/v4/pkg/plugin"
+	clicallback "github.com/sylabs/singularity/v4/pkg/plugin/callback/cli"
+	"github.com/sylabs/singularity/v4/pkg/runtime/engine/config"
 )
 
 // Plugin is the only variable which a plugin MUST export.

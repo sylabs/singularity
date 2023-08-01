@@ -9,8 +9,8 @@ import (
 	"fmt"
 
 	"github.com/containers/image/v5/types"
-	"github.com/sylabs/singularity/internal/pkg/util/fs/overlay"
-	"github.com/sylabs/singularity/pkg/util/cryptkey"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/overlay"
+	"github.com/sylabs/singularity/v4/pkg/util/cryptkey"
 )
 
 // Namespaces holds flags for the optional (non-mount) namespaces that can be

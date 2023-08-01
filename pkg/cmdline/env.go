@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/spf13/pflag"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 func setValue(flag *pflag.Flag, value string) error {

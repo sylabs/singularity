@@ -11,7 +11,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/sylabs/singularity/internal/pkg/remote"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote"
 )
 
 // KeyserverLogout logs out from a keyserver.

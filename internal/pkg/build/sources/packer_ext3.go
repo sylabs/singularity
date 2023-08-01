@@ -11,11 +11,11 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/archive"
-	"github.com/sylabs/singularity/pkg/util/loop"
+	"github.com/sylabs/singularity/v4/pkg/build/types"
+	"github.com/sylabs/singularity/v4/pkg/image"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/archive"
+	"github.com/sylabs/singularity/v4/pkg/util/loop"
 	"golang.org/x/sys/unix"
 )
 

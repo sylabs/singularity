@@ -11,10 +11,10 @@ import (
 	"path"
 	"testing"
 
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/util/rlimit"
+	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/pkg/util/rlimit"
 )
 
 // Check that an old-style `/environment` file is interpreted

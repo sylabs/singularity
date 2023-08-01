@@ -5,7 +5,7 @@
 
 package singularity
 
-import "github.com/sylabs/singularity/internal/pkg/plugin"
+import "github.com/sylabs/singularity/v4/internal/pkg/plugin"
 
 // DisablePlugin disables the named plugin.
 func DisablePlugin(name, libexecdir string) error {

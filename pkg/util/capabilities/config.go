@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // Caplist defines a map of users/groups with associated list of capabilities

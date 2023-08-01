@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 // WriteTempFile creates and populates a temporary file in the specified

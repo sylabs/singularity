@@ -21,7 +21,7 @@ import (
 	"github.com/containernetworking/cni/pkg/types"
 	cnitypes "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/plugins/plugins/ipam/host-local/backend/allocator"
-	"github.com/sylabs/singularity/internal/pkg/util/env"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
 )
 
 type netError string

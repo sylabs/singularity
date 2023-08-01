@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
-	"github.com/sylabs/singularity/cmd/internal/cli"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/cmd/internal/cli"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/sys/unix"
 )
 

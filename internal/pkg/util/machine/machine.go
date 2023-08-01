@@ -18,8 +18,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // ErrUnknownArch is the error returned for unknown architecture.

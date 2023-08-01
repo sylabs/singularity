@@ -10,7 +10,7 @@ import (
 	"net/rpc"
 	"os"
 
-	args "github.com/sylabs/singularity/internal/pkg/runtime/engine/singularity/rpc"
+	args "github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/singularity/rpc"
 	"golang.org/x/sys/unix"
 )
 

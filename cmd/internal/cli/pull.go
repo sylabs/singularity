@@ -12,17 +12,17 @@ import (
 	"runtime"
 
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/cache"
-	"github.com/sylabs/singularity/internal/pkg/client/library"
-	"github.com/sylabs/singularity/internal/pkg/client/net"
-	"github.com/sylabs/singularity/internal/pkg/client/oci"
-	"github.com/sylabs/singularity/internal/pkg/client/oras"
-	"github.com/sylabs/singularity/internal/pkg/client/shub"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
-	"github.com/sylabs/singularity/internal/pkg/util/uri"
-	"github.com/sylabs/singularity/pkg/cmdline"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/docs"
+	"github.com/sylabs/singularity/v4/internal/pkg/cache"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/library"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/net"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/oci"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/shub"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/uri"
+	"github.com/sylabs/singularity/v4/pkg/cmdline"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 const (

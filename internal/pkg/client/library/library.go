@@ -13,9 +13,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
 
 	scslibrary "github.com/sylabs/scs-library-client/client"
 )

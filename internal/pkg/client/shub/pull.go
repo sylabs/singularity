@@ -12,13 +12,13 @@ import (
 	"os"
 	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/client"
+	"github.com/sylabs/singularity/v4/internal/pkg/client"
 
 	jsonresp "github.com/sylabs/json-resp"
-	"github.com/sylabs/singularity/internal/pkg/cache"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/sylog"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	"github.com/sylabs/singularity/v4/internal/pkg/cache"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
 // Timeout for an image pull in seconds (2 hours)

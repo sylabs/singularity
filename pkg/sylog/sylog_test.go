@@ -16,7 +16,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
 )
 
 var defaultWriter = logWriter

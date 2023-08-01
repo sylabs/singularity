@@ -11,11 +11,11 @@ import (
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/docs"
-	sifsignature "github.com/sylabs/singularity/internal/pkg/signature"
-	"github.com/sylabs/singularity/internal/pkg/sypgp"
-	"github.com/sylabs/singularity/pkg/cmdline"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/docs"
+	sifsignature "github.com/sylabs/singularity/v4/internal/pkg/signature"
+	"github.com/sylabs/singularity/v4/internal/pkg/sypgp"
+	"github.com/sylabs/singularity/v4/pkg/cmdline"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 var (

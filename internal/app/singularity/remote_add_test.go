@@ -9,9 +9,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/remote"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
-	"github.com/sylabs/singularity/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
 	"gopkg.in/yaml.v3"
 )
 

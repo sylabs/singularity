@@ -10,9 +10,9 @@ import (
 	"testing"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
-	"github.com/sylabs/singularity/internal/pkg/test"
-	"github.com/sylabs/singularity/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
+	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"gotest.tools/v3/assert"
 )
 

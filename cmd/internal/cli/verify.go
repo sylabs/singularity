@@ -12,11 +12,11 @@ import (
 
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/spf13/cobra"
-	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/internal/pkg/remote/endpoint"
-	sifsignature "github.com/sylabs/singularity/internal/pkg/signature"
-	"github.com/sylabs/singularity/pkg/cmdline"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/docs"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
+	sifsignature "github.com/sylabs/singularity/v4/internal/pkg/signature"
+	"github.com/sylabs/singularity/v4/pkg/cmdline"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 var (

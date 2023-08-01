@@ -11,7 +11,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/pkg/build/types"
+	"github.com/sylabs/singularity/v4/pkg/build/types"
 )
 
 // ScratchConveyor only needs to hold the conveyor to have the needed data to pack

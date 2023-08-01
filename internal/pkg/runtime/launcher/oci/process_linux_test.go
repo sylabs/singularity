@@ -15,9 +15,9 @@ import (
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/samber/lo"
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
-	"github.com/sylabs/singularity/internal/pkg/runtime/launcher"
-	"github.com/sylabs/singularity/pkg/util/capabilities"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
+	"github.com/sylabs/singularity/v4/pkg/util/capabilities"
 )
 
 func TestSingularityEnvMap(t *testing.T) {

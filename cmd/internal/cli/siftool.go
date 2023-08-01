@@ -8,8 +8,8 @@ package cli
 import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/v2/pkg/siftool"
-	"github.com/sylabs/singularity/docs"
-	"github.com/sylabs/singularity/pkg/cmdline"
+	"github.com/sylabs/singularity/v4/docs"
+	"github.com/sylabs/singularity/v4/pkg/cmdline"
 )
 
 func init() {

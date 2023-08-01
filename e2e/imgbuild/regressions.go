@@ -15,8 +15,8 @@ import (
 	"text/template"
 
 	"github.com/google/uuid"
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 // This test will build an image from a multi-stage definition

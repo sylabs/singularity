@@ -15,8 +15,8 @@ import (
 	"testing"
 
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 )
 
 // SetupHomeDirectories creates temporary home directories for

@@ -18,11 +18,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/sylabs/singularity/internal/pkg/util/bin"
-	"github.com/sylabs/singularity/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/pkg/build/types"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/namespaces"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/pkg/build/types"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/namespaces"
 )
 
 // debootstrapArchs is a map of GO Archs to official Debian ports

@@ -15,8 +15,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sylabs/singularity/e2e/internal/e2e"
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
+	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 )
 
 // This test will build a sandbox, as a non-root user from a dockerhub image

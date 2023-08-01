@@ -12,10 +12,10 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci"
-	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/util/bind"
-	"github.com/sylabs/singularity/pkg/util/singularityconf"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci"
+	"github.com/sylabs/singularity/v4/pkg/image"
+	"github.com/sylabs/singularity/v4/pkg/util/bind"
+	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
 )
 
 // Name is the name of the runtime.

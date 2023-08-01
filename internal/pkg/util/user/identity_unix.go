@@ -6,7 +6,7 @@
 package user
 
 import (
-	"github.com/sylabs/singularity/pkg/util/namespaces"
+	"github.com/sylabs/singularity/v4/pkg/util/namespaces"
 )
 
 // User represents a Unix user account information.

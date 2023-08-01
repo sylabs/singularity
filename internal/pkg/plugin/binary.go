@@ -12,9 +12,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/pkg/image"
-	pluginapi "github.com/sylabs/singularity/pkg/plugin"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/image"
+	pluginapi "github.com/sylabs/singularity/v4/pkg/plugin"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // Install installs a plugin from a SIF image under rootDir. It will:

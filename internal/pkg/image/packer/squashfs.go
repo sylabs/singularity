@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"os/exec"
 
-	"github.com/sylabs/singularity/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 )
 
 // Squashfs represents a squashfs packer

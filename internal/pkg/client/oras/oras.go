@@ -21,10 +21,10 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/sylabs/singularity/internal/pkg/client/ocisif"
-	"github.com/sylabs/singularity/pkg/image"
-	"github.com/sylabs/singularity/pkg/sylog"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/v4/pkg/image"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials

@@ -8,7 +8,7 @@ package e2e
 import (
 	"testing"
 
-	"github.com/sylabs/singularity/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 )
 
 // WithCgroupManagers is a wrapper to call test function f in both the systemd and

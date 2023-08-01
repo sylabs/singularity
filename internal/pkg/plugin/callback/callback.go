@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"unsafe"
 
-	pluginapi "github.com/sylabs/singularity/pkg/plugin"
+	pluginapi "github.com/sylabs/singularity/v4/pkg/plugin"
 )
 
 // pluginCallback contains hook callbacks function registered

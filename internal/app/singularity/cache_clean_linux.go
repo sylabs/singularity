@@ -9,9 +9,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/sylabs/singularity/internal/pkg/cache"
-	"github.com/sylabs/singularity/pkg/sylog"
-	"github.com/sylabs/singularity/pkg/util/slice"
+	"github.com/sylabs/singularity/v4/internal/pkg/cache"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/slice"
 )
 
 var errInvalidCacheHandle = errors.New("invalid cache handle")

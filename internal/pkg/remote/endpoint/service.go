@@ -16,8 +16,8 @@ import (
 	"time"
 
 	jsonresp "github.com/sylabs/json-resp"
-	"github.com/sylabs/singularity/internal/pkg/remote/credential"
-	useragent "github.com/sylabs/singularity/pkg/util/user-agent"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential"
+	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
 const defaultTimeout = 10 * time.Second

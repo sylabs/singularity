@@ -20,7 +20,7 @@ import (
 	"github.com/containers/common/pkg/config"
 	"github.com/moby/term"
 	"github.com/pkg/errors"
-	"github.com/sylabs/singularity/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/sys/unix"
 )
 

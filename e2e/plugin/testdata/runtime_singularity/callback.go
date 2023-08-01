@@ -10,10 +10,10 @@ import (
 	"syscall"
 	"time"
 
-	pluginapi "github.com/sylabs/singularity/pkg/plugin"
-	singularitycallback "github.com/sylabs/singularity/pkg/plugin/callback/runtime/engine/singularity"
-	"github.com/sylabs/singularity/pkg/runtime/engine/config"
-	singularityConfig "github.com/sylabs/singularity/pkg/runtime/engine/singularity/config"
+	pluginapi "github.com/sylabs/singularity/v4/pkg/plugin"
+	singularitycallback "github.com/sylabs/singularity/v4/pkg/plugin/callback/runtime/engine/singularity"
+	"github.com/sylabs/singularity/v4/pkg/runtime/engine/config"
+	singularityConfig "github.com/sylabs/singularity/v4/pkg/runtime/engine/singularity/config"
 )
 
 // Plugin is the only variable which a plugin MUST export.

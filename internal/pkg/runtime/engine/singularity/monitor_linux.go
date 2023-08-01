@@ -10,8 +10,8 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/sylabs/singularity/internal/pkg/plugin"
-	singularitycallback "github.com/sylabs/singularity/pkg/plugin/callback/runtime/engine/singularity"
+	"github.com/sylabs/singularity/v4/internal/pkg/plugin"
+	singularitycallback "github.com/sylabs/singularity/v4/pkg/plugin/callback/runtime/engine/singularity"
 )
 
 // MonitorContainer is called from master once the container has
