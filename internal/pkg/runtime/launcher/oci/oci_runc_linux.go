@@ -13,7 +13,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path/filepath"
+	"strconv"
+	"syscall"
 
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
@@ -95,7 +98,7 @@ func Exec(containerID string, cmdArgs []string, systemdCgroups bool) error {
 }
 
 // Kill kills container process
-func Kill(containerID string, killSignal string, systemdCgroups bool) error {
+func Kill(containerID string, killSignal string) error {
 	runtimeBin, err := runtime()
 	if err != nil {
 		return err
@@ -202,6 +205,11 @@ func Run(ctx context.Context, containerID, bundlePath, pidFile string, systemdCg
 		runtimeArgs = append(runtimeArgs, "--pid-file="+pidFile)
 	}
 
+	signals := make(chan os.Signal, 2)
+	signal.Notify(signals)
+	sylog.Debugf("Starting signal proxy for container %s", containerID)
+	go signalProxy(containerID, signals)
+
 	runtimeArgs = append(runtimeArgs, containerID)
 	cmd := exec.Command(runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
@@ -209,6 +217,28 @@ func Run(ctx context.Context, containerID, bundlePath, pidFile string, systemdCg
 	cmd.Stdin = os.Stdin
 	sylog.Debugf("Calling %s with args %v", runtimeBin, runtimeArgs)
 	return cmd.Run()
+}
+
+func signalProxy(containerID string, signals chan os.Signal) {
+	for {
+		s := <-signals
+		switch s {
+		case syscall.SIGCHLD:
+			break
+		case syscall.SIGURG:
+			// Ignore SIGURG, which is used for non-cooperative goroutine
+			// preemption starting with Go 1.14. For more information, see
+			// https://github.com/golang/go/issues/24543.
+			break
+		default:
+			sylog.Debugf("Received signal %s", s.String())
+			sysSig := s.(syscall.Signal)
+			sylog.Debugf("Sending signal %s to container %s", sysSig.String(), containerID)
+			if err := Kill(containerID, strconv.Itoa(int(sysSig))); err != nil {
+				sylog.Errorf("Failed to send signal %s to container %s", sysSig.String(), containerID)
+			}
+		}
+	}
 }
 
 // Start starts a previously created container

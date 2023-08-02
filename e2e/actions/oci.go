@@ -1981,3 +1981,54 @@ func (c actionTests) actionOciNoCompat(t *testing.T) {
 		)
 	}
 }
+
+func (c actionTests) ociExitSignals(t *testing.T) {
+	e2e.EnsureOCISIF(t, c.env)
+
+	tests := []struct {
+		name string
+		args []string
+		exit int
+	}{
+		{
+			name: "Exit0",
+			args: []string{c.env.OCISIFPath, "/bin/sh", "-c", "exit 0"},
+			exit: 0,
+		},
+		{
+			name: "Exit1",
+			args: []string{c.env.OCISIFPath, "/bin/sh", "-c", "exit 1"},
+			exit: 1,
+		},
+		{
+			name: "Exit134",
+			args: []string{c.env.OCISIFPath, "/bin/sh", "-c", "exit 134"},
+			exit: 134,
+		},
+		// --no-pid is required to observe the signal exit code, as in a PID
+		// namespace sending a signal to our PID 1 has no effect here.
+		{
+			name: "SignalKill",
+			args: []string{"--no-pid", c.env.OCISIFPath, "/bin/sh", "-c", "kill -KILL $$"},
+			exit: 137,
+		},
+		{
+			name: "SignalAbort",
+			args: []string{"--no-pid", c.env.OCISIFPath, "/bin/sh", "-c", "kill -ABRT $$"},
+			exit: 134,
+		},
+	}
+
+	for _, p := range e2e.OCIProfiles {
+		for _, tt := range tests {
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest(tt.name+"/"+p.String()),
+				e2e.WithProfile(p),
+				e2e.WithCommand("exec"),
+				e2e.WithArgs(tt.args...),
+				e2e.ExpectExit(tt.exit),
+			)
+		}
+	}
+}

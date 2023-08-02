@@ -6,9 +6,9 @@
 package rootless
 
 import (
-	"errors"
 	"os"
 	"os/exec"
+	"os/signal"
 	"os/user"
 	"path/filepath"
 	"strconv"
@@ -115,15 +115,49 @@ func RunInMountNS(args []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
-		os.Exit(exitErr.ExitCode())
+	signals := make(chan os.Signal, 2)
+	signal.Notify(signals)
+	errChan := make(chan error, 1)
+
+	err := cmd.Start()
+	if err != nil {
+		return err
 	}
 
-	if err == nil {
-		os.Exit(0)
-	}
+	go func() {
+		errChan <- cmd.Wait()
+	}()
 
-	return err
+	for {
+		select {
+		case s := <-signals:
+			sylog.Debugf("Received signal %s", s.String())
+			switch s {
+			case syscall.SIGCHLD:
+				break
+			case syscall.SIGURG:
+				// Ignore SIGURG, which is used for non-cooperative goroutine
+				// preemption starting with Go 1.14. For more information, see
+				// https://github.com/golang/go/issues/24543.
+				break
+			default:
+				signal := s.(syscall.Signal)
+				if err := syscall.Kill(cmd.Process.Pid, signal); err != nil {
+					return err
+				}
+			}
+		case err := <-errChan:
+			if e, ok := err.(*exec.ExitError); ok {
+				status, ok := e.Sys().(syscall.WaitStatus)
+				if ok && status.Signaled() {
+					os.Exit(128 + int(status.Signal()))
+				}
+				os.Exit(e.ExitCode())
+			}
+			if err == nil {
+				os.Exit(0)
+			}
+			return err
+		}
+	}
 }
