@@ -1844,3 +1844,59 @@ func (c actionTests) actionOciHomeCwdPasswd(t *testing.T) {
 
 	}
 }
+
+func (c actionTests) actionOciAllowSetuid(t *testing.T) {
+	e2e.EnsureOCISIF(t, c.env)
+	imageRef := "oci-sif:" + c.env.OCISIFPath
+
+	// Ensure things are nosuid by default.
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("False"),
+		e2e.WithProfile(e2e.OCIUserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(
+			"--scratch", "/scratch",
+			"--bind", "/etc:/bind:ro",
+			imageRef,
+			"grep", "nosuid", "/proc/mounts",
+		),
+		e2e.ExpectExit(
+			0,
+			e2e.ExpectOutput(e2e.ContainMatch, "/dev/shm "),
+			e2e.ExpectOutput(e2e.ContainMatch, "/proc "),
+			e2e.ExpectOutput(e2e.ContainMatch, "/sys "),
+			e2e.ExpectOutput(e2e.ContainMatch, "/tmp "),
+			e2e.ExpectOutput(e2e.ContainMatch, "/var/tmp "),
+			e2e.ExpectOutput(e2e.ContainMatch, "/scratch "),
+			e2e.ExpectOutput(e2e.ContainMatch, "/bind "),
+		),
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("True"),
+		e2e.WithProfile(e2e.OCIUserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(
+			"--allow-setuid",
+			"--scratch", "/scratch",
+			"--bind", "/etc:/bind:ro",
+			imageRef,
+			"grep", "nosuid", "/proc/mounts",
+		),
+		e2e.ExpectExit(
+			0,
+			// Expected things are still nosuid
+			e2e.ExpectOutput(e2e.ContainMatch, "/dev/shm "),
+			e2e.ExpectOutput(e2e.ContainMatch, "/proc "),
+			e2e.ExpectOutput(e2e.ContainMatch, "/sys "),
+			// Binds, scratch are no longer nosuid
+			e2e.ExpectOutput(e2e.UnwantedContainMatch, "/scratch "),
+			e2e.ExpectOutput(e2e.UnwantedContainMatch, "/bind "),
+			// Underlying host /tmp and /var/tmp are usually nosuid, so they won't become suid here.
+			// e2e.ExpectOutput(e2e.UnwantedContainMatch, "/tmp "),
+			// e2e.ExpectOutput(e2e.UnwantedContainMatch, "/var/tmp "),
+		),
+	)
+}

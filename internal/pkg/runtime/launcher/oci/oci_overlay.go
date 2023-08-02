@@ -15,10 +15,10 @@ import (
 )
 
 // WrapWithWritableTmpFs runs a function wrapped with prep / cleanup steps for a writable tmpfs.
-func WrapWithWritableTmpFs(f func() error, bundleDir string) error {
+func WrapWithWritableTmpFs(f func() error, bundleDir string, allowSetuid bool) error {
 	// TODO: --oci mode always emulating --compat, which uses --writable-tmpfs.
 	//       Provide a way of disabling this, for a read only rootfs.
-	overlayDir, err := prepareWritableTmpfs(bundleDir)
+	overlayDir, err := prepareWritableTmpfs(bundleDir, allowSetuid)
 	sylog.Debugf("Done with prepareWritableTmpfs; overlayDir is: %q", overlayDir)
 	if err != nil {
 		return err
@@ -36,7 +36,7 @@ func WrapWithWritableTmpFs(f func() error, bundleDir string) error {
 }
 
 // WrapWithOverlays runs a function wrapped with prep / cleanup steps for overlays.
-func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) error {
+func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string, allowSetuid bool) error {
 	writableOverlayFound := false
 	s := overlay.Set{}
 	for _, p := range overlayPaths {
@@ -46,6 +46,10 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 		}
 
 		item.SetParentDir(bundleDir)
+
+		if allowSetuid {
+			item.SetAllowSetuid(true)
+		}
 
 		if item.Writable && writableOverlayFound {
 			return fmt.Errorf("you can't specify more than one writable overlay; %#v has already been specified as a writable overlay; use '--overlay %s:ro' instead", s.WritableOverlay, item.SourcePath)
@@ -67,7 +71,7 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 	if writableOverlayFound {
 		err = f()
 	} else {
-		err = WrapWithWritableTmpFs(f, bundleDir)
+		err = WrapWithWritableTmpFs(f, bundleDir, allowSetuid)
 	}
 
 	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
@@ -79,13 +83,13 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string) e
 	return err
 }
 
-func prepareWritableTmpfs(bundleDir string) (string, error) {
+func prepareWritableTmpfs(bundleDir string, allowSetuid bool) (string, error) {
 	sylog.Debugf("Configuring writable tmpfs overlay for %s", bundleDir)
 	c := singularityconf.GetCurrentConfig()
 	if c == nil {
 		return "", fmt.Errorf("singularity configuration is not initialized")
 	}
-	return tools.CreateOverlayTmpfs(bundleDir, int(c.SessiondirMaxSize))
+	return tools.CreateOverlayTmpfs(bundleDir, int(c.SessiondirMaxSize), allowSetuid)
 }
 
 func cleanupWritableTmpfs(bundleDir, overlayDir string) error {

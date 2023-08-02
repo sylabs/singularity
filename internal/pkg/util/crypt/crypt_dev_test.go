@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/squashfs"
 )
 
 func TestEncrypt(t *testing.T) {
@@ -47,9 +47,9 @@ func TestEncrypt(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create dummy file %s: %s", dummyRootFile, err)
 	}
-	squashfsBin, err := squashfs.GetPath()
+	mksquashfsBin, err := bin.FindBin("mksquashfs")
 	if err != nil {
-		t.Fatalf("failed to get path to squashfs binary: %s", err)
+		t.Fatalf("failed to get path to mksquashfs binary: %s", err)
 	}
 	tempTargetFile, err := os.CreateTemp("", "")
 	if err != nil {
@@ -61,7 +61,7 @@ func TestEncrypt(t *testing.T) {
 	}
 	defer os.Remove(tempTargetFile.Name())
 	squashfsArgs := []string{dummyDir, tempTargetFile.Name(), "-noappend"}
-	cmd := exec.Command(squashfsBin, squashfsArgs...)
+	cmd := exec.Command(mksquashfsBin, squashfsArgs...)
 	err = cmd.Run()
 	if err != nil {
 		t.Fatalf("failed to create squashfs file: %s", err)

@@ -41,6 +41,12 @@ type Item struct {
 	// which to create mount directories if needed. If empty, one will be
 	// created with os.MkdirTemp()
 	parentDir string
+
+	// allowSetuid is set to true to mount the overlay item without the "nosuid" option.
+	allowSetuid bool
+
+	// allowDev is set to true to mount the overlay item without the "nodev" option.
+	allowDev bool
 }
 
 // NewItemFromString takes a string argument, as passed to --overlay, and
@@ -106,6 +112,16 @@ func (i *Item) SetParentDir(d string) {
 	i.parentDir = d
 }
 
+// SetAllowDev sets whether to allow devices on the mount for this item.
+func (i *Item) SetAllowDev(a bool) {
+	i.allowDev = a
+}
+
+// SetAllowSetuid sets whether to allow setuid binaries on the mount for this item.
+func (i *Item) SetAllowSetuid(a bool) {
+	i.allowSetuid = a
+}
+
 // GetParentDir gets a parent-dir in which to create overlay-specific mount
 // directories. If one has not been set using SetParentDir(), one will be
 // created using os.MkdirTemp().
@@ -136,11 +152,7 @@ func (i *Item) Mount() error {
 	case image.SQUASHFS:
 		err = i.mountWithFuse("squashfuse")
 	case image.EXT3:
-		if i.Writable {
-			err = i.mountWithFuse("fuse2fs", "-o", "rw")
-		} else {
-			err = i.mountWithFuse("fuse2fs", "-o", "ro")
-		}
+		i.mountWithFuse("fuse2fs")
 	default:
 		return fmt.Errorf("internal error: unrecognized image type in overlay.Item.Mount() (type: %v)", i.Type)
 	}
@@ -203,9 +215,21 @@ func (i *Item) mountDir() error {
 		}
 	}()
 
-	// Try to perform remount
+	// Try to perform remount to apply restrictive flags.
+	var remountOpts uintptr = syscall.MS_REMOUNT | syscall.MS_BIND
+	if !i.Writable {
+		// Not strictly necessary as will be read-only in assembled overlay,
+		// however this stops any erroneous writes through the stagingDir.
+		remountOpts |= syscall.MS_RDONLY
+	}
+	if !i.allowDev {
+		remountOpts |= syscall.MS_NODEV
+	}
+	if !i.allowSetuid {
+		remountOpts |= syscall.MS_NOSUID
+	}
 	sylog.Debugf("Performing remount of %q", i.StagingDir)
-	if err = syscall.Mount("", i.StagingDir, "", syscall.MS_REMOUNT|syscall.MS_BIND, ""); err != nil {
+	if err = syscall.Mount("", i.StagingDir, "", remountOpts, ""); err != nil {
 		return fmt.Errorf("failed to remount %s: %w", i.StagingDir, err)
 	}
 
@@ -215,7 +239,7 @@ func (i *Item) mountDir() error {
 // mountWithFuse mounts an image to a temporary directory using a specified fuse
 // tool. It also verifies that fusermount is present before performing the
 // mount.
-func (i *Item) mountWithFuse(fuseMountTool string, additionalArgs ...string) error {
+func (i *Item) mountWithFuse(fuseMountTool string) error {
 	var err error
 	fuseMountCmd, err := bin.FindBin(fuseMountTool)
 	if err != nil {
@@ -249,12 +273,24 @@ func (i *Item) mountWithFuse(fuseMountTool string, additionalArgs ...string) err
 		}
 	}()
 
-	args := make([]string, 0, len(additionalArgs)+4)
+	args := make([]string, 0, 4)
 
 	// TODO: Think through what makes sense for file ownership in FUSE-mounted
 	// images, vis a vis id-mappings and user-namespaces.
-	args = append(args, "-o")
-	args = append(args, "uid=0,gid=0")
+	opts := "uid=0,gid=0"
+	if !i.Writable {
+		// Not strictly necessary as will be read-only in assembled overlay,
+		// however this stops any erroneous writes through the stagingDir.
+		opts += ",ro"
+	}
+	// FUSE defaults to nosuid,nodev - attempt to reverse if AllowDev/Setuid requested.
+	if i.allowDev {
+		opts += ",dev"
+	}
+	if i.allowSetuid {
+		opts += ",suid"
+	}
+	args = append(args, "-o", opts)
 
 	args = append(args, i.SourcePath)
 	args = append(args, fuseMountDir)

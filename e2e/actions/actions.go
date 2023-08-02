@@ -2679,5 +2679,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"ociOverlayTeardown":   np(c.actionOciOverlayTeardown), // proper overlay unmounting in OCI mode
 		"ociNo-mount":          c.actionOciNoMount,             // --no-mount in OCI mode
 		"ociHomeCwdPasswd":     c.actionOciHomeCwdPasswd,       // $HOME is correct in /etc/passwd, and is default cwd
+		"ociAllowSetuid":       c.actionOciAllowSetuid,         // --allow-setuid / check for nosuid mount options
 	}
 }

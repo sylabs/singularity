@@ -15,6 +15,8 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/image"
+	"github.com/sylabs/singularity/v4/pkg/util/fs/proc"
+	"github.com/sylabs/singularity/v4/pkg/util/slice"
 )
 
 const (
@@ -186,61 +188,170 @@ func TestUpperAndWorkCreation(t *testing.T) {
 	verifyDirExistsAndWritable(t, tmpDir+"/work")
 }
 
-func dirMountUnmount(t *testing.T, olStr string) {
-	item, err := NewItemFromString(olStr)
-	if err != nil {
-		t.Fatalf("unexpected error while initializing overlay item from string %q: %s", olStr, err)
-	}
-
-	if err := item.Mount(); err != nil {
-		t.Fatalf("while trying to mount dir %q: %s", olStr, err)
-	}
-	if err := item.Unmount(); err != nil {
-		t.Errorf("while trying to unmount dir %q: %s", olStr, err)
-	}
-}
-
 func TestDirMounts(t *testing.T) {
-	dirMountUnmount(t, mkTempOlDirOrFatal(t)+":ro")
-	dirMountUnmount(t, mkTempOlDirOrFatal(t))
+	tests := []struct {
+		name            string
+		olStr           string
+		allowSetUID     bool
+		allowDev        bool
+		expectMountOpts []string
+	}{
+		{
+			name:            "RO",
+			olStr:           mkTempOlDirOrFatal(t) + ":ro",
+			allowSetUID:     false,
+			allowDev:        false,
+			expectMountOpts: []string{"ro", "nosuid", "nodev"},
+		},
+		{
+			name:            "RW",
+			olStr:           mkTempOlDirOrFatal(t),
+			allowSetUID:     false,
+			allowDev:        false,
+			expectMountOpts: []string{"rw", "nosuid", "nodev"},
+		},
+		{
+			name:            "AllowSetuid",
+			olStr:           mkTempOlDirOrFatal(t),
+			allowSetUID:     true,
+			allowDev:        false,
+			expectMountOpts: []string{"rw", "nodev"},
+		},
+		{
+			name:            "AllowDev",
+			olStr:           mkTempOlDirOrFatal(t),
+			allowSetUID:     false,
+			allowDev:        true,
+			expectMountOpts: []string{"rw", "nosuid"},
+		},
+		{
+			name:            "AllowSetuidDev",
+			olStr:           mkTempOlDirOrFatal(t),
+			allowSetUID:     true,
+			allowDev:        true,
+			expectMountOpts: []string{"rw"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			item, err := NewItemFromString(tt.olStr)
+			if err != nil {
+				t.Fatalf("unexpected error while initializing overlay item from string %q: %s", tt.olStr, err)
+			}
+
+			item.SetAllowSetuid(tt.allowSetUID)
+			item.SetAllowDev(tt.allowDev)
+
+			if err := item.Mount(); err != nil {
+				t.Fatalf("while trying to mount dir %q: %s", tt.olStr, err)
+			}
+
+			checkMountOpts(t, item.StagingDir, tt.expectMountOpts)
+
+			if err := item.Unmount(); err != nil {
+				t.Errorf("while trying to unmount dir %q: %s", tt.olStr, err)
+			}
+		})
+	}
 }
 
-func tryImageRO(t *testing.T, olStr string, typeCode int, typeStr, expectStr string) {
-	item, err := NewItemFromString(olStr)
-	if err != nil {
-		t.Fatalf("failed to mount %s image at %q: %s", typeStr, olStr, err)
-	}
-
-	if item.Type != typeCode {
-		t.Errorf("item.Type is %v (should be %v)", item.Type, typeStr)
-	}
-
-	if err := item.Mount(); err != nil {
-		t.Fatalf("unable to mount %s image for reading: %s", typeStr, err)
-	}
-	t.Cleanup(func() {
-		item.Unmount()
-	})
-
-	testFileStagedPath := filepath.Join(item.GetMountDir(), testFilePath)
-	checkForStringInOverlay(t, typeStr, testFileStagedPath, expectStr)
-}
-
-func TestSquashfsRO(t *testing.T) {
-	require.Command(t, "squashfuse")
+func TestImageRO(t *testing.T) {
 	require.Command(t, "fusermount")
-	tryImageRO(t, squashfsImgPath, image.SQUASHFS, "squashfs", squashfsTestString)
-}
 
-func TestExtfsRO(t *testing.T) {
-	require.Command(t, "fuse2fs")
-	require.Command(t, "fusermount")
-	tmpDir := mkTempDirOrFatal(t)
-	readonlyExtfsImgPath := filepath.Join(tmpDir, "readonly-extfs.img")
-	if err := fs.CopyFile(extfsImgPath, readonlyExtfsImgPath, 0o444); err != nil {
-		t.Fatalf("could not copy %q to %q: %s", extfsImgPath, readonlyExtfsImgPath, err)
+	tests := []struct {
+		name            string
+		fusebin         string
+		olStr           string
+		typeCode        int
+		typeStr         string
+		allowSetUID     bool
+		allowDev        bool
+		expectStr       string
+		expectMountOpts []string
+	}{
+		{
+			name:            "squashfs",
+			fusebin:         "squashfuse",
+			olStr:           squashfsImgPath,
+			typeCode:        image.SQUASHFS,
+			typeStr:         "squashfs",
+			expectStr:       squashfsTestString,
+			expectMountOpts: []string{"ro", "nosuid", "nodev"},
+		},
+		{
+			name:      "extfs",
+			fusebin:   "fuse2fs",
+			olStr:     extfsImgPath + ":ro",
+			typeCode:  image.EXT3,
+			typeStr:   "extfs",
+			expectStr: extfsTestString,
+			// NOTE - fuse2fs mount shows a "rw" mount option even when mounted "ro".
+			// However, it does actually restrict read-only.
+			expectMountOpts: []string{"rw", "nosuid", "nodev"},
+		},
+		{
+			name:            "AllowSetuid",
+			fusebin:         "squashfuse",
+			olStr:           squashfsImgPath,
+			typeCode:        image.SQUASHFS,
+			typeStr:         "squashfs",
+			allowSetUID:     true,
+			allowDev:        false,
+			expectStr:       squashfsTestString,
+			expectMountOpts: []string{"ro", "nodev"},
+		},
+		{
+			name:            "AllowDev",
+			fusebin:         "squashfuse",
+			olStr:           squashfsImgPath,
+			typeCode:        image.SQUASHFS,
+			typeStr:         "squashfs",
+			allowSetUID:     false,
+			allowDev:        true,
+			expectStr:       squashfsTestString,
+			expectMountOpts: []string{"ro", "nosuid"},
+		},
+		{
+			name:            "AllowSetuidDev",
+			fusebin:         "squashfuse",
+			olStr:           squashfsImgPath,
+			typeCode:        image.SQUASHFS,
+			typeStr:         "squashfs",
+			allowSetUID:     true,
+			allowDev:        true,
+			expectStr:       squashfsTestString,
+			expectMountOpts: []string{"ro"},
+		},
 	}
-	tryImageRO(t, readonlyExtfsImgPath+":ro", image.EXT3, "extfs", extfsTestString)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.Command(t, tt.fusebin)
+
+			item, err := NewItemFromString(tt.olStr)
+			if err != nil {
+				t.Fatalf("unexpected error while initializing overlay item from string %q: %s", tt.olStr, err)
+			}
+			item.SetAllowSetuid(tt.allowSetUID)
+			item.SetAllowDev(tt.allowDev)
+
+			if item.Type != tt.typeCode {
+				t.Errorf("item.Type is %v (should be %v)", item.Type, tt.typeCode)
+			}
+
+			if err := item.Mount(); err != nil {
+				t.Fatalf("unable to mount image for reading: %s", err)
+			}
+			t.Cleanup(func() {
+				item.Unmount()
+			})
+
+			testFileStagedPath := filepath.Join(item.GetMountDir(), testFilePath)
+			checkForStringInOverlay(t, tt.typeStr, testFileStagedPath, tt.expectStr)
+			checkMountOpts(t, item.StagingDir, tt.expectMountOpts)
+		})
+	}
 }
 
 func TestExtfsRW(t *testing.T) {
@@ -282,6 +393,7 @@ func TestExtfsRW(t *testing.T) {
 		t.Errorf("could not write to file %q in extfs image %q: %s", otherTestFileStagedPath, writableExtfsImgPath, err)
 	}
 	checkForStringInOverlay(t, "extfs", otherTestFileStagedPath, otherExtfsTestString)
+	checkMountOpts(t, item.StagingDir, []string{"rw", "nosuid", "nodev", "relatime"})
 }
 
 func checkForStringInOverlay(t *testing.T, typeStr, stagedPath, expectStr string) {
@@ -293,4 +405,27 @@ func checkForStringInOverlay(t *testing.T, typeStr, stagedPath, expectStr string
 	if foundStr != expectStr {
 		t.Errorf("incorrect file contents in %s img: expected %q, but found: %q", typeStr, expectStr, foundStr)
 	}
+}
+
+func checkMountOpts(t *testing.T, mountPoint string, wantOpts []string) {
+	entries, err := proc.GetMountInfoEntry("/proc/self/mountinfo")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, e := range entries {
+		if e.Point != mountPoint {
+			continue
+		}
+
+		// Drop "relatime" as it may or may not be a default depending on distro, and is of no practical relevance to us.
+		haveOpts := slice.Subtract(e.Options, []string{"relatime"})
+
+		if len(slice.Subtract(haveOpts, wantOpts)) != 0 {
+			t.Errorf("Mount %q has options %q, expected %q", mountPoint, e.Options, wantOpts)
+		}
+		return
+	}
+
+	t.Errorf("Mount %q not found", mountPoint)
 }
