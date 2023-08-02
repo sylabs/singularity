@@ -318,6 +318,23 @@ func (c actionTests) actionOciExec(t *testing.T) {
 				e2e.ExpectOutput(e2e.ExactMatch, `hosts`),
 			},
 		},
+		// Default PID namespace, and override.
+		{
+			name: "DefaultPID",
+			argv: []string{c.env.OCISIFPath, "sh", "-c", "echo $$"},
+			exit: 0,
+			wantOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.ExactMatch, "1"),
+			},
+		},
+		{
+			name: "NoPID",
+			argv: []string{"--no-pid", c.env.OCISIFPath, "sh", "-c", "echo $$"},
+			exit: 0,
+			wantOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.UnwantedExactMatch, "1"),
+			},
+		},
 	}
 	for _, profile := range e2e.OCIProfiles {
 		t.Run(profile.String(), func(t *testing.T) {

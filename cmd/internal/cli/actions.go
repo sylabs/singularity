@@ -288,11 +288,12 @@ var TestCmd = &cobra.Command{
 
 func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 	ns := launcher.Namespaces{
-		User: userNamespace,
-		UTS:  utsNamespace,
-		PID:  pidNamespace,
-		IPC:  ipcNamespace,
-		Net:  netNamespace,
+		User:  userNamespace,
+		UTS:   utsNamespace,
+		PID:   pidNamespace,
+		IPC:   ipcNamespace,
+		Net:   netNamespace,
+		NoPID: noPidNamespace,
 	}
 
 	cgJSON, err := getCgroupsJSON()

@@ -125,6 +125,8 @@
   which invokes start script within the `%appstart <name>` section in the
   definition file. The `instance stop` command still only requires the instance
   name.
+- A new `--no-pid` flag for `singularity run/shell/exec` disables the PID namespace
+  inferred by `--containall` and `--compat`.
 
 ### Developer / API
 

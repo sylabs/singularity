@@ -30,7 +30,9 @@ const containerLibDir = "/.singularity.d/libs"
 // getMounts returns a mount list for the container's OCI runtime spec.
 func (l *Launcher) getMounts() ([]specs.Mount, error) {
 	mounts := &[]specs.Mount{}
-	l.addProcMount(mounts)
+	if err := l.addProcMount(mounts); err != nil {
+		return nil, fmt.Errorf("while configuring proc mount: %w", err)
+	}
 	if err := l.addSysMount(mounts); err != nil {
 		return nil, fmt.Errorf("while configuring sys mount: %w", err)
 	}
@@ -228,14 +230,23 @@ func (l *Launcher) addDevMounts(mounts *[]specs.Mount) error {
 }
 
 // addProcMount adds the /proc tree in the container.
-func (l *Launcher) addProcMount(mounts *[]specs.Mount) {
+func (l *Launcher) addProcMount(mounts *[]specs.Mount) error {
 	if !l.singularityConf.MountProc {
 		sylog.Debugf("Skipping mount of /proc due to singularity.conf")
-		return
+		return nil
 	}
 	if slice.ContainsString(l.cfg.NoMount, "proc") {
 		sylog.Debugf("Skipping mount of /proc due to --no-mount")
-		return
+		return nil
+	}
+
+	if l.cfg.Namespaces.NoPID {
+		return addBindMount(mounts,
+			bind.Path{
+				Source:      "/proc",
+				Destination: "/proc",
+			},
+			false)
 	}
 
 	*mounts = append(*mounts,
@@ -245,6 +256,7 @@ func (l *Launcher) addProcMount(mounts *[]specs.Mount) {
 			Type:        "proc",
 			Options:     []string{"nosuid", "noexec", "nodev"},
 		})
+	return nil
 }
 
 // addSysMount adds the /sys tree in the container.

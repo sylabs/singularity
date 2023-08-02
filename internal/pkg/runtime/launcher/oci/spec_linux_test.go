@@ -20,6 +20,15 @@ func Test_addNamespaces(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
+	defaultPlusPID := append(defaultNamespaces,
+		specs.LinuxNamespace{Type: specs.PIDNamespace})
+	defaultPlusNetPID := append(defaultNamespaces,
+		specs.LinuxNamespace{Type: specs.NetworkNamespace},
+		specs.LinuxNamespace{Type: specs.PIDNamespace})
+	defaultPlusPIDUTS := append(defaultNamespaces,
+		specs.LinuxNamespace{Type: specs.PIDNamespace},
+		specs.LinuxNamespace{Type: specs.UTSNamespace})
+
 	tests := []struct {
 		name   string
 		ns     launcher.Namespaces
@@ -28,32 +37,37 @@ func Test_addNamespaces(t *testing.T) {
 		{
 			name:   "none",
 			ns:     launcher.Namespaces{},
+			wantNS: defaultPlusPID,
+		},
+		{
+			name:   "nopid",
+			ns:     launcher.Namespaces{NoPID: true},
 			wantNS: defaultNamespaces,
 		},
 		{
 			name:   "pid",
 			ns:     launcher.Namespaces{PID: true},
-			wantNS: defaultNamespaces,
+			wantNS: defaultPlusPID,
 		},
 		{
 			name:   "ipc",
 			ns:     launcher.Namespaces{IPC: true},
-			wantNS: defaultNamespaces,
+			wantNS: defaultPlusPID,
 		},
 		{
 			name:   "user",
 			ns:     launcher.Namespaces{User: true},
-			wantNS: defaultNamespaces,
+			wantNS: defaultPlusPID,
 		},
 		{
 			name:   "net",
 			ns:     launcher.Namespaces{Net: true},
-			wantNS: append(defaultNamespaces, specs.LinuxNamespace{Type: specs.NetworkNamespace}),
+			wantNS: defaultPlusNetPID,
 		},
 		{
 			name:   "uts",
 			ns:     launcher.Namespaces{UTS: true},
-			wantNS: append(defaultNamespaces, specs.LinuxNamespace{Type: specs.UTSNamespace}),
+			wantNS: defaultPlusPIDUTS,
 		},
 	}
 

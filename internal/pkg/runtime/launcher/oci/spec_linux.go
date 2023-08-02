@@ -16,13 +16,10 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
-// defaultNamespaces matching native runtime with --compat / --containall.
+// defaultNamespaces matching native runtime with --compat / --containall, except PID which can be disabled.
 var defaultNamespaces = []specs.LinuxNamespace{
 	{
 		Type: specs.IPCNamespace,
-	},
-	{
-		Type: specs.PIDNamespace,
 	},
 	{
 		Type: specs.MountNamespace,
@@ -77,7 +74,14 @@ func addNamespaces(spec *specs.Spec, ns launcher.Namespaces) error {
 	}
 
 	if ns.PID {
-		sylog.Infof("--oci runtime always uses a PID namespace, pid flag is redundant.")
+		sylog.Infof("--oci runtime uses a PID namespace by default, pid flag is redundant.")
+	}
+
+	if !ns.NoPID {
+		spec.Linux.Namespaces = append(
+			spec.Linux.Namespaces,
+			specs.LinuxNamespace{Type: specs.PIDNamespace},
+		)
 	}
 
 	if ns.User {

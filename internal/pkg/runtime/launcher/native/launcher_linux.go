@@ -297,6 +297,11 @@ func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 		}
 	}
 
+	// --no-pid disables PID inferred above
+	if l.cfg.Namespaces.NoPID {
+		l.cfg.Namespaces.PID = false
+	}
+
 	// Setup instance specific configuration if required.
 	if ep.Instance != "" {
 		l.generator.AddProcessEnv("SINGULARITY_INSTANCE", ep.Instance)
