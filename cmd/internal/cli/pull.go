@@ -195,14 +195,19 @@ func pullRun(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("Bad URI %s", pullFrom)
 	}
 
+	suffix := "sif"
+	if pullOci {
+		suffix = "oci.sif"
+	}
+
 	pullTo := pullImageName
 	if pullTo == "" {
 		pullTo = args[0]
 		if len(args) == 1 {
 			if transport == "" {
-				pullTo = uri.GetName("library://" + pullFrom)
+				pullTo = uri.Filename("library://"+pullFrom, suffix)
 			} else {
-				pullTo = uri.GetName(pullFrom) // TODO: If not library/shub & no name specified, simply put to cache
+				pullTo = uri.Filename(pullFrom, suffix) // TODO: If not library/shub & no name specified, simply put to cache
 			}
 		}
 	}

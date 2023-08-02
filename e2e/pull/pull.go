@@ -124,7 +124,7 @@ func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 	checkPullResult(t, tt)
 }
 
-func getImageNameFromURI(imgURI string) string {
+func getImageNameFromURI(imgURI string, oci bool) string {
 	// XXX(mem): this function should be part of the code, not the test
 	switch transport, ref := uri.Split(imgURI); {
 	case ref == "":
@@ -134,7 +134,12 @@ func getImageNameFromURI(imgURI string) string {
 		imgURI = "library://" + imgURI
 	}
 
-	return uri.GetName(imgURI)
+	suffix := "sif"
+	if oci {
+		suffix = "oci.sif"
+	}
+
+	return uri.Filename(imgURI, suffix)
 }
 
 func (c *ctx) setup(t *testing.T) {
@@ -452,7 +457,7 @@ func (c ctx) testPullCmd(t *testing.T) {
 				// No explicit image path specified. Will use temp dir as working directory,
 				// so we pull into a clean location.
 				tt.workDir = tmpdir
-				imageName := getImageNameFromURI(tt.srcURI)
+				imageName := getImageNameFromURI(tt.srcURI, tt.oci)
 				tt.expectedImage = filepath.Join(tmpdir, imageName)
 
 				// if there's a pullDir, that's where we expect to find the image
