@@ -13,17 +13,18 @@ func Test_GetName(t *testing.T) {
 	tests := []struct {
 		name     string
 		uri      string
+		suffix   string
 		expected string
 	}{
-		{"docker basic", "docker://ubuntu", "ubuntu_latest.sif"},
-		{"docker scoped", "docker://user/image", "image_latest.sif"},
-		{"dave's magical lolcow", "docker://sylabs.io/lolcow", "lolcow_latest.sif"},
-		{"docker w/ tags", "docker://sylabs.io/lolcow:3.7", "lolcow_3.7.sif"},
+		{"docker basic", "docker://ubuntu", "sif", "ubuntu_latest.sif"},
+		{"docker scoped", "docker://user/image", "oci.sif", "image_latest.oci.sif"},
+		{"dave's magical lolcow", "docker://sylabs.io/lolcow", "sif", "lolcow_latest.sif"},
+		{"docker w/ tags", "docker://sylabs.io/lolcow:3.7", "sif", "lolcow_3.7.sif"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if n := GetName(tt.uri); n != tt.expected {
+			if n := Filename(tt.uri, tt.suffix); n != tt.expected {
 				t.Errorf("incorrectly parsed name as \"%v\" (expected \"%s\")", n, tt.expected)
 			}
 		})

@@ -61,6 +61,8 @@
   it can be entered. You must now specify `--no-mount home,cwd` instead of just
   `--no-mount home` to avoid mounting from `$HOME` if you run `singularity` from
   inside `$HOME`.
+- Running `singularity pull --oci` without a specific output filename will now
+  create an image with the `.oci.sif` suffix instead of `.sif`.
 
 ### New Features & Functionality
 
