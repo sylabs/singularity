@@ -135,6 +135,8 @@
   - The full `/dev` is bind mounted from the host, unless `mount dev = minimal`
     in `singularity.conf`.
   - `bind path` entries in `singularity.conf` are mounted into the container.
+  - The current working directory is mounted into the container, and is the
+    entry point into the container.
 
 ### Developer / API
 
