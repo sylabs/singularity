@@ -14,10 +14,11 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
 )
 
-// WrapWithWritableTmpFs runs a function wrapped with prep / cleanup steps for a writable tmpfs.
+// WrapWithWritableTmpFs runs a function wrapped with prep / cleanup steps for a
+// tmpfs. This tmpfs is always writable so that the launcher and runtime are
+// able to add content to the container. Whether it is writable from inside the
+// container is controlled by the runtime config.
 func WrapWithWritableTmpFs(f func() error, bundleDir string, allowSetuid bool) error {
-	// TODO: --oci mode always emulating --compat, which uses --writable-tmpfs.
-	//       Provide a way of disabling this, for a read only rootfs.
 	overlayDir, err := prepareWritableTmpfs(bundleDir, allowSetuid)
 	sylog.Debugf("Done with prepareWritableTmpfs; overlayDir is: %q", overlayDir)
 	if err != nil {

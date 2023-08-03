@@ -2010,6 +2010,17 @@ func (c actionTests) actionOciNoCompat(t *testing.T) {
 				e2e.ExpectOutput(e2e.ExactMatch, canaryContent),
 			},
 		},
+		// Read-only unless `--writable-tmpfs` also used.
+		{
+			name:     "readOnly",
+			args:     []string{"--no-compat", imageRef, "sh", "-c", "touch /test"},
+			exitCode: 1,
+		},
+		{
+			name:     "writableTmpfs",
+			args:     []string{"--no-compat", "--writable-tmpfs", imageRef, "sh", "-c", "touch /test"},
+			exitCode: 0,
+		},
 	}
 
 	oldUmask := syscall.Umask(0)

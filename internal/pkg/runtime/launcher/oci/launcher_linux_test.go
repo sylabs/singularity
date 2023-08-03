@@ -39,6 +39,7 @@ func TestNewLauncher(t *testing.T) {
 		{
 			name: "default",
 			want: &Launcher{
+				cfg:             launcher.Options{WritableTmpfs: true},
 				singularityConf: sc,
 				homeHost:        u.HomeDir,
 				homeSrc:         "",
@@ -51,7 +52,7 @@ func TestNewLauncher(t *testing.T) {
 				launcher.OptHome("/home/dest", true, false),
 			},
 			want: &Launcher{
-				cfg:             launcher.Options{HomeDir: "/home/dest", CustomHome: true},
+				cfg:             launcher.Options{HomeDir: "/home/dest", CustomHome: true, WritableTmpfs: true},
 				singularityConf: sc,
 				homeHost:        u.HomeDir,
 				homeSrc:         "",
@@ -65,11 +66,40 @@ func TestNewLauncher(t *testing.T) {
 				launcher.OptHome("/home/src:/home/dest", true, false),
 			},
 			want: &Launcher{
-				cfg:             launcher.Options{HomeDir: "/home/src:/home/dest", CustomHome: true},
+				cfg:             launcher.Options{HomeDir: "/home/src:/home/dest", CustomHome: true, WritableTmpfs: true},
 				singularityConf: sc,
 				homeHost:        u.HomeDir,
 				homeSrc:         "/home/src",
 				homeDest:        "/home/dest",
+			},
+			wantErr: false,
+		},
+		{
+			name: "no-compat",
+			opts: []launcher.Option{
+				launcher.OptNoCompat(true),
+			},
+			want: &Launcher{
+				cfg:             launcher.Options{NoCompat: true, WritableTmpfs: false},
+				singularityConf: sc,
+				homeHost:        u.HomeDir,
+				homeSrc:         "",
+				homeDest:        u.HomeDir,
+			},
+			wantErr: false,
+		},
+		{
+			name: "no-compat_writable-tmpfs",
+			opts: []launcher.Option{
+				launcher.OptNoCompat(true),
+				launcher.OptWritableTmpfs(true),
+			},
+			want: &Launcher{
+				cfg:             launcher.Options{NoCompat: true, WritableTmpfs: true},
+				singularityConf: sc,
+				homeHost:        u.HomeDir,
+				homeSrc:         "",
+				homeDest:        u.HomeDir,
 			},
 			wantErr: false,
 		},
