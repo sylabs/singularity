@@ -180,6 +180,23 @@ func (c actionTests) actionExec(t *testing.T) {
 			argv: []string{"--no-home", c.env.ImagePath, "ls", "-ld", user.Dir},
 			exit: 1,
 		},
+		// PID namespace, and override, in --containall mode. Uses --no-init to be able to check PID=1
+		{
+			name: "ContainAllPID",
+			argv: []string{"--containall", "--no-init", c.env.ImagePath, "sh", "-c", "echo $$"},
+			exit: 0,
+			wantOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.ExactMatch, "1"),
+			},
+		},
+		{
+			name: "ContainAllNoPID",
+			argv: []string{"--containall", "--no-init", "--no-pid", c.env.ImagePath, "sh", "-c", "echo $$"},
+			exit: 0,
+			wantOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.UnwantedExactMatch, "1"),
+			},
+		},
 	}
 
 	for _, tt := range tests {
