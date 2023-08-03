@@ -47,7 +47,7 @@ var (
 	ErrUnsupportedOption = errors.New("not supported by OCI launcher")
 	ErrNotImplemented    = errors.New("not implemented by OCI launcher")
 
-	unsupportedNoMount = []string{"cwd", "bind-paths"}
+	unsupportedNoMount = []string{"cwd"}
 )
 
 // Launcher will holds configuration for, and will launch a container using an
@@ -499,6 +499,11 @@ func (l *Launcher) prepareResolvConf(bundlePath string) (*specs.Mount, error) {
 
 	if !l.singularityConf.ConfigResolvConf {
 		sylog.Debugf("Skipping creation of %s due to singularity.conf", containerResolvConfPath)
+		return nil, nil
+	}
+
+	if slice.ContainsString(l.cfg.NoMount, hostResolvConfPath) {
+		sylog.Debugf("Skipping mount of %s due to --no-mount", hostResolvConfPath)
 		return nil, nil
 	}
 

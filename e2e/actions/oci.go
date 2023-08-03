@@ -1685,6 +1685,7 @@ func (c actionTests) actionOciNoMount(t *testing.T) {
 	tests := []struct {
 		name      string
 		noMount   string
+		noCompat  bool
 		noMatch   string
 		warnMatch string
 		exit      int
@@ -1731,43 +1732,35 @@ func (c actionTests) actionOciNoMount(t *testing.T) {
 			warnMatch: "--no-mount cwd is not supported in OCI mode, ignoring.",
 			exit:      0,
 		},
-		//
-		// TODO - singularity.conf bind path handling is not implemented yet in OCI mode.
-		//        If/when it is, consider how to handle below.
-		//
-		// /etc/hosts & /etc/localtime are default 'bind path' entries we should
-		// be able to disable by abs path. Although other 'bind path' entries
-		// are ignored under '--contain' these two are handled specially in
-		// addBindsMount(), so make sure that `--no-mount` applies properly
-		// under contain also.
+		// singularity.conf bind paths are mounted in --no-compat mode, and should be
+		// able to be --no-mount 'ed.
 		{
-			name:    "/etc/hosts",
-			noMount: "/etc/hosts",
-			// noMatch: "on /etc/hosts",
-			warnMatch: "--no-mount /etc/hosts is not supported in OCI mode, ignoring.",
-			exit:      0,
+			name:     "/etc/hosts",
+			noMount:  "/etc/hosts",
+			noCompat: true,
+			noMatch:  "on /etc/hosts",
+			exit:     0,
 		},
 		{
-			name:    "/etc/localtime",
-			noMount: "/etc/localtime",
-			// noMatch: "on /etc/localtime",
-			warnMatch: "--no-mount /etc/localtime is not supported in OCI mode, ignoring.",
-			exit:      0,
-		},
-		// bind-paths should disable all of the bind path mounts - including both defaults
-		{
-			name:    "binds-paths-hosts",
-			noMount: "bind-paths",
-			// noMatch: "on /etc/hosts",
-			warnMatch: "--no-mount bind-paths is not supported in OCI mode, ignoring.",
-			exit:      0,
+			name:     "/etc/localtime",
+			noMount:  "/etc/localtime",
+			noCompat: true,
+			noMatch:  "on /etc/localtime",
+			exit:     0,
 		},
 		{
-			name:    "bind-paths-localtime",
-			noMount: "bind-paths",
-			// noMatch: "on /etc/localtime",
-			warnMatch: "--no-mount bind-paths is not supported in OCI mode, ignoring.",
-			exit:      0,
+			name:     "binds-paths-hosts",
+			noMount:  "bind-paths",
+			noCompat: true,
+			noMatch:  "on /etc/hosts",
+			exit:     0,
+		},
+		{
+			name:     "binds-paths-localtime",
+			noMount:  "bind-paths",
+			noCompat: true,
+			noMatch:  "on /etc/localtime",
+			exit:     0,
 		},
 	}
 
@@ -1778,12 +1771,18 @@ func (c actionTests) actionOciNoMount(t *testing.T) {
 			expectOp = e2e.ExpectError(e2e.ContainMatch, tt.warnMatch)
 		}
 
+		args := []string{}
+		if tt.noCompat {
+			args = []string{"--no-compat"}
+		}
+		args = append(args, []string{"--no-mount", tt.noMount, imageRef, "mount"}...)
+
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(e2e.OCIUserProfile),
 			e2e.WithCommand("exec"),
-			e2e.WithArgs("--no-mount", tt.noMount, imageRef, "mount"),
+			e2e.WithArgs(args...),
 			e2e.ExpectExit(tt.exit, expectOp),
 		)
 	}
@@ -1967,6 +1966,12 @@ func (c actionTests) actionOciNoCompat(t *testing.T) {
 		{
 			name:     "fullDev",
 			args:     []string{"--no-compat", imageRef, "sh", "-c", "ls /dev/block"},
+			exitCode: 0,
+		},
+		// Default bind path /etc/localtime in singularity.conf is bound in
+		{
+			name:     "bindPath",
+			args:     []string{"--no-compat", imageRef, "sh", "-c", "mount | grep 'on /etc/localtime'"},
 			exitCode: 0,
 		},
 	}

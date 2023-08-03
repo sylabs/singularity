@@ -328,7 +328,7 @@ func TestLauncher_addBindMounts(t *testing.T) {
 				l.cfg.AllowSUID = true
 			}
 			mounts := &[]specs.Mount{}
-			err := l.addBindMounts(mounts)
+			err := l.addUserBindMounts(mounts)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("addBindMount() error = %v, wantErr %v", err, tt.wantErr)
 			}
