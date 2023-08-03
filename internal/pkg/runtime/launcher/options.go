@@ -154,6 +154,11 @@ type Options struct {
 
 	// CdiDirs contains the list of directories in which CDI should look for device definition JSON files
 	CdiDirs []string
+
+	// NoCompat indicates the container should be run in non-OCI compatible
+	// mode, i.e. with default mounts etc. as native mode. Effective for the OCI
+	// launcher only.
+	NoCompat bool
 }
 
 type Option func(co *Options) error
@@ -532,6 +537,14 @@ func OptDevice(op []string) Option {
 func OptCdiDirs(op []string) Option {
 	return func(lo *Options) error {
 		lo.CdiDirs = op
+		return nil
+	}
+}
+
+// OptNoCompat disable OCI compatible mode, for singularity native mode default behaviors.
+func OptNoCompat(b bool) Option {
+	return func(lo *Options) error {
+		lo.NoCompat = b
 		return nil
 	}
 }

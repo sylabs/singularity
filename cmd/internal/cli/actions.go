@@ -64,6 +64,9 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 	// Excludes uts/user/net namespaces as these are restrictive for many Singularity
 	// installs.
 	if isCompat {
+		if noCompat {
+			sylog.Fatalf("Cannot use --no-compat with --compat: incompatible options")
+		}
 		isContainAll = true
 		isWritableTmpfs = true
 		noInit = true
@@ -357,6 +360,7 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 		launcher.OptCacheDisabled(disableCache),
 		launcher.OptDevice(device),
 		launcher.OptCdiDirs(cdiDirs),
+		launcher.OptNoCompat(noCompat),
 	}
 
 	// Explicitly use the interface type here, as we will add alternative launchers later...
