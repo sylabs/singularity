@@ -55,6 +55,8 @@ var (
 type Launcher struct {
 	cfg             launcher.Options
 	singularityConf *singularityconf.File
+	// homeHost is the users' home directory on the host.
+	homeHost string
 	// homeSrc is the computed source (on the host) for the user's home directory.
 	// An empty value indicates there is no source on the host, and a tmpfs will be used.
 	homeSrc string
@@ -83,7 +85,7 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 		return nil, fmt.Errorf("singularity configuration is not initialized")
 	}
 
-	homeSrc, homeDest, err := parseHomeDir(lo.HomeDir, lo.CustomHome, lo.Fakeroot)
+	homeHost, homeSrc, homeDest, err := parseHomeDir(lo.HomeDir, lo.CustomHome, lo.Fakeroot)
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +93,7 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 	return &Launcher{
 		cfg:             lo,
 		singularityConf: c,
+		homeHost:        homeHost,
 		homeSrc:         homeSrc,
 		homeDest:        homeDest,
 	}, nil
@@ -192,15 +195,16 @@ func checkOpts(lo launcher.Options) error {
 	return nil
 }
 
-// parseHomeDir parses the homedir value passed from the CLI layer into a host source, and container dest.
+// parseHomeDir parses the homedir value passed from the CLI layer into a host value, customizable source, and container dest.
 // This includes handling fakeroot and custom --home dst, or --home src:dst specifications.
-func parseHomeDir(homedir string, custom, fakeroot bool) (src, dest string, err error) {
+func parseHomeDir(homedir string, custom, fakeroot bool) (host, src, dest string, err error) {
 	// Get the host user's information, looking outside of a user namespace if necessary.
 	pw, err := rootless.GetUser()
 	if err != nil {
-		return "", "", err
+		return "", "", "", err
 	}
 
+	host = pw.HomeDir
 	// By default in --oci mode there is no external source for $HOME, i.e. a `tmpfs` will be used.
 	src = ""
 	// By default the destination in the container matches the users's $HOME on the host.
@@ -215,7 +219,7 @@ func parseHomeDir(homedir string, custom, fakeroot bool) (src, dest string, err 
 	if custom {
 		homeSlice := strings.Split(homedir, ":")
 		if len(homeSlice) < 1 || len(homeSlice) > 2 {
-			return "", "", fmt.Errorf("home argument has incorrect number of elements: %v", homeSlice)
+			return "", "", "", fmt.Errorf("home argument has incorrect number of elements: %v", homeSlice)
 		}
 		// A single path was provided, so we will be mounting a tmpfs on this custom destination.
 		dest = homeSlice[0]
@@ -226,7 +230,7 @@ func parseHomeDir(homedir string, custom, fakeroot bool) (src, dest string, err 
 			dest = homeSlice[1]
 		}
 	}
-	return src, dest, nil
+	return host, src, dest, nil
 }
 
 // createSpec creates an initial OCI runtime specification, suitable to launch a

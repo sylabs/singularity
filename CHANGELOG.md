@@ -129,6 +129,9 @@
   name.
 - A new `--no-pid` flag for `singularity run/shell/exec` disables the PID namespace
   inferred by `--containall` and `--compat`.
+- A new `--no-compat` flag can be used with OCI-mode to reduce OCI runtime
+  compatibility and emulate singularity's historic native mode behaviour:
+  - `$HOME`, `/tmp`, `/var/tmp` are bind mounted from the host.
 
 ### Developer / API
 

@@ -78,6 +78,10 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 		return nil, fmt.Errorf("CDI device mappings unsupported in native launcher")
 	}
 
+	if lo.NoCompat {
+		sylog.Warningf("--no-compat applies to --oci mode only, ignoring")
+	}
+
 	// Initialize empty default Singularity Engine and OCI configuration
 	engineConfig := singularityConfig.NewConfig()
 	engineConfig.File = singularityconf.GetCurrentConfig()

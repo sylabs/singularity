@@ -1917,3 +1917,67 @@ func (c actionTests) actionOciAllowSetuid(t *testing.T) {
 		),
 	)
 }
+
+// actionOCINoCompat checks that the --oci mode emulates the native mode when run with `--no-compat`.
+func (c actionTests) actionOciNoCompat(t *testing.T) {
+	e2e.EnsureOCISIF(t, c.env)
+	imageRef := "oci-sif:" + c.env.OCISIFPath
+
+	tmpCanary, err := fs.MakeTmpDir("/tmp", "oci-no-compat", 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	varTmpCanary, err := fs.MakeTmpDir("/var/tmp", "oci-no-compat", 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// This goes into a tmpfs for e2e, not the actual host home dir.
+	homeCanary, err := fs.MakeTmpDir(e2e.UserProfile.HostUser(t).Dir, "oci-no-compat", 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.RemoveAll(tmpCanary)
+			os.RemoveAll(varTmpCanary)
+			os.RemoveAll(homeCanary)
+		}
+	})
+
+	type test struct {
+		name     string
+		args     []string
+		exitCode int
+		expect   []e2e.SingularityCmdResultOp
+	}
+
+	tests := []test{
+		{
+			name:     "dirBinds",
+			args:     []string{"--no-compat", imageRef, "sh", "-c", "ls /tmp /var/tmp $HOME"},
+			exitCode: 0,
+			expect: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.ContainMatch, filepath.Base(tmpCanary)),
+				e2e.ExpectOutput(e2e.ContainMatch, filepath.Base(varTmpCanary)),
+				e2e.ExpectOutput(e2e.ContainMatch, filepath.Base(homeCanary)),
+			},
+		},
+	}
+
+	oldUmask := syscall.Umask(0)
+	defer syscall.Umask(oldUmask)
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(
+				tt.exitCode,
+				tt.expect...,
+			),
+		)
+	}
+}
