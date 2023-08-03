@@ -640,9 +640,15 @@ func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 		sylog.Errorf("Couldn't unmount session directory: %v", err)
 	}
 
-	var exitErr *exec.ExitError
-	if errors.As(err, &exitErr) {
-		os.Exit(exitErr.ExitCode())
+	if e, ok := err.(*exec.ExitError); ok {
+		status, ok := e.Sys().(syscall.WaitStatus)
+		if ok && status.Signaled() {
+			os.Exit(128 + int(status.Signal()))
+		}
+		os.Exit(e.ExitCode())
+	}
+	if err == nil {
+		os.Exit(0)
 	}
 	return err
 }

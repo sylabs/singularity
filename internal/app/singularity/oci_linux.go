@@ -81,11 +81,7 @@ func OciExec(containerID string, cmdArgs []string) error {
 
 // OciKill kills container process
 func OciKill(containerID string, killSignal string) error {
-	systemdCgroups, err := systemdCgroups()
-	if err != nil {
-		return err
-	}
-	return oci.Kill(containerID, killSignal, systemdCgroups)
+	return oci.Kill(containerID, killSignal)
 }
 
 // OciPause pauses processes in a container
