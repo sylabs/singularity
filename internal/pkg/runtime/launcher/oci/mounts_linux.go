@@ -25,7 +25,11 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/util/slice"
 )
 
-const containerLibDir = "/.singularity.d/libs"
+const (
+	containerLibDir = "/.singularity.d/libs"
+	tmpDir          = "/tmp"
+	varTmpDir       = "/var/tmp"
+)
 
 // getMounts returns a mount list for the container's OCI runtime spec.
 func (l *Launcher) getMounts() ([]specs.Mount, error) {
@@ -70,13 +74,8 @@ func (l *Launcher) getMounts() ([]specs.Mount, error) {
 	return *mounts, nil
 }
 
-// addTmpMounts adds tmpfs mounts for /tmp and /var/tmp in the container.
+// addTmpMounts adds mounts for /tmp and /var/tmp in the container.
 func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
-	const (
-		tmpDest    = "/tmp"
-		vartmpDest = "/var/tmp"
-	)
-
 	if !l.singularityConf.MountTmp {
 		sylog.Debugf("Skipping mount of /tmp due to singularity.conf")
 		return nil
@@ -84,6 +83,11 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
 	if slice.ContainsString(l.cfg.NoMount, "tmp") {
 		sylog.Debugf("Skipping mount of /tmp due to --no-mount")
 		return nil
+	}
+
+	// Non-OCI compatibility, i.e. native mode emulation, binds from host by default.
+	if l.cfg.NoCompat && !l.cfg.Contain && !l.cfg.ContainAll {
+		return l.addTmpBinds(mounts)
 	}
 
 	if len(l.cfg.WorkDir) > 0 {
@@ -120,13 +124,13 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
 		*mounts = append(*mounts,
 
 			specs.Mount{
-				Destination: tmpDest,
+				Destination: tmpDir,
 				Type:        "none",
 				Source:      tmpSrc,
 				Options:     opts,
 			},
 			specs.Mount{
-				Destination: vartmpDest,
+				Destination: varTmpDir,
 				Type:        "none",
 				Source:      vartmpSrc,
 				Options:     opts,
@@ -140,7 +144,7 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
 	*mounts = append(*mounts,
 
 		specs.Mount{
-			Destination: tmpDest,
+			Destination: tmpDir,
 			Type:        "tmpfs",
 			Source:      "tmpfs",
 			Options: []string{
@@ -151,7 +155,7 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
 			},
 		},
 		specs.Mount{
-			Destination: vartmpDest,
+			Destination: varTmpDir,
 			Type:        "tmpfs",
 			Source:      "tmpfs",
 			Options: []string{
@@ -164,6 +168,26 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
 	)
 
 	return nil
+}
+
+// addTmpBinds adds tmpfs bind mounts from /tmp and /var/tmp on the host, into the container.
+func (l *Launcher) addTmpBinds(mounts *[]specs.Mount) error {
+	err := addBindMount(mounts,
+		bind.Path{
+			Source:      tmpDir,
+			Destination: tmpDir,
+		},
+		l.cfg.AllowSUID)
+	if err != nil {
+		return err
+	}
+
+	return addBindMount(mounts,
+		bind.Path{
+			Source:      varTmpDir,
+			Destination: varTmpDir,
+		},
+		l.cfg.AllowSUID)
 }
 
 // addDevMounts adds mounts to assemble a minimal /dev in the container.
@@ -314,6 +338,11 @@ func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
 
 	if l.homeDest == "" {
 		return fmt.Errorf("cannot add home mount with empty destination")
+	}
+
+	// In --no-compat we bind $HOME from host like native mode default.
+	if l.cfg.NoCompat && l.homeSrc == "" {
+		l.homeSrc = l.homeHost
 	}
 
 	// If l.homeSrc is set, then we are simply bind mounting from the host.

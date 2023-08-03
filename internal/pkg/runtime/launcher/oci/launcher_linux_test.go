@@ -40,6 +40,7 @@ func TestNewLauncher(t *testing.T) {
 			name: "default",
 			want: &Launcher{
 				singularityConf: sc,
+				homeHost:        u.HomeDir,
 				homeSrc:         "",
 				homeDest:        u.HomeDir,
 			},
@@ -52,6 +53,7 @@ func TestNewLauncher(t *testing.T) {
 			want: &Launcher{
 				cfg:             launcher.Options{HomeDir: "/home/dest", CustomHome: true},
 				singularityConf: sc,
+				homeHost:        u.HomeDir,
 				homeSrc:         "",
 				homeDest:        "/home/dest",
 			},
@@ -65,6 +67,7 @@ func TestNewLauncher(t *testing.T) {
 			want: &Launcher{
 				cfg:             launcher.Options{HomeDir: "/home/src:/home/dest", CustomHome: true},
 				singularityConf: sc,
+				homeHost:        u.HomeDir,
 				homeSrc:         "/home/src",
 				homeDest:        "/home/dest",
 			},

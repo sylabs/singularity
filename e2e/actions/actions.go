@@ -2691,6 +2691,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"ociCdi":               c.actionOciCdi,                 // singularity exec --oci --cdi
 		"ociIDMaps":            c.actionOciIDMaps,              // check uid/gid mapping on host for --oci as user / --fakeroot
 		"ociCompat":            np(c.actionOciCompat),          // --oci equivalence to native mode --compat
+		"ociNoCompat":          np(c.actionOciNoCompat),        // --oci equivalence to native mode defaults with --no-compat
 		"ociOverlay":           (c.actionOciOverlay),           // --overlay in OCI mode
 		"ociOverlayExtfsPerms": (c.actionOciOverlayExtfsPerms), // permissions in writable extfs overlays mounted with FUSE in OCI mode
 		"ociOverlayTeardown":   np(c.actionOciOverlayTeardown), // proper overlay unmounting in OCI mode
