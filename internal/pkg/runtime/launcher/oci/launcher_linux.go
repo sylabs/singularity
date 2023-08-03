@@ -47,7 +47,7 @@ var (
 	ErrUnsupportedOption = errors.New("not supported by OCI launcher")
 	ErrNotImplemented    = errors.New("not implemented by OCI launcher")
 
-	unsupportedNoMount = []string{"dev", "cwd", "bind-paths"}
+	unsupportedNoMount = []string{"cwd", "bind-paths"}
 )
 
 // Launcher will holds configuration for, and will launch a container using an

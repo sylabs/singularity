@@ -162,43 +162,47 @@ func (c configTests) ociConfigGlobal(t *testing.T) {
 			directiveValue: "yes",
 			exit:           0,
 		},
-		//
-		// mount dev is not currently honored. We are mimicking --compat in the
-		// native runtime, which implies `minimal` here. Using `no` isn't an
-		// option, as the OCI runtime spec requires certain devices:
-		// https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md#default-devices
-		//
-		// {
-		//  name:           "MountDevNo",
-		//  argv:           []string{archiveRef, "test", "-d", "/dev/pts"},
-		//  profile:        e2e.OCIUserProfile,
-		//  directive:      "mount dev",
-		//  directiveValue: "no",
-		//  exit:           1,
-		// }, {
-		//  name:           "MountDevMinimal",
-		//  argv:           []string{archiveRef, "test", "-b", "/dev/loop0"},
-		//  profile:        e2e.OCIUserProfile,
-		//  directive:      "mount dev",
-		//  directiveValue: "minimal",
-		//  exit:           1,
-		// }, {
-		//  name:           "MountDevYes",
-		//  argv:           []string{archiveRef, "test", "-b", "/dev/loop0"},
-		//  profile:        e2e.OCIUserProfile,
-		//  directive:      "mount dev",
-		//  directiveValue: "yes",
-		//  exit:           0,
-		// }, // just test 'mount devpts = no' as yes depends of kernel version
-		// {
-		//  name:           "MountDevPtsNo",
-		//  argv:           []string{"-C", archiveRef, "test", "-d", "/dev/pts"},
-		//  profile:        e2e.OCIUserProfile,
-		//  directive:      "mount devpts",
-		//  directiveValue: "no",
-		//  exit:           1,
-		// },
-		//
+		{
+			name:           "MountDevNo",
+			argv:           []string{archiveRef, "test", "-c", "/dev/zero"},
+			profile:        e2e.OCIUserProfile,
+			directive:      "mount dev",
+			directiveValue: "no",
+			exit:           255, // Not supported in OCI mode. Runtimes require /dev.
+		},
+		// Check that in `--no-compat`, `mount dev = minimal` forces a minimal dev.
+		{
+			name:           "MountDevMinimal",
+			argv:           []string{"--no-compat", archiveRef, "test", "-b", "/dev/loop0"},
+			profile:        e2e.OCIUserProfile,
+			directive:      "mount dev",
+			directiveValue: "minimal",
+			exit:           1, // No loop device visible in minimal /dev
+		},
+		{
+			name:           "MountDevYes",
+			argv:           []string{archiveRef, "test", "-c", "/dev/zero"},
+			profile:        e2e.OCIUserProfile,
+			directive:      "mount dev",
+			directiveValue: "yes",
+			exit:           0,
+		},
+		{
+			name:           "MountDevPtsNo",
+			argv:           []string{archiveRef, "test", "-d", "/dev/pts"},
+			profile:        e2e.OCIUserProfile,
+			directive:      "mount devpts",
+			directiveValue: "no",
+			exit:           255, // Not supported in OCI mode. Runtimes require /dev/pts.
+		},
+		{
+			name:           "MountDevPtsYes",
+			argv:           []string{archiveRef, "test", "-d", "/dev/pts"},
+			profile:        e2e.OCIUserProfile,
+			directive:      "mount devpts",
+			directiveValue: "yes",
+			exit:           0,
+		},
 		// We have to check for a mount of $HOME, rather than presence of dir,
 		// as runc/crun will create the dir in the container fs if it doesn't
 		// exist.

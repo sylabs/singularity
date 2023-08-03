@@ -132,6 +132,8 @@
 - A new `--no-compat` flag can be used with OCI-mode to reduce OCI runtime
   compatibility and emulate singularity's historic native mode behaviour:
   - `$HOME`, `/tmp`, `/var/tmp` are bind mounted from the host.
+  - The full `/dev` is bind mounted from the host, unless `mount dev = minimal`
+    in `singularity.conf`.
 
 ### Developer / API
 
