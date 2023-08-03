@@ -138,6 +138,8 @@
   - The current working directory is mounted into the container, and is the
     entry point into the container.
   - The container is read-only unless `--writable-tmpfs` is also used.
+  - The host umask is propagated into the container, unless `--no-umask` is also
+    used.
 
 ### Developer / API
 
