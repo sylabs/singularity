@@ -142,6 +142,8 @@ mount sys = {{ if eq .MountSys true }}yes{{ else }}no{{ end }}
 # Should we automatically bind mount /dev within the container? If 'minimal'
 # is chosen, then only 'null', 'zero', 'random', 'urandom', and 'shm' will
 # be included (the same effect as the --contain options)
+#
+# Must be set to 'yes' or 'minimal' to use --oci mode.
 mount dev = {{ .MountDev }}
 
 # MOUNT DEVPTS: [BOOL]
@@ -150,6 +152,8 @@ mount dev = {{ .MountDev }}
 # /dev, or -C is passed?  Note, this requires that your kernel was
 # configured with CONFIG_DEVPTS_MULTIPLE_INSTANCES=y, or that you're
 # running kernel 4.7 or newer.
+#
+# Must be set to 'yes' to use --oci mode.
 mount devpts = {{ if eq .MountDevPts true }}yes{{ else }}no{{ end }}
 
 # MOUNT HOME: [BOOL]

@@ -192,24 +192,20 @@ func (l *Launcher) addTmpBinds(mounts *[]specs.Mount) error {
 
 // addDevMounts adds mounts to assemble a minimal /dev in the container.
 func (l *Launcher) addDevMounts(mounts *[]specs.Mount) error {
-	ptsMount := specs.Mount{
-		Destination: "/dev/pts",
-		Type:        "devpts",
-		Source:      "devpts",
-		Options:     []string{"nosuid", "noexec", "newinstance", "ptmxmode=0666", "mode=0620"},
+	if l.singularityConf.MountDev == "no" {
+		return fmt.Errorf("OCI-mode requires /dev to be mounted, but 'mount dev = no' in singularity.conf")
+	}
+	if slice.ContainsString(l.cfg.NoMount, "dev") {
+		return fmt.Errorf("OCI-mode requires /dev to be mounted, but '--no-mount dev' was requested")
 	}
 
-	rootlessUID, err := rootless.Getuid()
-	if err != nil {
-		return fmt.Errorf("while fetching uid: %w", err)
-	}
-
-	if rootlessUID == 0 {
-		group, err := user.GetGrNam("tty")
-		if err != nil {
-			return fmt.Errorf("while identifying tty gid: %w", err)
-		}
-		ptsMount.Options = append(ptsMount.Options, fmt.Sprintf("gid=%d", group.GID))
+	// When emulating native runtime (--no-compat), the default is to bind all of /dev into
+	// the container. If --contain / --containall is used, or `mount dev = minimal` in
+	// singularity.conf, then we use an OCI-like minimal dev.
+	contained := l.cfg.Contain || l.cfg.ContainAll
+	minimalDev := contained || (l.singularityConf.MountDev == "minimal")
+	if l.cfg.NoCompat && !minimalDev {
+		return l.addDevBind(mounts)
 	}
 
 	*mounts = append(*mounts,
@@ -244,13 +240,59 @@ func (l *Launcher) addDevMounts(mounts *[]specs.Mount) error {
 		},
 	)
 
+	return l.addDevPtsMount(mounts)
+}
+
+// addDevPtsMount adds a devpts mount in the container
+func (l *Launcher) addDevPtsMount(mounts *[]specs.Mount) error {
+	if !l.singularityConf.MountDevPts {
+		return fmt.Errorf("OCI-mode requires /dev/pts to be mounted, but 'mount devpts = no' in singularity.conf")
+	}
 	if slice.ContainsString(l.cfg.NoMount, "devpts") {
-		sylog.Debugf("Skipping mount of /dev/pts due to --no-mount")
-		return nil
+		return fmt.Errorf("OCI-mode requires /dev/pts to be mounted, but '--no-mount devpts' was requested")
+	}
+
+	ptsMount := specs.Mount{
+		Destination: "/dev/pts",
+		Type:        "devpts",
+		Source:      "devpts",
+		Options:     []string{"nosuid", "noexec", "newinstance", "ptmxmode=0666", "mode=0620"},
+	}
+
+	rootlessUID, err := rootless.Getuid()
+	if err != nil {
+		return fmt.Errorf("while fetching uid: %w", err)
+	}
+
+	if rootlessUID == 0 {
+		group, err := user.GetGrNam("tty")
+		if err != nil {
+			return fmt.Errorf("while identifying tty gid: %w", err)
+		}
+		ptsMount.Options = append(ptsMount.Options, fmt.Sprintf("gid=%d", group.GID))
 	}
 
 	*mounts = append(*mounts, ptsMount)
 	return nil
+}
+
+// addDevBind bind mounts all of /dev into the container.
+func (l *Launcher) addDevBind(mounts *[]specs.Mount) error {
+	*mounts = append(*mounts,
+		specs.Mount{
+			Destination: "/dev",
+			Type:        "bind",
+			Source:      "/dev",
+			Options: []string{
+				"nosuid",
+				"rprivate",
+				"rbind",
+				"rw",
+			},
+		},
+	)
+	// Still need a /dev/pts mount with correct perms
+	return l.addDevPtsMount(mounts)
 }
 
 // addProcMount adds the /proc tree in the container.

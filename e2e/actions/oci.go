@@ -1702,16 +1702,16 @@ func (c actionTests) actionOciNoMount(t *testing.T) {
 			exit:    0,
 		},
 		{
-			name:      "dev",
-			noMount:   "dev",
-			warnMatch: "--no-mount dev is not supported in OCI mode, ignoring.",
-			exit:      0,
+			name:    "dev",
+			noMount: "dev",
+			noMatch: "on /dev",
+			exit:    255, // /dev is required in OCI mode.
 		},
 		{
 			name:    "devpts",
 			noMount: "devpts",
 			noMatch: "on /dev/pts",
-			exit:    0,
+			exit:    255, // /devpts is required in OCI mode.
 		},
 		{
 			name:    "tmp",
@@ -1952,6 +1952,7 @@ func (c actionTests) actionOciNoCompat(t *testing.T) {
 	}
 
 	tests := []test{
+		// $HOME, /tmp, /var/tmp are bound in
 		{
 			name:     "dirBinds",
 			args:     []string{"--no-compat", imageRef, "sh", "-c", "ls /tmp /var/tmp $HOME"},
@@ -1961,6 +1962,12 @@ func (c actionTests) actionOciNoCompat(t *testing.T) {
 				e2e.ExpectOutput(e2e.ContainMatch, filepath.Base(varTmpCanary)),
 				e2e.ExpectOutput(e2e.ContainMatch, filepath.Base(homeCanary)),
 			},
+		},
+		// /dev is bound in - /dev/block doesn't exist in a minimal /dev
+		{
+			name:     "fullDev",
+			args:     []string{"--no-compat", imageRef, "sh", "-c", "ls /dev/block"},
+			exitCode: 0,
 		},
 	}
 
