@@ -67,12 +67,12 @@ func TestItemWritableField(t *testing.T) {
 		t.Fatalf("unexpected error while initializing roItem from string %q: %s", roOverlayStr, err)
 	}
 
-	if !rwItem.Writable {
-		t.Errorf("Writable field of overlay.Item initialized with string %q should be true but is false", rwOverlayStr)
+	if rwItem.Readonly {
+		t.Errorf("Readonly field of overlay.Item initialized with string %q should be false but is true", rwOverlayStr)
 	}
 
-	if roItem.Writable {
-		t.Errorf("Writable field of overlay.Item initialized with string %q should be false but is true", roOverlayStr)
+	if !roItem.Readonly {
+		t.Errorf("Readonly field of overlay.Item initialized with string %q should be true but is false", roOverlayStr)
 	}
 }
 

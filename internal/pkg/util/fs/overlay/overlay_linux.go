@@ -290,22 +290,6 @@ func DetachMount(dir string) error {
 	return nil
 }
 
-// UnmountWithFuse performs an unmount on the specified directory using
-// fusermount -u.
-func UnmountWithFuse(dir string) error {
-	fusermountCmd, err := bin.FindBin("fusermount")
-	if err != nil {
-		// We should not be creating FUSE-based mounts in the first place
-		// without checking that fusermount is available.
-		return fmt.Errorf("fusermount not available while trying to perform unmount: %w", err)
-	}
-	sylog.Debugf("Executing FUSE unmount command: %s -u %s", fusermountCmd, dir)
-	execCmd := exec.Command(fusermountCmd, "-u", dir)
-	execCmd.Stderr = os.Stderr
-	_, err = execCmd.Output()
-	return err
-}
-
 // AbsOverlay takes an overlay description string (a path, optionally followed by a colon with an option string, like ":ro" or ":rw"), and replaces any relative path in the description string with an absolute one.
 func AbsOverlay(desc string) (string, error) {
 	splitted := strings.SplitN(desc, ":", 2)

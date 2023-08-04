@@ -12,6 +12,7 @@ import (
 
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/fuse"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
 )
 
@@ -39,11 +40,13 @@ func TestNewLauncher(t *testing.T) {
 		{
 			name: "default",
 			want: &Launcher{
-				cfg:             launcher.Options{WritableTmpfs: true},
-				singularityConf: sc,
-				homeHost:        u.HomeDir,
-				homeSrc:         "",
-				homeDest:        u.HomeDir,
+				cfg:                     launcher.Options{WritableTmpfs: true},
+				singularityConf:         sc,
+				homeHost:                u.HomeDir,
+				homeSrc:                 "",
+				homeDest:                u.HomeDir,
+				imageMountsByImagePath:  make(map[string]*fuse.ImageMount),
+				imageMountsByMountpoint: make(map[string]*fuse.ImageMount),
 			},
 		},
 		{
@@ -52,11 +55,13 @@ func TestNewLauncher(t *testing.T) {
 				launcher.OptHome("/home/dest", true, false),
 			},
 			want: &Launcher{
-				cfg:             launcher.Options{HomeDir: "/home/dest", CustomHome: true, WritableTmpfs: true},
-				singularityConf: sc,
-				homeHost:        u.HomeDir,
-				homeSrc:         "",
-				homeDest:        "/home/dest",
+				cfg:                     launcher.Options{HomeDir: "/home/dest", CustomHome: true, WritableTmpfs: true},
+				singularityConf:         sc,
+				homeHost:                u.HomeDir,
+				homeSrc:                 "",
+				homeDest:                "/home/dest",
+				imageMountsByImagePath:  make(map[string]*fuse.ImageMount),
+				imageMountsByMountpoint: make(map[string]*fuse.ImageMount),
 			},
 			wantErr: false,
 		},
@@ -66,11 +71,13 @@ func TestNewLauncher(t *testing.T) {
 				launcher.OptHome("/home/src:/home/dest", true, false),
 			},
 			want: &Launcher{
-				cfg:             launcher.Options{HomeDir: "/home/src:/home/dest", CustomHome: true, WritableTmpfs: true},
-				singularityConf: sc,
-				homeHost:        u.HomeDir,
-				homeSrc:         "/home/src",
-				homeDest:        "/home/dest",
+				cfg:                     launcher.Options{HomeDir: "/home/src:/home/dest", CustomHome: true, WritableTmpfs: true},
+				singularityConf:         sc,
+				homeHost:                u.HomeDir,
+				homeSrc:                 "/home/src",
+				homeDest:                "/home/dest",
+				imageMountsByImagePath:  make(map[string]*fuse.ImageMount),
+				imageMountsByMountpoint: make(map[string]*fuse.ImageMount),
 			},
 			wantErr: false,
 		},
@@ -80,11 +87,13 @@ func TestNewLauncher(t *testing.T) {
 				launcher.OptNoCompat(true),
 			},
 			want: &Launcher{
-				cfg:             launcher.Options{NoCompat: true, WritableTmpfs: false},
-				singularityConf: sc,
-				homeHost:        u.HomeDir,
-				homeSrc:         "",
-				homeDest:        u.HomeDir,
+				cfg:                     launcher.Options{NoCompat: true, WritableTmpfs: false},
+				singularityConf:         sc,
+				homeHost:                u.HomeDir,
+				homeSrc:                 "",
+				homeDest:                u.HomeDir,
+				imageMountsByImagePath:  make(map[string]*fuse.ImageMount),
+				imageMountsByMountpoint: make(map[string]*fuse.ImageMount),
 			},
 			wantErr: false,
 		},
@@ -95,11 +104,13 @@ func TestNewLauncher(t *testing.T) {
 				launcher.OptWritableTmpfs(true),
 			},
 			want: &Launcher{
-				cfg:             launcher.Options{NoCompat: true, WritableTmpfs: true},
-				singularityConf: sc,
-				homeHost:        u.HomeDir,
-				homeSrc:         "",
-				homeDest:        u.HomeDir,
+				cfg:                     launcher.Options{NoCompat: true, WritableTmpfs: true},
+				singularityConf:         sc,
+				homeHost:                u.HomeDir,
+				homeSrc:                 "",
+				homeDest:                u.HomeDir,
+				imageMountsByImagePath:  make(map[string]*fuse.ImageMount),
+				imageMountsByMountpoint: make(map[string]*fuse.ImageMount),
 			},
 			wantErr: false,
 		},

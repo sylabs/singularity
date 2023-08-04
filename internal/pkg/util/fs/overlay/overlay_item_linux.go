@@ -8,13 +8,12 @@ package overlay
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"syscall"
 
-	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	fsfuse "github.com/sylabs/singularity/v4/internal/pkg/util/fs/fuse"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
@@ -26,11 +25,11 @@ type Item struct {
 	// pkg/image)
 	Type int
 
-	// Writable represents whether this is a writable overlay
-	Writable bool
+	// Readonly represents whether this is a readonly overlay
+	Readonly bool
 
-	// SourcePath is the path of the overlay item stripped of any colon-prefixed
-	// options (like ":ro")
+	// SourcePath is the path of the overlay item, stripped of any
+	// colon-prefixed options (like ":ro")
 	SourcePath string
 
 	// StagingDir is the directory on which this overlay item is staged, to be
@@ -52,7 +51,7 @@ type Item struct {
 // NewItemFromString takes a string argument, as passed to --overlay, and
 // returns an Item struct describing the requested overlay.
 func NewItemFromString(overlayString string) (*Item, error) {
-	item := Item{Writable: true}
+	item := Item{Readonly: false}
 
 	var err error
 	splitted := strings.SplitN(overlayString, ":", 2)
@@ -63,7 +62,7 @@ func NewItemFromString(overlayString string) (*Item, error) {
 
 	if len(splitted) > 1 {
 		if splitted[1] == "ro" {
-			item.Writable = false
+			item.Readonly = true
 		}
 	}
 
@@ -96,7 +95,7 @@ func (i *Item) analyzeImageFile() error {
 	case image.SQUASHFS:
 		i.Type = image.SQUASHFS
 		// squashfs image must be readonly
-		i.Writable = false
+		i.Readonly = true
 	case image.EXT3:
 		i.Type = image.EXT3
 	default:
@@ -149,10 +148,10 @@ func (i *Item) Mount() error {
 	switch i.Type {
 	case image.SANDBOX:
 		err = i.mountDir()
-	case image.SQUASHFS:
-		err = i.mountWithFuse("squashfuse")
-	case image.EXT3:
-		i.mountWithFuse("fuse2fs")
+
+	case image.SQUASHFS, image.EXT3:
+		err = i.mountWithFuse()
+
 	default:
 		return fmt.Errorf("internal error: unrecognized image type in overlay.Item.Mount() (type: %v)", i.Type)
 	}
@@ -161,7 +160,7 @@ func (i *Item) Mount() error {
 		return err
 	}
 
-	if i.Writable {
+	if !i.Readonly {
 		return i.prepareWritableOverlay()
 	}
 
@@ -178,7 +177,7 @@ func (i Item) GetMountDir() string {
 		return i.StagingDir
 
 	case image.SANDBOX:
-		if i.Writable || fs.IsDir(i.Upper()) {
+		if (!i.Readonly) || fs.IsDir(i.Upper()) {
 			return i.Upper()
 		}
 		return i.StagingDir
@@ -217,7 +216,7 @@ func (i *Item) mountDir() error {
 
 	// Try to perform remount to apply restrictive flags.
 	var remountOpts uintptr = syscall.MS_REMOUNT | syscall.MS_BIND
-	if !i.Writable {
+	if i.Readonly {
 		// Not strictly necessary as will be read-only in assembled overlay,
 		// however this stops any erroneous writes through the stagingDir.
 		remountOpts |= syscall.MS_RDONLY
@@ -236,72 +235,27 @@ func (i *Item) mountDir() error {
 	return nil
 }
 
-// mountWithFuse mounts an image to a temporary directory using a specified fuse
-// tool. It also verifies that fusermount is present before performing the
-// mount.
-func (i *Item) mountWithFuse(fuseMountTool string) error {
-	var err error
-	fuseMountCmd, err := bin.FindBin(fuseMountTool)
-	if err != nil {
-		return fmt.Errorf("use of image %q as overlay requires %s to be installed: %w", i.SourcePath, fuseMountTool, err)
-	}
-
-	// Even though fusermount is not needed for this step, we shouldn't perform
-	// the mount unless we have the necessary tools to eventually unmount it
-	_, err = bin.FindBin("fusermount")
-	if err != nil {
-		return fmt.Errorf("use of image %q as overlay requires fusermount to be installed: %w", i.SourcePath, err)
-	}
-
-	// Obtain parent directory in which to create overlay-related mount
-	// directories. See https://github.com/apptainer/singularity/pull/5575 for
-	// related discussion.
+// mountWithFuse mounts an image to a temporary directory
+func (i *Item) mountWithFuse() error {
 	parentDir, err := i.GetParentDir()
 	if err != nil {
-		return fmt.Errorf("error while trying to create parent dir for overlay %q: %w", i.SourcePath, err)
-	}
-	fuseMountDir, err := os.MkdirTemp(parentDir, "overlay-mountpoint-")
-	if err != nil {
-		return fmt.Errorf("failed to create temporary dir %q for overlay %q: %w", fuseMountDir, i.SourcePath, err)
+		return err
 	}
 
-	// Best effort to cleanup temporary dir
-	defer func() {
-		if err != nil {
-			sylog.Debugf("Encountered error with current overlay set; attempting to remove %q", fuseMountDir)
-			os.Remove(fuseMountDir)
-		}
-	}()
+	im := fsfuse.ImageMount{
+		Type:         i.Type,
+		Readonly:     i.Readonly,
+		SourcePath:   i.SourcePath,
+		EnclosingDir: parentDir,
+		AllowSetuid:  i.allowSetuid,
+		AllowDev:     i.allowDev,
+	}
 
-	args := make([]string, 0, 4)
+	if err := im.Mount(); err != nil {
+		return err
+	}
 
-	// TODO: Think through what makes sense for file ownership in FUSE-mounted
-	// images, vis a vis id-mappings and user-namespaces.
-	opts := "uid=0,gid=0"
-	if !i.Writable {
-		// Not strictly necessary as will be read-only in assembled overlay,
-		// however this stops any erroneous writes through the stagingDir.
-		opts += ",ro"
-	}
-	// FUSE defaults to nosuid,nodev - attempt to reverse if AllowDev/Setuid requested.
-	if i.allowDev {
-		opts += ",dev"
-	}
-	if i.allowSetuid {
-		opts += ",suid"
-	}
-	args = append(args, "-o", opts)
-
-	args = append(args, i.SourcePath)
-	args = append(args, fuseMountDir)
-	sylog.Debugf("Executing FUSE mount command: %s %s", fuseMountCmd, strings.Join(args, " "))
-	execCmd := exec.Command(fuseMountCmd, args...)
-	execCmd.Stderr = os.Stderr
-	_, err = execCmd.Output()
-	if err != nil {
-		return fmt.Errorf("encountered error while trying to mount image %q as overlay at %s: %w", i.SourcePath, fuseMountDir, err)
-	}
-	i.StagingDir = fuseMountDir
+	i.StagingDir = im.GetMountPoint()
 
 	return nil
 }
@@ -314,9 +268,7 @@ func (i Item) Unmount() error {
 	case image.SANDBOX:
 		return i.unmountDir()
 
-	case image.SQUASHFS:
-		fallthrough
-	case image.EXT3:
+	case image.SQUASHFS, image.EXT3:
 		return i.unmountFuse()
 
 	default:
@@ -332,7 +284,7 @@ func (i Item) unmountDir() error {
 // unmountFuse unmounts FUSE-based Items.
 func (i Item) unmountFuse() error {
 	defer os.Remove(i.StagingDir)
-	err := UnmountWithFuse(i.StagingDir)
+	err := fsfuse.UnmountWithFuse(i.StagingDir)
 	if err != nil {
 		return fmt.Errorf("error while trying to unmount image %q from %s: %w", i.SourcePath, i.StagingDir, err)
 	}

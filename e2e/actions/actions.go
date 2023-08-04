@@ -2638,46 +2638,46 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	np := testhelper.NoParallel
 
 	return testhelper.Tests{
-		"action URI":                   c.RunFromURI,               // action_URI
-		"exec":                         c.actionExec,               // singularity exec
-		"exec under multiple profiles": c.actionExecMultiProfile,   // singularity exec
-		"persistent overlay":           c.PersistentOverlay,        // Persistent Overlay
-		"persistent overlay unpriv":    c.PersistentOverlayUnpriv,  // Persistent Overlay Unprivileged
-		"run":                          c.actionRun,                // singularity run
-		"shell":                        c.actionShell,              // shell interaction
-		"STDPIPE":                      c.STDPipe,                  // stdin/stdout pipe
-		"action basic profiles":        c.actionBasicProfiles,      // run basic action under different profiles
-		"issue 4488":                   c.issue4488,                // https://github.com/sylabs/singularity/issues/4488
-		"issue 4587":                   c.issue4587,                // https://github.com/sylabs/singularity/issues/4587
-		"issue 4755":                   c.issue4755,                // https://github.com/sylabs/singularity/issues/4755
-		"issue 4768":                   c.issue4768,                // https://github.com/sylabs/singularity/issues/4768
-		"issue 4797":                   c.issue4797,                // https://github.com/sylabs/singularity/issues/4797
-		"issue 4823":                   c.issue4823,                // https://github.com/sylabs/singularity/issues/4823
-		"issue 4836":                   c.issue4836,                // https://github.com/sylabs/singularity/issues/4836
-		"issue 5211":                   c.issue5211,                // https://github.com/sylabs/singularity/issues/5211
-		"issue 5228":                   c.issue5228,                // https://github.com/sylabs/singularity/issues/5228
-		"issue 5271":                   c.issue5271,                // https://github.com/sylabs/singularity/issues/5271
-		"issue 5307":                   c.issue5307,                // https://github.com/sylabs/singularity/issues/5307
-		"issue 5399":                   c.issue5399,                // https://github.com/sylabs/singularity/issues/5399
-		"issue 5455":                   c.issue5455,                // https://github.com/sylabs/singularity/issues/5455
-		"issue 5465":                   c.issue5465,                // https://github.com/sylabs/singularity/issues/5465
-		"issue 5599":                   c.issue5599,                // https://github.com/sylabs/singularity/issues/5599
-		"issue 5631":                   c.issue5631,                // https://github.com/sylabs/singularity/issues/5631
-		"issue 5690":                   c.issue5690,                // https://github.com/sylabs/singularity/issues/5690
-		"network":                      c.actionNetwork,            // test basic networking
-		"binds":                        c.actionBinds,              // test various binds with --bind and --mount
-		"exit and signals":             c.exitSignals,              // test exit and signals propagation
-		"fuse mount":                   c.fuseMount,                // test fusemount option
-		"bind image":                   c.bindImage,                // test bind image with --bind and --mount
-		"no-mount":                     c.actionNoMount,            // test --no-mount
-		"no-setgroups":                 c.actionNoSetgroups,        // test --no-setgroups
-		"compat":                       np(c.actionCompat),         // test --compat
-		"umask":                        np(c.actionUmask),          // test umask propagation
-		"invalidRemote":                np(c.invalidRemote),        // GHSA-5mv9-q7fq-9394
-		"SIFFUSE":                      np(c.actionSIFFUSE),        // test --sif-fuse
-		"NoSIFFUSE":                    np(c.actionNoSIFFUSE),      // test absence of squashfs and CleanupHost()
-		"relWorkdirScratch":            np(c.relWorkdirScratch),    // test relative --workdir with --scratch
-		"ociRelWorkdirScratch":         np(c.ociRelWorkdirScratch), // test relative --workdir with --scratch in OCI mode
+		"action URI":                   c.RunFromURI,                     // action_URI
+		"exec":                         c.actionExec,                     // singularity exec
+		"exec under multiple profiles": c.actionExecMultiProfile,         // singularity exec
+		"persistent overlay":           c.PersistentOverlay,              // Persistent Overlay
+		"persistent overlay unpriv":    c.PersistentOverlayUnpriv,        // Persistent Overlay Unprivileged
+		"run":                          c.actionRun,                      // singularity run
+		"shell":                        c.actionShell,                    // shell interaction
+		"STDPIPE":                      c.STDPipe,                        // stdin/stdout pipe
+		"action basic profiles":        c.actionBasicProfiles,            // run basic action under different profiles
+		"issue 4488":                   c.issue4488,                      // https://github.com/sylabs/singularity/issues/4488
+		"issue 4587":                   c.issue4587,                      // https://github.com/sylabs/singularity/issues/4587
+		"issue 4755":                   c.issue4755,                      // https://github.com/sylabs/singularity/issues/4755
+		"issue 4768":                   c.issue4768,                      // https://github.com/sylabs/singularity/issues/4768
+		"issue 4797":                   c.issue4797,                      // https://github.com/sylabs/singularity/issues/4797
+		"issue 4823":                   c.issue4823,                      // https://github.com/sylabs/singularity/issues/4823
+		"issue 4836":                   c.issue4836,                      // https://github.com/sylabs/singularity/issues/4836
+		"issue 5211":                   c.issue5211,                      // https://github.com/sylabs/singularity/issues/5211
+		"issue 5228":                   c.issue5228,                      // https://github.com/sylabs/singularity/issues/5228
+		"issue 5271":                   c.issue5271,                      // https://github.com/sylabs/singularity/issues/5271
+		"issue 5307":                   c.issue5307,                      // https://github.com/sylabs/singularity/issues/5307
+		"issue 5399":                   c.issue5399,                      // https://github.com/sylabs/singularity/issues/5399
+		"issue 5455":                   c.issue5455,                      // https://github.com/sylabs/singularity/issues/5455
+		"issue 5465":                   c.issue5465,                      // https://github.com/sylabs/singularity/issues/5465
+		"issue 5599":                   c.issue5599,                      // https://github.com/sylabs/singularity/issues/5599
+		"issue 5631":                   c.issue5631,                      // https://github.com/sylabs/singularity/issues/5631
+		"issue 5690":                   c.issue5690,                      // https://github.com/sylabs/singularity/issues/5690
+		"network":                      c.actionNetwork,                  // test basic networking
+		"binds":                        c.actionBinds,                    // test various binds with --bind and --mount
+		"exit and signals":             c.exitSignals,                    // test exit and signals propagation
+		"fuse mount":                   c.fuseMount,                      // test fusemount option
+		"bind image":                   c.bindImage,                      // test bind image with --bind and --mount
+		"no-mount":                     c.actionNoMount,                  // test --no-mount
+		"no-setgroups":                 c.actionNoSetgroups,              // test --no-setgroups
+		"compat":                       np(c.actionCompat),               // test --compat
+		"umask":                        np(c.actionUmask),                // test umask propagation
+		"invalidRemote":                np(c.invalidRemote),              // GHSA-5mv9-q7fq-9394
+		"SIFFUSE":                      np(c.actionSIFFUSE),              // test --sif-fuse
+		"NoSIFFUSE":                    np(c.actionNoSIFFUSE),            // test absence of squashfs and CleanupHost()
+		"relWorkdirScratch":            np(c.relWorkdirScratch),          // test relative --workdir with --scratch
+		"ociRelWorkdirScratch":         np(c.actionOciRelWorkdirScratch), // test relative --workdir with --scratch in OCI mode
 		//
 		// OCI Runtime Mode
 		//
@@ -2695,6 +2695,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"ociOverlay":           (c.actionOciOverlay),           // --overlay in OCI mode
 		"ociOverlayExtfsPerms": (c.actionOciOverlayExtfsPerms), // permissions in writable extfs overlays mounted with FUSE in OCI mode
 		"ociOverlayTeardown":   np(c.actionOciOverlayTeardown), // proper overlay unmounting in OCI mode
+		"ociBindImage":         c.actionOciBindImage,           // test binding of images in OCI mode
 		"ociNo-mount":          c.actionOciNoMount,             // --no-mount in OCI mode
 		"ociHomeCwdPasswd":     c.actionOciHomeCwdPasswd,       // $HOME is correct in /etc/passwd, and is default cwd
 		"ociAllowSetuid":       c.actionOciAllowSetuid,         // --allow-setuid / check for nosuid mount options

@@ -9,6 +9,7 @@
 package oci
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -17,9 +18,11 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/fuse"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/gpu"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
+	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/bind"
 	"github.com/sylabs/singularity/v4/pkg/util/slice"
@@ -183,7 +186,7 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
 
 // addTmpBinds adds tmpfs bind mounts from /tmp and /var/tmp on the host, into the container.
 func (l *Launcher) addTmpBinds(mounts *[]specs.Mount) error {
-	err := addBindMount(mounts,
+	err := l.addBindMount(mounts,
 		bind.Path{
 			Source:      tmpDir,
 			Destination: tmpDir,
@@ -193,7 +196,7 @@ func (l *Launcher) addTmpBinds(mounts *[]specs.Mount) error {
 		return err
 	}
 
-	return addBindMount(mounts,
+	return l.addBindMount(mounts,
 		bind.Path{
 			Source:      varTmpDir,
 			Destination: varTmpDir,
@@ -318,7 +321,7 @@ func (l *Launcher) addProcMount(mounts *[]specs.Mount) error {
 	}
 
 	if l.cfg.Namespaces.NoPID {
-		return addBindMount(mounts,
+		return l.addBindMount(mounts,
 			bind.Path{
 				Source:      "/proc",
 				Destination: "/proc",
@@ -400,7 +403,7 @@ func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
 
 	// If l.homeSrc is set, then we are simply bind mounting from the host.
 	if l.homeSrc != "" {
-		return addBindMount(mounts,
+		return l.addBindMount(mounts,
 			bind.Path{
 				Source:      l.homeSrc,
 				Destination: l.homeDest,
@@ -532,7 +535,7 @@ func (l *Launcher) addSystemBindMounts(mounts *[]specs.Mount) error {
 		if slice.ContainsString(l.cfg.NoMount, b.Destination) {
 			continue
 		}
-		if err := addBindMount(mounts, b, l.cfg.AllowSUID); err != nil {
+		if err := l.addBindMount(mounts, b, l.cfg.AllowSUID); err != nil {
 			return fmt.Errorf("while adding mount %q: %w", b.Source, err)
 		}
 	}
@@ -559,10 +562,11 @@ func (l *Launcher) addUserBindMounts(mounts *[]specs.Mount) error {
 			sylog.Warningf("Ignoring bind mount request: user bind control disabled by system administrator")
 			return nil
 		}
-		if err := addBindMount(mounts, b, l.cfg.AllowSUID); err != nil {
+		if err := l.addBindMount(mounts, b, l.cfg.AllowSUID); err != nil {
 			return fmt.Errorf("while adding mount %q: %w", b.Source, err)
 		}
 	}
+
 	return nil
 }
 
@@ -578,7 +582,7 @@ func (l *Launcher) addCwdMount(mounts *[]specs.Mount) error {
 		return err
 	}
 
-	return addBindMount(mounts,
+	return l.addBindMount(mounts,
 		bind.Path{
 			Source:      cwd,
 			Destination: cwd,
@@ -587,9 +591,30 @@ func (l *Launcher) addCwdMount(mounts *[]specs.Mount) error {
 	)
 }
 
-func addBindMount(mounts *[]specs.Mount, b bind.Path, allowSUID bool) error {
+func (l *Launcher) addBindMount(mounts *[]specs.Mount, b bind.Path, allowSUID bool) (err error) {
 	if b.ID() != "" || b.ImageSrc() != "" {
-		return fmt.Errorf("image binds are not yet supported by the OCI runtime")
+		if !l.singularityConf.UserBindControl {
+			sylog.Warningf("Ignoring image bind mount request: user bind control disabled by system administrator")
+			return nil
+		}
+
+		im, err := l.prepareImageBindMount(b, allowSUID)
+		if err != nil {
+			return err
+		}
+
+		sylog.Debugf("mountpoint for image bind-mount is: %q", im.GetMountPoint())
+
+		bindMountSource := filepath.Join(im.GetMountPoint(), b.ImageSrc())
+
+		return l.addBindMount(
+			mounts,
+			bind.Path{
+				Source:      bindMountSource,
+				Destination: b.Destination,
+			},
+			allowSUID,
+		)
 	}
 
 	opts := []string{"rbind", "nodev"}
@@ -605,7 +630,10 @@ func addBindMount(mounts *[]specs.Mount, b bind.Path, allowSUID bool) error {
 		return fmt.Errorf("cannot determine absolute path of %s: %w", b.Source, err)
 	}
 	if _, err := os.Stat(absSource); err != nil {
-		return fmt.Errorf("cannot stat bind source %s: %w", b.Source, err)
+		_, ok := l.imageMountsByMountpoint[absSource]
+		if !(errors.Is(err, os.ErrNotExist) && ok) {
+			return fmt.Errorf("cannot stat bind source %s: %w", b.Source, err)
+		}
 	}
 
 	if !filepath.IsAbs(b.Destination) {
@@ -621,7 +649,57 @@ func addBindMount(mounts *[]specs.Mount, b bind.Path, allowSUID bool) error {
 			Type:        "none",
 			Options:     opts,
 		})
+
 	return nil
+}
+
+func (l *Launcher) prepareImageBindMount(bindPath bind.Path, allowSUID bool) (*fuse.ImageMount, error) {
+	imagePath := bindPath.Source
+	img, err := image.Init(imagePath, false)
+	if err != nil {
+		return nil, err
+	}
+
+	resolvedPath := img.Path
+	readonly := bindPath.Readonly()
+
+	sylog.Debugf("img is: %#v", img)
+
+	switch img.Type {
+	case image.SQUASHFS:
+		readonly = true
+		fallthrough
+	case image.EXT3:
+		if bindPath.ID() != "" {
+			return nil, fmt.Errorf("image %q does not support id values, but one was supplied (%q)", bindPath.ImageSrc(), bindPath.ID())
+		}
+	}
+
+	enclosingDir, err := os.MkdirTemp(buildcfg.SESSIONDIR, "fusemount-enclosure")
+	if err != nil {
+		return nil, err
+	}
+
+	im := fuse.ImageMount{
+		Type:         img.Type,
+		Readonly:     readonly,
+		SourcePath:   resolvedPath,
+		EnclosingDir: enclosingDir,
+		AllowSetuid:  l.cfg.AllowSUID,
+		AllowOther:   true,
+	}
+
+	mountpoint := filepath.Join(enclosingDir, fmt.Sprintf("fusemount-%d", len(l.imageMountsByMountpoint)))
+	im.SetMountPoint(mountpoint)
+
+	if otherIm, ok := l.imageMountsByImagePath[resolvedPath]; ok && !otherIm.Readonly && !im.Readonly {
+		return nil, fmt.Errorf("image %q already mounted as writable once; cannot mount it again as writable at %q", resolvedPath, bindPath.Destination)
+	}
+
+	l.imageMountsByImagePath[resolvedPath] = &im
+	l.imageMountsByMountpoint[mountpoint] = &im
+
+	return &im, nil
 }
 
 func addDevBindMount(mounts *[]specs.Mount, b bind.Path) error {
@@ -679,7 +757,7 @@ func (l *Launcher) addRocmMounts(mounts *[]specs.Mount) error {
 			Destination: containerBinary,
 			Options:     map[string]*bind.Option{"ro": {}},
 		}
-		if err := addBindMount(mounts, bind, false); err != nil {
+		if err := l.addBindMount(mounts, bind, false); err != nil {
 			return err
 		}
 	}
@@ -691,7 +769,7 @@ func (l *Launcher) addRocmMounts(mounts *[]specs.Mount) error {
 			Destination: containerLib,
 			Options:     map[string]*bind.Option{"ro": {}},
 		}
-		if err := addBindMount(mounts, bind, false); err != nil {
+		if err := l.addBindMount(mounts, bind, false); err != nil {
 			return err
 		}
 	}
@@ -743,7 +821,7 @@ func (l *Launcher) addNvidiaMounts(mounts *[]specs.Mount) error {
 			Destination: containerBinary,
 			Options:     map[string]*bind.Option{"ro": {}},
 		}
-		if err := addBindMount(mounts, bind, false); err != nil {
+		if err := l.addBindMount(mounts, bind, false); err != nil {
 			return err
 		}
 	}
@@ -755,7 +833,7 @@ func (l *Launcher) addNvidiaMounts(mounts *[]specs.Mount) error {
 			Destination: containerLib,
 			Options:     map[string]*bind.Option{"ro": {}},
 		}
-		if err := addBindMount(mounts, bind, false); err != nil {
+		if err := l.addBindMount(mounts, bind, false); err != nil {
 			return err
 		}
 	}
@@ -765,7 +843,7 @@ func (l *Launcher) addNvidiaMounts(mounts *[]specs.Mount) error {
 			Source:      ipc,
 			Destination: ipc,
 		}
-		if err := addBindMount(mounts, bind, false); err != nil {
+		if err := l.addBindMount(mounts, bind, false); err != nil {
 			return err
 		}
 	}
@@ -796,7 +874,7 @@ func (l *Launcher) addLibrariesMounts(mounts *[]specs.Mount) error {
 			Destination: containerLib,
 			Options:     map[string]*bind.Option{"ro": {}},
 		}
-		if err := addBindMount(mounts, bind, false); err != nil {
+		if err := l.addBindMount(mounts, bind, false); err != nil {
 			return err
 		}
 	}
