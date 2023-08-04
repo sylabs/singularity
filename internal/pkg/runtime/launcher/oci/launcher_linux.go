@@ -90,6 +90,13 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 		return nil, err
 	}
 
+	// We are emulating native mode `--compat`, so  we provide a user-writable
+	// tmpfs by default, unless `--no-compat` was requested without
+	// `--writable-tmpfs`.
+	if !lo.NoCompat || lo.WritableTmpfs {
+		lo.WritableTmpfs = true
+	}
+
 	return &Launcher{
 		cfg:             lo,
 		singularityConf: c,
@@ -107,9 +114,6 @@ func checkOpts(lo launcher.Options) error {
 
 	if lo.Writable {
 		badOpt = append(badOpt, "Writable")
-	}
-	if lo.WritableTmpfs {
-		sylog.Infof("--oci mode uses --writable-tmpfs by default")
 	}
 
 	if len(lo.FuseMount) > 0 {
@@ -240,6 +244,11 @@ func parseHomeDir(homedir string, custom, fakeroot bool) (host, src, dest string
 func (l *Launcher) createSpec() (spec *specs.Spec, err error) {
 	ms := minimalSpec()
 	spec = &ms
+
+	// The OCI mode always wraps the rootfs in a tmpfs.
+	// Whether we  make it writable inside the container depends on a request for `--writable-tmpfs`.
+	// Note that --writable-tmpfs is inferred by default in OCI mode. See NewLauncher().
+	spec.Root.Readonly = !l.cfg.WritableTmpfs
 
 	err = addNamespaces(spec, l.cfg.Namespaces)
 	if err != nil {

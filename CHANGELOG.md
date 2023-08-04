@@ -137,6 +137,7 @@
   - `bind path` entries in `singularity.conf` are mounted into the container.
   - The current working directory is mounted into the container, and is the
     entry point into the container.
+  - The container is read-only unless `--writable-tmpfs` is also used.
 
 ### Developer / API
 

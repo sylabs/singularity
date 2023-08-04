@@ -135,6 +135,15 @@ func (c configTests) configGlobal(t *testing.T) {
 			e2e.ExpectExit(0),
 		)
 	}
+	unsetDirective := func(t *testing.T, directive, value string) {
+		c.env.RunSingularity(
+			t,
+			e2e.WithProfile(e2e.RootProfile),
+			e2e.WithCommand("config global"),
+			e2e.WithArgs("--unset", directive, value),
+			e2e.ExpectExit(0),
+		)
+	}
 	resetDirective := func(t *testing.T, directive string) {
 		c.env.RunSingularity(
 			t,
@@ -159,6 +168,7 @@ func (c configTests) configGlobal(t *testing.T) {
 		cwd               string
 		directive         string
 		directiveValue    string
+		unset             bool // unset instead of reset
 		exit              int
 		resultOp          e2e.SingularityCmdResultOp
 	}{
@@ -353,6 +363,7 @@ func (c configTests) configGlobal(t *testing.T) {
 			profile:        e2e.UserProfile,
 			directive:      "bind path",
 			directiveValue: "/etc/passwd:/passwd",
+			unset:          true,
 			exit:           0,
 		},
 		{
@@ -698,7 +709,11 @@ func (c configTests) configGlobal(t *testing.T) {
 				setDirective(t, tt.directive, tt.directiveValue)
 			}),
 			e2e.PostRun(func(t *testing.T) {
-				resetDirective(t, tt.directive)
+				if tt.unset {
+					unsetDirective(t, tt.directive, tt.directiveValue)
+				} else {
+					resetDirective(t, tt.directive)
+				}
 			}),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.argv...),
