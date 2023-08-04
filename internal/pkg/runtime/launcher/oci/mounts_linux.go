@@ -52,8 +52,14 @@ func (l *Launcher) getMounts() ([]specs.Mount, error) {
 	if err := l.addScratchMounts(mounts); err != nil {
 		return nil, fmt.Errorf("while configuring scratch mount(s): %w", err)
 	}
-	if err := l.addBindMounts(mounts); err != nil {
-		return nil, fmt.Errorf("while configuring bind mount(s): %w", err)
+	// System bind path mounts (singularity.conf) are only added with --no-compat (native emulation)
+	if l.cfg.NoCompat {
+		if err := l.addSystemBindMounts(mounts); err != nil {
+			return nil, fmt.Errorf("while configuring system bind mount(s): %w", err)
+		}
+	}
+	if err := l.addUserBindMounts(mounts); err != nil {
+		return nil, fmt.Errorf("while configuring user bind mount(s): %w", err)
 	}
 	if (l.cfg.Rocm || l.singularityConf.AlwaysUseRocm) && !l.cfg.NoRocm {
 		if err := l.addRocmMounts(mounts); err != nil {
@@ -498,7 +504,37 @@ func (l *Launcher) addScratchMounts(mounts *[]specs.Mount) error {
 	return nil
 }
 
-func (l *Launcher) addBindMounts(mounts *[]specs.Mount) error {
+func (l *Launcher) addSystemBindMounts(mounts *[]specs.Mount) error {
+	if slice.ContainsString(l.cfg.NoMount, "bind-paths") {
+		sylog.Debugf("Skipping singularity.conf bind path entries due to --no-mount bind-paths")
+		return nil
+	}
+
+	binds, err := bind.ParseBindPath(strings.Join(l.singularityConf.BindPath, ","))
+	if err != nil {
+		return fmt.Errorf("while parsing singularity.conf bind path: %w", err)
+	}
+	// Now add binds from one or more --mount and env var.
+	for _, m := range l.cfg.Mounts {
+		bps, err := bind.ParseMountString(m)
+		if err != nil {
+			return fmt.Errorf("while parsing mount %q: %w", m, err)
+		}
+		binds = append(binds, bps...)
+	}
+
+	for _, b := range binds {
+		if slice.ContainsString(l.cfg.NoMount, b.Destination) {
+			continue
+		}
+		if err := addBindMount(mounts, b, l.cfg.AllowSUID); err != nil {
+			return fmt.Errorf("while adding mount %q: %w", b.Source, err)
+		}
+	}
+	return nil
+}
+
+func (l *Launcher) addUserBindMounts(mounts *[]specs.Mount) error {
 	// First get binds from -B/--bind and env var
 	binds, err := bind.ParseBindPath(strings.Join(l.cfg.BindPaths, ","))
 	if err != nil {
