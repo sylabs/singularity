@@ -140,6 +140,8 @@
   - The container is read-only unless `--writable-tmpfs` is also used.
   - The host umask is propagated into the container, unless `--no-umask` is also
     used.
+  - When a native (non-OCI-SIF) image is run in OCI-mode, environment variables
+    will be shell evaluated on container startup.
 
 ### Developer / API
 

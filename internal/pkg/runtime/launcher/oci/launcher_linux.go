@@ -9,6 +9,7 @@
 package oci
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -33,6 +34,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/files"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/fuse"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/shell"
 	imgutil "github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/ocibundle"
 	"github.com/sylabs/singularity/v4/pkg/ocibundle/native"
@@ -146,9 +148,6 @@ func checkOpts(lo launcher.Options) error {
 
 	if lo.CleanEnv {
 		badOpt = append(badOpt, "CleanEnv")
-	}
-	if lo.NoEval {
-		badOpt = append(badOpt, "NoEval")
 	}
 
 	// Network always set in CLI layer even if network namespace not requested.
@@ -373,11 +372,19 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 		u.Umask = &containerMask
 	}
 
-	specProcess, err := l.getProcess(ctx, *imgSpec, b.Path(), ep, u)
+	specProcess, userEnv, err := l.getProcess(ctx, *imgSpec, b.Path(), ep, u)
 	if err != nil {
 		return err
 	}
 	spec.Process = specProcess
+
+	if l.nativeSIF {
+		envMount, err := l.prepareNativeEnv(b.Path(), userEnv)
+		if err != nil {
+			return err
+		}
+		spec.Mounts = append(spec.Mounts, envMount)
+	}
 
 	if len(l.cfg.CdiDirs) > 0 {
 		err = addCDIDevices(spec, l.cfg.Devices, cdi.WithSpecDirs(l.cfg.CdiDirs...))
@@ -561,6 +568,54 @@ func (l *Launcher) prepareResolvConf(bundlePath string) (*specs.Mount, error) {
 	}
 
 	return &resolvMount, nil
+}
+
+// prepareNativeEnv creates a file to inject user specified (SINGULARITYENV_ /
+// --env / --env-file) environment variables into a native SIF container. We
+// need to do this so that they can override any values set when a native SIF
+// container sources earlier environment scripts from /singularity.d/env
+func (l *Launcher) prepareNativeEnv(bundlePath string, userEnv map[string]string) (specs.Mount, error) {
+	// Must run after 95-apps.sh (sets SCIF app environment)
+	// Must run before 99-base.sh (modifies container LD_LIBRARY_PATH)
+	envScript := "98-singularityenv.sh"
+	hostEnvPath := filepath.Join(bundlePath, envScript)
+	containerEnvPath := filepath.Join("/.singularity.d/env", envScript)
+
+	// Don't export these, as they are handles by other env scripts
+	skipVars := map[string]bool{
+		"PATH":            true,
+		"LD_LIBRARY_PATH": true,
+		"APPEND_PATH":     true,
+		"PREPEND_PATH":    true,
+	}
+
+	b := bytes.Buffer{}
+	for key, value := range userEnv {
+		if skipVars[key] {
+			continue
+		}
+		if l.cfg.NoCompat && !l.cfg.NoEval {
+			// Shell evaluation when the export is sourced (--no-compat infers without --no-eval)
+			value = "\"" + shell.EscapeDoubleQuotes(value) + "\""
+		} else {
+			// No evaluation when the export is sourced (default OCI mode emulates --compat, which includes --no-eval)
+			value = "'" + shell.EscapeSingleQuotes(value) + "'"
+		}
+		b.WriteString(fmt.Sprintf("%s=%s\n", key, value))
+	}
+
+	if err := os.WriteFile(hostEnvPath, b.Bytes(), 0o755); err != nil {
+		return specs.Mount{}, fmt.Errorf("while writing container's %s file: %v", containerEnvPath, err)
+	}
+
+	envMount := specs.Mount{
+		Source:      hostEnvPath,
+		Destination: containerEnvPath,
+		Type:        "none",
+		Options:     []string{"bind", "ro", "nosuid", "nodev"},
+	}
+
+	return envMount, nil
 }
 
 // Exec will interactively execute a container via the runc low-level runtime.

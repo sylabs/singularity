@@ -32,7 +32,9 @@ const singularityLibs = "/.singularity.d/libs"
 // Set Singularity> prompt, try bash --norc, fall back to sh.
 var ociShellScript = "export PS1='Singularity> '; test -x /bin/bash && exec /bin/bash --norc || exec /bin/sh"
 
-func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bundle string, ep launcher.ExecParams, u specs.User) (*specs.Process, error) {
+// getProcess creates and returns an specs.Process struct defining the execution behavior of the container.
+// The userEnv map returned also holds all user-requested environment variables (i.e. not those from the image).
+func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bundle string, ep launcher.ExecParams, u specs.User) (process *specs.Process, userEnv map[string]string, err error) {
 	// Assemble the runtime & user-requested environment, which will be merged
 	// with the image ENV and set in the container at runtime.
 	rtEnv := defaultEnv(ep.Image, bundle)
@@ -49,7 +51,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 	if l.cfg.EnvFile != "" {
 		e, err := envFileMap(ctx, l.cfg.EnvFile)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		rtEnv = mergeMap(rtEnv, e)
 	}
@@ -63,7 +65,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 
 	cwd, err := l.getProcessCwd()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// OCI default is NoNewPrivileges = false
@@ -75,7 +77,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 
 	caps, err := l.getProcessCapabilities(u.UID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var args []string
@@ -84,7 +86,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 		// Native SIF image must run via in-container action script
 		args, err = ep.ActionScriptArgs()
 		if err != nil {
-			return nil, fmt.Errorf("while getting ProcessArgs: %w", err)
+			return nil, nil, fmt.Errorf("while getting ProcessArgs: %w", err)
 		}
 		sylog.Debugf("Native SIF container process/args: %v", args)
 	case ep.Action == "shell":
@@ -105,7 +107,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 		Terminal:        getProcessTerminal(),
 	}
 
-	return &p, nil
+	return &p, rtEnv, nil
 }
 
 // getProcessTerminal determines whether the container process should run with a terminal.

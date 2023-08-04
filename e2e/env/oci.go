@@ -8,6 +8,7 @@ package singularityenv
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -184,6 +185,48 @@ func (c ctx) ociEnvOption(t *testing.T) {
 			envOpt:   []string{"PREPEND_PATH=/foo"},
 			matchEnv: "PATH",
 			matchVal: "/foo:" + customPath,
+		},
+		{
+			name:     "TestImageCgoEnabledDefault",
+			images:   []string{nativeSIFCustomPath},
+			matchEnv: "CGO_ENABLED",
+			matchVal: "0",
+		},
+		{
+			name:     "TestImageCgoEnabledOverride",
+			images:   []string{nativeSIFCustomPath},
+			envOpt:   []string{"CGO_ENABLED=1"},
+			matchEnv: "CGO_ENABLED",
+			matchVal: "1",
+		},
+		{
+			name:     "TestImageCgoEnabledOverride_KO",
+			images:   []string{nativeSIFCustomPath},
+			hostEnv:  []string{"CGO_ENABLED=1"},
+			matchEnv: "CGO_ENABLED",
+			matchVal: "0",
+		},
+		{
+			name:     "TestImageCgoEnabledOverrideFromEnv",
+			images:   []string{nativeSIFCustomPath},
+			hostEnv:  []string{"SINGULARITYENV_CGO_ENABLED=1"},
+			matchEnv: "CGO_ENABLED",
+			matchVal: "1",
+		},
+		{
+			name:     "TestImageCgoEnabledOverrideEnvOptionPrecedence",
+			images:   []string{nativeSIFCustomPath},
+			hostEnv:  []string{"SINGULARITYENV_CGO_ENABLED=1"},
+			envOpt:   []string{"CGO_ENABLED=2"},
+			matchEnv: "CGO_ENABLED",
+			matchVal: "2",
+		},
+		{
+			name:     "TestImageCgoEnabledOverrideEmpty",
+			images:   []string{nativeSIFCustomPath},
+			envOpt:   []string{"CGO_ENABLED="},
+			matchEnv: "CGO_ENABLED",
+			matchVal: "",
 		},
 		{
 			name:     "TestMultiLine",
@@ -363,5 +406,199 @@ func (c ctx) ociEnvFile(t *testing.T) {
 				),
 			)
 		}
+	}
+}
+
+// In OCI mode, default emulates compat which implies --no-eval.
+// OCI-SIF images will never evaluate env vars, however for native SIF
+// we should see evaluation when we use --no-compat, so test that!
+func (c ctx) ociNativeEnvEval(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	testArgs := []string{"/bin/sh", "-c", "echo $WHO"}
+
+	tests := []struct {
+		name         string
+		env          []string
+		args         []string
+		noCompat     bool
+		noEval       bool
+		expectOutput string
+	}{
+		// Docker/OCI behavior (default for OCI mode)
+		{
+			name:         "no env",
+			args:         testArgs,
+			env:          []string{},
+			noCompat:     false,
+			expectOutput: "",
+		},
+		{
+			name:         "string env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=ME"},
+			noCompat:     false,
+			expectOutput: "ME",
+		},
+		{
+			name:         "env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=$HOME"},
+			noCompat:     false,
+			expectOutput: "$HOME",
+		},
+		{
+			name:         "double quoted env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\"$HOME\""},
+			noCompat:     false,
+			expectOutput: "\"$HOME\"",
+		},
+		{
+			name:         "single quoted env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO='$HOME'"},
+			noCompat:     false,
+			expectOutput: "'$HOME'",
+		},
+		{
+			name:         "escaped env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\\$HOME"},
+			noCompat:     false,
+			expectOutput: "\\$HOME",
+		},
+		{
+			name:         "subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=$(id -u)"},
+			noCompat:     false,
+			expectOutput: "$(id -u)",
+		},
+		{
+			name:         "double quoted subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\"$(id -u)\""},
+			noCompat:     false,
+			expectOutput: "\"$(id -u)\"",
+		},
+		{
+			name:         "single quoted subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO='$(id -u)'"},
+			noCompat:     false,
+			expectOutput: "'$(id -u)'",
+		},
+		{
+			name:         "escaped subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\\$(id -u)"},
+			noCompat:     false,
+			expectOutput: "\\$(id -u)",
+		},
+		// Singularity historic behavior (native SIF with --no-compat)
+		{
+			name:         "no-compat/no env",
+			args:         testArgs,
+			env:          []string{},
+			noCompat:     true,
+			expectOutput: "",
+		},
+		{
+			name:         "no-compat/string env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=ME"},
+			noCompat:     true,
+			expectOutput: "ME",
+		},
+		{
+			name:         "no-compat/env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=$HOME"},
+			noCompat:     true,
+			expectOutput: e2e.OCIUserProfile.ContainerUser(t).Dir,
+		},
+		{
+			name:         "no-compat/double quoted env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\"$HOME\""},
+			noCompat:     true,
+			expectOutput: "\"" + e2e.OCIUserProfile.ContainerUser(t).Dir + "\"",
+		},
+		{
+			name:         "no-compat/single quoted env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO='$HOME'"},
+			noCompat:     true,
+			expectOutput: "'" + e2e.OCIUserProfile.ContainerUser(t).Dir + "'",
+		},
+		{
+			name:         "no-compat/escaped env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\\$HOME"},
+			noCompat:     true,
+			expectOutput: "$HOME",
+		},
+		{
+			name:         "no-compat/subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=$(id -u)"},
+			noCompat:     true,
+			expectOutput: strconv.Itoa(os.Getuid()),
+		},
+		{
+			name:         "no-compat/double quoted subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\"$(id -u)\""},
+			noCompat:     true,
+			expectOutput: "\"" + strconv.Itoa(os.Getuid()) + "\"",
+		},
+		{
+			name:         "no-compat/single quoted subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO='$(id -u)'"},
+			noCompat:     true,
+			expectOutput: "'" + strconv.Itoa(os.Getuid()) + "'",
+		},
+		{
+			name:         "no-compat/escaped subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\\$(id -u)"},
+			noCompat:     true,
+			expectOutput: "$(id -u)",
+		},
+		// Finally check using --no-eval with --no-compat turns evaluation back off.
+		{
+			name:         "no-compat/noeval env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=$HOME"},
+			noCompat:     true,
+			noEval:       true,
+			expectOutput: "$HOME",
+		},
+	}
+
+	for _, tt := range tests {
+		cmdArgs := []string{}
+		if tt.noCompat {
+			cmdArgs = append(cmdArgs, "--no-compat")
+		}
+		if tt.noEval {
+			cmdArgs = append(cmdArgs, "--no-eval")
+		}
+		cmdArgs = append(cmdArgs, c.env.ImagePath)
+		cmdArgs = append(cmdArgs, tt.args...)
+		testEnv := append(os.Environ(), tt.env...)
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithEnv(testEnv),
+			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(cmdArgs...),
+			e2e.ExpectExit(0,
+				e2e.ExpectOutput(e2e.ExactMatch, tt.expectOutput),
+			),
+		)
 	}
 }
