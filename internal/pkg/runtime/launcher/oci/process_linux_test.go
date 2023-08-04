@@ -264,7 +264,7 @@ func TestGetProcessArgs(t *testing.T) {
 	}
 }
 
-func TestGetProcessEnv(t *testing.T) {
+func TestGetProcessEnvOCI(t *testing.T) {
 	tests := []struct {
 		name      string
 		imageEnv  []string
@@ -372,7 +372,71 @@ func TestGetProcessEnv(t *testing.T) {
 				Config: imgspecv1.ImageConfig{Env: tt.imageEnv},
 			}
 
-			env := getProcessEnv(imgSpec, tt.bundleEnv)
+			env := getProcessEnv(imgSpec, tt.bundleEnv, false)
+
+			if !reflect.DeepEqual(env, tt.wantEnv) {
+				t.Errorf("want: %v, got: %v", tt.wantEnv, env)
+			}
+		})
+	}
+}
+
+func TestGetProcessEnvNative(t *testing.T) {
+	tests := []struct {
+		name      string
+		imageEnv  []string
+		bundleEnv map[string]string
+		wantEnv   []string
+	}{
+		{
+			name:      "Default",
+			imageEnv:  []string{},
+			bundleEnv: map[string]string{},
+			wantEnv:   []string{},
+		},
+		{
+			name:      "OverridePath",
+			imageEnv:  []string{"PATH=/foo"},
+			bundleEnv: map[string]string{"PATH": "/bar"},
+			wantEnv: []string{
+				"PATH=/foo",
+				"SING_USER_DEFINED_PATH=/bar",
+			},
+		},
+		{
+			name:      "AppendPath",
+			imageEnv:  []string{"PATH=/foo"},
+			bundleEnv: map[string]string{"APPEND_PATH": "/bar"},
+			wantEnv: []string{
+				"PATH=/foo",
+				"SING_USER_DEFINED_APPEND_PATH=/bar",
+			},
+		},
+		{
+			name:      "PrependPath",
+			imageEnv:  []string{"PATH=/foo"},
+			bundleEnv: map[string]string{"PREPEND_PATH": "/bar"},
+			wantEnv: []string{
+				"PATH=/foo",
+				"SING_USER_DEFINED_PREPEND_PATH=/bar",
+			},
+		},
+		{
+			name:      "BundleLdLibraryPath",
+			imageEnv:  []string{},
+			bundleEnv: map[string]string{"LD_LIBRARY_PATH": "/foo"},
+			wantEnv: []string{
+				"LD_LIBRARY_PATH=/foo",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			imgSpec := imgspecv1.Image{
+				Config: imgspecv1.ImageConfig{Env: tt.imageEnv},
+			}
+
+			env := getProcessEnv(imgSpec, tt.bundleEnv, true)
 
 			if !reflect.DeepEqual(env, tt.wantEnv) {
 				t.Errorf("want: %v, got: %v", tt.wantEnv, env)
