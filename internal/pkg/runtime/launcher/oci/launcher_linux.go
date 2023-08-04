@@ -41,6 +41,7 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
 	"github.com/sylabs/singularity/v4/pkg/util/slice"
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -153,9 +154,6 @@ func checkOpts(lo launcher.Options) error {
 
 	if len(lo.SecurityOpts) > 0 {
 		badOpt = append(badOpt, "SecurityOpts")
-	}
-	if lo.NoUmask {
-		badOpt = append(badOpt, "NoUmask")
 	}
 
 	// ConfigFile always set by CLI. We should support only the default from build time.
@@ -357,6 +355,13 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 	u := specs.User{
 		UID: targetUID,
 		GID: targetGID,
+	}
+	// In native mode emulation (--no-compat) propagate umask unless --no-umask set
+	if l.cfg.NoCompat && !l.cfg.NoUmask {
+		currentMask := unix.Umask(0)
+		unix.Umask(currentMask)
+		containerMask := uint32(currentMask)
+		u.Umask = &containerMask
 	}
 
 	specProcess, err := l.getProcess(ctx, *imgSpec, b.Path(), ep, u)

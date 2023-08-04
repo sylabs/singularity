@@ -2021,6 +2021,19 @@ func (c actionTests) actionOciNoCompat(t *testing.T) {
 			args:     []string{"--no-compat", "--writable-tmpfs", imageRef, "sh", "-c", "touch /test"},
 			exitCode: 0,
 		},
+		// Propagate umask, unless `--no-umask` (default is 0022, test sets 0000)
+		{
+			name:     "umask",
+			args:     []string{"--no-compat", c.env.ImagePath, "sh", "-c", "umask"},
+			exitCode: 0,
+			expect:   []e2e.SingularityCmdResultOp{e2e.ExpectOutput(e2e.ContainMatch, "0000")},
+		},
+		{
+			name:     "no-umask",
+			args:     []string{"--no-compat", "--no-umask", c.env.ImagePath, "sh", "-c", "umask"},
+			exitCode: 0,
+			expect:   []e2e.SingularityCmdResultOp{e2e.ExpectOutput(e2e.ContainMatch, "0022")},
+		},
 	}
 
 	oldUmask := syscall.Umask(0)
