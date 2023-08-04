@@ -61,6 +61,11 @@ func (l *Launcher) getMounts() ([]specs.Mount, error) {
 	if err := l.addUserBindMounts(mounts); err != nil {
 		return nil, fmt.Errorf("while configuring user bind mount(s): %w", err)
 	}
+	if l.cfg.NoCompat {
+		if err := l.addCwdMount(mounts); err != nil {
+			return nil, fmt.Errorf("while configuring cwd mount: %w", err)
+		}
+	}
 	if (l.cfg.Rocm || l.singularityConf.AlwaysUseRocm) && !l.cfg.NoRocm {
 		if err := l.addRocmMounts(mounts); err != nil {
 			return nil, fmt.Errorf("while configuring ROCm mount(s): %w", err)
@@ -559,6 +564,27 @@ func (l *Launcher) addUserBindMounts(mounts *[]specs.Mount) error {
 		}
 	}
 	return nil
+}
+
+// addCwdMount adds the CWD to the container.
+func (l *Launcher) addCwdMount(mounts *[]specs.Mount) error {
+	if slice.ContainsString(l.cfg.NoMount, "cwd") {
+		sylog.Debugf("Skipping mount of cwd due to --no-mount")
+		return nil
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	return addBindMount(mounts,
+		bind.Path{
+			Source:      cwd,
+			Destination: cwd,
+		},
+		l.cfg.AllowSUID,
+	)
 }
 
 func addBindMount(mounts *[]specs.Mount, b bind.Path, allowSUID bool) error {

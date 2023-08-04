@@ -1682,6 +1682,12 @@ func (c actionTests) actionOciNoMount(t *testing.T) {
 	e2e.EnsureOCISIF(t, c.env)
 	imageRef := "oci-sif:" + c.env.OCISIFPath
 
+	wd, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "no-mount-", "")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup(t)
+		}
+	})
 	tests := []struct {
 		name      string
 		noMount   string
@@ -1727,10 +1733,10 @@ func (c actionTests) actionOciNoMount(t *testing.T) {
 			exit:    0,
 		},
 		{
-			name:      "cwd",
-			noMount:   "cwd",
-			warnMatch: "--no-mount cwd is not supported in OCI mode, ignoring.",
-			exit:      0,
+			name:    "cwd",
+			noMount: "cwd",
+			noMatch: "on " + wd,
+			exit:    0,
 		},
 		// singularity.conf bind paths are mounted in --no-compat mode, and should be
 		// able to be --no-mount 'ed.
@@ -1781,6 +1787,7 @@ func (c actionTests) actionOciNoMount(t *testing.T) {
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithDir(wd),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(args...),
 			e2e.ExpectExit(tt.exit, expectOp),
@@ -1922,6 +1929,16 @@ func (c actionTests) actionOciNoCompat(t *testing.T) {
 	e2e.EnsureOCISIF(t, c.env)
 	imageRef := "oci-sif:" + c.env.OCISIFPath
 
+	workDir, err := fs.MakeTmpDir(c.env.TestDir, "oci-no-compat", 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	canaryContent := "CANARY"
+	workCanary := filepath.Join(workDir, "canary")
+	if err := os.WriteFile(workCanary, []byte(canaryContent), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
 	tmpCanary, err := fs.MakeTmpDir("/tmp", "oci-no-compat", 0o755)
 	if err != nil {
 		t.Fatal(err)
@@ -1940,6 +1957,7 @@ func (c actionTests) actionOciNoCompat(t *testing.T) {
 			os.RemoveAll(tmpCanary)
 			os.RemoveAll(varTmpCanary)
 			os.RemoveAll(homeCanary)
+			os.RemoveAll(workDir)
 		}
 	})
 
@@ -1974,6 +1992,24 @@ func (c actionTests) actionOciNoCompat(t *testing.T) {
 			args:     []string{"--no-compat", imageRef, "sh", "-c", "mount | grep 'on /etc/localtime'"},
 			exitCode: 0,
 		},
+		// CWD in container is host CWD
+		{
+			name:     "cwd",
+			args:     []string{"--no-compat", imageRef, "sh", "-c", "pwd"},
+			exitCode: 0,
+			expect: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.ContainMatch, workDir),
+			},
+		},
+		// CWD is bind mounted from host
+		{
+			name:     "cwdBind",
+			args:     []string{"--no-compat", imageRef, "cat", workCanary},
+			exitCode: 0,
+			expect: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.ExactMatch, canaryContent),
+			},
+		},
 	}
 
 	oldUmask := syscall.Umask(0)
@@ -1984,6 +2020,7 @@ func (c actionTests) actionOciNoCompat(t *testing.T) {
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithDir(workDir),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.args...),
 			e2e.ExpectExit(

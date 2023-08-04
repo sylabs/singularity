@@ -136,11 +136,18 @@ func getProcessArgs(imageSpec imgspecv1.Image, ep launcher.ExecParams) []string 
 }
 
 // getProcessCwd computes the Cwd that the container process should start in.
-// Currently this is the user's tmpfs home directory (see --containall).
-// Because this is called after mounts have already been computed, we can count on l.cfg.HomeDir containing the right value, incorporating any custom home dir overrides (i.e., --home).
+// Default in OCI mode, like native --compat, is $HOME.
+// In native emulation (--no-compat), we use the CWD.
+// Can be overridden with a custom value via --cwd/pwd.
+
+// Because this is called after mounts have already been computed, we can count on homeDest containing the right value, incorporating any custom home dir overrides (i.e., --home).
 func (l *Launcher) getProcessCwd() (dir string, err error) {
 	if len(l.cfg.CwdPath) > 0 {
 		return l.cfg.CwdPath, nil
+	}
+
+	if l.cfg.NoCompat {
+		return os.Getwd()
 	}
 
 	return l.homeDest, nil
