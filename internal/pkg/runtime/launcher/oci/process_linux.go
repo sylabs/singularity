@@ -32,7 +32,9 @@ const singularityLibs = "/.singularity.d/libs"
 // Set Singularity> prompt, try bash --norc, fall back to sh.
 var ociShellScript = "export PS1='Singularity> '; test -x /bin/bash && exec /bin/bash --norc || exec /bin/sh"
 
-func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bundle string, ep launcher.ExecParams, u specs.User) (*specs.Process, error) {
+// getProcess creates and returns an specs.Process struct defining the execution behavior of the container.
+// The userEnv map returned also holds all user-requested environment variables (i.e. not those from the image).
+func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bundle string, ep launcher.ExecParams, u specs.User) (process *specs.Process, userEnv map[string]string, err error) {
 	// Assemble the runtime & user-requested environment, which will be merged
 	// with the image ENV and set in the container at runtime.
 	rtEnv := defaultEnv(ep.Image, bundle)
@@ -49,7 +51,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 	if l.cfg.EnvFile != "" {
 		e, err := envFileMap(ctx, l.cfg.EnvFile)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		rtEnv = mergeMap(rtEnv, e)
 	}
@@ -63,7 +65,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 
 	cwd, err := l.getProcessCwd()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// OCI default is NoNewPrivileges = false
@@ -75,7 +77,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 
 	caps, err := l.getProcessCapabilities(u.UID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	var args []string
@@ -84,7 +86,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 		// Native SIF image must run via in-container action script
 		args, err = ep.ActionScriptArgs()
 		if err != nil {
-			return nil, fmt.Errorf("while getting ProcessArgs: %w", err)
+			return nil, nil, fmt.Errorf("while getting ProcessArgs: %w", err)
 		}
 		sylog.Debugf("Native SIF container process/args: %v", args)
 	case ep.Action == "shell":
@@ -99,13 +101,13 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 		Args:            args,
 		Capabilities:    caps,
 		Cwd:             cwd,
-		Env:             getProcessEnv(imgSpec, rtEnv),
+		Env:             getProcessEnv(imgSpec, rtEnv, l.nativeSIF),
 		NoNewPrivileges: noNewPrivs,
 		User:            u,
 		Terminal:        getProcessTerminal(),
 	}
 
-	return &p, nil
+	return &p, rtEnv, nil
 }
 
 // getProcessTerminal determines whether the container process should run with a terminal.
@@ -253,7 +255,7 @@ func reverseMapByRange(targetUID, targetGID uint32, subuidRange, subgidRange spe
 // getProcessEnv combines the image config ENV with the ENV requested at runtime.
 // APPEND_PATH and PREPEND_PATH are honored as with the native singularity runtime.
 // LD_LIBRARY_PATH is modified to always include the singularity lib bind directory.
-func getProcessEnv(imageSpec imgspecv1.Image, runtimeEnv map[string]string) []string {
+func getProcessEnv(imageSpec imgspecv1.Image, runtimeEnv map[string]string, nativeSIF bool) []string {
 	path := ""
 	appendPath := ""
 	prependPath := ""
@@ -269,7 +271,10 @@ func getProcessEnv(imageSpec imgspecv1.Image, runtimeEnv map[string]string) []st
 		if len(e) < 2 {
 			continue
 		}
-		if e[0] == "PATH" {
+		// The image config PATH is not accurate for native SIF images - it is a
+		// default, and a PATH may be declared in the image /.singularity.d/env
+		// scripts. Ignore, so we can pick that up.
+		if e[0] == "PATH" && !nativeSIF {
 			path = e[1]
 		}
 		if e[0] == "LD_LIBRARY_PATH" {
@@ -293,24 +298,49 @@ func getProcessEnv(imageSpec imgspecv1.Image, runtimeEnv map[string]string) []st
 		}
 	}
 
+	// Handle PATH differently beteween OCI and native images
+	if nativeSIF {
+		setNativePath(g, prependPath, path, appendPath)
+	} else {
+		setOCIPath(g, prependPath, path, appendPath)
+	}
+
+	// Ensure LD_LIBRARY_PATH always contains singularity lib binding dir.
+	// This is handled by environment scripts in native SIF images.
+	if !nativeSIF && !strings.Contains(ldLibraryPath, singularityLibs) {
+		ldLibraryPath = strings.TrimPrefix(ldLibraryPath+":"+singularityLibs, ":")
+	}
+	if ldLibraryPath != "" {
+		g.AddProcessEnv("LD_LIBRARY_PATH", ldLibraryPath)
+	}
+
+	return g.Config.Process.Env
+}
+
+func setOCIPath(g *generate.Generator, prependPath, path, appendPath string) {
 	// Compute and set optionally APPEND-ed / PREPEND-ed PATH.
 	if appendPath != "" {
-		path = path + ":" + appendPath
+		path = strings.TrimSuffix(path, ":") + ":" + appendPath
 	}
 	if prependPath != "" {
-		path = prependPath + ":" + path
+		path = prependPath + ":" + strings.TrimPrefix(path, ":")
 	}
 	if path != "" {
 		g.AddProcessEnv("PATH", path)
 	}
+}
 
-	// Ensure LD_LIBRARY_PATH always contains singularity lib binding dir.
-	if !strings.Contains(ldLibraryPath, singularityLibs) {
-		ldLibraryPath = strings.TrimPrefix(ldLibraryPath+":"+singularityLibs, ":")
+func setNativePath(g *generate.Generator, prependPath, path, appendPath string) {
+	// Set env vars used by Singularity env script to handle PATH.
+	if prependPath != "" {
+		g.AddProcessEnv("SING_USER_DEFINED_PREPEND_PATH", prependPath)
 	}
-	g.AddProcessEnv("LD_LIBRARY_PATH", ldLibraryPath)
-
-	return g.Config.Process.Env
+	if path != "" {
+		g.AddProcessEnv("SING_USER_DEFINED_PATH", path)
+	}
+	if appendPath != "" {
+		g.AddProcessEnv("SING_USER_DEFINED_APPEND_PATH", appendPath)
+	}
 }
 
 // defaultEnv returns default environment variables set in the container.

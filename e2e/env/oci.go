@@ -8,6 +8,7 @@ package singularityenv
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -16,7 +17,12 @@ import (
 
 func (c ctx) ociSingularityEnv(t *testing.T) {
 	e2e.EnsureOCISIF(t, c.env)
-	defaultImage := "oci-sif:" + c.env.OCISIFPath
+	e2e.EnsureImage(t, c.env)
+
+	ociSIFDefaultPath := c.env.OCISIFPath
+	nativeSIFDefaultPath := e2e.BusyboxSIF(t)
+	nativeSIFCustomPath := c.env.ImagePath
+	customPath := defaultPath + ":/go/bin:/usr/local/go/bin"
 
 	// Append or prepend this path.
 	partialPath := "/foo"
@@ -28,68 +34,99 @@ func (c ctx) ociSingularityEnv(t *testing.T) {
 	trailingCommaPath := "/usr/bin:/bin,"
 
 	tests := []struct {
-		name  string
-		image string
-		path  string
-		env   []string
+		name   string
+		images []string
+		path   string
+		env    []string
 	}{
 		{
-			name:  "DefaultPath",
-			image: defaultImage,
-			path:  defaultPath,
-			env:   []string{},
+			name:   "DefaultPath",
+			images: []string{ociSIFDefaultPath, nativeSIFDefaultPath},
+			path:   defaultPath,
+			env:    []string{},
 		},
 		{
-			name:  "AppendToDefaultPath",
-			image: defaultImage,
-			path:  defaultPath + ":" + partialPath,
-			env:   []string{"SINGULARITYENV_APPEND_PATH=/foo"},
+			name:   "CustomPath",
+			images: []string{nativeSIFCustomPath},
+			path:   customPath,
+			env:    []string{},
 		},
 		{
-			name:  "PrependToDefaultPath",
-			image: defaultImage,
-			path:  partialPath + ":" + defaultPath,
-			env:   []string{"SINGULARITYENV_PREPEND_PATH=/foo"},
+			name:   "AppendToDefaultPath",
+			images: []string{ociSIFDefaultPath, nativeSIFDefaultPath},
+			path:   defaultPath + ":" + partialPath,
+			env:    []string{"SINGULARITYENV_APPEND_PATH=" + partialPath},
 		},
 		{
-			name:  "OverwriteDefaultPath",
-			image: defaultImage,
-			path:  overwrittenPath,
-			env:   []string{"SINGULARITYENV_PATH=" + overwrittenPath},
+			name:   "AppendToCustomPath",
+			images: []string{nativeSIFCustomPath},
+			path:   customPath + ":" + partialPath,
+			env:    []string{"SINGULARITYENV_APPEND_PATH=" + partialPath},
 		},
 		{
-			name:  "OverwriteTrailingCommaPath",
-			image: defaultImage,
-			path:  trailingCommaPath,
-			env:   []string{"SINGULARITYENV_PATH=" + trailingCommaPath},
+			name:   "PrependToDefaultPath",
+			images: []string{ociSIFDefaultPath, nativeSIFDefaultPath},
+			path:   partialPath + ":" + defaultPath,
+			env:    []string{"SINGULARITYENV_PREPEND_PATH=" + partialPath},
+		},
+		{
+			name:   "PrependToCustomPath",
+			images: []string{nativeSIFCustomPath},
+			path:   partialPath + ":" + customPath,
+			env:    []string{"SINGULARITYENV_PREPEND_PATH=" + partialPath},
+		},
+		{
+			name:   "OverwriteDefaultPath",
+			images: []string{ociSIFDefaultPath, nativeSIFDefaultPath},
+			path:   overwrittenPath,
+			env:    []string{"SINGULARITYENV_PATH=" + overwrittenPath},
+		},
+		{
+			name:   "OverwriteCustomPath",
+			images: []string{nativeSIFCustomPath},
+			path:   overwrittenPath,
+			env:    []string{"SINGULARITYENV_PATH=" + overwrittenPath},
+		},
+		{
+			name:   "OverwriteTrailingCommaPath",
+			images: []string{ociSIFDefaultPath, nativeSIFDefaultPath},
+			path:   trailingCommaPath,
+			env:    []string{"SINGULARITYENV_PATH=" + trailingCommaPath},
 		},
 	}
 
 	for _, tt := range tests {
 		testEnv := append(os.Environ(), tt.env...)
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.OCIUserProfile),
-			e2e.WithCommand("exec"),
-			e2e.WithEnv(testEnv),
-			e2e.WithRootlessEnv(),
-			e2e.WithArgs(tt.image, "/bin/sh", "-c", "echo $PATH"),
-			e2e.ExpectExit(
-				0,
-				e2e.ExpectOutput(e2e.ExactMatch, tt.path),
-			),
-		)
+		for _, img := range tt.images {
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest(tt.name),
+				e2e.WithProfile(e2e.OCIUserProfile),
+				e2e.WithCommand("exec"),
+				e2e.WithEnv(testEnv),
+				e2e.WithRootlessEnv(),
+				e2e.WithArgs(img, "/bin/sh", "-c", "echo $PATH"),
+				e2e.ExpectExit(
+					0,
+					e2e.ExpectOutput(e2e.ExactMatch, tt.path),
+				),
+			)
+		}
 	}
 }
 
 func (c ctx) ociEnvOption(t *testing.T) {
 	e2e.EnsureOCISIF(t, c.env)
-	defaultImage := "oci-sif:" + c.env.OCISIFPath
+	e2e.EnsureImage(t, c.env)
+
+	ociSIFDefaultPath := c.env.OCISIFPath
+	nativeSIFDefaultPath := e2e.BusyboxSIF(t)
+	nativeSIFCustomPath := c.env.ImagePath
+	customPath := defaultPath + ":/go/bin:/usr/local/go/bin"
 
 	tests := []struct {
 		name     string
-		image    string
+		images   []string
 		envOpt   []string
 		hostEnv  []string
 		matchEnv string
@@ -97,77 +134,152 @@ func (c ctx) ociEnvOption(t *testing.T) {
 	}{
 		{
 			name:     "DefaultPath",
-			image:    defaultImage,
+			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
 			matchEnv: "PATH",
 			matchVal: defaultPath,
 		},
 		{
 			name:     "DefaultPathOverride",
-			image:    defaultImage,
+			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
 			envOpt:   []string{"PATH=/"},
 			matchEnv: "PATH",
 			matchVal: "/",
 		},
 		{
 			name:     "AppendDefaultPath",
-			image:    defaultImage,
+			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
 			envOpt:   []string{"APPEND_PATH=/foo"},
 			matchEnv: "PATH",
 			matchVal: defaultPath + ":/foo",
 		},
 		{
 			name:     "PrependDefaultPath",
-			image:    defaultImage,
+			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
 			envOpt:   []string{"PREPEND_PATH=/foo"},
 			matchEnv: "PATH",
 			matchVal: "/foo:" + defaultPath,
 		},
 		{
+			name:     "DefaultPathImage",
+			images:   []string{nativeSIFCustomPath},
+			matchEnv: "PATH",
+			matchVal: customPath,
+		},
+		{
+			name:     "DefaultPathTestImageOverride",
+			images:   []string{nativeSIFCustomPath},
+			envOpt:   []string{"PATH=/"},
+			matchEnv: "PATH",
+			matchVal: "/",
+		},
+		{
+			name:     "AppendDefaultPathTestImage",
+			images:   []string{nativeSIFCustomPath},
+			envOpt:   []string{"APPEND_PATH=/foo"},
+			matchEnv: "PATH",
+			matchVal: customPath + ":/foo",
+		},
+		{
+			name:     "PrependDefaultPathTestImage",
+			images:   []string{nativeSIFCustomPath},
+			envOpt:   []string{"PREPEND_PATH=/foo"},
+			matchEnv: "PATH",
+			matchVal: "/foo:" + customPath,
+		},
+		{
+			name:     "TestImageCgoEnabledDefault",
+			images:   []string{nativeSIFCustomPath},
+			matchEnv: "CGO_ENABLED",
+			matchVal: "0",
+		},
+		{
+			name:     "TestImageCgoEnabledOverride",
+			images:   []string{nativeSIFCustomPath},
+			envOpt:   []string{"CGO_ENABLED=1"},
+			matchEnv: "CGO_ENABLED",
+			matchVal: "1",
+		},
+		{
+			name:     "TestImageCgoEnabledOverride_KO",
+			images:   []string{nativeSIFCustomPath},
+			hostEnv:  []string{"CGO_ENABLED=1"},
+			matchEnv: "CGO_ENABLED",
+			matchVal: "0",
+		},
+		{
+			name:     "TestImageCgoEnabledOverrideFromEnv",
+			images:   []string{nativeSIFCustomPath},
+			hostEnv:  []string{"SINGULARITYENV_CGO_ENABLED=1"},
+			matchEnv: "CGO_ENABLED",
+			matchVal: "1",
+		},
+		{
+			name:     "TestImageCgoEnabledOverrideEnvOptionPrecedence",
+			images:   []string{nativeSIFCustomPath},
+			hostEnv:  []string{"SINGULARITYENV_CGO_ENABLED=1"},
+			envOpt:   []string{"CGO_ENABLED=2"},
+			matchEnv: "CGO_ENABLED",
+			matchVal: "2",
+		},
+		{
+			name:     "TestImageCgoEnabledOverrideEmpty",
+			images:   []string{nativeSIFCustomPath},
+			envOpt:   []string{"CGO_ENABLED="},
+			matchEnv: "CGO_ENABLED",
+			matchVal: "",
+		},
+		{
 			name:     "TestMultiLine",
-			image:    defaultImage,
+			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
 			envOpt:   []string{"MULTI=Hello\nWorld"},
 			matchEnv: "MULTI",
 			matchVal: "Hello\nWorld",
 		},
 		{
 			name:     "TestEscapedNewline",
-			image:    defaultImage,
+			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
 			envOpt:   []string{"ESCAPED=Hello\\nWorld"},
 			matchEnv: "ESCAPED",
 			matchVal: "Hello\\nWorld",
 		},
 		{
 			name:     "TestInvalidKey",
-			image:    defaultImage,
+			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
 			envOpt:   []string{"BASH_FUNC_ml%%=TEST"},
 			matchEnv: "BASH_FUNC_ml%%",
 			matchVal: "",
 		},
 		{
 			name:     "TestDefaultLdLibraryPath",
-			image:    defaultImage,
+			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
 			matchEnv: "LD_LIBRARY_PATH",
 			matchVal: singularityLibs,
 		},
 		{
 			name:     "TestCustomTrailingCommaPath",
-			image:    defaultImage,
+			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
 			envOpt:   []string{"LD_LIBRARY_PATH=/foo,"},
 			matchEnv: "LD_LIBRARY_PATH",
 			matchVal: "/foo,:" + singularityLibs,
 		},
 		{
 			name:     "TestCustomLdLibraryPath",
-			image:    defaultImage,
+			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
 			envOpt:   []string{"LD_LIBRARY_PATH=/foo"},
 			matchEnv: "LD_LIBRARY_PATH",
 			matchVal: "/foo:" + singularityLibs,
 		},
 		{
-			name:     "SINGULARITY_NAME",
-			image:    defaultImage,
+			name:     "SINGULARITY_NAME_OCI_SIF",
+			images:   []string{ociSIFDefaultPath},
 			matchEnv: "SINGULARITY_NAME",
-			matchVal: defaultImage,
+			matchVal: ociSIFDefaultPath,
+		},
+		{
+			name:     "SINGULARITY_NAME_NATIVE_SIF",
+			images:   []string{nativeSIFDefaultPath},
+			matchEnv: "SINGULARITY_NAME",
+			matchVal: nativeSIFDefaultPath,
 		},
 	}
 
@@ -177,26 +289,31 @@ func (c ctx) ociEnvOption(t *testing.T) {
 		if tt.envOpt != nil {
 			args = append(args, "--env", strings.Join(tt.envOpt, ","))
 		}
-		args = append(args, tt.image, "/bin/sh", "-c", "echo \"${"+tt.matchEnv+"}\"")
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.OCIUserProfile),
-			e2e.WithCommand("exec"),
-			e2e.WithEnv(testEnv),
-			e2e.WithRootlessEnv(),
-			e2e.WithArgs(args...),
-			e2e.ExpectExit(
-				0,
-				e2e.ExpectOutput(e2e.ExactMatch, tt.matchVal),
-			),
-		)
+		for _, img := range tt.images {
+			args = append(args, img, "/bin/sh", "-c", "echo \"${"+tt.matchEnv+"}\"")
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest(tt.name),
+				e2e.WithProfile(e2e.OCIUserProfile),
+				e2e.WithCommand("exec"),
+				e2e.WithEnv(testEnv),
+				e2e.WithRootlessEnv(),
+				e2e.WithArgs(args...),
+				e2e.ExpectExit(
+					0,
+					e2e.ExpectOutput(e2e.ExactMatch, tt.matchVal),
+				),
+			)
+		}
 	}
 }
 
 func (c ctx) ociEnvFile(t *testing.T) {
 	e2e.EnsureOCISIF(t, c.env)
-	defaultImage := "oci-sif:" + c.env.OCISIFPath
+	e2e.EnsureImage(t, c.env)
+
+	ociSIFDefaultPath := c.env.OCISIFPath
+	nativeSIFDefaultPath := e2e.BusyboxSIF(t)
 
 	dir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "envfile-", "")
 	defer cleanup(t)
@@ -204,7 +321,7 @@ func (c ctx) ociEnvFile(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		image    string
+		images   []string
 		envFile  string
 		envOpt   []string
 		hostEnv  []string
@@ -212,87 +329,275 @@ func (c ctx) ociEnvFile(t *testing.T) {
 		matchVal string
 	}{
 		{
-			name:     "DefaultPathOverride",
-			image:    defaultImage,
-			envFile:  "PATH=/",
+			name:   "DefaultPathOverride",
+			images: []string{ociSIFDefaultPath, nativeSIFDefaultPath}, envFile: "PATH=/",
 			matchEnv: "PATH",
 			matchVal: "/",
 		},
 		{
-			name:     "DefaultPathOverrideEnvOptionPrecedence",
-			image:    defaultImage,
-			envOpt:   []string{"PATH=/etc"},
+			name:   "DefaultPathOverrideEnvOptionPrecedence",
+			images: []string{ociSIFDefaultPath, nativeSIFDefaultPath}, envOpt: []string{"PATH=/etc"},
 			envFile:  "PATH=/",
 			matchEnv: "PATH",
 			matchVal: "/etc",
 		},
 		{
-			name:     "DefaultPathOverrideEnvOptionPrecedence",
-			image:    defaultImage,
-			envOpt:   []string{"PATH=/etc"},
+			name:   "DefaultPathOverrideEnvOptionPrecedence",
+			images: []string{ociSIFDefaultPath, nativeSIFDefaultPath}, envOpt: []string{"PATH=/etc"},
 			envFile:  "PATH=/",
 			matchEnv: "PATH",
 			matchVal: "/etc",
 		},
 		{
-			name:     "AppendDefaultPath",
-			image:    defaultImage,
-			envFile:  "APPEND_PATH=/",
+			name:   "AppendDefaultPath",
+			images: []string{ociSIFDefaultPath, nativeSIFDefaultPath}, envFile: "APPEND_PATH=/",
 			matchEnv: "PATH",
 			matchVal: defaultPath + ":/",
 		},
 		{
-			name:     "PrependDefaultPath",
-			image:    defaultImage,
-			envFile:  "PREPEND_PATH=/",
+			name:   "PrependDefaultPath",
+			images: []string{ociSIFDefaultPath, nativeSIFDefaultPath}, envFile: "PREPEND_PATH=/",
 			matchEnv: "PATH",
 			matchVal: "/:" + defaultPath,
 		},
 		{
-			name:     "DefaultLdLibraryPath",
-			image:    defaultImage,
-			matchEnv: "LD_LIBRARY_PATH",
+			name:   "DefaultLdLibraryPath",
+			images: []string{ociSIFDefaultPath, nativeSIFDefaultPath}, matchEnv: "LD_LIBRARY_PATH",
 			matchVal: singularityLibs,
 		},
 		{
-			name:     "CustomLdLibraryPath",
-			image:    defaultImage,
-			envFile:  "LD_LIBRARY_PATH=/foo",
+			name:   "CustomLdLibraryPath",
+			images: []string{ociSIFDefaultPath, nativeSIFDefaultPath}, envFile: "LD_LIBRARY_PATH=/foo",
 			matchEnv: "LD_LIBRARY_PATH",
 			matchVal: "/foo:" + singularityLibs,
 		},
 		{
-			name:     "CustomTrailingCommaPath",
-			image:    defaultImage,
-			envFile:  "LD_LIBRARY_PATH=/foo,",
+			name:   "CustomTrailingCommaPath",
+			images: []string{ociSIFDefaultPath, nativeSIFDefaultPath}, envFile: "LD_LIBRARY_PATH=/foo,",
 			matchEnv: "LD_LIBRARY_PATH",
 			matchVal: "/foo,:" + singularityLibs,
 		},
 	}
 
 	for _, tt := range tests {
-		testEnv := append(os.Environ(), tt.hostEnv...)
-		args := make([]string, 0)
-		if tt.envOpt != nil {
-			args = append(args, "--env", strings.Join(tt.envOpt, ","))
-		}
-		if tt.envFile != "" {
-			os.WriteFile(p, []byte(tt.envFile), 0o644)
-			args = append(args, "--env-file", p)
-		}
-		args = append(args, tt.image, "/bin/sh", "-c", "echo $"+tt.matchEnv)
+		for _, img := range tt.images {
+			testEnv := append(os.Environ(), tt.hostEnv...)
+			args := make([]string, 0)
+			if tt.envOpt != nil {
+				args = append(args, "--env", strings.Join(tt.envOpt, ","))
+			}
+			if tt.envFile != "" {
+				os.WriteFile(p, []byte(tt.envFile), 0o644)
+				args = append(args, "--env-file", p)
+			}
+			args = append(args, img, "/bin/sh", "-c", "echo $"+tt.matchEnv)
 
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest(tt.name),
+				e2e.WithProfile(e2e.OCIUserProfile),
+				e2e.WithCommand("exec"),
+				e2e.WithEnv(testEnv),
+				e2e.WithRootlessEnv(),
+				e2e.WithArgs(args...),
+				e2e.ExpectExit(
+					0,
+					e2e.ExpectOutput(e2e.ExactMatch, tt.matchVal),
+				),
+			)
+		}
+	}
+}
+
+// In OCI mode, default emulates compat which implies --no-eval.
+// OCI-SIF images will never evaluate env vars, however for native SIF
+// we should see evaluation when we use --no-compat, so test that!
+func (c ctx) ociNativeEnvEval(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	testArgs := []string{"/bin/sh", "-c", "echo $WHO"}
+
+	tests := []struct {
+		name         string
+		env          []string
+		args         []string
+		noCompat     bool
+		noEval       bool
+		expectOutput string
+	}{
+		// Docker/OCI behavior (default for OCI mode)
+		{
+			name:         "no env",
+			args:         testArgs,
+			env:          []string{},
+			noCompat:     false,
+			expectOutput: "",
+		},
+		{
+			name:         "string env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=ME"},
+			noCompat:     false,
+			expectOutput: "ME",
+		},
+		{
+			name:         "env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=$HOME"},
+			noCompat:     false,
+			expectOutput: "$HOME",
+		},
+		{
+			name:         "double quoted env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\"$HOME\""},
+			noCompat:     false,
+			expectOutput: "\"$HOME\"",
+		},
+		{
+			name:         "single quoted env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO='$HOME'"},
+			noCompat:     false,
+			expectOutput: "'$HOME'",
+		},
+		{
+			name:         "escaped env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\\$HOME"},
+			noCompat:     false,
+			expectOutput: "\\$HOME",
+		},
+		{
+			name:         "subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=$(id -u)"},
+			noCompat:     false,
+			expectOutput: "$(id -u)",
+		},
+		{
+			name:         "double quoted subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\"$(id -u)\""},
+			noCompat:     false,
+			expectOutput: "\"$(id -u)\"",
+		},
+		{
+			name:         "single quoted subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO='$(id -u)'"},
+			noCompat:     false,
+			expectOutput: "'$(id -u)'",
+		},
+		{
+			name:         "escaped subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\\$(id -u)"},
+			noCompat:     false,
+			expectOutput: "\\$(id -u)",
+		},
+		// Singularity historic behavior (native SIF with --no-compat)
+		{
+			name:         "no-compat/no env",
+			args:         testArgs,
+			env:          []string{},
+			noCompat:     true,
+			expectOutput: "",
+		},
+		{
+			name:         "no-compat/string env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=ME"},
+			noCompat:     true,
+			expectOutput: "ME",
+		},
+		{
+			name:         "no-compat/env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=$HOME"},
+			noCompat:     true,
+			expectOutput: e2e.OCIUserProfile.ContainerUser(t).Dir,
+		},
+		{
+			name:         "no-compat/double quoted env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\"$HOME\""},
+			noCompat:     true,
+			expectOutput: "\"" + e2e.OCIUserProfile.ContainerUser(t).Dir + "\"",
+		},
+		{
+			name:         "no-compat/single quoted env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO='$HOME'"},
+			noCompat:     true,
+			expectOutput: "'" + e2e.OCIUserProfile.ContainerUser(t).Dir + "'",
+		},
+		{
+			name:         "no-compat/escaped env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\\$HOME"},
+			noCompat:     true,
+			expectOutput: "$HOME",
+		},
+		{
+			name:         "no-compat/subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=$(id -u)"},
+			noCompat:     true,
+			expectOutput: strconv.Itoa(os.Getuid()),
+		},
+		{
+			name:         "no-compat/double quoted subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\"$(id -u)\""},
+			noCompat:     true,
+			expectOutput: "\"" + strconv.Itoa(os.Getuid()) + "\"",
+		},
+		{
+			name:         "no-compat/single quoted subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO='$(id -u)'"},
+			noCompat:     true,
+			expectOutput: "'" + strconv.Itoa(os.Getuid()) + "'",
+		},
+		{
+			name:         "no-compat/escaped subshell env",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=\\$(id -u)"},
+			noCompat:     true,
+			expectOutput: "$(id -u)",
+		},
+		// Finally check using --no-eval with --no-compat turns evaluation back off.
+		{
+			name:         "no-compat/noeval env var",
+			args:         testArgs,
+			env:          []string{"SINGULARITYENV_WHO=$HOME"},
+			noCompat:     true,
+			noEval:       true,
+			expectOutput: "$HOME",
+		},
+	}
+
+	for _, tt := range tests {
+		cmdArgs := []string{}
+		if tt.noCompat {
+			cmdArgs = append(cmdArgs, "--no-compat")
+		}
+		if tt.noEval {
+			cmdArgs = append(cmdArgs, "--no-eval")
+		}
+		cmdArgs = append(cmdArgs, c.env.ImagePath)
+		cmdArgs = append(cmdArgs, tt.args...)
+		testEnv := append(os.Environ(), tt.env...)
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
+			e2e.WithEnv(testEnv),
 			e2e.WithProfile(e2e.OCIUserProfile),
 			e2e.WithCommand("exec"),
-			e2e.WithEnv(testEnv),
-			e2e.WithRootlessEnv(),
-			e2e.WithArgs(args...),
-			e2e.ExpectExit(
-				0,
-				e2e.ExpectOutput(e2e.ExactMatch, tt.matchVal),
+			e2e.WithArgs(cmdArgs...),
+			e2e.ExpectExit(0,
+				e2e.ExpectOutput(e2e.ExactMatch, tt.expectOutput),
 			),
 		)
 	}
