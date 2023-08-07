@@ -50,7 +50,7 @@ require (
 	github.com/sylabs/sif/v2 v2.11.6-0.20230615203820-9fe9b624c3fd
 	github.com/vbauerster/mpb/v8 v8.5.2
 	golang.org/x/crypto v0.11.0
-	golang.org/x/sys v0.10.0
+	golang.org/x/sys v0.11.0
 	golang.org/x/term v0.10.0
 	golang.org/x/text v0.11.0
 	gopkg.in/yaml.v3 v3.0.1
