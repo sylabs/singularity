@@ -52,10 +52,10 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string, a
 			item.SetAllowSetuid(true)
 		}
 
-		if item.Writable && writableOverlayFound {
+		if writableOverlayFound && !item.Readonly {
 			return fmt.Errorf("you can't specify more than one writable overlay; %#v has already been specified as a writable overlay; use '--overlay %s:ro' instead", s.WritableOverlay, item.SourcePath)
 		}
-		if item.Writable {
+		if !item.Readonly {
 			writableOverlayFound = true
 			s.WritableOverlay = item
 		} else {

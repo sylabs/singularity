@@ -23,6 +23,8 @@ import (
 func Test_addBindMount(t *testing.T) {
 	tests := []struct {
 		name       string
+		cfg        launcher.Options
+		userbind   bool
 		b          bind.Path
 		allowSUID  bool
 		wantMounts *[]specs.Mount
@@ -101,8 +103,10 @@ func Test_addBindMount(t *testing.T) {
 				Destination: "/mnt",
 				Options:     map[string]*bind.Option{"id": {Value: "4"}},
 			},
+			userbind:   true,
 			wantMounts: &[]specs.Mount{},
-			wantErr:    true,
+			// Should fail because bind-mounting SIFs not supported in OCI mode
+			wantErr: true,
 		},
 		{
 			name: "ImageSrc",
@@ -111,14 +115,23 @@ func Test_addBindMount(t *testing.T) {
 				Destination: "/mnt",
 				Options:     map[string]*bind.Option{"img-src": {Value: "/test"}},
 			},
+			userbind:   true,
 			wantMounts: &[]specs.Mount{},
-			wantErr:    true,
+			// Should fail because bind-mounting SIFs not supported in OCI mode
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mounts := &[]specs.Mount{}
-			err := addBindMount(mounts, tt.b, tt.allowSUID)
+			l := &Launcher{
+				cfg:             tt.cfg,
+				singularityConf: &singularityconf.File{},
+			}
+			if tt.userbind {
+				l.singularityConf.UserBindControl = true
+			}
+			err := l.addBindMount(mounts, tt.b, tt.allowSUID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("addBindMount() error = %v, wantErr %v", err, tt.wantErr)
 			}

@@ -31,6 +31,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/files"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/fuse"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
 	imgutil "github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/ocibundle"
@@ -66,6 +67,12 @@ type Launcher struct {
 	homeDest string
 	// nativeSIF is set true when we are running a non-OCI SIF built for the native runtime.
 	nativeSIF bool
+	// imageMountsByImagePath is the set of FUSE image mounts to be carried out
+	// before the container is run, mapped by the absolute path to the image.
+	imageMountsByImagePath map[string]*fuse.ImageMount
+	// imageMountsByMountpoint is the set of FUSE image mounts to be carried out
+	// before the container is run, mapped by their mountpoint.
+	imageMountsByMountpoint map[string]*fuse.ImageMount
 }
 
 // NewLauncher returns a oci.Launcher with an initial configuration set by opts.
@@ -99,11 +106,13 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 	}
 
 	return &Launcher{
-		cfg:             lo,
-		singularityConf: c,
-		homeHost:        homeHost,
-		homeSrc:         homeSrc,
-		homeDest:        homeDest,
+		cfg:                     lo,
+		singularityConf:         c,
+		homeHost:                homeHost,
+		homeSrc:                 homeSrc,
+		homeDest:                homeDest,
+		imageMountsByImagePath:  make(map[string]*fuse.ImageMount),
+		imageMountsByMountpoint: make(map[string]*fuse.ImageMount),
 	}, nil
 }
 
@@ -684,7 +693,22 @@ func (l *Launcher) RunWrapped(ctx context.Context, containerID, bundlePath, pidF
 	}
 
 	runFunc := func() error {
-		return Run(ctx, containerID, absBundle, pidFile, l.singularityConf.SystemdCgroups)
+		for _, im := range l.imageMountsByMountpoint {
+			if err := os.MkdirAll(im.GetMountPoint(), 0o755); err != nil {
+				return err
+			}
+			if err := im.Mount(); err != nil {
+				return err
+			}
+		}
+
+		err := Run(ctx, containerID, absBundle, pidFile, l.singularityConf.SystemdCgroups)
+
+		for _, im := range l.imageMountsByMountpoint {
+			im.Unmount()
+		}
+
+		return err
 	}
 
 	if len(l.cfg.OverlayPaths) > 0 {

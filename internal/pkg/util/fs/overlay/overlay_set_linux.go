@@ -16,6 +16,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
+	fsfuse "github.com/sylabs/singularity/v4/internal/pkg/util/fs/fuse"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
@@ -73,7 +74,7 @@ func (s Set) Unmount(rootFsDir string) error {
 	if useKernelMount {
 		err = DetachMount(rootFsDir)
 	} else {
-		err = UnmountWithFuse(rootFsDir)
+		err = fsfuse.UnmountWithFuse(rootFsDir)
 	}
 
 	if err != nil {
