@@ -20,7 +20,6 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
-	"github.com/sylabs/singularity/v4/internal/pkg/util/shell/interpreter"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/capabilities"
 	"golang.org/x/term"
@@ -46,17 +45,23 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 	}
 
 	// SINGULARITYENV_ has lowest priority
-	rtEnv = mergeMap(rtEnv, singularityEnvMap())
+	rtEnv = env.MergeMap(rtEnv, env.SingularityEnvMap())
+
 	// --env-file can override SINGULARITYENV_
 	if l.cfg.EnvFile != "" {
-		e, err := envFileMap(ctx, l.cfg.EnvFile)
+		currentEnv := append(
+			os.Environ(),
+			"SINGULARITY_IMAGE="+l.image,
+		)
+		e, err := env.FileMap(ctx, l.cfg.EnvFile, []string{}, currentEnv)
 		if err != nil {
 			return nil, nil, err
 		}
-		rtEnv = mergeMap(rtEnv, e)
+		rtEnv = env.MergeMap(rtEnv, e)
 	}
+
 	// --env flag can override --env-file and SINGULARITYENV_
-	rtEnv = mergeMap(rtEnv, l.cfg.Env)
+	rtEnv = env.MergeMap(rtEnv, l.cfg.Env)
 
 	// Ensure HOME points to the required home directory, even if it is a custom one, unless the container explicitly specifies its USER, in which case we don't want to touch HOME.
 	if imgSpec.Config.User == "" {
@@ -349,61 +354,6 @@ func defaultEnv(image, bundle string) map[string]string {
 		env.SingularityPrefix + "CONTAINER": bundle,
 		env.SingularityPrefix + "NAME":      image,
 	}
-}
-
-// singularityEnvMap returns a map of SINGULARITYENV_ prefixed env vars to their values.
-func singularityEnvMap() map[string]string {
-	singularityEnv := map[string]string{}
-
-	for _, envVar := range os.Environ() {
-		if !strings.HasPrefix(envVar, env.SingularityEnvPrefix) {
-			continue
-		}
-		parts := strings.SplitN(envVar, "=", 2)
-		if len(parts) < 2 {
-			continue
-		}
-		key := strings.TrimPrefix(parts[0], env.SingularityEnvPrefix)
-		singularityEnv[key] = parts[1]
-	}
-
-	return singularityEnv
-}
-
-// envFileMap returns a map of KEY=VAL env vars from an environment file
-func envFileMap(ctx context.Context, f string) (map[string]string, error) {
-	envMap := map[string]string{}
-
-	content, err := os.ReadFile(f)
-	if err != nil {
-		return envMap, fmt.Errorf("could not read environment file %q: %w", f, err)
-	}
-
-	// Use the embedded shell interpreter to evaluate the env file, with an empty starting environment.
-	// Shell takes care of comments, quoting etc. for us and keeps compatibility with native runtime.
-	env, err := interpreter.EvaluateEnv(ctx, content, []string{}, []string{})
-	if err != nil {
-		return envMap, fmt.Errorf("while processing %s: %w", f, err)
-	}
-
-	for _, envVar := range env {
-		parts := strings.SplitN(envVar, "=", 2)
-		if len(parts) < 2 {
-			continue
-		}
-		// Strip out the runtime env vars set by the shell interpreter
-		if parts[0] == "GID" ||
-			parts[0] == "HOME" ||
-			parts[0] == "IFS" ||
-			parts[0] == "OPTIND" ||
-			parts[0] == "PWD" ||
-			parts[0] == "UID" {
-			continue
-		}
-		envMap[parts[0]] = parts[1]
-	}
-
-	return envMap, nil
 }
 
 // getBaseCapabilities returns the capabilities that are enabled for the user

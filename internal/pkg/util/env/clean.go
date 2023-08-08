@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -21,7 +21,9 @@ const (
 	SingularityEnvPrefix = "SINGULARITYENV_"
 )
 
-var alwaysPassKeys = map[string]struct{}{
+// AlwaysPassKeys lists environment variables that are always passed from the host
+// into the container.
+var AlwaysPassKeys = map[string]struct{}{
 	"TERM":        {},
 	"http_proxy":  {},
 	"HTTP_PROXY":  {},
@@ -35,9 +37,10 @@ var alwaysPassKeys = map[string]struct{}{
 	"FTP_PROXY":   {},
 }
 
-// boolean value defines if the variable could be overridden
-// with the SINGULARITYENV_ variant.
-var alwaysOmitKeys = map[string]bool{
+// AlwaysOmitKeys lists environment variables that are never passed from the host
+// into the container, with a boolean to indicate whether the key can be overridden
+// by a user-specificed SINGULARITYENV_ / --env / --env-file value.
+var AlwaysOmitKeys = map[string]bool{
 	"HOME":                false,
 	"PATH":                false,
 	"SINGULARITY_SHELL":   false,
@@ -76,7 +79,7 @@ func SetContainerEnv(g *generate.Generator, hostEnvs []string, cleanEnv bool, ho
 				if key == "" {
 					continue
 				}
-				if permitted, ok := alwaysOmitKeys[key]; ok && !permitted {
+				if permitted, ok := AlwaysOmitKeys[key]; ok && !permitted {
 					sylog.Warningf("Overriding %s environment variable with %s is not permitted", key, e[0])
 					continue
 				}
@@ -89,7 +92,7 @@ func SetContainerEnv(g *generate.Generator, hostEnvs []string, cleanEnv bool, ho
 			// precedence over the non prefixed variables
 			if _, ok := singEnvKeys[e[0]]; ok {
 				sylog.Verbosef("Skipping %[1]s environment variable, overridden by %[2]s%[1]s", e[0], SingularityEnvPrefix)
-			} else if addHostEnv(e[0], cleanEnv) {
+			} else if AddHostEnv(e[0], cleanEnv) {
 				// transpose host env variables into config
 				sylog.Debugf("Forwarding %s environment variable", e[0])
 				g.AddProcessEnv(e[0], e[1])
@@ -105,13 +108,13 @@ func SetContainerEnv(g *generate.Generator, hostEnvs []string, cleanEnv bool, ho
 	return singEnvKeys
 }
 
-// addHostEnv processes given key and returns if the environment
+// AddHostEnv processes given key and returns if the environment
 // variable should be added to the container or not.
-func addHostEnv(key string, cleanEnv bool) bool {
-	if _, ok := alwaysPassKeys[key]; ok {
+func AddHostEnv(key string, cleanEnv bool) bool {
+	if _, ok := AlwaysPassKeys[key]; ok {
 		return true
 	}
-	if _, ok := alwaysOmitKeys[key]; ok || cleanEnv {
+	if _, ok := AlwaysOmitKeys[key]; ok || cleanEnv {
 		return false
 	}
 	return true
