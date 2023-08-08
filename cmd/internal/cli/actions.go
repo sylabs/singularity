@@ -93,7 +93,7 @@ func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, 
 		OciAuth:    ociAuth,
 		DockerHost: dockerHost,
 		NoHTTPS:    noHTTPS,
-		OciSif:     ociRuntime,
+		OciSif:     isOCI,
 	}
 
 	return oci.Pull(ctx, imgCache, pullFrom, pullOpts)
@@ -186,7 +186,7 @@ func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string)
 	}
 
 	// TODO - drop once we have implemented prefix-less oci-sif vs native sif detection.
-	if ociRuntime {
+	if isOCI {
 		image = "oci-sif:" + image
 	}
 
@@ -366,7 +366,7 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 	// Explicitly use the interface type here, as we will add alternative launchers later...
 	var l launcher.Launcher
 
-	if ociRuntime {
+	if isOCI {
 		sylog.Debugf("Using OCI runtime launcher.")
 
 		sysCtx := &types.SystemContext{

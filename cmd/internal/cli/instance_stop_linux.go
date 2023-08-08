@@ -100,6 +100,10 @@ var instanceStopCmd = &cobra.Command{
 	Args:                  cobra.RangeArgs(0, 1),
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if isOCI {
+			sylog.Fatalf("Instances are not yet supported in OCI-mode. Omit --oci, or use --no-oci, to manage a non-OCI Singularity instance.")
+		}
+
 		if len(args) == 0 && !instanceStopAll {
 			return errors.New("invalid command")
 		}

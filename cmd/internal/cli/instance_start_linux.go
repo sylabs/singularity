@@ -38,6 +38,10 @@ var instanceStartCmd = &cobra.Command{
 	PreRun:                actionPreRun,
 	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
+		if isOCI {
+			sylog.Fatalf("Instances are not yet supported in OCI-mode. Omit --oci, or use --no-oci, to start a non-OCI Singularity container.")
+		}
+
 		ep := launcher.ExecParams{
 			Image:    args[0],
 			Action:   "start",
