@@ -38,15 +38,8 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 	// with the image ENV and set in the container at runtime.
 	rtEnv := defaultEnv(ep.Image, bundle)
 
-	// Propagate TERM from host. Doing this here means it can be overridden by SINGULARITYENV_TERM.
-	hostTerm, isHostTermSet := os.LookupEnv("TERM")
-	if isHostTermSet {
-		rtEnv["TERM"] = hostTerm
-	}
-
 	// SINGULARITYENV_ has lowest priority
-	rtEnv = env.MergeMap(rtEnv, env.SingularityEnvMap())
-
+	rtEnv = env.MergeMap(rtEnv, env.SingularityEnvMap(os.Environ()))
 	// --env-file can override SINGULARITYENV_
 	if l.cfg.EnvFile != "" {
 		currentEnv := append(
@@ -106,7 +99,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 		Args:            args,
 		Capabilities:    caps,
 		Cwd:             cwd,
-		Env:             getProcessEnv(imgSpec, rtEnv, l.nativeSIF),
+		Env:             l.getProcessEnv(imgSpec, os.Environ(), rtEnv),
 		NoNewPrivileges: noNewPrivs,
 		User:            u,
 		Terminal:        getProcessTerminal(),
@@ -257,20 +250,19 @@ func reverseMapByRange(targetUID, targetGID uint32, subuidRange, subgidRange spe
 	return uidMap, gidMap
 }
 
-// getProcessEnv combines the image config ENV with the ENV requested at runtime.
+// getProcessEnv combines the image config ENV with the ENV requested by the user.
 // APPEND_PATH and PREPEND_PATH are honored as with the native singularity runtime.
 // LD_LIBRARY_PATH is modified to always include the singularity lib bind directory.
-func getProcessEnv(imageSpec imgspecv1.Image, runtimeEnv map[string]string, nativeSIF bool) []string {
+func (l *Launcher) getProcessEnv(imageSpec imgspecv1.Image, hostEnv []string, userEnv map[string]string) []string {
 	path := ""
 	appendPath := ""
 	prependPath := ""
 	ldLibraryPath := ""
+	envAdded := map[string]bool{}
 
-	// Start with the environment from the image config.
+	// Start with image config ENV, reserving PATH, and LD_LIBRARY_PATH, for special handling.
 	g := generate.New(nil)
 	g.Config.Process = &specs.Process{Env: imageSpec.Config.Env}
-
-	// Obtain PATH, and LD_LIBRARY_PATH if set in the image config, for special handling.
 	for _, env := range imageSpec.Config.Env {
 		e := strings.SplitN(env, "=", 2)
 		if len(e) < 2 {
@@ -279,16 +271,18 @@ func getProcessEnv(imageSpec imgspecv1.Image, runtimeEnv map[string]string, nati
 		// The image config PATH is not accurate for native SIF images - it is a
 		// default, and a PATH may be declared in the image /.singularity.d/env
 		// scripts. Ignore, so we can pick that up.
-		if e[0] == "PATH" && !nativeSIF {
+		switch {
+		case e[0] == "PATH" && !l.nativeSIF:
 			path = e[1]
-		}
-		if e[0] == "LD_LIBRARY_PATH" {
+		case e[0] == "LD_LIBRARY_PATH":
 			ldLibraryPath = e[1]
+		default:
+			envAdded[e[0]] = true
 		}
 	}
 
-	// Apply env vars from runtime, except PATH and LD_LIBRARY_PATH releated.
-	for k, v := range runtimeEnv {
+	// Apply user requested env vars, except PATH and LD_LIBRARY_PATH releated.
+	for k, v := range userEnv {
 		switch k {
 		case "PATH":
 			path = v
@@ -300,11 +294,25 @@ func getProcessEnv(imageSpec imgspecv1.Image, runtimeEnv map[string]string, nati
 			ldLibraryPath = v
 		default:
 			g.AddProcessEnv(k, v)
+			envAdded[k] = true
+		}
+	}
+
+	// If we aren't a native SIF, add back required host env vars now, provided they haven't been set by the image or user.
+	// In --compat (default implied) we are only adding host proxy env vars.
+	// In --no-compat we are adding almost all host env vars.
+	if !l.nativeSIF {
+		cleanEnv := !l.cfg.NoCompat || l.cfg.CleanEnv
+		for k, v := range env.HostEnvMap(hostEnv, cleanEnv) {
+			if !envAdded[k] {
+				g.AddProcessEnv(k, v)
+				envAdded[k] = true
+			}
 		}
 	}
 
 	// Handle PATH differently beteween OCI and native images
-	if nativeSIF {
+	if l.nativeSIF {
 		setNativePath(g, prependPath, path, appendPath)
 	} else {
 		setOCIPath(g, prependPath, path, appendPath)
@@ -312,7 +320,7 @@ func getProcessEnv(imageSpec imgspecv1.Image, runtimeEnv map[string]string, nati
 
 	// Ensure LD_LIBRARY_PATH always contains singularity lib binding dir.
 	// This is handled by environment scripts in native SIF images.
-	if !nativeSIF && !strings.Contains(ldLibraryPath, singularityLibs) {
+	if !l.nativeSIF && !strings.Contains(ldLibraryPath, singularityLibs) {
 		ldLibraryPath = strings.TrimPrefix(ldLibraryPath+":"+singularityLibs, ":")
 	}
 	if ldLibraryPath != "" {

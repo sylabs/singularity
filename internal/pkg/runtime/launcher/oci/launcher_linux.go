@@ -30,6 +30,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
 	ociclient "github.com/sylabs/singularity/v4/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/files"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/fuse"
@@ -146,10 +147,6 @@ func checkOpts(lo launcher.Options) error {
 
 	if lo.Proot != "" {
 		badOpt = append(badOpt, "Proot")
-	}
-
-	if lo.CleanEnv {
-		badOpt = append(badOpt, "CleanEnv")
 	}
 
 	// Network always set in CLI layer even if network namespace not requested.
@@ -583,15 +580,17 @@ func (l *Launcher) prepareNativeEnv(bundlePath string, userEnv map[string]string
 	hostEnvPath := filepath.Join(bundlePath, envScript)
 	containerEnvPath := filepath.Join("/.singularity.d/env", envScript)
 
-	// Don't export these, as they are handles by other env scripts
+	b := bytes.Buffer{}
+
+	// First, we export any user-set env vars, so they always override anything set in the container image.
+
+	// Don't export these, as they are handled by other env scripts
 	skipVars := map[string]bool{
 		"PATH":            true,
 		"LD_LIBRARY_PATH": true,
 		"APPEND_PATH":     true,
 		"PREPEND_PATH":    true,
 	}
-
-	b := bytes.Buffer{}
 	for key, value := range userEnv {
 		if skipVars[key] {
 			continue
@@ -604,6 +603,17 @@ func (l *Launcher) prepareNativeEnv(bundlePath string, userEnv map[string]string
 			value = "'" + shell.EscapeSingleQuotes(value) + "'"
 		}
 		b.WriteString(fmt.Sprintf("%s=%s\n", key, value))
+	}
+
+	// Second, we conditionally restore host env vars, if we are are --no-compat and if they are not set already.
+	hostEnvSnippet := `
+if [ ! "${%[1]s+1}" ]; then
+	export %[1]s=%[2]s
+fi
+	`
+	cleanEnv := !l.cfg.NoCompat || l.cfg.CleanEnv
+	for k, v := range env.HostEnvMap(os.Environ(), cleanEnv) {
+		b.WriteString(fmt.Sprintf(hostEnvSnippet, k, "'"+shell.EscapeSingleQuotes(v)+"'"))
 	}
 
 	if err := os.WriteFile(hostEnvPath, b.Bytes(), 0o755); err != nil {

@@ -29,10 +29,10 @@ func SetFromList(environ []string) error {
 }
 
 // SingularityEnvMap returns a map of SINGULARITYENV_ prefixed env vars to their values.
-func SingularityEnvMap() map[string]string {
+func SingularityEnvMap(hostEnv []string) map[string]string {
 	singularityEnv := map[string]string{}
 
-	for _, envVar := range os.Environ() {
+	for _, envVar := range hostEnv {
 		if !strings.HasPrefix(envVar, SingularityEnvPrefix) {
 			continue
 		}
@@ -49,8 +49,8 @@ func SingularityEnvMap() map[string]string {
 
 // FileMap returns a map of KEY=VAL env vars from an environment file f. The env
 // file is shell evaluated using mvdan/sh with arguments and environment set
-// from args and currentEnv.
-func FileMap(ctx context.Context, f string, args []string, currentEnv []string) (map[string]string, error) {
+// from args and hostEnv.
+func FileMap(ctx context.Context, f string, args []string, hostEnv []string) (map[string]string, error) {
 	envMap := map[string]string{}
 
 	content, err := os.ReadFile(f)
@@ -60,7 +60,7 @@ func FileMap(ctx context.Context, f string, args []string, currentEnv []string) 
 
 	// Use the embedded shell interpreter to evaluate the env file, with an empty starting environment.
 	// Shell takes care of comments, quoting etc. for us and keeps compatibility with native runtime.
-	env, err := interpreter.EvaluateEnv(ctx, content, args, currentEnv)
+	env, err := interpreter.EvaluateEnv(ctx, content, args, hostEnv)
 	if err != nil {
 		return envMap, fmt.Errorf("while processing %s: %w", f, err)
 	}

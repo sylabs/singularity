@@ -72,30 +72,30 @@ func TestSetFromList(t *testing.T) {
 
 func TestSingularityEnvMap(t *testing.T) {
 	tests := []struct {
-		name   string
-		setEnv map[string]string
-		want   map[string]string
+		name    string
+		hostEnv []string
+		want    map[string]string
 	}{
 		{
-			name:   "None",
-			setEnv: map[string]string{},
-			want:   map[string]string{},
+			name:    "None",
+			hostEnv: []string{},
+			want:    map[string]string{},
 		},
 		{
-			name:   "NonPrefixed",
-			setEnv: map[string]string{"FOO": "bar"},
-			want:   map[string]string{},
+			name:    "NonPrefixed",
+			hostEnv: []string{"FOO=bar"},
+			want:    map[string]string{},
 		},
 		{
-			name:   "PrefixedSingle",
-			setEnv: map[string]string{"SINGULARITYENV_FOO": "bar"},
-			want:   map[string]string{"FOO": "bar"},
+			name:    "PrefixedSingle",
+			hostEnv: []string{"SINGULARITYENV_FOO=bar"},
+			want:    map[string]string{"FOO": "bar"},
 		},
 		{
 			name: "PrefixedMultiple",
-			setEnv: map[string]string{
-				"SINGULARITYENV_FOO": "bar",
-				"SINGULARITYENV_ABC": "123",
+			hostEnv: []string{
+				"SINGULARITYENV_FOO=bar",
+				"SINGULARITYENV_ABC=123",
 			},
 			want: map[string]string{
 				"FOO": "bar",
@@ -105,13 +105,7 @@ func TestSingularityEnvMap(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for k, v := range tt.setEnv {
-				os.Setenv(k, v)
-				t.Cleanup(func() {
-					os.Unsetenv(k)
-				})
-			}
-			if got := SingularityEnvMap(); !reflect.DeepEqual(got, tt.want) {
+			if got := SingularityEnvMap(tt.hostEnv); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("singularityEnvMap() = %v, want %v", got, tt.want)
 			}
 		})
