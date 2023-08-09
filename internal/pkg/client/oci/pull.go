@@ -27,10 +27,15 @@ type PullOptions struct {
 	NoHTTPS    bool
 	NoCleanUp  bool
 	OciSif     bool
+	Platform   string
 }
 
 // sysCtx provides authentication and tempDir config for containers/image OCI operations
-func sysCtx(opts PullOptions) *ocitypes.SystemContext {
+func sysCtx(opts PullOptions) (*ocitypes.SystemContext, error) {
+	if opts.Platform != "" {
+		return nil, fmt.Errorf("custom platform not supported for OCI -> SIF conversion")
+	}
+
 	// DockerInsecureSkipTLSVerify is set only if --no-https is specified to honor
 	// configuration from /etc/containers/registries.conf because DockerInsecureSkipTLSVerify
 	// can have three possible values true/false and undefined, so we left it as undefined instead
@@ -47,13 +52,12 @@ func sysCtx(opts PullOptions) *ocitypes.SystemContext {
 	if opts.NoHTTPS {
 		sysCtx.DockerInsecureSkipTLSVerify = ocitypes.NewOptionalBool(true)
 	}
-	return sysCtx
+	return sysCtx, nil
 }
 
 // Pull will create a SIF / OCI-SIF image to the cache or direct to a temporary file if cache is disabled
 func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, opts PullOptions) (imagePath string, err error) {
 	directTo := ""
-
 	if imgCache.IsDisabled() {
 		file, err := os.CreateTemp(opts.TmpDir, "sbuild-tmp-cache-")
 		if err != nil {
@@ -69,6 +73,7 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, opts Pul
 			DockerHost: opts.DockerHost,
 			NoHTTPS:    opts.NoHTTPS,
 			NoCleanUp:  opts.NoCleanUp,
+			Platform:   opts.Platform,
 		}
 		return ocisif.PullOCISIF(ctx, imgCache, directTo, pullFrom, ocisifOpts)
 	}
@@ -91,6 +96,7 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom st
 			DockerHost: opts.DockerHost,
 			NoHTTPS:    opts.NoHTTPS,
 			NoCleanUp:  opts.NoCleanUp,
+			Platform:   opts.Platform,
 		}
 		src, err = ocisif.PullOCISIF(ctx, imgCache, directTo, pullFrom, ocisifOpts)
 	} else {
@@ -104,7 +110,7 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom st
 		// mode is before umask if pullTo doesn't exist
 		err = fs.CopyFileAtomic(src, pullTo, 0o777)
 		if err != nil {
-			return "", fmt.Errorf("error copying image out of cache: %v", err)
+			return "", fmt.Errorf("error copying image out of cache (from %q to %q): %w", src, pullTo, err)
 		}
 	}
 

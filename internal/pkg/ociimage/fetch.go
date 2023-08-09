@@ -18,13 +18,9 @@ import (
 	"strings"
 
 	"github.com/containers/image/v5/copy"
-	"github.com/containers/image/v5/docker"
-	dockerarchive "github.com/containers/image/v5/docker/archive"
-	dockerdaemon "github.com/containers/image/v5/docker/daemon"
-	ociarchive "github.com/containers/image/v5/oci/archive"
 	ocilayout "github.com/containers/image/v5/oci/layout"
-	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/types"
+	"github.com/opencontainers/go-digest"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
@@ -32,73 +28,57 @@ import (
 // FetchLayout will fetch the OCI image specified by imageRef to a containers/image OCI layout in layoutDir.
 // An ImageReference to the image that was fetched into layoutDir is returned on success.
 // If imgCache is non-nil, and enabled, the image will be pulled through the cache.
-func FetchLayout(ctx context.Context, sysCtx *types.SystemContext, imgCache *cache.Handle, imageRef, layoutDir string) (layoutRef types.ImageReference, err error) {
-	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
-	policyCtx, err := signature.NewPolicyContext(policy)
+func FetchLayout(ctx context.Context, sysCtx *types.SystemContext, imgCache *cache.Handle, imageRef, layoutDir string) (types.ImageReference, digest.Digest, error) {
+	policyCtx, err := defaultPolicy()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	parts := strings.SplitN(imageRef, ":", 2)
-	if len(parts) < 2 {
-		return nil, fmt.Errorf("could not parse image ref: %s", imageRef)
+	srcRef, err := ParseImageRef(imageRef)
+	if err != nil {
+		return nil, "", fmt.Errorf("invalid image source: %v", err)
 	}
-	var srcRef types.ImageReference
 
-	switch parts[0] {
-	case "docker":
-		srcRef, err = docker.ParseReference(parts[1])
-	case "docker-archive":
-		srcRef, err = dockerarchive.ParseReference(parts[1])
-	case "docker-daemon":
-		srcRef, err = dockerdaemon.ParseReference(parts[1])
-	case "oci":
-		srcRef, err = ocilayout.ParseReference(parts[1])
-	case "oci-archive":
-		if os.Geteuid() == 0 {
-			// As root, the direct oci-archive handling will work
-			srcRef, err = ociarchive.ParseReference(parts[1])
-		} else {
-			// As non-root we need to do a dumb tar extraction first
-			var tmpDir string
-			tmpDir, err = os.MkdirTemp(sysCtx.BigFilesTemporaryDir, "temp-oci-")
-			if err != nil {
-				return nil, fmt.Errorf("could not create temporary oci directory: %v", err)
-			}
-			defer os.RemoveAll(tmpDir)
-
-			archiveParts := strings.SplitN(parts[1], ":", 2)
-			sylog.Debugf("Extracting oci-archive %q to %q", archiveParts[0], tmpDir)
-			err = extractArchive(archiveParts[0], tmpDir)
-			if err != nil {
-				return nil, fmt.Errorf("error extracting the OCI archive file: %v", err)
-			}
-			// We may or may not have had a ':tag' in the source to handle
-			if len(archiveParts) == 2 {
-				srcRef, err = ocilayout.ParseReference(tmpDir + ":" + archiveParts[1])
-			} else {
-				srcRef, err = ocilayout.ParseReference(tmpDir)
-			}
+	// oci-archive direct handling by containers/image can fail as non-root.
+	// Perform a tar extraction first, and handle as an oci layout.
+	if os.Geteuid() != 0 && srcRef.Transport().Name() == "oci-archive" {
+		var tmpDir string
+		tmpDir, err = os.MkdirTemp(sysCtx.BigFilesTemporaryDir, "temp-oci-")
+		if err != nil {
+			return nil, "", fmt.Errorf("could not create temporary oci directory: %v", err)
 		}
-	default:
-		return nil, fmt.Errorf("cannot create an OCI container from %s source", parts[0])
+		defer os.RemoveAll(tmpDir)
+
+		archiveParts := strings.SplitN(srcRef.StringWithinTransport(), ":", 2)
+		sylog.Debugf("Extracting oci-archive %q to %q", archiveParts[0], tmpDir)
+		err = extractArchive(archiveParts[0], tmpDir)
+		if err != nil {
+			return nil, "", fmt.Errorf("error extracting the OCI archive file: %v", err)
+		}
+		// We may or may not have had a ':tag' in the source to handle
+		if len(archiveParts) == 2 {
+			srcRef, err = ocilayout.ParseReference(tmpDir + ":" + archiveParts[1])
+		} else {
+			srcRef, err = ocilayout.ParseReference(tmpDir)
+		}
+		if err != nil {
+			return nil, "", err
+		}
 	}
 
-	if err != nil {
-		return nil, fmt.Errorf("invalid image source: %v", err)
-	}
+	var imgDigest digest.Digest
 
 	if imgCache != nil && !imgCache.IsDisabled() {
 		// Grab the modified source ref from the cache
-		srcRef, err = ConvertReference(ctx, imgCache, srcRef, sysCtx)
+		srcRef, imgDigest, err = CacheReference(ctx, sysCtx, imgCache, srcRef)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 	}
 
-	lr, err := ocilayout.ParseReference(layoutDir + ":singularity")
+	lr, err := ocilayout.ParseReference(layoutDir + ":" + imgDigest.String())
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	_, err = copy.Image(ctx, policyCtx, lr, srcRef, &copy.Options{
@@ -106,10 +86,10 @@ func FetchLayout(ctx context.Context, sysCtx *types.SystemContext, imgCache *cac
 		SourceCtx:    sysCtx,
 	})
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return lr, nil
+	return lr, imgDigest, nil
 }
 
 // Perform a dumb tar(gz) extraction with no chown, id remapping etc.

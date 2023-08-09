@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -32,7 +32,8 @@ var ErrLibraryPullUnsigned = errors.New("failed to verify container")
 // PullOptions provides options/configuration that determine the behavior of a
 // pull from a library.
 type PullOptions struct {
-	// Architecture specifies the architecture of the image to retrieve.
+	// Architecture specifies the architecture of the image to retrieve, when
+	// performing a non-OCI-SIF pull.
 	Architecture string
 	// Endpoint is the active remote endpoint, against which the OCI registry
 	// backing the library can be discovered.
@@ -48,6 +49,9 @@ type PullOptions struct {
 	// RequireOciSif should be set true to require that the image pulled is an OCI-SIF.
 	// If false a native SIF pull will be attempted, followed by an OCI(-SIF) pull on failure.
 	RequireOciSif bool
+	// Platform specifies the platform of the image to retrieve, when performing
+	// an OCI-SIF pull.
+	Platform string
 }
 
 // pull will pull a library image into the cache if directTo="", or a specific file if directTo is set.
@@ -148,8 +152,9 @@ func pullOCI(ctx context.Context, imgCache *cache.Handle, directTo string, pullF
 
 	authConf := lr.authConfig()
 	ocisifOpts := ocisif.PullOptions{
-		TmpDir:  opts.TmpDir,
-		OciAuth: authConf,
+		TmpDir:   opts.TmpDir,
+		OciAuth:  authConf,
+		Platform: opts.Platform,
 	}
 	return ocisif.PullOCISIF(ctx, imgCache, directTo, pullRef, ocisifOpts)
 }
