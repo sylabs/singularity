@@ -67,6 +67,8 @@ type Launcher struct {
 	// homeDest is the computed destination (in the container) for the user's home directory.
 	// An empty value is not valid at mount time.
 	homeDest string
+	// image is the image being executed
+	image string
 	// nativeSIF is set true when we are running a non-OCI SIF built for the native runtime.
 	nativeSIF bool
 	// imageMountsByImagePath is the set of FUSE image mounts to be carried out
@@ -634,6 +636,7 @@ func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 	if err != nil {
 		return err
 	}
+	l.image = image
 
 	if err := l.mountSessionTmpfs(); err != nil {
 		return err
@@ -847,13 +850,6 @@ func CrunNestCgroup() error {
 	sylog.Debugf("In sibling cgroup: %s", cgPath)
 
 	return nil
-}
-
-func mergeMap(a map[string]string, b map[string]string) map[string]string {
-	for k, v := range b {
-		a[k] = v
-	}
-	return a
 }
 
 // normalizeImageRef transforms a bare image path to an oci-sif: or sif: prefixed path,

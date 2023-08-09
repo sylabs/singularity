@@ -34,7 +34,6 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/gpu"
-	"github.com/sylabs/singularity/v4/internal/pkg/util/shell/interpreter"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 	"github.com/sylabs/singularity/v4/pkg/image"
@@ -882,12 +881,7 @@ func (l *Launcher) setEnv(ctx context.Context, args []string) error {
 			"SINGULARITY_IMAGE="+l.engineConfig.GetImage(),
 		)
 
-		content, err := os.ReadFile(l.cfg.EnvFile)
-		if err != nil {
-			return fmt.Errorf("could not read environment file %q: %w", l.cfg.EnvFile, err)
-		}
-
-		env, err := interpreter.EvaluateEnv(ctx, content, args, currentEnv)
+		env, err := env.FileMap(ctx, l.cfg.EnvFile, args, currentEnv)
 		if err != nil {
 			return fmt.Errorf("while processing %s: %w", l.cfg.EnvFile, err)
 		}
@@ -896,22 +890,12 @@ func (l *Launcher) setEnv(ctx context.Context, args []string) error {
 		sylog.Debugf("Setting environment variables from file %s", l.cfg.EnvFile)
 
 		// Update Env with those from file
-		for _, envar := range env {
-			e := strings.SplitN(envar, "=", 2)
-			if len(e) != 2 {
-				sylog.Warningf("Ignored environment variable %q: '=' is missing", envar)
-				continue
-			}
-			// Don't attempt to overwrite bash builtin readonly vars
-			// https://github.com/sylabs/singularity/issues/1263
-			if e[0] == "UID" || e[0] == "GID" {
-				continue
-			}
+		for k, v := range env {
 			// Ensure we don't overwrite --env variables with environment file
-			if _, ok := l.cfg.Env[e[0]]; ok {
-				sylog.Warningf("Ignored environment variable %s from %s: override from --env", e[0], l.cfg.EnvFile)
+			if _, ok := l.cfg.Env[k]; ok {
+				sylog.Warningf("Ignored environment variable %s from %s: override from --env", k, l.cfg.EnvFile)
 			} else {
-				l.cfg.Env[e[0]] = e[1]
+				l.cfg.Env[k] = v
 			}
 		}
 	}

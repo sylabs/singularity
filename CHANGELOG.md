@@ -158,6 +158,8 @@
 - Fix interaction between `--workdir` when given relative path and `--scratch`.
 - Set correct `$HOME` in `--oci` mode when `mount home = no` in
   `singularity.conf`.
+- In `--oci` mode, an `--env-file` is evaluated with respect to the host
+  environment, to match native mode behaviour.
 
 ## 3.11.4 \[2023-06-22\]
 
