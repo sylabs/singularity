@@ -625,3 +625,77 @@ func (c ctx) ociNativeEnvEval(t *testing.T) {
 		)
 	}
 }
+
+// In OCI mode, default emulates compat which implies --cleanenv.
+// Ensure we see host env vars with --no-compat
+func (c ctx) ociNoCompatHost(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	tests := []struct {
+		name         string
+		env          []string
+		args         []string
+		noCompat     bool
+		cleanenv     bool
+		expectOutput string
+	}{
+		{
+			name:         "no host env",
+			args:         []string{"/bin/sh", "-c", "echo $WHO"},
+			env:          []string{},
+			cleanenv:     false,
+			expectOutput: "",
+		},
+		{
+			name:         "set host env",
+			args:         []string{"/bin/sh", "-c", "echo $WHO"},
+			env:          []string{"WHO=ME"},
+			cleanenv:     false,
+			expectOutput: "ME",
+		},
+		{
+			name:         "override host env",
+			args:         []string{"/bin/sh", "-c", "echo $WHO"},
+			env:          []string{"WHO=ME", "SINGULARITYENV_WHO=YOU"},
+			cleanenv:     false,
+			expectOutput: "YOU",
+		},
+		{
+			name:         "no override container",
+			args:         []string{"/bin/sh", "-c", "echo $CGO_ENABLED"},
+			env:          []string{"CGO_ENABLED=2"},
+			cleanenv:     false,
+			expectOutput: "0",
+		},
+
+		// Finally check using --no-eval with --cleanenv turns host envs back off.
+		{
+			name:         "cleanenv",
+			args:         []string{"/bin/sh", "-c", "echo $WHO"},
+			env:          []string{"WHO=ME"},
+			cleanenv:     true,
+			expectOutput: "",
+		},
+	}
+
+	for _, tt := range tests {
+		cmdArgs := []string{"--no-compat"}
+		if tt.cleanenv {
+			cmdArgs = append(cmdArgs, "--cleanenv")
+		}
+		cmdArgs = append(cmdArgs, c.env.ImagePath)
+		cmdArgs = append(cmdArgs, tt.args...)
+		testEnv := append(os.Environ(), tt.env...)
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithEnv(testEnv),
+			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(cmdArgs...),
+			e2e.ExpectExit(0,
+				e2e.ExpectOutput(e2e.ExactMatch, tt.expectOutput),
+			),
+		)
+	}
+}

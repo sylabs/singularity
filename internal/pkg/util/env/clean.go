@@ -119,3 +119,26 @@ func AddHostEnv(key string, cleanEnv bool) bool {
 	}
 	return true
 }
+
+// HostEnvMap returns a map of host env vars to pass into the container.
+func HostEnvMap(hostEnvs []string, cleanEnv bool) map[string]string {
+	hostEnv := map[string]string{}
+
+	for _, envVar := range hostEnvs {
+		if strings.HasPrefix(envVar, SingularityEnvPrefix) {
+			continue
+		}
+		parts := strings.SplitN(envVar, "=", 2)
+		if len(parts) < 2 {
+			continue
+		}
+
+		if !AddHostEnv(parts[0], cleanEnv) {
+			continue
+		}
+
+		hostEnv[parts[0]] = parts[1]
+	}
+
+	return hostEnv
+}

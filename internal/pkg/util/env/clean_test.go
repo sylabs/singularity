@@ -13,6 +13,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	"gotest.tools/v3/assert"
 )
 
 func TestSetContainerEnv(t *testing.T) {
@@ -329,4 +330,60 @@ func equal(t *testing.T, a, b []string) bool {
 		}
 	}
 	return true
+}
+
+func TestHostEnvMap(t *testing.T) {
+	testEnv := []string{
+		// Never pass from host
+		"HOME=/home/john",
+		"PATH=/usr/games:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+		"SINGULARITY_SHELL=/bin/sh",
+		"SINGULARITY_APPNAME=myapp",
+		"LD_LIBRARY_PATH=/.singularity.d/libs",
+		"SOME_INVALID_VAR:test",
+		// Always pass from host
+		"HTTP_PROXY=example.com:3128",
+		"TERM=xterm-256color",
+		// Pass from host with cleanenv = false
+		"PS1=test",
+		"LANG=C",
+		"PWD=/tmp",
+		"LC_ALL=C",
+	}
+
+	tests := []struct {
+		name     string
+		hostEnv  []string
+		cleanEnv bool
+		want     map[string]string
+	}{
+		{
+			name:     "NoCleanEnv",
+			cleanEnv: false,
+			hostEnv:  testEnv,
+			want: map[string]string{
+				"HTTP_PROXY": "example.com:3128",
+				"LANG":       "C",
+				"LC_ALL":     "C",
+				"PS1":        "test",
+				"PWD":        "/tmp",
+				"TERM":       "xterm-256color",
+			},
+		},
+		{
+			name:     "CleanEnv",
+			cleanEnv: true,
+			hostEnv:  testEnv,
+			want: map[string]string{
+				"HTTP_PROXY": "example.com:3128",
+				"TERM":       "xterm-256color",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := HostEnvMap(tt.hostEnv, tt.cleanEnv)
+			assert.DeepEqual(t, tt.want, got)
+		})
+	}
 }
