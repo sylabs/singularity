@@ -76,6 +76,7 @@ type File struct {
 	DownloadBufferSize      uint     `default:"32768" directive:"download buffer size"`
 	SystemdCgroups          bool     `default:"yes" authorized:"yes,no" directive:"systemd cgroups"`
 	SIFFUSE                 bool     `default:"no" authorized:"yes,no" directive:"sif fuse"`
+	OCIMode                 bool     `default:"no" authorized:"yes,no" directive:"oci mode"`
 }
 
 const TemplateAsset = `# SINGULARITY.CONF
@@ -94,6 +95,15 @@ const TemplateAsset = `# SINGULARITY.CONF
 # namespaces which have not been integrated equally between different Linux
 # distributions.
 allow setuid = {{ if eq .AllowSetuid true }}yes{{ else }}no{{ end }}
+
+# OCI MODE: [BOOL]
+# DEFAULT: no
+# Should we use the OCI runtime, and push/pull OCI-SIF images by default?
+# Mimics always specifying --oci on the command line.
+# Can be reversed by specifying --no-oci on the command line.
+# Note that OCI mode requires unprivileged user namespace creation and
+# subuid / subgid mappings.
+oci mode = {{ if eq .OCIMode true }}yes{{ else }}no{{ end }}
 
 # MAX LOOP DEVICES: [INT]
 # DEFAULT: 256

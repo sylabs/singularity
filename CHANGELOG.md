@@ -142,6 +142,8 @@
     used.
   - When a native (non-OCI-SIF) image is run in OCI-mode, environment variables
     will be shell evaluated on container startup.
+- A new `oci mode` directive in `singularity.conf` can be set to true to enable
+  OCI-mode by default. It can be negated with a new `--no-oci` command line flag.
 
 ### Developer / API
 

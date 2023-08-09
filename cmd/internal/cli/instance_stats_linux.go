@@ -70,6 +70,10 @@ var instanceStatsCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if isOCI {
+			sylog.Fatalf("Instances are not yet supported in OCI-mode. Omit --oci, or use --no-oci, to manage a non-OCI Singularity instance.")
+		}
+
 		uid := os.Getuid()
 
 		// Root is required to look at stats for another user

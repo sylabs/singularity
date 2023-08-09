@@ -85,8 +85,6 @@ var (
 	memorySwap        string // bytes
 	oomKillDisable    bool
 	pidsLimit         int
-
-	ociRuntime bool
 )
 
 // --app
@@ -781,16 +779,6 @@ var actionProotFlag = cmdline.Flag{
 	Hidden:       true,
 }
 
-// --oci
-var actionOCIFlag = cmdline.Flag{
-	ID:           "actionOCI",
-	Value:        &ociRuntime,
-	DefaultValue: false,
-	Name:         "oci",
-	Usage:        "Launch container with OCI runtime (experimental)",
-	EnvKeys:      []string{"OCI"},
-}
-
 // --device
 var actionDevice = cmdline.Flag{
 	ID:           "actionDevice",
@@ -900,7 +888,8 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionPidsLimitFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionSIFFUSEFlag, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&actionProotFlag, actionsCmd...)
-		cmdManager.RegisterFlagForCmd(&actionOCIFlag, actionsCmd...)
+		cmdManager.RegisterFlagForCmd(&commonOCIFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&commonNoOCIFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionDevice, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&actionCdiDirs, actionsCmd...)
 	})

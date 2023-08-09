@@ -49,23 +49,11 @@ var CurrentUser = getCurrentUser()
 // currentRemoteEndpoint holds the current remote endpoint
 var currentRemoteEndpoint *endpoint.Config
 
-var (
-	dockerAuthConfig ocitypes.DockerAuthConfig
-	dockerLogin      bool
-	dockerHost       string
-
-	encryptionPEMPath   string
-	promptForPassphrase bool
-	forceOverwrite      bool
-	noHTTPS             bool
-	tmpDir              string
-)
-
 const (
 	envPrefix = "SINGULARITY_"
 )
 
-// singularity command flags
+// Top level options on the `singularity` root command.
 var (
 	debug   bool
 	nocolor bool
@@ -75,6 +63,31 @@ var (
 
 	configurationFile string
 )
+
+// Common options used with multiple sub-commands.
+var (
+	// OCI Registry Authentication
+	dockerAuthConfig ocitypes.DockerAuthConfig
+	dockerLogin      bool
+	dockerHost       string
+	noHTTPS          bool
+
+	// Encryption Material
+	encryptionPEMPath   string
+	promptForPassphrase bool
+
+	// Paths / file handling
+	tmpDir         string
+	forceOverwrite bool
+
+	// Use OCI runtime and OCI SIF?
+	isOCI bool
+	noOCI bool
+)
+
+//
+// Top level option flags
+//
 
 // -d|--debug
 var singDebugFlag = cmdline.Flag{
@@ -126,6 +139,21 @@ var singVerboseFlag = cmdline.Flag{
 	Usage:        "print additional information",
 }
 
+// -c|--config
+var singConfigFileFlag = cmdline.Flag{
+	ID:           "singConfigFileFlag",
+	Value:        &configurationFile,
+	DefaultValue: buildcfg.SINGULARITY_CONF_FILE,
+	Name:         "config",
+	ShortHand:    "c",
+	Usage:        "specify a configuration file (for root or unprivileged installation only)",
+	EnvKeys:      []string{"CONFIG_FILE"},
+}
+
+//
+// Common option flags for multiple subcommands
+//
+
 // --docker-username
 var dockerUsernameFlag = cmdline.Flag{
 	ID:            "dockerUsernameFlag",
@@ -171,6 +199,26 @@ var dockerHostFlag = cmdline.Flag{
 	WithoutPrefix: true,
 }
 
+// --no-https
+var commonNoHTTPSFlag = cmdline.Flag{
+	ID:           "commonNoHTTPSFlag",
+	Value:        &noHTTPS,
+	DefaultValue: false,
+	Name:         "no-https",
+	Usage:        "use http instead of https for docker:// oras:// and library://<hostname>/... URIs",
+	EnvKeys:      []string{"NOHTTPS", "NO_HTTPS"},
+}
+
+// --nohttps (deprecated)
+var commonOldNoHTTPSFlag = cmdline.Flag{
+	ID:           "commonOldNoHTTPSFlag",
+	Value:        &noHTTPS,
+	DefaultValue: false,
+	Name:         "nohttps",
+	Deprecated:   "use --no-https",
+	Usage:        "use http instead of https for docker:// oras:// and library://<hostname>/... URIs",
+}
+
 // --passphrase
 var commonPromptForPassphraseFlag = cmdline.Flag{
 	ID:           "commonPromptForPassphraseFlag",
@@ -200,26 +248,6 @@ var commonForceFlag = cmdline.Flag{
 	EnvKeys:      []string{"FORCE"},
 }
 
-// --no-https
-var commonNoHTTPSFlag = cmdline.Flag{
-	ID:           "commonNoHTTPSFlag",
-	Value:        &noHTTPS,
-	DefaultValue: false,
-	Name:         "no-https",
-	Usage:        "use http instead of https for docker:// oras:// and library://<hostname>/... URIs",
-	EnvKeys:      []string{"NOHTTPS", "NO_HTTPS"},
-}
-
-// --nohttps (deprecated)
-var commonOldNoHTTPSFlag = cmdline.Flag{
-	ID:           "commonOldNoHTTPSFlag",
-	Value:        &noHTTPS,
-	DefaultValue: false,
-	Name:         "nohttps",
-	Deprecated:   "use --no-https",
-	Usage:        "use http instead of https for docker:// oras:// and library://<hostname>/... URIs",
-}
-
 // --tmpdir
 var commonTmpDirFlag = cmdline.Flag{
 	ID:           "commonTmpDirFlag",
@@ -231,15 +259,24 @@ var commonTmpDirFlag = cmdline.Flag{
 	EnvKeys:      []string{"TMPDIR"},
 }
 
-// -c|--config
-var singConfigFileFlag = cmdline.Flag{
-	ID:           "singConfigFileFlag",
-	Value:        &configurationFile,
-	DefaultValue: buildcfg.SINGULARITY_CONF_FILE,
-	Name:         "config",
-	ShortHand:    "c",
-	Usage:        "specify a configuration file (for root or unprivileged installation only)",
-	EnvKeys:      []string{"CONFIG_FILE"},
+// --oci
+var commonOCIFlag = cmdline.Flag{
+	ID:           "actionOCI",
+	Value:        &isOCI,
+	DefaultValue: false,
+	Name:         "oci",
+	Usage:        "Launch container with OCI runtime (experimental)",
+	EnvKeys:      []string{"OCI"},
+}
+
+// --no-oci
+var commonNoOCIFlag = cmdline.Flag{
+	ID:           "actionNoOCI",
+	Value:        &noOCI,
+	DefaultValue: false,
+	Name:         "no-oci",
+	Usage:        "Launch container with native runtime",
+	EnvKeys:      []string{"NO_OCI"},
 }
 
 func getCurrentUser() *user.User {
@@ -335,6 +372,15 @@ func persistentPreRun(*cobra.Command, []string) error {
 		return fmt.Errorf("couldn't parse configuration file %s: %s", configurationFile, err)
 	}
 	singularityconf.SetCurrentConfig(config)
+
+	// Honor 'oci mode' in singularity.conf, and allow negation with `--no-oci`.
+	if isOCI && !isOCI {
+		return fmt.Errorf("--oci and --no-oci cannot be used together")
+	}
+	isOCI = isOCI || config.OCIMode
+	if noOCI {
+		isOCI = false
+	}
 
 	// If we need to enter a namespace (oci-mode) do the re-exec now, before any other handling happens.
 	if err := maybeReExec(); err != nil {
@@ -700,7 +746,7 @@ func getBuilderClientConfig(uri string) (baseURI, authToken string, err error) {
 func maybeReExec() error {
 	sylog.Debugf("Checking whether to re-exec")
 	// The OCI runtime must always be launched where the effective uid/gid is 0 (root or fake-root).
-	if ociRuntime && !rootless.InNS() {
+	if isOCI && !rootless.InNS() {
 		// If we need to, enter a new cgroup now, to workaround an issue with crun container cgroup creation (#1538).
 		if err := ocilauncher.CrunNestCgroup(); err != nil {
 			return fmt.Errorf("while applying crun cgroup workaround: %w", err)

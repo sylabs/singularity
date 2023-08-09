@@ -694,6 +694,33 @@ func (c configTests) configGlobal(t *testing.T) {
 			directiveValue: "no",
 			exit:           0,
 		},
+		{
+			name:           "OCIModeYes",
+			argv:           []string{c.sifImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "oci mode",
+			directiveValue: "yes",
+			exit:           0,
+			resultOp:       e2e.ExpectError(e2e.ContainMatch, "Running a non-OCI SIF in OCI mode."),
+		},
+		{
+			name:           "OCIModeYes_NoOCI",
+			argv:           []string{"--no-oci", c.sifImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "oci mode",
+			directiveValue: "yes",
+			exit:           0,
+			resultOp:       e2e.ExpectError(e2e.UnwantedContainMatch, "Running a non-OCI SIF in OCI mode."),
+		},
+		{
+			name:           "OCIModeNo",
+			argv:           []string{c.sifImage, "true"},
+			profile:        e2e.UserProfile,
+			directive:      "oci mode",
+			directiveValue: "no",
+			exit:           0,
+			resultOp:       e2e.ExpectError(e2e.UnwantedContainMatch, "Running a non-OCI SIF in OCI mode."),
+		},
 	}
 
 	for _, tt := range tests {

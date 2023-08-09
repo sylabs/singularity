@@ -349,6 +349,9 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&buildWritableTmpfsFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildVarArgsFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&buildVarArgFileFlag, buildCmd)
+
+		cmdManager.RegisterFlagForCmd(&commonOCIFlag, buildCmd)
+		cmdManager.RegisterFlagForCmd(&commonNoOCIFlag, buildCmd)
 	})
 }
 
@@ -367,6 +370,10 @@ var buildCmd = &cobra.Command{
 }
 
 func preRun(cmd *cobra.Command, args []string) {
+	if isOCI {
+		sylog.Fatalf("Builds are not yet supported in OCI-mode. Omit --oci, or use --no-oci, to build a non-OCI Singularity container.")
+	}
+
 	if buildArgs.noSetgroups && !buildArgs.fakeroot {
 		sylog.Warningf("--no-setgroups only applies to --fakeroot builds")
 	}
