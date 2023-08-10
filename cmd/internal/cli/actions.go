@@ -10,7 +10,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"runtime"
 	"strings"
 
 	"github.com/containers/image/v5/types"
@@ -129,12 +128,12 @@ func handleLibrary(ctx context.Context, imgCache *cache.Handle, pullFrom string)
 	}
 
 	pullOpts := library.PullOptions{
-		Architecture:  runtime.GOARCH,
 		Endpoint:      currentRemoteEndpoint,
 		LibraryConfig: c,
 		// false to allow OCI execution of native SIF from library
 		RequireOciSif: false,
 		TmpDir:        tmpDir,
+		Platform:      getOCIPlatform(),
 	}
 	return library.Pull(ctx, imgCache, r, pullOpts)
 }

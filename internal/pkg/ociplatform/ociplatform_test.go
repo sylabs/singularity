@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package ociimage
+package ociplatform
 
 import (
 	"reflect"
@@ -26,7 +26,7 @@ func Test_sysCtxToPlatform(t *testing.T) {
 			want: ggcrv1.Platform{
 				OS:           runtime.GOOS,
 				Architecture: runtime.GOARCH,
-				Variant:      cpuVariant(),
+				Variant:      CPUVariant(),
 			},
 		},
 		{
@@ -37,7 +37,7 @@ func Test_sysCtxToPlatform(t *testing.T) {
 			want: ggcrv1.Platform{
 				OS:           "myOS",
 				Architecture: runtime.GOARCH,
-				Variant:      cpuVariant(),
+				Variant:      CPUVariant(),
 			},
 		},
 		{
@@ -48,7 +48,7 @@ func Test_sysCtxToPlatform(t *testing.T) {
 			want: ggcrv1.Platform{
 				OS:           runtime.GOOS,
 				Architecture: "myArch",
-				Variant:      cpuVariant(),
+				Variant:      CPUVariant(),
 			},
 		},
 		{
@@ -78,7 +78,7 @@ func Test_sysCtxToPlatform(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := sysCtxToPlatform(tt.sysCtx); !reflect.DeepEqual(got, tt.want) {
+			if got := SysCtxToPlatform(tt.sysCtx); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("sysCtxToPlatform() = %v, want %v", got, tt.want)
 			}
 		})

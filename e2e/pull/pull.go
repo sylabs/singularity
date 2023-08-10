@@ -254,6 +254,19 @@ func (c ctx) testPullCmd(t *testing.T) {
 			unauthenticated:  true,
 			expectedExitCode: 0,
 		},
+		// forced arch and platform equivalent
+		{
+			desc:             "library non-oci platform",
+			srcURI:           "library://alpine:3.11.5",
+			arch:             "ppc64le",
+			expectedExitCode: 0,
+		},
+		{
+			desc:             "library non-oci platform",
+			srcURI:           "library://alpine:3.11.5",
+			platform:         "linux/ppc64le",
+			expectedExitCode: 0,
+		},
 		// --dir tests
 		{
 			desc:             "library dir",
@@ -319,13 +332,6 @@ func (c ctx) testPullCmd(t *testing.T) {
 			force:            true,
 			expectedExitCode: 0,
 		},
-		// --platform shouldn't be accepted for non OCI-SIF pulls (--arch is used).
-		{
-			desc:             "library non-oci platform",
-			srcURI:           "library://alpine:3.11.5",
-			platform:         "linux/ppc64le",
-			expectedExitCode: 255,
-		},
 		// pulling an OCI-SIF image from library backing registry
 		{
 			desc:   "library oci-sif fallback",
@@ -359,7 +365,7 @@ func (c ctx) testPullCmd(t *testing.T) {
 			// direct oci pull
 			arch:             "ppc64le",
 			oci:              true,
-			expectedExitCode: 255,
+			expectedExitCode: 0,
 		},
 		//
 		// shub:// URIs

@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package ociimage
+package ociplatform
 
 import (
 	"bufio"

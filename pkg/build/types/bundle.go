@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	ocitypes "github.com/containers/image/v5/types"
+	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	scskeyclient "github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
@@ -76,6 +77,8 @@ type Options struct {
 	// To warn when the above is needed, we need to know if the target of this
 	// bundle will be a sandbox
 	SandboxTarget bool
+	// Which Platform to use when retrieving images for the build
+	Platform ggcrv1.Platform
 }
 
 // NewEncryptedBundle creates an Encrypted Bundle environment.

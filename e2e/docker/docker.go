@@ -1003,7 +1003,7 @@ func (c ctx) testDockerUSER(t *testing.T) {
 	}
 }
 
-// Test that we can pull for different --platforms in --oci mode.
+// Test that we can pull for different --platforms
 func (c ctx) testDockerPlatform(t *testing.T) {
 	tmpPath, err := fs.MakeTmpDir(c.env.TestDir, "docker-platform-", 0o755)
 	if err != nil {
@@ -1014,82 +1014,88 @@ func (c ctx) testDockerPlatform(t *testing.T) {
 			os.RemoveAll(tmpPath)
 		}
 	})
+	tmpSIF := filepath.Join(tmpPath, "test.sif")
 
 	tests := []struct {
 		name     string
 		platform string
-		image    string
 		uri      string
 		exit     int
 	}{
 		{
 			name:     "MultiArchArm64",
-			image:    filepath.Join(tmpPath, "multi-arm64.sif"),
 			platform: "linux/arm64/v8",
 			uri:      "docker://alpine:latest",
 			exit:     0,
 		},
 		{
 			name:     "MultiArchPpc64le",
-			image:    filepath.Join(tmpPath, "multi-ppc64le.sif"),
 			platform: "linux/ppc64le",
 			uri:      "docker://alpine:latest",
 			exit:     0,
 		},
 		{
 			name:     "MultiArchBadPlatform",
-			image:    filepath.Join(tmpPath, "multi-bad.sif"),
 			platform: "windows/m68k",
 			uri:      "docker://alpine:latest",
 			exit:     255,
 		},
 		{
 			name:     "SingleArchArm64",
-			image:    filepath.Join(tmpPath, "single-arm64.sif"),
 			platform: "linux/arm64/v8",
 			uri:      "docker://arm64v8/alpine:latest",
 			exit:     0,
 		},
 		{
 			name:     "SingleArchPpc64le",
-			image:    filepath.Join(tmpPath, "single-ppc64le.sif"),
 			platform: "linux/ppc64le",
 			uri:      "docker://ppc64le/alpine:latest",
 			exit:     0,
 		},
 		{
 			name:     "SingleArchBadPlatform",
-			image:    filepath.Join(tmpPath, "single-ppc64le.sif"),
 			platform: "windows/m68k",
 			uri:      "docker://ppc64le/alpine:latest",
 			exit:     255,
 		},
 	}
 
-	for _, tt := range tests {
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.OCIUserProfile),
-			e2e.WithCommand("pull"),
-			e2e.WithArgs("--platform", tt.platform, tt.image, tt.uri),
-			e2e.ExpectExit(tt.exit),
-			e2e.PostRun(func(t *testing.T) {
-				if t.Failed() || tt.exit != 0 {
-					return
-				}
-				checkOCISIFPlatform(t, tt.image, tt.platform)
-			}),
-		)
+	for _, p := range []e2e.Profile{e2e.UserProfile, e2e.OCIUserProfile} {
+		for _, tt := range tests {
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest(p.String()+"/"+tt.name),
+				e2e.WithProfile(p),
+				e2e.WithCommand("pull"),
+				e2e.WithArgs("--force", "--platform", tt.platform, tmpSIF, tt.uri),
+				e2e.ExpectExit(tt.exit),
+				e2e.PostRun(func(t *testing.T) {
+					if t.Failed() || tt.exit != 0 {
+						return
+					}
+					if p.OCI() {
+						checkOCISIFPlatform(t, tmpSIF, tt.platform)
+					} else {
+						checkNativeSIFPlatform(t, tmpSIF, tt.platform)
+					}
+				}),
+			)
+		}
 	}
 }
 
 func checkOCISIFPlatform(t *testing.T, imgPath, platform string) {
+	wantPlatform, err := v1.ParsePlatform(platform)
+	if err != nil {
+		t.Errorf("while parsing platform %v", err)
+	}
+
 	fi, err := sif.LoadContainerFromPath(imgPath, sif.OptLoadWithFlag(os.O_RDONLY))
 	defer fi.UnloadContainer()
 	if err != nil {
 		t.Errorf("while loading SIF: %v", err)
 	}
+
 	ix, err := ocisif.ImageIndexFromFileImage(fi)
 	if err != nil {
 		t.Errorf("while obtaining image index: %v", err)
@@ -1110,12 +1116,29 @@ func checkOCISIFPlatform(t *testing.T, imgPath, platform string) {
 	if err != nil {
 		t.Errorf("while fetching image config: %v", err)
 	}
+	if !cfg.Platform().Equals(*wantPlatform) {
+		t.Errorf("wrong platform - wanted %q, got %q", wantPlatform.String(), cfg.Platform().String())
+	}
+}
+
+func checkNativeSIFPlatform(t *testing.T, imgPath, platform string) {
 	wantPlatform, err := v1.ParsePlatform(platform)
 	if err != nil {
 		t.Errorf("while parsing platform %v", err)
 	}
-	if !cfg.Platform().Equals(*wantPlatform) {
-		t.Errorf("wrong platform - wanted %q, got %q", wantPlatform.String(), cfg.Platform().String())
+
+	fi, err := sif.LoadContainerFromPath(imgPath, sif.OptLoadWithFlag(os.O_RDONLY))
+	defer fi.UnloadContainer()
+	if err != nil {
+		t.Errorf("while loading SIF: %v", err)
+	}
+	d, err := fi.GetDescriptor(sif.WithPartitionType(sif.PartPrimSys))
+	if err != nil {
+		t.Errorf("while getting primary partition: %v", err)
+	}
+	_, _, arch, _ := d.PartitionMetadata()
+	if arch != wantPlatform.Architecture {
+		t.Errorf("wrong architecture - wanted %q, got %q", wantPlatform.Architecture, arch)
 	}
 }
 

@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,7 +9,6 @@ package sources
 import (
 	"context"
 	"fmt"
-	"runtime"
 
 	golog "github.com/go-log/log"
 
@@ -73,9 +72,9 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 	}
 
 	pullOpts := library.PullOptions{
-		Architecture:  runtime.GOARCH,
 		LibraryConfig: libraryConfig,
 		TmpDir:        cp.b.TmpDir,
+		Platform:      cp.b.Opts.Platform,
 	}
 	imagePath, err := library.Pull(ctx, b.Opts.ImgCache, imageRef, pullOpts)
 	if err != nil {

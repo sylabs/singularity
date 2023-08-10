@@ -25,6 +25,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/build/remotebuilder"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
 	fakerootConfig "github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
@@ -396,6 +397,11 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 
 	}
 
+	dp, err := ociplatform.DefaultPlatform()
+	if err != nil {
+		sylog.Fatalf("%v", err)
+	}
+
 	b, err := build.New(
 		defs,
 		build.Config{
@@ -419,6 +425,9 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 				EncryptionKeyInfo: keyInfo,
 				FixPerms:          buildArgs.fixPerms,
 				SandboxTarget:     sandboxTarget,
+				// Only perform a build with the host DefaultPlatform at present.
+				// TODO: rework --arch handling for remote builds so that local builds can specify --arch and --platform.
+				Platform: *dp,
 			},
 		})
 	if err != nil {

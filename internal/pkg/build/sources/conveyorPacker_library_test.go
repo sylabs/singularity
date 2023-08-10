@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/build/sources"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 )
@@ -31,10 +32,15 @@ func TestLibraryConveyor(t *testing.T) {
 
 	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-library"), os.TempDir())
 	if err != nil {
-		return
+		t.Fatalf("failed to create NewBundle: %v", err)
 	}
 
 	b.Opts.LibraryURL = libraryURL
+	p, err := ociplatform.DefaultPlatform()
+	if err != nil {
+		t.Fatalf("failed to get DefaultPlatform: %v", err)
+	}
+	b.Opts.Platform = *p
 
 	b.Recipe, err = types.NewDefinitionFromURI(libraryURI)
 	if err != nil {
@@ -62,10 +68,15 @@ func TestLibraryPacker(t *testing.T) {
 
 	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-library"), os.TempDir())
 	if err != nil {
-		return
+		t.Fatalf("failed to create NewBundle: %v", err)
 	}
 
 	b.Opts.LibraryURL = libraryURL
+	p, err := ociplatform.DefaultPlatform()
+	if err != nil {
+		t.Fatalf("failed to get DefaultPlatform: %v", err)
+	}
+	b.Opts.Platform = *p
 
 	b.Recipe, err = types.NewDefinitionFromURI(libraryURI)
 	if err != nil {
