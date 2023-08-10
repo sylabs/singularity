@@ -38,6 +38,7 @@ type testStruct struct {
 	srcURI           string // source URI for image
 	library          string // use specific library server URI
 	arch             string // architecture to force, if any
+	platform         string // platform to force, if any
 	force            bool   // pass --force
 	createDst        bool   // create destination file before pull
 	unauthenticated  bool   // pass --allow-unauthenticated
@@ -72,6 +73,10 @@ func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 
 	if tt.arch != "" {
 		argv += "--arch " + tt.arch + " "
+	}
+
+	if tt.platform != "" {
+		argv += "--platform " + tt.platform + " "
 	}
 
 	if tt.force {
@@ -314,6 +319,13 @@ func (c ctx) testPullCmd(t *testing.T) {
 			force:            true,
 			expectedExitCode: 0,
 		},
+		// --platform shouldn't be accepted for non OCI-SIF pulls (--arch is used).
+		{
+			desc:             "library non-oci platform",
+			srcURI:           "library://alpine:3.11.5",
+			platform:         "linux/ppc64le",
+			expectedExitCode: 255,
+		},
 		// pulling an OCI-SIF image from library backing registry
 		{
 			desc:   "library oci-sif fallback",
@@ -331,7 +343,24 @@ func (c ctx) testPullCmd(t *testing.T) {
 			expectedOCI:      true,
 			expectedExitCode: 0,
 		},
-
+		{
+			desc:   "library oci-sif platform",
+			srcURI: "library://sylabs/tests/alpine-ppc64le-oci-sif:latest",
+			// direct oci pull
+			platform:         "linux/ppc64le",
+			oci:              true,
+			expectedOCI:      true,
+			expectedExitCode: 0,
+		},
+		// arch shouldn't be accepted for oci-sif pulls (--platform instead)
+		{
+			desc:   "library oci-sif arch",
+			srcURI: "library://sylabs/tests/alpine-ppc64le-oci-sif:latest",
+			// direct oci pull
+			arch:             "ppc64le",
+			oci:              true,
+			expectedExitCode: 255,
+		},
 		//
 		// shub:// URIs
 		// Singularity Hub (retired) and compatible.

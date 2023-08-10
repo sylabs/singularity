@@ -19,8 +19,17 @@ import (
 
 // pullNativeSIF will build a SIF image into the cache if directTo="", or a specific file if directTo is set.
 func pullNativeSIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, opts PullOptions) (imagePath string, err error) {
-	sys := sysCtx(opts)
-	hash, err := ociimage.ImageDigest(ctx, pullFrom, sys)
+	sys, err := sysCtx(opts)
+	if err != nil {
+		return "", err
+	}
+
+	ref, err := ociimage.ParseImageRef(pullFrom)
+	if err != nil {
+		return "", err
+	}
+
+	hash, err := ociimage.ImageDigest(ctx, sys, imgCache, ref)
 	if err != nil {
 		return "", fmt.Errorf("failed to get checksum for %s: %s", pullFrom, err)
 	}
@@ -32,7 +41,7 @@ func pullNativeSIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFr
 		}
 		imagePath = directTo
 	} else {
-		cacheEntry, err := imgCache.GetEntry(cache.OciTempCacheType, hash)
+		cacheEntry, err := imgCache.GetEntry(cache.OciTempCacheType, hash.String())
 		if err != nil {
 			return "", fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
 		}

@@ -42,10 +42,11 @@ type PullOptions struct {
 	DockerHost string
 	NoHTTPS    bool
 	NoCleanUp  bool
+	Platform   string
 }
 
 // sysCtx provides authentication and tempDir config for containers/image OCI operations
-func sysCtx(opts PullOptions) *ocitypes.SystemContext {
+func sysCtx(opts PullOptions) (*ocitypes.SystemContext, error) {
 	// DockerInsecureSkipTLSVerify is set only if --no-https is specified to honor
 	// configuration from /etc/containers/registries.conf because DockerInsecureSkipTLSVerify
 	// can have three possible values true/false and undefined, so we left it as undefined instead
@@ -62,30 +63,52 @@ func sysCtx(opts PullOptions) *ocitypes.SystemContext {
 	if opts.NoHTTPS {
 		sysCtx.DockerInsecureSkipTLSVerify = ocitypes.NewOptionalBool(true)
 	}
-	return sysCtx
+
+	// Explicit --platform / (--arch) was specified.
+	if opts.Platform != "" {
+		sylog.Debugf("OCI platform %s requested", opts.Platform)
+		platform, err := v1.ParsePlatform(opts.Platform)
+		if err != nil {
+			return nil, err
+		}
+		sysCtx.ArchitectureChoice = platform.Architecture
+		sysCtx.VariantChoice = platform.Variant
+		sysCtx.OSChoice = platform.OS
+	}
+
+	return sysCtx, nil
 }
 
 // PullOCISIF will create an OCI-SIF image in the cache if directTo="", or a specific file if directTo is set.
 func PullOCISIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, opts PullOptions) (imagePath string, err error) {
-	sys := sysCtx(opts)
-	hash, err := ociimage.ImageDigest(ctx, pullFrom, sys)
+	sys, err := sysCtx(opts)
 	if err != nil {
-		return "", fmt.Errorf("failed to get checksum for %s: %s", pullFrom, err)
+		return "", err
+	}
+
+	ref, err := ociimage.ParseImageRef(pullFrom)
+	if err != nil {
+		return "", err
+	}
+
+	hash, err := ociimage.ImageDigest(ctx, sys, imgCache, ref)
+	if err != nil {
+		return "", fmt.Errorf("failed to get digest for %s: %s", pullFrom, err)
 	}
 
 	if directTo != "" {
-		if err := createOciSif(ctx, imgCache, pullFrom, directTo, opts); err != nil {
+		if err := createOciSif(ctx, sys, imgCache, pullFrom, directTo, opts); err != nil {
 			return "", fmt.Errorf("while creating OCI-SIF: %v", err)
 		}
 		imagePath = directTo
 	} else {
-		cacheEntry, err := imgCache.GetEntry(cache.OciSifCacheType, hash)
+		cacheEntry, err := imgCache.GetEntry(cache.OciSifCacheType, hash.String())
 		if err != nil {
 			return "", fmt.Errorf("unable to check if %v exists in cache: %v", hash, err)
 		}
 		defer cacheEntry.CleanTmp()
 		if !cacheEntry.Exists {
-			if err := createOciSif(ctx, imgCache, pullFrom, cacheEntry.TmpPath, opts); err != nil {
+			if err := createOciSif(ctx, sys, imgCache, pullFrom, cacheEntry.TmpPath, opts); err != nil {
 				return "", fmt.Errorf("while creating OCI-SIF: %v", err)
 			}
 
@@ -104,9 +127,7 @@ func PullOCISIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom 
 }
 
 // createOciSif will convert an OCI source into an OCI-SIF using sylabs/oci-tools
-func createOciSif(ctx context.Context, imgCache *cache.Handle, imageSrc, imageDest string, opts PullOptions) error {
-	// Step 1 - Pull the OCI config and blobs to a standalone oci layout directory, through the cache if necessary.
-	sys := sysCtx(opts)
+func createOciSif(ctx context.Context, sysCtx *ocitypes.SystemContext, imgCache *cache.Handle, imageSrc, imageDest string, opts PullOptions) error {
 	tmpDir, err := os.MkdirTemp(opts.TmpDir, "oci-sif-tmp-")
 	if err != nil {
 		return err
@@ -128,13 +149,16 @@ func createOciSif(ctx context.Context, imgCache *cache.Handle, imageSrc, imageDe
 	}
 
 	sylog.Debugf("Fetching image to temporary layout %q", layoutDir)
-	layoutRef, err := ociimage.FetchLayout(ctx, sys, imgCache, imageSrc, layoutDir)
+	layoutRef, _, err := ociimage.FetchLayout(ctx, sysCtx, imgCache, imageSrc, layoutDir)
 	if err != nil {
 		return fmt.Errorf("while fetching OCI image: %w", err)
 	}
+	if err := ociimage.CheckImageRefPlatform(ctx, sysCtx, layoutRef); err != nil {
+		return fmt.Errorf("while checking OCI image: %w", err)
+	}
 
 	// Step 2 - Work from containers/image ImageReference -> gocontainerregistry digest & manifest
-	layoutSrc, err := layoutRef.NewImageSource(ctx, sys)
+	layoutSrc, err := layoutRef.NewImageSource(ctx, sysCtx)
 	if err != nil {
 		return err
 	}

@@ -150,7 +150,7 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	}
 	defer os.RemoveAll(tmpLayout)
 
-	layoutRef, err := ociimage.FetchLayout(ctx, b.sysCtx, b.imgCache, b.imageRef, tmpLayout)
+	layoutRef, _, err := ociimage.FetchLayout(ctx, b.sysCtx, b.imgCache, b.imageRef, tmpLayout)
 	if err != nil {
 		return err
 	}

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,18 +9,26 @@ package cache
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
 	"strconv"
 	"time"
 
+	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/empty"
+	"github.com/google/go-containerregistry/pkg/v1/layout"
+	"github.com/opencontainers/go-digest"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
-var errInvalidCacheType = errors.New("invalid cache type")
+var (
+	errInvalidCacheType = errors.New("invalid cache type")
+	errCacheDisabled    = errors.New("cache is disabled")
+)
 
 const (
 	// DirEnv specifies the environment variable which can set the directory
@@ -104,6 +112,44 @@ func (h *Handle) GetOciCacheDir(cacheType string) (cacheDir string, err error) {
 		return "", errInvalidCacheType
 	}
 	return h.getCacheTypeDir(cacheType), nil
+}
+
+func (h *Handle) GetOciCacheBlob(cacheType string, blobDigest digest.Digest) (io.ReadCloser, error) {
+	if h.disabled {
+		return nil, errCacheDisabled
+	}
+	layoutDir, err := h.GetOciCacheDir(cacheType)
+	if err != nil {
+		return nil, err
+	}
+	hash, err := v1.NewHash(blobDigest.String())
+	if err != nil {
+		return nil, err
+	}
+	layout, err := layout.FromPath(layoutDir)
+	if err != nil {
+		return nil, err
+	}
+	return layout.Blob(hash)
+}
+
+func (h *Handle) PutOciCacheBlob(cacheType string, blobDigest digest.Digest, r io.ReadCloser) (err error) {
+	if h.disabled {
+		return errCacheDisabled
+	}
+	layoutDir, err := h.GetOciCacheDir(cacheType)
+	if err != nil {
+		return err
+	}
+	hash, err := v1.NewHash(blobDigest.String())
+	if err != nil {
+		return err
+	}
+	layout, err := layout.FromPath(layoutDir)
+	if err != nil {
+		return err
+	}
+	return layout.WriteBlob(hash, r)
 }
 
 // GetEntry returns a cache Entry for a specified file cache type and hash
@@ -271,13 +317,18 @@ func New(cfg Config) (h *Handle, err error) {
 	rootDir := path.Join(parentDir, SubDirName)
 	h.rootDir = rootDir
 	if err = initCacheDir(rootDir); err != nil {
-		return nil, fmt.Errorf("failed initializing caching directory: %s", err)
+		return nil, fmt.Errorf("failed initializing cache root directory: %s", err)
 	}
 	// Initialize the subdirectories of the cache
-	for _, ct := range FileCacheTypes {
+	for _, ct := range AllCacheTypes {
 		dir := h.getCacheTypeDir(ct)
 		if err = initCacheDir(dir); err != nil {
-			return nil, fmt.Errorf("failed initializing caching directory: %s", err)
+			return nil, fmt.Errorf("failed initializing %s cache directory: %s", ct, err)
+		}
+		if stringInSlice(ct, OciCacheTypes) {
+			if err = initLayout(dir); err != nil {
+				return nil, fmt.Errorf("failed initializing %s cache oci layout: %s", ct, err)
+			}
 		}
 	}
 
@@ -323,7 +374,15 @@ func initCacheDir(dir string) error {
 			return fmt.Errorf("couldn't enforce permission 0700 on %s: %s", dir, err)
 		}
 	}
+	return nil
+}
 
+func initLayout(dir string) error {
+	if _, err := os.Stat(filepath.Join(dir, "index.json")); os.IsNotExist(err) {
+		sylog.Debugf("Creating cache OCI layout: %s", dir)
+		_, err := layout.Write(dir, empty.Index)
+		return err
+	}
 	return nil
 }
 

@@ -21,7 +21,10 @@ import (
 	"testing"
 
 	dockerclient "github.com/docker/docker/client"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pkg/errors"
+	ocisif "github.com/sylabs/oci-tools/pkg/sif"
+	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
@@ -1000,6 +1003,122 @@ func (c ctx) testDockerUSER(t *testing.T) {
 	}
 }
 
+// Test that we can pull for different --platforms in --oci mode.
+func (c ctx) testDockerPlatform(t *testing.T) {
+	tmpPath, err := fs.MakeTmpDir(c.env.TestDir, "docker-platform-", 0o755)
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %v", err)
+	}
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.RemoveAll(tmpPath)
+		}
+	})
+
+	tests := []struct {
+		name     string
+		platform string
+		image    string
+		uri      string
+		exit     int
+	}{
+		{
+			name:     "MultiArchArm64",
+			image:    filepath.Join(tmpPath, "multi-arm64.sif"),
+			platform: "linux/arm64/v8",
+			uri:      "docker://alpine:latest",
+			exit:     0,
+		},
+		{
+			name:     "MultiArchPpc64le",
+			image:    filepath.Join(tmpPath, "multi-ppc64le.sif"),
+			platform: "linux/ppc64le",
+			uri:      "docker://alpine:latest",
+			exit:     0,
+		},
+		{
+			name:     "MultiArchBadPlatform",
+			image:    filepath.Join(tmpPath, "multi-bad.sif"),
+			platform: "windows/m68k",
+			uri:      "docker://alpine:latest",
+			exit:     255,
+		},
+		{
+			name:     "SingleArchArm64",
+			image:    filepath.Join(tmpPath, "single-arm64.sif"),
+			platform: "linux/arm64/v8",
+			uri:      "docker://arm64v8/alpine:latest",
+			exit:     0,
+		},
+		{
+			name:     "SingleArchPpc64le",
+			image:    filepath.Join(tmpPath, "single-ppc64le.sif"),
+			platform: "linux/ppc64le",
+			uri:      "docker://ppc64le/alpine:latest",
+			exit:     0,
+		},
+		{
+			name:     "SingleArchBadPlatform",
+			image:    filepath.Join(tmpPath, "single-ppc64le.sif"),
+			platform: "windows/m68k",
+			uri:      "docker://ppc64le/alpine:latest",
+			exit:     255,
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithCommand("pull"),
+			e2e.WithArgs("--platform", tt.platform, tt.image, tt.uri),
+			e2e.ExpectExit(tt.exit),
+			e2e.PostRun(func(t *testing.T) {
+				if t.Failed() || tt.exit != 0 {
+					return
+				}
+				checkOCISIFPlatform(t, tt.image, tt.platform)
+			}),
+		)
+	}
+}
+
+func checkOCISIFPlatform(t *testing.T, imgPath, platform string) {
+	fi, err := sif.LoadContainerFromPath(imgPath, sif.OptLoadWithFlag(os.O_RDONLY))
+	defer fi.UnloadContainer()
+	if err != nil {
+		t.Errorf("while loading SIF: %v", err)
+	}
+	ix, err := ocisif.ImageIndexFromFileImage(fi)
+	if err != nil {
+		t.Errorf("while obtaining image index: %v", err)
+	}
+	idxManifest, err := ix.IndexManifest()
+	if err != nil {
+		t.Errorf("while obtaining index manifest: %v", err)
+	}
+	if len(idxManifest.Manifests) != 1 {
+		t.Errorf("image has multiple manifests")
+	}
+	imageDigest := idxManifest.Manifests[0].Digest
+	img, err := ix.Image(imageDigest)
+	if err != nil {
+		t.Errorf("while initializing image: %v", err)
+	}
+	cfg, err := img.ConfigFile()
+	if err != nil {
+		t.Errorf("while fetching image config: %v", err)
+	}
+	wantPlatform, err := v1.ParsePlatform(platform)
+	if err != nil {
+		t.Errorf("while parsing platform %v", err)
+	}
+	if !cfg.Platform().Equals(*wantPlatform) {
+		t.Errorf("wrong platform - wanted %q, got %q", wantPlatform.String(), cfg.Platform().String())
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -1022,6 +1141,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			t.Run("cmdentrypoint", c.testDockerCMDENTRYPOINT)
 			t.Run("cmd quotes", c.testDockerCMDQuotes)
 			t.Run("user", c.testDockerUSER)
+			t.Run("platform", c.testDockerPlatform)
 			// Regressions
 			t.Run("issue 4524", c.issue4524)
 			t.Run("issue 1286", c.issue1286)

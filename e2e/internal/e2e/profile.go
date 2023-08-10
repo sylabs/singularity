@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -136,7 +136,7 @@ var OCIProfiles = map[string]Profile{
 		defaultCwd:        "",
 		requirementsFn:    ociRequirements,
 		singularityOption: "--oci",
-		optionForCommands: []string{"shell", "exec", "run", "test", "instance start"},
+		optionForCommands: []string{"shell", "exec", "run", "test", "instance start", "pull"},
 		oci:               true,
 	},
 	ociRootProfile: {
@@ -147,7 +147,7 @@ var OCIProfiles = map[string]Profile{
 		defaultCwd:        "",
 		requirementsFn:    ociRequirements,
 		singularityOption: "--oci",
-		optionForCommands: []string{"shell", "exec", "run", "test", "instance start"},
+		optionForCommands: []string{"shell", "exec", "run", "test", "instance start", "pull"},
 		oci:               true,
 	},
 	ociFakerootProfile: {
@@ -158,7 +158,7 @@ var OCIProfiles = map[string]Profile{
 		defaultCwd:        "",
 		requirementsFn:    ociRequirements,
 		singularityOption: "--oci --fakeroot",
-		optionForCommands: []string{"shell", "exec", "run", "test", "instance start"},
+		optionForCommands: []string{"shell", "exec", "run", "test", "instance start", "pull"},
 		oci:               true,
 	},
 }

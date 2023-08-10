@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -54,6 +54,8 @@ var (
 	// pullArch is the architecture for which containers will be pulled from the
 	// SCS library.
 	pullArch string
+	// pullPlatform is the platform for which containers will be pulled from OCI sources.
+	pullPlatform string
 )
 
 // --arch
@@ -62,8 +64,18 @@ var pullArchFlag = cmdline.Flag{
 	Value:        &pullArch,
 	DefaultValue: runtime.GOARCH,
 	Name:         "arch",
-	Usage:        "architecture to pull from library",
+	Usage:        "architecture for images to pull from library",
 	EnvKeys:      []string{"PULL_ARCH"},
+}
+
+// --platform
+var pullPlatformFlag = cmdline.Flag{
+	ID:           "pullPlatformFlag",
+	Value:        &pullPlatform,
+	DefaultValue: "",
+	Name:         "platform",
+	Usage:        "platform for images to pull from OCI sources",
+	EnvKeys:      []string{"PULL_PLATFORM"},
 }
 
 // --library
@@ -152,6 +164,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&pullAllowUnsignedFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&pullAllowUnauthenticatedFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&pullArchFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&pullPlatformFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&commonOCIFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&commonNoOCIFlag, PullCmd)
 	})
@@ -213,6 +226,13 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 	switch transport {
 	case LibraryProtocol, "":
+		if pullArch != runtime.GOARCH && isOCI {
+			sylog.Fatalf("Use --platform to specify os/architecture/variant for OCI-SIF library sources, when using the --oci flag.")
+		}
+		if pullPlatform != "" && !isOCI {
+			sylog.Fatalf("Use --arch to specify architecture for non-OCI library sources.")
+		}
+
 		ref, err := library.NormalizeLibraryRef(pullFrom)
 		if err != nil {
 			sylog.Fatalf("Malformed library reference: %v", err)
@@ -250,6 +270,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			LibraryConfig: lc,
 			RequireOciSif: isOCI,
 			TmpDir:        tmpDir,
+			Platform:      pullPlatform,
 		}
 		_, err = library.PullToFile(ctx, imgCache, pullTo, ref, pullOpts)
 		if err != nil && err != library.ErrLibraryPullUnsigned {
@@ -288,6 +309,13 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("While pulling from image from http(s): %v\n", err)
 		}
 	case oci.IsSupported(transport):
+		if pullArch != runtime.GOARCH {
+			sylog.Fatalf("Use --platform to specify architecture/variant for OCI sources.")
+		}
+		if pullPlatform != "" && !isOCI {
+			sylog.Fatalf("--platform is only supported when pulling to a OCI-SIF, using the --oci flag.")
+		}
+
 		ociAuth, err := makeDockerCredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
@@ -300,6 +328,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			NoHTTPS:    noHTTPS,
 			NoCleanUp:  buildArgs.noCleanUp,
 			OciSif:     isOCI,
+			Platform:   pullPlatform,
 		}
 
 		_, err = oci.PullToFile(ctx, imgCache, pullTo, pullFrom, pullOpts)

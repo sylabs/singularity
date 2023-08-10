@@ -159,7 +159,7 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 	}
 
 	// Fetch the image into a temporary containers/image oci layout dir.
-	cp.srcRef, err = ociimage.FetchLayout(ctx, cp.sysCtx, imgCache, ref, b.TmpDir)
+	cp.srcRef, _, err = ociimage.FetchLayout(ctx, cp.sysCtx, imgCache, ref, b.TmpDir)
 	if err != nil {
 		return err
 	}
