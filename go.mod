@@ -14,7 +14,7 @@ require (
 	github.com/container-orchestrated-devices/container-device-interface v0.6.0
 	github.com/containernetworking/cni v1.1.2
 	github.com/containernetworking/plugins v1.3.0
-	github.com/containers/common v0.55.2
+	github.com/containers/common v0.55.3
 	github.com/containers/image/v5 v5.27.0
 	github.com/cyphar/filepath-securejoin v0.2.3
 	github.com/docker/cli v24.0.5+incompatible
