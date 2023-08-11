@@ -308,6 +308,7 @@ func netHash(url string) (hash string, err error) {
 	if err != nil {
 		return "", fmt.Errorf("error making http request: %w", err)
 	}
+	defer res.Body.Close()
 
 	headerDate := res.Header.Get("Last-Modified")
 	h := sha256.New()
