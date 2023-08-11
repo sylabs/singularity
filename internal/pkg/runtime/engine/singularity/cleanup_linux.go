@@ -128,7 +128,7 @@ func umount(lazy bool) (err error) {
 
 	oldEffective, err = capabilities.SetProcessEffective(caps)
 	if err != nil {
-		return
+		return err
 	}
 	defer func() {
 		_, e := capabilities.SetProcessEffective(oldEffective)
