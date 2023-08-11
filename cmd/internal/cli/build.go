@@ -369,7 +369,7 @@ var buildCmd = &cobra.Command{
 	TraverseChildren: true,
 }
 
-func preRun(cmd *cobra.Command, args []string) {
+func preRun(cmd *cobra.Command, _ []string) {
 	if isOCI {
 		sylog.Fatalf("Builds are not yet supported in OCI-mode. Omit --oci, or use --no-oci, to build a non-OCI Singularity container.")
 	}
@@ -379,7 +379,7 @@ func preRun(cmd *cobra.Command, args []string) {
 	}
 
 	if buildArgs.fakeroot && !buildArgs.remote {
-		fakerootExec(args)
+		fakerootExec()
 	}
 
 	// Always perform remote build when builder flag is set

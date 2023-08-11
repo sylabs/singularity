@@ -129,10 +129,7 @@ func downloadWrapper(ctx context.Context, c *scslibrary.Client, imagePath, arch 
 		}
 	}(time.Now())
 
-	if err := DownloadImage(ctx, c, imagePath, arch, libraryRef, pb); err != nil {
-		return err
-	}
-	return nil
+	return DownloadImage(ctx, c, imagePath, arch, libraryRef, pb)
 }
 
 // pullOCI pulls a single layer squashfs OCI image from the library into an OCI-SIF file.

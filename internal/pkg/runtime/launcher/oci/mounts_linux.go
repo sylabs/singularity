@@ -598,7 +598,7 @@ func (l *Launcher) addBindMount(mounts *[]specs.Mount, b bind.Path, allowSUID bo
 			return nil
 		}
 
-		im, err := l.prepareImageBindMount(b, allowSUID)
+		im, err := l.prepareImageBindMount(b)
 		if err != nil {
 			return err
 		}
@@ -653,7 +653,7 @@ func (l *Launcher) addBindMount(mounts *[]specs.Mount, b bind.Path, allowSUID bo
 	return nil
 }
 
-func (l *Launcher) prepareImageBindMount(bindPath bind.Path, allowSUID bool) (*fuse.ImageMount, error) {
+func (l *Launcher) prepareImageBindMount(bindPath bind.Path) (*fuse.ImageMount, error) {
 	imagePath := bindPath.Source
 	img, err := image.Init(imagePath, false)
 	if err != nil {

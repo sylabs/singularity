@@ -53,7 +53,9 @@ const (
 )
 
 // Attach attaches the console to a running container
-func Attach(ctx context.Context, containerID string) error {
+//
+// FIXME: use context for cancellation, or remove.
+func Attach(_ context.Context, containerID string) error {
 	streams := attachStreams{
 		OutputStream: os.Stdout,
 		ErrorStream:  os.Stderr,

@@ -170,10 +170,10 @@ func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	return nil
 }
 
-func (f *squashfsFormat) openMode(writable bool) int {
+func (f *squashfsFormat) openMode(bool) int {
 	return os.O_RDONLY
 }
 
-func (f *squashfsFormat) lock(img *Image) error {
+func (f *squashfsFormat) lock(*Image) error {
 	return nil
 }

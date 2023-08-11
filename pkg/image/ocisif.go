@@ -53,10 +53,10 @@ func (f *ociSifFormat) initializer(img *Image, fi os.FileInfo) error {
 	return nil
 }
 
-func (f *ociSifFormat) openMode(writable bool) int {
+func (f *ociSifFormat) openMode(bool) int {
 	return os.O_RDONLY
 }
 
-func (f *ociSifFormat) lock(img *Image) error {
+func (f *ociSifFormat) lock(*Image) error {
 	return nil
 }

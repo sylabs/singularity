@@ -41,7 +41,7 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/util/cryptkey"
 )
 
-func fakerootExec(cmdArgs []string) {
+func fakerootExec() {
 	if buildArgs.nvccli && !buildArgs.noTest {
 		sylog.Warningf("Due to writable-tmpfs limitations, %%test sections will fail with --nvccli & --fakeroot")
 		sylog.Infof("Use -T / --notest to disable running tests during the build")

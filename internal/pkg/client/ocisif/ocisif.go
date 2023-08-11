@@ -171,7 +171,7 @@ func createOciSif(ctx context.Context, sysCtx *ocitypes.SystemContext, imgCache 
 	// If the image has a single squashfs layer, then we can write it directly to oci-sif.
 	if (len(mf.Layers)) == 1 && (mf.Layers[0].MediaType == SquashfsLayerMediaType) {
 		sylog.Infof("Writing OCI-SIF image")
-		return writeLayoutToOciSif(layoutDir, digest, imageDest, workDir)
+		return writeLayoutToOciSif(layoutDir, digest, imageDest)
 	}
 
 	// Otherwise, squashing and converting layers to squashfs is required.
@@ -180,7 +180,7 @@ func createOciSif(ctx context.Context, sysCtx *ocitypes.SystemContext, imgCache 
 }
 
 // writeLayoutToOciSif will write an image from an OCI layout to an oci-sif without applying any mutations.
-func writeLayoutToOciSif(layoutDir string, digest v1.Hash, imageDest, workDir string) error {
+func writeLayoutToOciSif(layoutDir string, digest v1.Hash, imageDest string) error {
 	lp, err := layout.FromPath(layoutDir)
 	if err != nil {
 		return fmt.Errorf("while opening layout: %w", err)
@@ -245,7 +245,9 @@ func convertLayoutToOciSif(layoutDir string, digest v1.Hash, imageDest, workDir 
 }
 
 // PushOCISIF pushes a single image from sourceFile to the OCI registry destRef.
-func PushOCISIF(ctx context.Context, sourceFile, destRef string, ociAuth *ocitypes.DockerAuthConfig) error {
+//
+// FIXME: Use context for cancellation.
+func PushOCISIF(_ context.Context, sourceFile, destRef string, ociAuth *ocitypes.DockerAuthConfig) error {
 	destRef = strings.TrimPrefix(destRef, "docker://")
 	destRef = strings.TrimPrefix(destRef, "//")
 	ref, err := name.ParseReference(destRef)

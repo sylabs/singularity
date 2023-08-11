@@ -41,7 +41,7 @@ var (
 	}
 )
 
-func importRun(cmd *cobra.Command, args []string) {
+func importRun(_ *cobra.Command, args []string) {
 	var opts []sypgp.HandleOpt
 	path := ""
 

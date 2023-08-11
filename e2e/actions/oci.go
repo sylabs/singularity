@@ -1407,7 +1407,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 
 		t.Run(profile.String(), func(t *testing.T) {
 			for _, tt := range tests {
-				if !haveAllCommands(t, tt.requiredCmds) {
+				if !haveAllCommands(tt.requiredCmds) {
 					continue
 				}
 
@@ -1427,7 +1427,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 	}
 }
 
-func haveAllCommands(t *testing.T, cmds []string) bool {
+func haveAllCommands(cmds []string) bool {
 	for _, c := range cmds {
 		if _, err := bin.FindBin(c); err != nil {
 			return false
@@ -1792,7 +1792,7 @@ func (c actionTests) actionOciBindImage(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		if !haveAllCommands(t, tt.requiredCmds) {
+		if !haveAllCommands(tt.requiredCmds) {
 			continue
 		}
 

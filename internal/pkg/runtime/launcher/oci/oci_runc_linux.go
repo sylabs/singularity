@@ -22,7 +22,9 @@ import (
 )
 
 // Delete deletes container resources
-func Delete(ctx context.Context, containerID string, systemdCgroups bool) error {
+//
+// FIXME: use context for cancellation, or remove.
+func Delete(_ context.Context, containerID string, systemdCgroups bool) error {
 	runtimeBin, err := runtime()
 	if err != nil {
 		return err
@@ -175,7 +177,9 @@ func Resume(containerID string, systemdCgroups bool) error {
 }
 
 // Run runs a container (equivalent to create/start/delete)
-func Run(ctx context.Context, containerID, bundlePath, pidFile string, systemdCgroups bool) error {
+//
+// FIXME: use context for cancellation, or remove.
+func Run(_ context.Context, containerID, bundlePath, pidFile string, systemdCgroups bool) error {
 	runtimeBin, err := runtime()
 	if err != nil {
 		return err

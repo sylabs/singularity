@@ -148,7 +148,7 @@ func (s *sifBundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 }
 
 // Update will update the OCI config for the OCI bundle, so that it is ready for execution.
-func (s *sifBundle) Update(ctx context.Context, ociConfig *specs.Spec) error {
+func (s *sifBundle) Update(_ context.Context, ociConfig *specs.Spec) error {
 	// generate OCI bundle directory and config
 	g, err := tools.GenerateBundleConfig(s.bundlePath, ociConfig)
 	if err != nil {

@@ -399,11 +399,7 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 		return err
 	}
 
-	if err := b.Update(ctx, spec); err != nil {
-		return err
-	}
-
-	return nil
+	return b.Update(ctx, spec)
 }
 
 // prepareEtc creates modified container-specific /etc files and adds them to

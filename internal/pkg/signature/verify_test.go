@@ -101,7 +101,7 @@ type mockHKP struct {
 	e *openpgp.Entity
 }
 
-func (m mockHKP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (m mockHKP) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/pgp-keys")
 
 	wr, err := armor.Encode(w, openpgp.PublicKeyType, nil)

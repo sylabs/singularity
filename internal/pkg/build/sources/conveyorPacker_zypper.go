@@ -50,8 +50,10 @@ func machine() (string, error) {
 
 // Get downloads container information from the specified source
 //
+// FIXME: use context for cancellation.
+//
 //nolint:maintidx
-func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err error) {
+func (cp *ZypperConveyorPacker) Get(_ context.Context, b *types.Bundle) (err error) {
 	var suseconnectProduct, suseconnectModver string
 	var suseconnectPath string
 	var pgpfile string

@@ -97,7 +97,7 @@ func init() {
 	})
 }
 
-func checkGlobal(cmd *cobra.Command, args []string) {
+func checkGlobal(cmd *cobra.Command, _ []string) {
 	if !keyGlobalPubKey || os.Geteuid() == 0 || buildcfg.SINGULARITY_SUID_INSTALL == 0 {
 		return
 	}

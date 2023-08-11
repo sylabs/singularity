@@ -255,7 +255,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Warningf("Pull from shub:// is a direct download, --arch and --platform have no effect.")
 		}
 
-		_, err := shub.PullToFile(ctx, imgCache, pullTo, pullFrom, tmpDir, noHTTPS)
+		_, err := shub.PullToFile(ctx, imgCache, pullTo, pullFrom, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("While pulling shub image: %v\n", err)
 		}
@@ -272,7 +272,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 		}
 
-		_, err = oras.PullToFile(ctx, imgCache, pullTo, pullFrom, tmpDir, ociAuth)
+		_, err = oras.PullToFile(ctx, imgCache, pullTo, pullFrom, ociAuth)
 		if err != nil {
 			sylog.Fatalf("While pulling image from oci registry: %v", err)
 		}
@@ -284,7 +284,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Warningf("Pull from http[s]:// is a direct download, --arch and --platform have no effect.")
 		}
 
-		_, err := net.PullToFile(ctx, imgCache, pullTo, pullFrom, tmpDir)
+		_, err := net.PullToFile(ctx, imgCache, pullTo, pullFrom)
 		if err != nil {
 			sylog.Fatalf("While pulling from image from http(s): %v\n", err)
 		}

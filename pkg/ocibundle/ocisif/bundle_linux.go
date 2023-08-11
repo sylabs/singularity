@@ -174,7 +174,7 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 }
 
 // Update will update the OCI config for the OCI bundle, so that it is ready for execution.
-func (b *Bundle) Update(ctx context.Context, ociConfig *specs.Spec) error {
+func (b *Bundle) Update(_ context.Context, ociConfig *specs.Spec) error {
 	// generate OCI bundle directory and config
 	g, err := tools.GenerateBundleConfig(b.bundlePath, ociConfig)
 	if err != nil {

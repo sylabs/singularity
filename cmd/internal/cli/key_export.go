@@ -72,7 +72,7 @@ var KeyExportCmd = &cobra.Command{
 	Example: docs.KeyExportExample,
 }
 
-func exportRun(cmd *cobra.Command, args []string) {
+func exportRun(_ *cobra.Command, args []string) {
 	var opts []sypgp.HandleOpt
 	path := ""
 

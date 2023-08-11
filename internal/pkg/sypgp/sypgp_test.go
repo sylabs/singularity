@@ -38,7 +38,7 @@ type mockPKSLookup struct {
 	el   openpgp.EntityList
 }
 
-func (ms *mockPKSLookup) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (ms *mockPKSLookup) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(ms.code)
 	if ms.code == http.StatusOK {
 		w.Header().Set("Content-Type", "application/pgp-keys")
@@ -132,7 +132,7 @@ func TestFetchPubkey(t *testing.T) {
 				client.OptHTTPClient(srv.Client()),
 			}
 
-			el, err := FetchPubkey(context.Background(), tt.fingerprint, false, opts...)
+			el, err := FetchPubkey(context.Background(), tt.fingerprint, opts...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("unexpected error: %v", err)
 				return
