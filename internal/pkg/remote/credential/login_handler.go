@@ -236,6 +236,6 @@ func (h *keyserverHandler) login(u *url.URL, username, password string, insecure
 	}, nil
 }
 
-func (h *keyserverHandler) logout(u *url.URL) error {
+func (h *keyserverHandler) logout(_ *url.URL) error {
 	return nil
 }

@@ -321,7 +321,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 // and thus no additional privileges can be gained.
 //
 // Here, however, singularity engine does not escalate privileges.
-func (e *EngineOperations) PostStartProcess(ctx context.Context, pid int) error {
+func (e *EngineOperations) PostStartProcess(_ context.Context, pid int) error {
 	sylog.Debugf("Post start process")
 
 	callbackType := (singularitycallback.PostStartProcess)(nil)
@@ -670,7 +670,7 @@ func injectEnvHandler(senv map[string]string, noEval bool) interpreter.OpenHandl
 	}
 }
 
-func runtimeVarsHandler(senv map[string]string) interpreter.OpenHandler {
+func runtimeVarsHandler() interpreter.OpenHandler {
 	var once sync.Once
 
 	return func(path string, _ int, _ os.FileMode) (io.ReadWriteCloser, error) {
@@ -685,7 +685,7 @@ func runtimeVarsHandler(senv map[string]string) interpreter.OpenHandler {
 }
 
 // sylogBuiltin allows to use sylog logger from shell script.
-func sylogBuiltin(ctx context.Context, argv []string) error {
+func sylogBuiltin(_ context.Context, argv []string) error {
 	if len(argv) < 2 {
 		return fmt.Errorf("sylog builtin requires two arguments")
 	}
@@ -705,7 +705,7 @@ func sylogBuiltin(ctx context.Context, argv []string) error {
 }
 
 // getAllEnvBuiltin display all exported variables in the form KEY=VALUE.
-func getAllEnvBuiltin(shell *interpreter.Shell) interpreter.ShellBuiltin {
+func getAllEnvBuiltin() interpreter.ShellBuiltin {
 	return func(ctx context.Context, argv []string) error {
 		hc := interp.HandlerCtx(ctx)
 
@@ -739,7 +739,7 @@ func getAllEnvBuiltin(shell *interpreter.Shell) interpreter.ShellBuiltin {
 
 // fixPathBuiltin takes the current path value to fix it by injecting
 // missing default path and returns value on shell interpreter output.
-func fixPathBuiltin(ctx context.Context, argv []string) error {
+func fixPathBuiltin(ctx context.Context, _ []string) error {
 	hc := interp.HandlerCtx(ctx)
 
 	currentPath := filepath.SplitList(hc.Env.Get("PATH").String())
@@ -765,7 +765,7 @@ func fixPathBuiltin(ctx context.Context, argv []string) error {
 
 // hashBuiltin is a noop function for hash bash builtin, since we don't
 // store resolved path in a hash table, there is nothing to do.
-func hashBuiltin(ctx context.Context, argv []string) error {
+func hashBuiltin(context.Context, []string) error {
 	return nil
 }
 
@@ -815,10 +815,10 @@ func runActionScript(engineConfig *singularityConfig.EngineConfig) ([]string, []
 	senv := engineConfig.GetSingularityEnv()
 	shell.RegisterOpenHandler("/.inject-singularity-env.sh", injectEnvHandler(senv, engineConfig.GetNoEval()))
 
-	shell.RegisterOpenHandler("/.singularity.d/env/99-runtimevars.sh", runtimeVarsHandler(senv))
+	shell.RegisterOpenHandler("/.singularity.d/env/99-runtimevars.sh", runtimeVarsHandler())
 
 	// register few builtin
-	shell.RegisterShellBuiltin("getallenv", getAllEnvBuiltin(shell))
+	shell.RegisterShellBuiltin("getallenv", getAllEnvBuiltin())
 	shell.RegisterShellBuiltin("sylog", sylogBuiltin)
 	shell.RegisterShellBuiltin("fixpath", fixPathBuiltin)
 	shell.RegisterShellBuiltin("hash", hashBuiltin)

@@ -116,7 +116,9 @@ func New(opts ...Option) (ocibundle.Bundle, error) {
 }
 
 // Delete erases OCI bundle created an OCI image ref
-func (b *Bundle) Delete(ctx context.Context) error {
+//
+// FIXME: use context for cancellation, or remove.
+func (b *Bundle) Delete(_ context.Context) error {
 	if b.rootfsMounted {
 		sylog.Debugf("Unmounting bundle rootfs %q", tools.RootFs(b.bundlePath).Path())
 		if err := syscall.Unmount(tools.RootFs(b.bundlePath).Path(), syscall.MNT_DETACH); err != nil {
@@ -222,7 +224,9 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 }
 
 // Update will update the OCI config for the OCI bundle, so that it is ready for execution.
-func (b *Bundle) Update(ctx context.Context, ociConfig *specs.Spec) error {
+//
+// FIXME: use context for cancellation, or remove.
+func (b *Bundle) Update(_ context.Context, ociConfig *specs.Spec) error {
 	// generate OCI bundle directory and config
 	g, err := tools.GenerateBundleConfig(b.bundlePath, ociConfig)
 	if err != nil {

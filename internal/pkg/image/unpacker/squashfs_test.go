@@ -56,7 +56,11 @@ func testSquashfs(t *testing.T, tmpParent string) {
 		t.Skip("unsquashfs not found")
 	}
 
-	dir := t.TempDir()
+	dir, err := os.MkdirTemp(tmpParent, "test-squashfs-")
+	if err != nil {
+		t.Fatalf("while creating tmpdir: %v", err)
+	}
+	defer os.RemoveAll(dir)
 
 	// create archive with files present in this directory
 	archive := createArchive(t)

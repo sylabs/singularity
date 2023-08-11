@@ -250,7 +250,7 @@ func fakerootSeccompProfile() *specs.LinuxSeccomp {
 //
 // This will be executed as a fake root user in a new user
 // namespace (PrepareConfig will set both).
-func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
+func (e *EngineOperations) StartProcess(_ net.Conn) error {
 	const (
 		mountInfo    = "/proc/self/mountinfo"
 		selinuxMount = "/sys/fs/selinux"
@@ -373,12 +373,12 @@ func (e *EngineOperations) CleanupContainer(context.Context, error, syscall.Wait
 }
 
 // CleanupHost does nothing for the fakeroot engine.
-func (e *EngineOperations) CleanupHost(ctx context.Context) error {
+func (e *EngineOperations) CleanupHost(context.Context) error {
 	return nil
 }
 
 // PostStartProcess does nothing for the fakeroot engine.
-func (e *EngineOperations) PostStartProcess(ctx context.Context, pid int) error {
+func (e *EngineOperations) PostStartProcess(context.Context, int) error {
 	return nil
 }
 

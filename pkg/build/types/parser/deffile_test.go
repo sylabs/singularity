@@ -50,6 +50,7 @@ func TestScanDefinitionFile(t *testing.T) {
 
 			s := bufio.NewScanner(r)
 			s.Split(scanDefinitionFile)
+			//nolint:revive
 			for s.Scan() && s.Text() == "" && s.Err() == nil {
 			}
 
@@ -136,6 +137,7 @@ func TestDoSections(t *testing.T) {
 	s1.Split(scanDefinitionFile)
 
 	// advance scanner until it returns a useful token
+	//nolint:revive
 	for s1.Scan() && s1.Text() == "" {
 		// Nothing to do
 	}
@@ -151,6 +153,7 @@ func TestDoSections(t *testing.T) {
 	s2.Split(scanDefinitionFile)
 
 	// Advance the scanner until it returns a useful token
+	//nolint:revive
 	for s2.Scan() && s2.Text() == "" {
 		// Nothing to do
 	}

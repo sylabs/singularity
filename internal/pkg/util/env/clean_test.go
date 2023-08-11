@@ -308,7 +308,7 @@ func TestSetContainerEnv(t *testing.T) {
 			generator := generate.New(&ociConfig.Spec)
 
 			senv := SetContainerEnv(generator, tc.env, tc.cleanEnv, tc.homeDest)
-			if !equal(t, ociConfig.Process.Env, tc.resultEnv) {
+			if !equal(ociConfig.Process.Env, tc.resultEnv) {
 				t.Fatalf("unexpected envs:\n want: %v\ngot: %v", tc.resultEnv, ociConfig.Process.Env)
 			}
 			if tc.singularityEnv != nil && !reflect.DeepEqual(senv, tc.singularityEnv) {
@@ -320,7 +320,7 @@ func TestSetContainerEnv(t *testing.T) {
 
 // equal tells whether a and b contain the same elements in the
 // same order. A nil argument is equivalent to an empty slice.
-func equal(t *testing.T, a, b []string) bool {
+func equal(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
 	}

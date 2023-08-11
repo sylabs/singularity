@@ -79,7 +79,7 @@ func readColonFile(r io.Reader, fn lineFunc, readCols int) (v any, err error) {
 		}
 		v, err = fn(wholeLine)
 		if v != nil || err != nil {
-			return
+			return v, err
 		}
 
 		// If necessary, skip the rest of the line

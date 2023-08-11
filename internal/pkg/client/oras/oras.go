@@ -28,7 +28,9 @@ import (
 )
 
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
-func DownloadImage(ctx context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
+//
+// FIXME: use context for cancellation.
+func DownloadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 	im, err := remoteImage(ref, ociAuth)
 	if err != nil {
 		return err
@@ -98,7 +100,9 @@ func DownloadImage(ctx context.Context, path, ref string, ociAuth *ocitypes.Dock
 
 // UploadImage uploads the image specified by path and pushes it to the provided oci reference,
 // it will use credentials if supplied
-func UploadImage(ctx context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
+//
+// FIXME: use context for cancellation.
+func UploadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
 	// ensure that are uploading a SIF
 	if err := ensureSIF(path); err != nil {
 		return err
@@ -141,7 +145,9 @@ func ensureSIF(filepath string) error {
 }
 
 // RefHash returns the digest of the SIF layer of the OCI manifest for supplied ref
-func RefHash(ctx context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig) (v1.Hash, error) {
+//
+// FIXME: use context for cancellation.
+func RefHash(_ context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig) (v1.Hash, error) {
 	im, err := remoteImage(ref, ociAuth)
 	if err != nil {
 		return v1.Hash{}, err

@@ -88,7 +88,7 @@ type keyNewPairOptions struct {
 	PushToKeyStore bool
 }
 
-func runNewPairCmd(cmd *cobra.Command, args []string) {
+func runNewPairCmd(cmd *cobra.Command, _ []string) {
 	keyring := sypgp.NewHandle("")
 
 	opts, err := collectInput(cmd)

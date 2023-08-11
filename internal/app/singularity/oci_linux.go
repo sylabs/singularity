@@ -103,7 +103,7 @@ func OciResume(containerID string) error {
 }
 
 // OciState queries container state
-func OciState(containerID string, args *OciArgs) error {
+func OciState(containerID string, _ *OciArgs) error {
 	systemdCgroups, err := systemdCgroups()
 	if err != nil {
 		return err
