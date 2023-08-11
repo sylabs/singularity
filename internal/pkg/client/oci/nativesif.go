@@ -87,6 +87,7 @@ func convertOciToSIF(ctx context.Context, imgCache *cache.Handle, image, cachedI
 				DockerAuthConfig: opts.OciAuth,
 				DockerDaemonHost: opts.DockerHost,
 				ImgCache:         imgCache,
+				Platform:         opts.Platform,
 			},
 		},
 	)

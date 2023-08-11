@@ -12,6 +12,7 @@ import (
 	"os"
 
 	ocitypes "github.com/containers/image/v5/types"
+	gccrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
@@ -27,15 +28,11 @@ type PullOptions struct {
 	NoHTTPS    bool
 	NoCleanUp  bool
 	OciSif     bool
-	Platform   string
+	Platform   gccrv1.Platform
 }
 
 // sysCtx provides authentication and tempDir config for containers/image OCI operations
 func sysCtx(opts PullOptions) (*ocitypes.SystemContext, error) {
-	if opts.Platform != "" {
-		return nil, fmt.Errorf("custom platform not supported for OCI -> SIF conversion")
-	}
-
 	// DockerInsecureSkipTLSVerify is set only if --no-https is specified to honor
 	// configuration from /etc/containers/registries.conf because DockerInsecureSkipTLSVerify
 	// can have three possible values true/false and undefined, so we left it as undefined instead
@@ -48,6 +45,9 @@ func sysCtx(opts PullOptions) (*ocitypes.SystemContext, error) {
 		DockerRegistryUserAgent:  useragent.Value(),
 		BigFilesTemporaryDir:     opts.TmpDir,
 		DockerDaemonHost:         opts.DockerHost,
+		OSChoice:                 opts.Platform.OS,
+		ArchitectureChoice:       opts.Platform.Architecture,
+		VariantChoice:            opts.Platform.Variant,
 	}
 	if opts.NoHTTPS {
 		sysCtx.DockerInsecureSkipTLSVerify = ocitypes.NewOptionalBool(true)

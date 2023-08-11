@@ -27,6 +27,7 @@ import (
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -42,7 +43,7 @@ type PullOptions struct {
 	DockerHost string
 	NoHTTPS    bool
 	NoCleanUp  bool
-	Platform   string
+	Platform   v1.Platform
 }
 
 // sysCtx provides authentication and tempDir config for containers/image OCI operations
@@ -59,21 +60,12 @@ func sysCtx(opts PullOptions) (*ocitypes.SystemContext, error) {
 		DockerRegistryUserAgent:  useragent.Value(),
 		BigFilesTemporaryDir:     opts.TmpDir,
 		DockerDaemonHost:         opts.DockerHost,
+		OSChoice:                 opts.Platform.OS,
+		ArchitectureChoice:       opts.Platform.Architecture,
+		VariantChoice:            opts.Platform.Variant,
 	}
 	if opts.NoHTTPS {
 		sysCtx.DockerInsecureSkipTLSVerify = ocitypes.NewOptionalBool(true)
-	}
-
-	// Explicit --platform / (--arch) was specified.
-	if opts.Platform != "" {
-		sylog.Debugf("OCI platform %s requested", opts.Platform)
-		platform, err := v1.ParsePlatform(opts.Platform)
-		if err != nil {
-			return nil, err
-		}
-		sysCtx.ArchitectureChoice = platform.Architecture
-		sysCtx.VariantChoice = platform.Variant
-		sysCtx.OSChoice = platform.OS
 	}
 
 	return sysCtx, nil
@@ -153,7 +145,7 @@ func createOciSif(ctx context.Context, sysCtx *ocitypes.SystemContext, imgCache 
 	if err != nil {
 		return fmt.Errorf("while fetching OCI image: %w", err)
 	}
-	if err := ociimage.CheckImageRefPlatform(ctx, sysCtx, layoutRef); err != nil {
+	if err := ociplatform.CheckImageRefPlatform(ctx, sysCtx, layoutRef); err != nil {
 		return fmt.Errorf("while checking OCI image: %w", err)
 	}
 

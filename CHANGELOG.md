@@ -144,6 +144,11 @@
     will be shell evaluated on container startup.
 - A new `oci mode` directive in `singularity.conf` can be set to true to enable
   OCI-mode by default. It can be negated with a new `--no-oci` command line flag.
+- A new `--platform` flag can be used to specify an `OS/Architecture[/Variant]`
+  when pulling images from OCI or library sources. When pulling from library
+  sources the optional variant is igored.
+- The `--arch` flag can now be used to specify a required architecture when pulling
+  images from OCI, as well as library sources.
 
 ### Developer / API
 

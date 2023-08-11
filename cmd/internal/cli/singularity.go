@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -20,11 +20,13 @@ import (
 	"text/template"
 
 	ocitypes "github.com/containers/image/v5/types"
+	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/spf13/cobra"
 	scskeyclient "github.com/sylabs/scs-key-client/client"
 	scslibclient "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/v4/docs"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	"github.com/sylabs/singularity/v4/internal/pkg/plugin"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
@@ -83,6 +85,10 @@ var (
 	// Use OCI runtime and OCI SIF?
 	isOCI bool
 	noOCI bool
+
+	// Platform for retrieving images
+	arch     string
+	platform string
 )
 
 //
@@ -277,6 +283,26 @@ var commonNoOCIFlag = cmdline.Flag{
 	Name:         "no-oci",
 	Usage:        "Launch container with native runtime",
 	EnvKeys:      []string{"NO_OCI"},
+}
+
+// --arch
+var commonArchFlag = cmdline.Flag{
+	ID:           "commonArchFlag",
+	Value:        &arch,
+	DefaultValue: "",
+	Name:         "arch",
+	Usage:        "architecture to use when pulling images",
+	EnvKeys:      []string{"PULL_ARCH", "ARCH"},
+}
+
+// --platform
+var commonPlatformFlag = cmdline.Flag{
+	ID:           "commonPlatformFlag",
+	Value:        &platform,
+	DefaultValue: "",
+	Name:         "platform",
+	Usage:        "platform (OS/Architecture/Variant) to use when pulling images",
+	EnvKeys:      []string{"PLATFORM"},
 }
 
 func getCurrentUser() *user.User {
@@ -759,4 +785,28 @@ func maybeReExec() error {
 		return rootless.ExecWithFakeroot(os.Args[1:])
 	}
 	return nil
+}
+
+// getOCIPlatform returns the appropriate OCI platform to use according to `--arch` and `--platform`
+func getOCIPlatform() ggcrv1.Platform {
+	var (
+		p   *ggcrv1.Platform
+		err error
+	)
+	if arch != "" && platform != "" {
+		err = fmt.Errorf("--arch and --platform cannot be used together")
+	}
+	if arch == "" && platform == "" {
+		p, err = ociplatform.DefaultPlatform()
+	}
+	if arch != "" {
+		p, err = ociplatform.PlatformFromArch(arch)
+	}
+	if platform != "" {
+		p, err = ociplatform.PlatformFromString(platform)
+	}
+	if err != nil {
+		sylog.Fatalf("%v", err)
+	}
+	return *p
 }

@@ -14,7 +14,7 @@
    limitations under the License.
 */
 
-package ociimage
+package ociplatform
 
 import (
 	"runtime"
@@ -29,7 +29,7 @@ var cpuVariantValue string
 
 var cpuVariantOnce sync.Once
 
-func cpuVariant() string {
+func CPUVariant() string {
 	cpuVariantOnce.Do(func() {
 		if isArmArch(runtime.GOARCH) {
 			var err error

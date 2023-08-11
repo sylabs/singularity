@@ -17,6 +17,7 @@ import (
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/opencontainers/go-digest"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
@@ -135,7 +136,7 @@ func digestFromManifestOrIndex(sysCtx *types.SystemContext, manifestOrIndex []by
 		return "", fmt.Errorf("not a valid image manifest or image index")
 	}
 
-	requiredPlatform := sysCtxToPlatform(sysCtx)
+	requiredPlatform := ociplatform.SysCtxToPlatform(sysCtx)
 	sylog.Debugf("Content is an image index, finding image for %s", requiredPlatform)
 	for _, mf := range ix.Manifests {
 		if mf.Platform == nil {

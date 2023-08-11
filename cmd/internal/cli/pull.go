@@ -9,7 +9,6 @@ package cli
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/v4/docs"
@@ -51,32 +50,7 @@ var (
 	unauthenticatedPull bool
 	// pullDir is the path that the containers will be pulled to, if set.
 	pullDir string
-	// pullArch is the architecture for which containers will be pulled from the
-	// SCS library.
-	pullArch string
-	// pullPlatform is the platform for which containers will be pulled from OCI sources.
-	pullPlatform string
 )
-
-// --arch
-var pullArchFlag = cmdline.Flag{
-	ID:           "pullArchFlag",
-	Value:        &pullArch,
-	DefaultValue: runtime.GOARCH,
-	Name:         "arch",
-	Usage:        "architecture for images to pull from library",
-	EnvKeys:      []string{"PULL_ARCH"},
-}
-
-// --platform
-var pullPlatformFlag = cmdline.Flag{
-	ID:           "pullPlatformFlag",
-	Value:        &pullPlatform,
-	DefaultValue: "",
-	Name:         "platform",
-	Usage:        "platform for images to pull from OCI sources",
-	EnvKeys:      []string{"PULL_PLATFORM"},
-}
 
 // --library
 var pullLibraryURIFlag = cmdline.Flag{
@@ -163,10 +137,12 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&buildNoCleanupFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&pullAllowUnsignedFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&pullAllowUnauthenticatedFlag, PullCmd)
-		cmdManager.RegisterFlagForCmd(&pullArchFlag, PullCmd)
-		cmdManager.RegisterFlagForCmd(&pullPlatformFlag, PullCmd)
+
 		cmdManager.RegisterFlagForCmd(&commonOCIFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&commonNoOCIFlag, PullCmd)
+
+		cmdManager.RegisterFlagForCmd(&commonArchFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&commonPlatformFlag, PullCmd)
 	})
 }
 
@@ -226,13 +202,6 @@ func pullRun(cmd *cobra.Command, args []string) {
 
 	switch transport {
 	case LibraryProtocol, "":
-		if pullArch != runtime.GOARCH && isOCI {
-			sylog.Fatalf("Use --platform to specify os/architecture/variant for OCI-SIF library sources, when using the --oci flag.")
-		}
-		if pullPlatform != "" && !isOCI {
-			sylog.Fatalf("Use --arch to specify architecture for non-OCI library sources.")
-		}
-
 		ref, err := library.NormalizeLibraryRef(pullFrom)
 		if err != nil {
 			sylog.Fatalf("Malformed library reference: %v", err)
@@ -264,13 +233,12 @@ func pullRun(cmd *cobra.Command, args []string) {
 		}
 
 		pullOpts := library.PullOptions{
-			Architecture:  pullArch,
 			Endpoint:      currentRemoteEndpoint,
 			KeyClientOpts: co,
 			LibraryConfig: lc,
 			RequireOciSif: isOCI,
 			TmpDir:        tmpDir,
-			Platform:      pullPlatform,
+			Platform:      getOCIPlatform(),
 		}
 		_, err = library.PullToFile(ctx, imgCache, pullTo, ref, pullOpts)
 		if err != nil && err != library.ErrLibraryPullUnsigned {
@@ -283,6 +251,10 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if isOCI {
 			sylog.Fatalf("Pull from shub:// to OCI-SIF (--oci) is not supported. Omit --oci, or use --no-oci, to pull a non-OCI Singularity container.")
 		}
+		if platform != "" || arch != "" {
+			sylog.Warningf("Pull from shub:// is a direct download, --arch and --platform have no effect.")
+		}
+
 		_, err := shub.PullToFile(ctx, imgCache, pullTo, pullFrom, tmpDir, noHTTPS)
 		if err != nil {
 			sylog.Fatalf("While pulling shub image: %v\n", err)
@@ -291,6 +263,10 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if isOCI {
 			sylog.Warningf("Pull from oras:// URIs is a direct download, --oci has no effect.")
 		}
+		if platform != "" || arch != "" {
+			sylog.Warningf("Pull from oras:// is a direct download, --arch and --platform have no effect.")
+		}
+
 		ociAuth, err := makeDockerCredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
@@ -304,18 +280,15 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if isOCI {
 			sylog.Warningf("Pull from http[s]:// URIs is a direct download, --oci has no effect.")
 		}
+		if platform != "" || arch != "" {
+			sylog.Warningf("Pull from http[s]:// is a direct download, --arch and --platform have no effect.")
+		}
+
 		_, err := net.PullToFile(ctx, imgCache, pullTo, pullFrom, tmpDir)
 		if err != nil {
 			sylog.Fatalf("While pulling from image from http(s): %v\n", err)
 		}
 	case oci.IsSupported(transport):
-		if pullArch != runtime.GOARCH {
-			sylog.Fatalf("Use --platform to specify architecture/variant for OCI sources.")
-		}
-		if pullPlatform != "" && !isOCI {
-			sylog.Fatalf("--platform is only supported when pulling to a OCI-SIF, using the --oci flag.")
-		}
-
 		ociAuth, err := makeDockerCredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
@@ -328,7 +301,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			NoHTTPS:    noHTTPS,
 			NoCleanUp:  buildArgs.noCleanUp,
 			OciSif:     isOCI,
-			Platform:   pullPlatform,
+			Platform:   getOCIPlatform(),
 		}
 
 		_, err = oci.PullToFile(ctx, imgCache, pullTo, pullFrom, pullOpts)

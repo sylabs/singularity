@@ -128,10 +128,12 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 		OCIInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
 		DockerAuthConfig:         cp.b.Opts.DockerAuthConfig,
 		DockerDaemonHost:         cp.b.Opts.DockerDaemonHost,
-		OSChoice:                 "linux",
 		AuthFilePath:             syfs.DockerConf(),
 		DockerRegistryUserAgent:  useragent.Value(),
 		BigFilesTemporaryDir:     b.TmpDir,
+		OSChoice:                 cp.b.Opts.Platform.OS,
+		ArchitectureChoice:       cp.b.Opts.Platform.Architecture,
+		VariantChoice:            cp.b.Opts.Platform.Variant,
 	}
 
 	if cp.b.Opts.NoHTTPS {

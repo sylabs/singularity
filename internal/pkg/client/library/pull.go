@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	gccrv1 "github.com/google/go-containerregistry/pkg/v1"
 	keyclient "github.com/sylabs/scs-key-client/client"
 	scslibrary "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
@@ -32,9 +33,6 @@ var ErrLibraryPullUnsigned = errors.New("failed to verify container")
 // PullOptions provides options/configuration that determine the behavior of a
 // pull from a library.
 type PullOptions struct {
-	// Architecture specifies the architecture of the image to retrieve, when
-	// performing a non-OCI-SIF pull.
-	Architecture string
 	// Endpoint is the active remote endpoint, against which the OCI registry
 	// backing the library can be discovered.
 	Endpoint *endpoint.Config
@@ -49,9 +47,8 @@ type PullOptions struct {
 	// RequireOciSif should be set true to require that the image pulled is an OCI-SIF.
 	// If false a native SIF pull will be attempted, followed by an OCI(-SIF) pull on failure.
 	RequireOciSif bool
-	// Platform specifies the platform of the image to retrieve, when performing
-	// an OCI-SIF pull.
-	Platform string
+	// Platform specifies the platform of the image to retrieve.
+	Platform gccrv1.Platform
 }
 
 // pull will pull a library image into the cache if directTo="", or a specific file if directTo is set.
@@ -65,10 +62,10 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo string, imageRef
 
 	ref := fmt.Sprintf("%s:%s", imageRef.Path, imageRef.Tags[0])
 
-	libraryImage, err := c.GetImage(ctx, opts.Architecture, ref)
+	libraryImage, err := c.GetImage(ctx, opts.Platform.Architecture, ref)
 	if err != nil {
 		if errors.Is(err, scslibrary.ErrNotFound) {
-			return "", fmt.Errorf("image does not exist in the library: %s (%s)", ref, opts.Architecture)
+			return "", fmt.Errorf("image does not exist in the library: %s (%s)", ref, opts.Platform.Architecture)
 		}
 		// TODO - handle this via a friendlier error in future.
 		// Error message comes from server, so this will require changes upstream.
@@ -86,7 +83,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo string, imageRef
 
 	if directTo != "" {
 		// Download direct to file
-		if err := downloadWrapper(ctx, c, directTo, opts.Architecture, imageRef, progressBar); err != nil {
+		if err := downloadWrapper(ctx, c, directTo, opts.Platform.Architecture, imageRef, progressBar); err != nil {
 			return "", fmt.Errorf("unable to download image: %v", err)
 		}
 		return directTo, nil
@@ -99,7 +96,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo string, imageRef
 	defer cacheEntry.CleanTmp()
 
 	if !cacheEntry.Exists {
-		if err := downloadWrapper(ctx, c, cacheEntry.TmpPath, opts.Architecture, imageRef, progressBar); err != nil {
+		if err := downloadWrapper(ctx, c, cacheEntry.TmpPath, opts.Platform.Architecture, imageRef, progressBar); err != nil {
 			return "", fmt.Errorf("unable to download image: %v", err)
 		}
 

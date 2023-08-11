@@ -583,9 +583,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 The source files:
 
-* `internal/pkg/ociimage/cpuinfo.go`
-* `internal/pkg/ociimage/cpuinfo_linux.go`
-* `internal/pkg/ociimage/cpuinfo_linux_test.go`
+* `internal/pkg/ociplatform/cpuinfo.go`
+* `internal/pkg/ociplatform/cpuinfo_linux.go`
+* `internal/pkg/ociplatform/cpuinfo_linux_test.go`
 
 Contain code from the docker cli project, under the Apache License, Version 2.0.
 

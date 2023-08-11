@@ -14,6 +14,7 @@ import (
 	ggcrmutate "github.com/google/go-containerregistry/pkg/v1/mutate"
 	ggcrrandom "github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/opencontainers/go-digest"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	"gotest.tools/v3/assert"
 )
 
@@ -44,7 +45,7 @@ func imageWithIndex(t *testing.T) (rawIndex []byte, imageDigest digest.Digest) {
 			Platform: &ggcrv1.Platform{
 				OS:           runtime.GOOS,
 				Architecture: runtime.GOARCH,
-				Variant:      cpuVariant(),
+				Variant:      ociplatform.CPUVariant(),
 			},
 		},
 	})
@@ -89,7 +90,7 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 			sysCtx: &types.SystemContext{
 				OSChoice:           runtime.GOOS,
 				ArchitectureChoice: runtime.GOARCH,
-				VariantChoice:      cpuVariant(),
+				VariantChoice:      ociplatform.CPUVariant(),
 			},
 			manifestOrIndex: index,
 			want:            indexImageDigest,
@@ -100,7 +101,7 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 			sysCtx: &types.SystemContext{
 				OSChoice:           "myOS",
 				ArchitectureChoice: runtime.GOARCH,
-				VariantChoice:      cpuVariant(),
+				VariantChoice:      ociplatform.CPUVariant(),
 			},
 			manifestOrIndex: index,
 			want:            "",
@@ -111,7 +112,7 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 			sysCtx: &types.SystemContext{
 				OSChoice:           runtime.GOOS,
 				ArchitectureChoice: "myArch",
-				VariantChoice:      cpuVariant(),
+				VariantChoice:      ociplatform.CPUVariant(),
 			},
 			manifestOrIndex: index,
 			want:            "",
