@@ -1136,7 +1136,7 @@ func checkNativeSIFPlatform(t *testing.T, imgPath, platform string) {
 	if err != nil {
 		t.Errorf("while getting primary partition: %v", err)
 	}
-	_, _, arch, _ := d.PartitionMetadata()
+	_, _, arch, _ := d.PartitionMetadata() //nolint:dogsled
 	if arch != wantPlatform.Architecture {
 		t.Errorf("wrong architecture - wanted %q, got %q", wantPlatform.Architecture, arch)
 	}
