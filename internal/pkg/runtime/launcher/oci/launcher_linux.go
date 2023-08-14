@@ -476,7 +476,7 @@ func (l *Launcher) preparePasswd(bundlePath string, uid uint32) (*specs.Mount, e
 	passwdMount := specs.Mount{
 		Source:      containerPasswd,
 		Destination: "/etc/passwd",
-		Type:        "none",
+		Type:        "bind",
 		Options:     []string{"bind"},
 	}
 	return &passwdMount, nil
@@ -508,7 +508,7 @@ func (l *Launcher) prepareGroup(bundlePath string, uid, gid uint32) (*specs.Moun
 	groupMount := specs.Mount{
 		Source:      containerGroup,
 		Destination: "/etc/group",
-		Type:        "none",
+		Type:        "bind",
 		Options:     []string{"bind"},
 	}
 	return &groupMount, nil
@@ -558,7 +558,7 @@ func (l *Launcher) prepareResolvConf(bundlePath string) (*specs.Mount, error) {
 	resolvMount := specs.Mount{
 		Source:      containerResolvConfPath,
 		Destination: "/etc/resolv.conf",
-		Type:        "none",
+		Type:        "bind",
 		Options:     []string{"bind"},
 	}
 
@@ -619,7 +619,7 @@ fi
 	envMount := specs.Mount{
 		Source:      hostEnvPath,
 		Destination: containerEnvPath,
-		Type:        "none",
+		Type:        "bind",
 		Options:     []string{"bind", "ro", "nosuid", "nodev"},
 	}
 
