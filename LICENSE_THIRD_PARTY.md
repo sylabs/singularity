@@ -586,6 +586,7 @@ The source files:
 * `internal/pkg/ociplatform/cpuinfo.go`
 * `internal/pkg/ociplatform/cpuinfo_linux.go`
 * `internal/pkg/ociplatform/cpuinfo_linux_test.go`
+* `internal/pkg/ociplatform/database.go`
 
 Contain code from the docker cli project, under the Apache License, Version 2.0.
 
