@@ -32,6 +32,7 @@ func SysCtxToPlatform(sysCtx *types.SystemContext) ggcrv1.Platform {
 	if variant == "" {
 		variant = CPUVariant()
 	}
+	arch, variant = normalizeArch(arch, variant)
 	return ggcrv1.Platform{
 		Architecture: arch,
 		Variant:      variant,
@@ -73,13 +74,20 @@ func CheckImageRefPlatform(ctx context.Context, sysCtx *types.SystemContext, ima
 }
 
 func DefaultPlatform() (*ggcrv1.Platform, error) {
-	if runtime.GOOS != "linux" {
+	os := runtime.GOOS
+	arch := runtime.GOARCH
+	variant := CPUVariant()
+
+	if os != "linux" {
 		return nil, fmt.Errorf("%q is not a valid platform OS for singularity", runtime.GOOS)
 	}
+
+	arch, variant = normalizeArch(arch, variant)
+
 	return &ggcrv1.Platform{
-		OS:           runtime.GOOS,
-		Architecture: runtime.GOARCH,
-		Variant:      CPUVariant(),
+		OS:           os,
+		Architecture: arch,
+		Variant:      variant,
 	}, nil
 }
 
@@ -91,6 +99,9 @@ func PlatformFromString(p string) (*ggcrv1.Platform, error) {
 	if plat.OS != "linux" {
 		return nil, fmt.Errorf("%q is not a valid platform OS for singularity", plat.OS)
 	}
+
+	plat.Architecture, plat.Variant = normalizeArch(plat.Architecture, plat.Variant)
+
 	return plat, nil
 }
 
@@ -98,9 +109,12 @@ func PlatformFromArch(a string) (*ggcrv1.Platform, error) {
 	if runtime.GOOS != "linux" {
 		return nil, fmt.Errorf("%q is not a valid platform OS for singularity", runtime.GOOS)
 	}
+
+	arch, variant := normalizeArch(a, "")
+
 	return &ggcrv1.Platform{
 		OS:           runtime.GOOS,
-		Architecture: a,
-		Variant:      "",
+		Architecture: arch,
+		Variant:      variant,
 	}, nil
 }
