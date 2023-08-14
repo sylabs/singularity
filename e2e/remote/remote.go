@@ -28,7 +28,11 @@ func (c ctx) remoteAdd(t *testing.T) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer os.Remove(config.Name()) // clean up
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(config.Name()) // clean up
+		}
+	})
 
 	testPass := []struct {
 		name   string
@@ -168,7 +172,11 @@ func (c ctx) remoteRemove(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	defer os.Remove(config.Name()) // clean up
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(config.Name()) // clean up
+		}
+	})
 
 	// Prep config by adding multiple remotes
 	add := []struct {
@@ -241,7 +249,11 @@ func (c ctx) remoteUse(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	defer os.Remove(config.Name()) // clean up
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(config.Name()) // clean up
+		}
+	})
 
 	testFail := []struct {
 		name   string
@@ -315,7 +327,11 @@ func (c ctx) remoteStatus(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	defer os.Remove(config.Name()) // clean up
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(config.Name()) // clean up
+		}
+	})
 
 	// Prep config by adding multiple remotes
 	add := []struct {
@@ -386,7 +402,11 @@ func (c ctx) remoteList(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	defer os.Remove(config.Name()) // clean up
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(config.Name()) // clean up
+		}
+	})
 
 	testPass := []struct {
 		name string
