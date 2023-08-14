@@ -15,6 +15,7 @@ import (
 
 	"github.com/sylabs/singularity/v4/internal/pkg/remote"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
 )
 
 // KeyserverList prints information about remote configurations
@@ -62,7 +63,16 @@ func KeyserverList(remoteName string, usrConfigFile string) (err error) {
 		return fmt.Errorf("error getting default remote-endpoint: %w", err)
 	}
 
-	for epName, ep := range c.Remotes {
+	remotes := c.Remotes
+	if remoteName != "" {
+		ep, ok := c.Remotes[remoteName]
+		if !ok {
+			return fmt.Errorf("no remote-endpoint with the name %q found", remoteName)
+		}
+		remotes = map[string]*endpoint.Config{remoteName: ep}
+	}
+
+	for epName, ep := range remotes {
 		fmt.Println()
 		isSystem := ""
 		if ep.System {
