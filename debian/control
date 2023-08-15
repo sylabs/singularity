@@ -23,7 +23,7 @@ Vcs-Browser: https://github.com/sylabs/singularity
 Package: singularity-ce
 Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends},
-  crun | runc,
+  crun (>= 1.5.0) | runc,
   cryptsetup-bin,
   fuse,
   libglib2.0-0,
@@ -39,6 +39,8 @@ Conflicts:
  singularitypro31,
  singularitypro35,
  singularitypro37,
- singularitypro39
+ singularitypro39,
+ singularitypro311
+Recommends: squashfs-tools-ng
 Description: SingularityCE is the Community Edition of Singularity, an
  open source container platform designed to be simple, fast, and secure. 
