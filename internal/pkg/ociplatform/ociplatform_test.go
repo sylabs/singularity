@@ -15,6 +15,9 @@ import (
 )
 
 func Test_sysCtxToPlatform(t *testing.T) {
+	defaultOS := runtime.GOOS
+	defaultArch, defaultVariant := normalizeArch(runtime.GOARCH, CPUVariant())
+
 	tests := []struct {
 		name   string
 		sysCtx *types.SystemContext
@@ -24,20 +27,20 @@ func Test_sysCtxToPlatform(t *testing.T) {
 			name:   "Default",
 			sysCtx: &types.SystemContext{},
 			want: ggcrv1.Platform{
-				OS:           runtime.GOOS,
-				Architecture: runtime.GOARCH,
-				Variant:      CPUVariant(),
+				OS:           defaultOS,
+				Architecture: defaultArch,
+				Variant:      defaultVariant,
 			},
 		},
 		{
 			name: "OverrideOS",
 			sysCtx: &types.SystemContext{
-				OSChoice: "myOS",
+				OSChoice: "myos",
 			},
 			want: ggcrv1.Platform{
-				OS:           "myOS",
-				Architecture: runtime.GOARCH,
-				Variant:      CPUVariant(),
+				OS:           "myos",
+				Architecture: defaultArch,
+				Variant:      defaultVariant,
 			},
 		},
 		{
@@ -46,9 +49,9 @@ func Test_sysCtxToPlatform(t *testing.T) {
 				ArchitectureChoice: "myarch",
 			},
 			want: ggcrv1.Platform{
-				OS:           runtime.GOOS,
+				OS:           defaultOS,
 				Architecture: "myarch",
-				Variant:      CPUVariant(),
+				Variant:      defaultVariant,
 			},
 		},
 		{
@@ -57,8 +60,8 @@ func Test_sysCtxToPlatform(t *testing.T) {
 				VariantChoice: "myvariant",
 			},
 			want: ggcrv1.Platform{
-				OS:           runtime.GOOS,
-				Architecture: runtime.GOARCH,
+				OS:           defaultOS,
+				Architecture: defaultArch,
 				Variant:      "myvariant",
 			},
 		},
