@@ -41,8 +41,8 @@ func FindBin(name string) (path string, err error) {
 		return findFromConfigOnly(name)
 	// distro provided squashfuse and fusermount for unpriv SIF mount and
 	// OCI-mode bare-image overlay
-	case "fusermount":
-		return findOnPath(name)
+	case "fusermount", "fusermount3":
+		return findFusermount()
 	case "squashfuse":
 		// Behavior depends on buildcfg - whether to use bundled squashfuse_ll or external squashfuse_ll/squashfuse
 		return findSquashfuse(name)
@@ -56,4 +56,16 @@ func FindBin(name string) (path string, err error) {
 	default:
 		return "", fmt.Errorf("executable name %q is not known to FindBin", name)
 	}
+}
+
+// findFusermount looks for fusermount3 or, if that's not found, fusermount, on
+// PATH.
+func findFusermount() (string, error) {
+	// fusermount3 if found on PATH
+	path, err := findOnPath("fusermount3")
+	if err == nil {
+		return path, nil
+	}
+	// squashfuse if found on PATH
+	return findOnPath("fusermount")
 }

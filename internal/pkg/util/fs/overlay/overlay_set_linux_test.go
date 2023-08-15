@@ -37,15 +37,20 @@ func wrapOverlayTest(f func(t *testing.T)) func(t *testing.T) {
 			t.Fatalf("while checking for unprivileged overlay support in kernel: %s", unprivOlsErr)
 		}
 
+		if unprivOls {
+			kernelOverlayFunc := func(t *testing.T) {
+				require.Command(t, "fusermount")
+				f(t)
+			}
+
+			t.Run("kerneloverlay", kernelOverlayFunc)
+			unprivOverlays.kernelSupport = false
+		}
+
 		fuseOverlayFunc := func(t *testing.T) {
 			require.Command(t, "fuse-overlayfs")
 			require.Command(t, "fusermount")
 			f(t)
-		}
-
-		if unprivOls {
-			t.Run("kerneloverlay", f)
-			unprivOverlays.kernelSupport = false
 		}
 
 		t.Run("fuseoverlayfs", fuseOverlayFunc)
