@@ -650,7 +650,7 @@ func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 
 	bundleDir, err := os.MkdirTemp(buildcfg.SESSIONDIR, "oci-bundle")
 	if err != nil {
-		return nil
+		return err
 	}
 	defer func() {
 		sylog.Debugf("Removing OCI bundle at: %s", bundleDir)
