@@ -10,7 +10,7 @@ For full instructions on installation, including building RPMs, please check the
 
 You must first install development tools and libraries to your host.
 
-**On Debian-based systems, including Ubuntu 20.04 and above:**
+### Debian / Ubuntu
 
 ```sh
 # Ensure repositories are up-to-date
@@ -28,11 +28,13 @@ sudo apt-get install -y \
     pkg-config \
     runc \
     squashfs-tools \
+    squashfs-tools-ng \
+    uidmap \
     wget \
-    zlib1g-dev \
+    zlib1g-dev
 ```
 
-**On RHEL / AlmaLinux / RockyLinux / CentOS Stream 8 and above:**
+### RHEL / Alma Linux / Rocky Linux 8+ and Fedora
 
 ```sh
 # Install basic tools for compiling
@@ -53,7 +55,7 @@ sudo yum install -y \
     zlib-devel
 ```
 
-**On CentOS/RHEL 7:**
+### RHEL / CentOS 7
 
 ```sh
 # Install basic tools for compiling
@@ -74,8 +76,79 @@ sudo yum install -y \
     zlib-devel
 ```
 
-_Note - `crun` / `runc` can be omitted if you will not use the `singularity oci`
-commands, or the `--oci` execution mode._
+### SLES / openSUSE Leap
+
+```sh
+sudo zypper in \
+    autoconf \
+    automake \
+    cryptsetup \
+    fuse3-devel \
+    gcc \
+    gcc-c++ \
+    git \
+    glib2-devel \
+    libseccomp-devel \
+    libtool \
+    make \
+    pkg-config \
+    runc \
+    squashfs \
+    wget \
+    zlib-devel
+```
+
+## Install sqfstar / tar2sqfs for OCI-mode
+
+If you intend to use the `--oci` execution mode of SingularityCE, your system
+must provide either:
+
+* `squashfs-tools / squashfs` >= 4.5, which provides the `sqfstar` utility.
+  Older versions packaged by many distributions do not include `sqfstar`.
+* `squashfs-tools-ng`, which provides the `tar2sqfs` utility. This is not
+  packaged by all distributions.
+
+### Debian / Ubuntu
+
+On Debian/Ubuntu `squashfs-tools-ng` is available in the distribution
+repositories. It has been included in the "Install system dependencies" step
+above. No further action is necessary.
+
+### Fedora
+
+On Fedora, the `squashfs-tools` package includes `sqfstar`. No further action is
+necessary.
+
+### RHEL / Alma Linux / Rocky Linux / CentOS
+
+On RHEL and derivatives a COPR is available at:
+
+<https://copr.fedorainfracloud.org/coprs/dctrud/squashfs-tools-ng/>
+
+This provides `squashfs-tools-ng`, which will not replace any standard EL or
+EPEL packages. To use it:
+
+#### EL 8 / 9
+
+```sh
+sudo dnf install dnf-plugins-core
+sudo dnf copr enable dctrud/squashfs-tools-ng 
+sudo dnf install squashfs-tools-ng
+```
+
+#### EL 7
+
+```sh
+sudo yum install yum-plugin-copr 
+sudo yum copr enable dctrud/squashfs-tools-ng 
+sudo yum install squashfs-tools-ng
+```
+
+### SLES / openSUSE Leap
+
+On SLES/openSUSE, follow the instructions at the [filesystems
+project](https://software.opensuse.org//download.html?project=filesystems&package=squashfs)
+to obtain an more recent `squashfs` package that provides `sqfstar`.
 
 ## Install Go
 
