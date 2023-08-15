@@ -22,6 +22,7 @@ import (
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/security/seccomp"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rpm"
 	"github.com/sylabs/singularity/v4/pkg/network"
 	"github.com/sylabs/singularity/v4/pkg/util/fs/proc"
@@ -254,14 +255,19 @@ func Filesystem(t *testing.T, fs string) {
 	}
 }
 
-// Command checks if the provided command is found
-// in one the path defined in the PATH environment variable,
-// if not found the current test is skipped with a message.
+// Command checks if the provided command is available (via Singularity's
+// internal bin.FindBin() facility, or else simply on the PATH). If not found,
+// the current test is skipped with a message.
 func Command(t *testing.T, command string) {
-	_, err := exec.LookPath(command)
-	if err != nil {
-		t.Skipf("%s command not found in $PATH", command)
+	if _, err := bin.FindBin(command); err == nil {
+		return
 	}
+
+	if _, err := exec.LookPath(command); err == nil {
+		return
+	}
+
+	t.Skipf("%s command not found in $PATH", command)
 }
 
 // Seccomp checks that seccomp is enabled, if not the
