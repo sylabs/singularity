@@ -42,6 +42,8 @@ var (
 )
 
 func (c actionTests) actionOciRun(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+	e2e.EnsureORASImage(t, c.env)
 	e2e.EnsureOCIArchive(t, c.env)
 	e2e.EnsureOCISIF(t, c.env)
 	e2e.EnsureDockerArchive(t, c.env)
@@ -56,10 +58,11 @@ func (c actionTests) actionOciRun(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
-		imageRef string
-		argv     []string
-		exit     int
+		name         string
+		imageRef     string
+		argv         []string
+		exit         int
+		requirements func(t *testing.T)
 	}{
 		{
 			name:     "oci-sif",
@@ -75,6 +78,9 @@ func (c actionTests) actionOciRun(t *testing.T) {
 			name:     "oci-sif-http",
 			imageRef: "https://s3.amazonaws.com/singularity-ci-public/alpine-oci-sif-squashfs.sif",
 			exit:     0,
+			requirements: func(t *testing.T) {
+				require.Arch(t, "amd64")
+			},
 		},
 		{
 			name:     "oci-sif-oras",
@@ -135,6 +141,7 @@ func (c actionTests) actionOciRun(t *testing.T) {
 					e2e.AsSubtest(tt.name),
 					e2e.WithProfile(profile),
 					e2e.WithCommand("run"),
+					e2e.PreRun(tt.requirements),
 					// While we don't support args we are entering a /bin/sh interactively.
 					e2e.ConsoleRun(e2e.ConsoleSendLine("exit")),
 					e2e.WithArgs(cmdArgs...),
