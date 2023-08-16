@@ -24,6 +24,7 @@ import (
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
 	syoras "github.com/sylabs/singularity/v4/internal/pkg/client/oras"
+	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"golang.org/x/sys/unix"
@@ -53,9 +54,14 @@ type testStruct struct {
 	expectedImage    string
 	expectedOCI      bool
 	envVars          []string
+	requirements     func(t *testing.T)
 }
 
 func (c *ctx) imagePull(t *testing.T, tt testStruct) {
+	if tt.requirements != nil {
+		tt.requirements(t)
+	}
+
 	// Use a one-time cache directory specific to this pull. This ensures we are always
 	// testing an entire pull operation, performing the download into an empty cache.
 	cacheDir, cleanup := e2e.MakeCacheDir(t, "")
@@ -340,6 +346,9 @@ func (c ctx) testPullCmd(t *testing.T) {
 			oci:              false,
 			expectedOCI:      true,
 			expectedExitCode: 0,
+			requirements: func(t *testing.T) {
+				require.Arch(t, "amd64")
+			},
 		},
 		{
 			desc:   "library oci-sif direct",
@@ -348,6 +357,9 @@ func (c ctx) testPullCmd(t *testing.T) {
 			oci:              true,
 			expectedOCI:      true,
 			expectedExitCode: 0,
+			requirements: func(t *testing.T) {
+				require.Arch(t, "amd64")
+			},
 		},
 		{
 			desc:   "library oci-sif platform",
