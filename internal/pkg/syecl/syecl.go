@@ -239,15 +239,16 @@ func shouldRun(ctx context.Context, ecl *EclConfig, fp *os.File, kr openpgp.KeyR
 }
 
 func getExecGroup(ecl *EclConfig, fp *os.File) *Execgroup {
+	var v Execgroup
 	// look what execgroup a container is part of
-	for _, v := range ecl.ExecGroups {
+	for _, v = range ecl.ExecGroups {
 		if filepath.Dir(fp.Name()) == v.DirPath {
 			return &v
 		}
 	}
 
 	// go back at it and this time look for an empty dirpath execgroup to fallback into
-	for _, v := range ecl.ExecGroups {
+	for _, v = range ecl.ExecGroups {
 		if v.DirPath == "" {
 			return &v
 		}

@@ -1054,7 +1054,8 @@ func getFirstPartition(partitions []image.Section) *image.Section {
 }
 
 func getPartitionByID(partitions []image.Section, partID uint32) *image.Section {
-	for _, part := range partitions {
+	var part image.Section
+	for _, part = range partitions {
 		if part.ID == partID {
 			return &part
 		}
