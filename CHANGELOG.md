@@ -32,7 +32,7 @@ OCI-mode changes from 3.11 to 4.0 include:
   - `--workdir`
   - `--scratch`
   - `--no-home`
-  - `--no-mount` (dev cannot be disabled in OCI mode
+  - `--no-mount` (dev cannot be disabled in OCI mode)
   - `--no-umask` (with `--no-compat`)
   - `--writable-tmpfs` (with `--no-compat`)
 - Added `--device` flag to "action" commands (`run`/`exec`/`shell`) when run in
@@ -52,12 +52,13 @@ OCI-mode changes from 3.11 to 4.0 include:
 - Support for thee `SINGULARITY_CONTAINLIBS` env var, to specify libraries to
   bind into `/.singularity.d/libs/` in the container.
 - Support for running OCI-SIF images directly from `docker://`, `http://`,
-  `https://` and `oras://`. URIs.
-- A new `--no-compat` flag can be used with OCI-mode to reduce OCI runtime
-  compatibility and emulate singularity's historic native mode behaviour:
+  `https://` and `oras://` URIs.
+- A new `--no-compat` flag can be used with OCI-mode to mirror singularity's
+  historic native mode behavior on a variety of settings, instead of setting
+  them the way other OCI runtimes typically do:
   - `$HOME`, `/tmp`, `/var/tmp` are bind mounted from the host.
   - The full `/dev` is bind mounted from the host, unless `mount dev = minimal`
-    in `singularity.conf`.
+    in `singularity.conf` (requires `crun`, not applied with `runc`).
   - `bind path` entries in `singularity.conf` are mounted into the container.
   - The current working directory is mounted into the container, and is the
     entry point into the container.
@@ -69,10 +70,10 @@ OCI-mode changes from 3.11 to 4.0 include:
 - The `pull` command now accepts a new flag `--oci` for OCI image sources. This
   will create an OCI-SIF image rather than convert to Singularity's native
   container format.
-- OCI-SIF images can be pushed/pulled to/from OCI registries as single file
+- OCI-SIF containers can be pushed/pulled to/from OCI registries as single file
   artifacts using `oras://` URIs.
-- OCI-SIF images can be pushed/pulled to/from OCI registries as single layer,
-  squashfs layer format OCI images using `docker://` URIs.
+- OCI-SIF containers can be pushed/pulled to/from registries as OCI images, with
+  a single squashfs layer, using `docker://` URIs.
 - A new `oci mode` directive in `singularity.conf` can be set to true to enable
   OCI-mode by default. It can be negated with a new `--no-oci` command line flag.
 
@@ -91,13 +92,10 @@ requirements of OCI-mode and usage information.
 - The `--vm` and related flags to start singularity inside a VM have been
   removed. This functionality was related to the retired Singularity Desktop /
   SyOS projects.
-- Singularity uses squashfuse_ll/squashfuse, which is now built from a git
+- Singularity uses `squashfuse_ll` / `squashfuse`, which is now built from a git
   submodule unless `--without-squashfuse` is specified as an argument to
   `mconfig`. When built with `--without-squashfuse`, `squashfuse_ll` or
   `squashfuse` will be located on `PATH`. Version 0.2.0 or later is required.
-- The keyserver-related commands that were under `remote` have been moved to
-  their own, dedicated `keyserver` command. Run `singularity help keyserver` for
-  more information.
 
 #### CLI
 
@@ -107,12 +105,15 @@ requirements of OCI-mode and usage information.
 - The `remote list` subcommand now outputs only remote endpoints (with
   keyservers and OCI/Docker registries having been moved to separate commands),
   and the output has been streamlined.
-- `--cwd` is now the preferred form of the flag for setting the container's
-  working directory, though `--pwd` is still supported for compatibility.
 - Adding a new remote endpoint using the `singularity remote add` command will
   now set the new endpoint as default. This behavior can be suppressed by
   supplying the `--no-default` (or `-n`) flag to `remote add`.
+- The keyserver-related commands that were under `remote` have been moved to
+  their own, dedicated `keyserver` command. Run `singularity help keyserver` for
+  more information.
 - Improved the clarity of `singularity key list` output.
+- `--cwd` is now the preferred form of the flag for setting the container's
+  working directory, though `--pwd` is still supported for compatibility.
 
 #### Runtime Behaviour
 
@@ -120,7 +121,7 @@ requirements of OCI-mode and usage information.
   with `--fakeroot` has changed. Previously, we were only modifying the `HOME`
   environment variable in these cases, while leaving the container's
   `/etc/passwd` file unchanged (with its homedir field pointing to `/root`,
-  regardless of the value passed to `--home`). With this change, both value of
+  regardless of the value passed to `--home`). With this change, both the value of
   `HOME` and the contents of `/etc/passwd` in the container will reflect the
   value passed to `--home`.
 - Bind mounts are now performed in the order of their occurrence on the command
@@ -128,8 +129,10 @@ requirements of OCI-mode and usage information.
   (Previously, image-mounts were always performed first, regardless of order.)
 - Default OCI config generated with `singularity mount` no longer sets any
   inheritable / ambient capabilites, matching other OCI runtimes.
-- `singularity oci mount` now uses, and requires, `squashfuse` to mount a SIF
-  image to an OCI bundle.
+- `singularity oci mount` now uses, and requires, `squashfuse_ll` or
+  `squashfuse` to mount a SIF image to an OCI bundle. Note that `squashfuse_ll`
+  is built with singularity unless `--without-squashfuse` is passed to
+  `mconfig`.
 - The current working directory is created in the container when it doesn't
   exist, so that it can be entered. You must now specify `--no-mount home,cwd`
   instead of just `--no-mount home` to avoid mounting from `$HOME` if you run
