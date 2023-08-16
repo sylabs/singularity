@@ -766,7 +766,18 @@ func (l *Launcher) RunWrapped(ctx context.Context, containerID, bundlePath, pidF
 			}
 		}
 
-		err := Run(ctx, containerID, absBundle, pidFile, l.singularityConf.SystemdCgroups)
+		// On cgroups v1 rootless, it's not possible to use systemd to manage cgroups.
+		// runc will fail if requested, so don't request it.
+		systemdCgroups := l.singularityConf.SystemdCgroups
+		uid, err := rootless.Getuid()
+		if err != nil {
+			return err
+		}
+		if uid != 0 && !lccgroups.IsCgroup2UnifiedMode() {
+			systemdCgroups = false
+		}
+
+		err = Run(ctx, containerID, absBundle, pidFile, systemdCgroups)
 
 		for _, im := range l.imageMountsByMountpoint {
 			im.Unmount()
