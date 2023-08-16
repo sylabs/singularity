@@ -66,8 +66,8 @@ func GetProcessBounding() (uint64, error) {
 	return uint64(data[0].Inheritable) | uint64(data[1].Inheritable)<<32, nil
 }
 
-// SetProcessEffective set effective capabilities for the
-// the current process and returns previous effective set.
+// SetProcessEffective set effective capabilities for the current process and
+// returns previous effective set.
 func SetProcessEffective(caps uint64) (uint64, error) {
 	var data [2]unix.CapUserData
 	var header unix.CapUserHeader

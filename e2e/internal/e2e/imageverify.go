@@ -79,7 +79,8 @@ func (env TestEnv) ImageVerify(t *testing.T, imagePath string) {
 	)
 }
 
-// DefinitionImageVerify checks for image correctness based off off supplied DefFileDetail
+// DefinitionImageVerify checks for image correctness based off of supplied
+// DefFileDetail
 func DefinitionImageVerify(t *testing.T, cmdPath, imagePath string, dfd DefFileDetails) {
 	if dfd.Help != nil {
 		helpPath := filepath.Join(imagePath, `/.singularity.d/runscript.help`)

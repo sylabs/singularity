@@ -458,7 +458,7 @@ func checkBuildTarget(path string) error {
 }
 
 // definitionFromSpec is specifically for parsing specs for the remote builder
-// it uses a different version the the definition struct and parser
+// it uses a different version the definition struct and parser
 func definitionFromSpec(spec string) (types.Definition, error) {
 	// Try spec as URI first
 	def, err := types.NewDefinitionFromURI(spec)

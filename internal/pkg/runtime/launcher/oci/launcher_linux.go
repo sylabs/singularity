@@ -601,7 +601,8 @@ func (l *Launcher) prepareNativeEnv(bundlePath string, userEnv map[string]string
 		b.WriteString(fmt.Sprintf("%s=%s\n", key, value))
 	}
 
-	// Second, we conditionally restore host env vars, if we are are --no-compat and if they are not set already.
+	// Second, we conditionally restore host env vars, if we are --no-compat and
+	// if they are not set already.
 	hostEnvSnippet := `
 if [ ! "${%[1]s+1}" ]; then
 	export %[1]s=%[2]s

@@ -172,6 +172,7 @@ func TestAskNumberInRange(t *testing.T) {
 	}
 }
 
+//nolint:dupword
 func TestAskQuestion(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
@@ -233,6 +234,7 @@ func TestAskQuestion(t *testing.T) {
 	}
 }
 
+//nolint:dupword
 func TestAskQuestionNoEcho(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)

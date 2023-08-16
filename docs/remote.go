@@ -50,7 +50,7 @@ const (
 	RemoteAddShort string = `Add a new singularity remote endpoint`
 	RemoteAddLong  string = `
   The 'remote add' command allows you to add a new remote endpoint to be
-  be used for singularity remote services. Authentication with a newly created
+  used for singularity remote services. Authentication with a newly created
   endpoint will occur automatically.`
 	RemoteAddExample string = `
   $ singularity remote add SylabsCloud cloud.sylabs.io`
