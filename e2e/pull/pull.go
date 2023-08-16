@@ -613,6 +613,7 @@ func (c ctx) testPullDisableCacheCmd(t *testing.T) {
 		name      string
 		imagePath string
 		imageSrc  string
+		platform  string
 		oci       bool
 		noHTTPS   bool
 	}{
@@ -625,6 +626,7 @@ func (c ctx) testPullDisableCacheCmd(t *testing.T) {
 			name:      "library oci-sif",
 			imagePath: filepath.Join(c.env.TestDir, "nocache-library.oci.sif"),
 			imageSrc:  "library://sylabs/tests/alpine-oci-sif:latest",
+			platform:  "linux/amd64",
 			oci:       true,
 		},
 		{
@@ -648,6 +650,9 @@ func (c ctx) testPullDisableCacheCmd(t *testing.T) {
 		}
 		if tt.noHTTPS {
 			cmdArgs = append(cmdArgs, "--no-https")
+		}
+		if tt.platform != "" {
+			cmdArgs = append(cmdArgs, "--platform", tt.platform)
 		}
 		cmdArgs = append(cmdArgs, tt.imagePath, tt.imageSrc)
 		c.env.RunSingularity(
