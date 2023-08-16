@@ -13,7 +13,7 @@ import (
 )
 
 // ListPlugins lists the singularity plugins installed in the plugin
-// plugin installation directory.
+// installation directory.
 func ListPlugins() error {
 	plugins, err := plugin.List()
 	if err != nil {
