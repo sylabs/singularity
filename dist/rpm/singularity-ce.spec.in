@@ -58,7 +58,11 @@ BuildRequires: glib2-devel
 # Required for building bundled squashfuse
 BuildRequires: autoconf
 BuildRequires: automake
+%if "%{_target_vendor}" == "suse" && 0%{?suse_version} < 1500
+BuildRequires: fuse-devel
+%else
 BuildRequires: fuse3-devel
+%endif
 BuildRequires: libtool
 BuildRequires: zlib-devel
 
@@ -75,7 +79,11 @@ Requires: shadow-utils
 Requires: squashfs-tools
 %endif
 Requires: cryptsetup
+%if "%{_target_vendor}" == "suse" && 0%{?suse_version} < 1500
+Requires: fuse
+%else
 Requires: fuse3
+%endif
 
 Provides: %{name}-runtime
 
@@ -115,10 +123,10 @@ container platform designed to be simple, fast, and secure.
         --mandir=%{_mandir} \
         --infodir=%{_infodir}
 
-%make_build -C builddir old_config= V=
+make -C builddir old_config= V=
 
 %install
-%make_install -C builddir V=
+make DESTDIR=$RPM_BUILD_ROOT install -C builddir V=
 
 %files
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/starter-suid
