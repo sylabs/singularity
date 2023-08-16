@@ -1264,6 +1264,7 @@ func runPluginCallbacks(cfg *config.Common) error {
 		return fmt.Errorf("while loading plugin callbacks '%T': %w", callbackType, err)
 	}
 	for _, c := range callbacks {
+		//nolint:forcetypeassert
 		c.(clicallback.SingularityEngineConfig)(cfg)
 	}
 	return nil

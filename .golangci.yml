@@ -26,6 +26,7 @@ linters:
     - dupl
     - dupword
     - exportloopref
+    - forcetypeassert
     - gofumpt
     - goimports
     - gomodguard

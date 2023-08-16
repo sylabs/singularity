@@ -579,6 +579,7 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 		if len(callbacks) > 1 {
 			return fmt.Errorf("multiple plugins have registered hook callback for fakeroot")
 		} else if len(callbacks) == 1 {
+			//nolint:forcetypeassert
 			getIDRange = callbacks[0].(fakerootcallback.UserMapping)
 		}
 
@@ -761,6 +762,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		if err != nil {
 			return fmt.Errorf("error while getting information for instance task directory: %s", err)
 		}
+		//nolint:forcetypeassert
 		st := fi.Sys().(*syscall.Stat_t)
 		if st.Uid != uint32(uid) || st.Gid != uint32(gid) {
 			return fmt.Errorf("instance process owned by %d:%d instead of %d:%d", st.Uid, st.Gid, uid, gid)
@@ -803,6 +805,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		if err != nil {
 			return fmt.Errorf("error while getting information for parent task directory: %s", err)
 		}
+		//nolint:forcetypeassert
 		st = fi.Sys().(*syscall.Stat_t)
 		if st.Uid != uint32(uid) || st.Gid != uint32(gid) {
 			return fmt.Errorf("parent instance process owned by %d:%d instead of %d:%d", st.Uid, st.Gid, uid, gid)

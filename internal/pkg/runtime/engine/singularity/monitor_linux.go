@@ -35,6 +35,7 @@ func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (sy
 	if len(callbacks) > 1 {
 		return status, fmt.Errorf("multiple plugins have registered callback for '%T'", callbackType)
 	} else if len(callbacks) == 1 {
+		//nolint:forcetypeassert
 		return callbacks[0].(singularitycallback.MonitorContainer)(e.CommonConfig, pid, signals)
 	}
 
@@ -55,6 +56,7 @@ func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (sy
 			break
 		default:
 			if e.EngineConfig.GetSignalPropagation() {
+				//nolint:forcetypeassert
 				if err := syscall.Kill(pid, s.(syscall.Signal)); err != nil {
 					return status, fmt.Errorf("interrupted by signal %s", s.String())
 				}

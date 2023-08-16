@@ -144,11 +144,13 @@ func umount(lazy bool) (err error) {
 	retry:
 		err = syscall.Unmount(p, umountFlags)
 		// ignore EINVAL meaning it's not a mount point
+		//nolint:forcetypeassert
 		if err != nil && err.(syscall.Errno) != syscall.EINVAL {
 			// when rootfs mount point is a sandbox, the unmount
 			// fail more often with EBUSY, but it's just a matter of
 			// time before resources are released by the kernel so we
 			// retry until the unmount operation succeed (retries 10 times)
+			//nolint:forcetypeassert
 			if err.(syscall.Errno) == syscall.EBUSY && retries < 10 {
 				retries++
 				goto retry

@@ -121,6 +121,7 @@ func parseMountInfoLine(line string) MountInfoEntry {
 	if entry.FSType == "btrfs" || entry.FSType == "overlay" || entry.FSType == "ceph" {
 		fi, err := os.Stat(entry.Point)
 		if err == nil {
+			//nolint:forcetypeassert
 			st := fi.Sys().(*syscall.Stat_t)
 			// cast to uint64 as st.Dev is uint32 on MIPS
 			entry.Dev = fmt.Sprintf("%d:%d", unix.Major(uint64(st.Dev)), unix.Minor(uint64(st.Dev)))
@@ -161,6 +162,7 @@ func FindParentMountEntry(path string, entries []MountInfoEntry) (*MountInfoEntr
 	if err != nil {
 		return nil, fmt.Errorf("while getting stat for %s: %s", path, err)
 	}
+	//nolint:forcetypeassert
 	st := fi.Sys().(*syscall.Stat_t)
 	// cast to uint64 as st.Dev is uint32 on MIPS
 	dev := fmt.Sprintf("%d:%d", unix.Major(uint64(st.Dev)), unix.Minor(uint64(st.Dev)))

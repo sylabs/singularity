@@ -236,6 +236,7 @@ func signalProxy(containerID string, signals chan os.Signal) {
 			break
 		default:
 			sylog.Debugf("Received signal %s", s.String())
+			//nolint:forcetypeassert
 			sysSig := s.(syscall.Signal)
 			sylog.Debugf("Sending signal %s to container %s", sysSig.String(), containerID)
 			if err := Kill(containerID, strconv.Itoa(int(sysSig))); err != nil {

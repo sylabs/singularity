@@ -82,6 +82,7 @@ func TestLoop(t *testing.T) {
 
 	loopDevTwo.Close()
 
+	//nolint:forcetypeassert
 	st := fi.Sys().(*syscall.Stat_t)
 	// cast to uint64 as st.Dev is uint32 on MIPS
 	if uint64(st.Dev) != i1.Device || st.Ino != i1.Inode {

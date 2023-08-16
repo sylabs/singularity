@@ -94,6 +94,8 @@ func IsOwner(name string, uid uint32) bool {
 	if err != nil {
 		return false
 	}
+
+	//nolint:forcetypeassert
 	return info.Sys().(*syscall.Stat_t).Uid == uid
 }
 
@@ -103,6 +105,8 @@ func IsGroup(name string, gid uint32) bool {
 	if err != nil {
 		return false
 	}
+
+	//nolint:forcetypeassert
 	return info.Sys().(*syscall.Stat_t).Gid == gid
 }
 
@@ -112,6 +116,8 @@ func IsExec(name string) bool {
 	if err != nil {
 		return false
 	}
+
+	//nolint:forcetypeassert
 	return info.Sys().(*syscall.Stat_t).Mode&syscall.S_IXUSR != 0
 }
 
@@ -121,6 +127,8 @@ func IsSuid(name string) bool {
 	if err != nil {
 		return false
 	}
+
+	//nolint:forcetypeassert
 	return info.Sys().(*syscall.Stat_t).Mode&syscall.S_ISUID != 0
 }
 

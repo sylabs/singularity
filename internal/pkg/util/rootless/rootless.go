@@ -141,6 +141,7 @@ func RunInMountNS(args []string) error {
 				// https://github.com/golang/go/issues/24543.
 				break
 			default:
+				//nolint:forcetypeassert
 				signal := s.(syscall.Signal)
 				if err := syscall.Kill(cmd.Process.Pid, signal); err != nil {
 					return err

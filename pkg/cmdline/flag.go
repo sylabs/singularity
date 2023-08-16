@@ -109,6 +109,7 @@ func (m *flagManager) registerFlagForCmd(flag *Flag, cmds ...*cobra.Command) err
 
 func (m *flagManager) registerStringVar(flag *Flag, cmds []*cobra.Command) error {
 	for _, c := range cmds {
+		//nolint:forcetypeassert
 		if flag.ShortHand != "" {
 			c.Flags().StringVarP(flag.Value.(*string), flag.Name, flag.ShortHand, flag.DefaultValue.(string), flag.Usage)
 		} else {
@@ -121,6 +122,7 @@ func (m *flagManager) registerStringVar(flag *Flag, cmds []*cobra.Command) error
 
 func (m *flagManager) registerStringSliceVar(flag *Flag, cmds []*cobra.Command) error {
 	for _, c := range cmds {
+		//nolint:forcetypeassert
 		if flag.ShortHand != "" {
 			c.Flags().StringSliceVarP(flag.Value.(*[]string), flag.Name, flag.ShortHand, flag.DefaultValue.([]string), flag.Usage)
 		} else {
@@ -133,6 +135,7 @@ func (m *flagManager) registerStringSliceVar(flag *Flag, cmds []*cobra.Command) 
 
 func (m *flagManager) registerStringArrayVar(flag *Flag, cmds []*cobra.Command) error {
 	for _, c := range cmds {
+		//nolint:forcetypeassert
 		if flag.ShortHand != "" {
 			c.Flags().StringArrayVarP(flag.Value.(*[]string), flag.Name, flag.ShortHand, flag.DefaultValue.([]string), flag.Usage)
 		} else {
@@ -146,6 +149,7 @@ func (m *flagManager) registerStringArrayVar(flag *Flag, cmds []*cobra.Command) 
 // registerStringArrayCommas uses StringToStringVarP, a variant to allow commas (and a map of string/string)
 func (m *flagManager) registerStringMapVar(flag *Flag, cmds []*cobra.Command) error {
 	for _, c := range cmds {
+		//nolint:forcetypeassert
 		if flag.ShortHand != "" {
 			c.Flags().StringToStringVarP(flag.Value.(*map[string]string), flag.Name, flag.ShortHand, flag.DefaultValue.(map[string]string), flag.Usage)
 		} else {
@@ -158,6 +162,7 @@ func (m *flagManager) registerStringMapVar(flag *Flag, cmds []*cobra.Command) er
 
 func (m *flagManager) registerBoolVar(flag *Flag, cmds []*cobra.Command) error {
 	for _, c := range cmds {
+		//nolint:forcetypeassert
 		if flag.ShortHand != "" {
 			c.Flags().BoolVarP(flag.Value.(*bool), flag.Name, flag.ShortHand, flag.DefaultValue.(bool), flag.Usage)
 		} else {
@@ -170,6 +175,7 @@ func (m *flagManager) registerBoolVar(flag *Flag, cmds []*cobra.Command) error {
 
 func (m *flagManager) registerIntVar(flag *Flag, cmds []*cobra.Command) error {
 	for _, c := range cmds {
+		//nolint:forcetypeassert
 		if flag.ShortHand != "" {
 			c.Flags().IntVarP(flag.Value.(*int), flag.Name, flag.ShortHand, flag.DefaultValue.(int), flag.Usage)
 		} else {
@@ -182,6 +188,7 @@ func (m *flagManager) registerIntVar(flag *Flag, cmds []*cobra.Command) error {
 
 func (m *flagManager) registerUint32Var(flag *Flag, cmds []*cobra.Command) error {
 	for _, c := range cmds {
+		//nolint:forcetypeassert
 		if flag.ShortHand != "" {
 			c.Flags().Uint32VarP(flag.Value.(*uint32), flag.Name, flag.ShortHand, flag.DefaultValue.(uint32), flag.Usage)
 		} else {

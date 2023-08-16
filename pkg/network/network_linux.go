@@ -208,6 +208,7 @@ func (m *Setup) SetCapability(network string, capName string, args interface{}) 
 				return fmt.Errorf("%s network doesn't have %s capability", network, capName)
 			}
 
+			//nolint:forcetypeassert
 			switch args := args.(type) {
 			case PortMapEntry:
 				if m.runtimeConf[i].CapabilityArgs[capName] == nil {

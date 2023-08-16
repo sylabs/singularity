@@ -15,6 +15,7 @@ import (
 	"os"
 	osuser "os/user"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"syscall"
@@ -748,7 +749,10 @@ func (c *container) addRootfsMount(system *mount.System) error {
 }
 
 func (c *container) overlayUpperWork(*mount.System) error {
-	ov := c.session.Layer.(*overlay.Overlay)
+	ov, ok := c.session.Layer.(*overlay.Overlay)
+	if !ok {
+		return fmt.Errorf("expected overlay layer, but found layer of type %v", reflect.TypeOf(c.session.Layer))
+	}
 
 	createUpperWork := func(path, label string) error {
 		fi, err := c.rpcOps.Lstat(path)
@@ -778,7 +782,10 @@ func (c *container) overlayUpperWork(*mount.System) error {
 
 func (c *container) addOverlayMount(system *mount.System) error {
 	nb := 0
-	ov := c.session.Layer.(*overlay.Overlay)
+	ov, ok := c.session.Layer.(*overlay.Overlay)
+	if !ok {
+		return fmt.Errorf("expected overlay layer, but found layer of type %v", reflect.TypeOf(c.session.Layer))
+	}
 	hasUpper := false
 
 	if c.engine.EngineConfig.GetWritableTmpfs() {
@@ -1878,6 +1885,7 @@ func (c *container) addCwdMount(system *mount.System) error {
 		sylog.Verbosef("Not mounting CWD, while getting %s information: %s", cwdContainerResolved, err)
 		return nil
 	}
+	//nolint:forcetypeassert
 	cst := fi.Sys().(*syscall.Stat_t)
 
 	var hst syscall.Stat_t

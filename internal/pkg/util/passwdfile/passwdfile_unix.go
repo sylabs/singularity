@@ -12,9 +12,11 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"os/user"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -143,7 +145,11 @@ func findUserID(uid string, r io.Reader) (*user.User, error) {
 	if v, err := readColonFile(r, matchUserIndexValue(uid, 2), 6); err != nil {
 		return nil, err
 	} else if v != nil {
-		return v.(*user.User), nil
+		u, ok := v.(*user.User)
+		if !ok {
+			return nil, fmt.Errorf("expected user info, but found %v", reflect.TypeOf(v))
+		}
+		return u, nil
 	}
 	return nil, user.UnknownUserIdError(i)
 }
@@ -152,7 +158,11 @@ func findUsername(name string, r io.Reader) (*user.User, error) {
 	if v, err := readColonFile(r, matchUserIndexValue(name, 0), 6); err != nil {
 		return nil, err
 	} else if v != nil {
-		return v.(*user.User), nil
+		u, ok := v.(*user.User)
+		if !ok {
+			return nil, fmt.Errorf("expected user info, but found %v", reflect.TypeOf(v))
+		}
+		return u, nil
 	}
 	return nil, user.UnknownUserError(name)
 }
