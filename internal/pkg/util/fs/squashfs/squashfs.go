@@ -28,7 +28,7 @@ func FUSEMount(ctx context.Context, offset uint64, path, mountPath string) error
 	if err != nil {
 		return err
 	}
-	cmd := exec.CommandContext(ctx, squashfuse, args...) //nolint:gosec
+	cmd := exec.CommandContext(ctx, squashfuse, args...)
 
 	sylog.Debugf("Executing %s %s", squashfuse, strings.Join(args, " "))
 
@@ -49,7 +49,7 @@ func FUSEUnmount(ctx context.Context, mountPath string) error {
 	if err != nil {
 		return err
 	}
-	cmd := exec.CommandContext(ctx, fusermount, args...) //nolint:gosec
+	cmd := exec.CommandContext(ctx, fusermount, args...)
 
 	sylog.Debugf("Executing %s %s", fusermount, strings.Join(args, " "))
 

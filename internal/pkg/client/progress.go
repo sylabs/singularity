@@ -58,7 +58,7 @@ func ProgressBarCallback(ctx context.Context) ProgressCallback {
 	}
 
 	return func(totalSize int64, r io.Reader, w io.Writer) error {
-		p, bar := initProgressBar(totalSize) //nolint:contextcheck
+		p, bar := initProgressBar(totalSize)
 
 		// create proxy reader
 		bodyProgress := bar.ProxyReader(r)

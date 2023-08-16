@@ -52,7 +52,6 @@ func TestCgroupsV2(t *testing.T) {
 	runSystemdTests(t, tests)
 }
 
-//nolint:dupl
 func testGetCgroupRootPathV2(t *testing.T, systemd bool) {
 	// This cgroup won't be created in the fs as we don't add a PID through the manager
 	group := filepath.Join("/singularity/rootpathtest")
@@ -99,7 +98,6 @@ func testGetCgroupRelPathV2(t *testing.T, systemd bool) {
 	}
 }
 
-//nolint:dupl
 func testNewUpdateV2(t *testing.T, systemd bool) {
 	_, manager, cleanup := testManager(t, systemd)
 	defer cleanup()
@@ -132,7 +130,6 @@ func testNewUpdateV2(t *testing.T, systemd bool) {
 	ensureInt(t, pidsMax, 512)
 }
 
-//nolint:dupl
 func testUpdateUnifiedV2(t *testing.T, systemd bool) {
 	// Apply a 1024 pids.max limit using the v1 style config that sets [pids] limit
 	_, manager, cleanup := testManager(t, systemd)
@@ -149,7 +146,6 @@ func testUpdateUnifiedV2(t *testing.T, systemd bool) {
 	ensureInt(t, pidsMax, 512)
 }
 
-//nolint:dupl
 func testAddProcV2(t *testing.T, systemd bool) {
 	pid, manager, cleanup := testManager(t, systemd)
 
@@ -173,7 +169,6 @@ func testAddProcV2(t *testing.T, systemd bool) {
 	ensureContainsInt(t, cgroupProcs, int64(newPid))
 }
 
-//nolint:dupl
 func testFreezeThawV2(t *testing.T, systemd bool) {
 	manager := &Manager{}
 	if err := manager.Freeze(); err == nil {

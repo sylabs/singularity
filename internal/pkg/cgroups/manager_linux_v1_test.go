@@ -52,7 +52,6 @@ func TestCgroupsV1(t *testing.T) {
 	runSystemdTests(t, tests)
 }
 
-//nolint:dupl
 func testGetCgroupRootPathV1(t *testing.T, systemd bool) {
 	// This cgroup won't be created in the fs as we don't add a PID through the manager
 	group := filepath.Join("/singularity/rootpathtest")
@@ -85,7 +84,6 @@ func testGetCgroupRootPathV1(t *testing.T, systemd bool) {
 	}
 }
 
-//nolint:dupl
 func testGetCgroupRelPathV1(t *testing.T, systemd bool) {
 	// This cgroup won't be created in the fs as we don't add a PID through the manager
 	group := filepath.Join("/singularity/rootpathtest")
@@ -110,7 +108,6 @@ func testGetCgroupRelPathV1(t *testing.T, systemd bool) {
 	}
 }
 
-//nolint:dupl
 func testNewUpdateV1(t *testing.T, systemd bool) {
 	_, manager, cleanup := testManager(t, systemd)
 	defer cleanup()
@@ -142,7 +139,6 @@ func testNewUpdateV1(t *testing.T, systemd bool) {
 	ensureInt(t, pidsMax, 512)
 }
 
-//nolint:dupl
 func testUpdateUnifiedV1(t *testing.T, systemd bool) {
 	_, manager, cleanup := testManager(t, systemd)
 	defer cleanup()

@@ -1743,7 +1743,6 @@ cat /proc/$$/cmdline`
 	)
 }
 
-//nolint:maintidx
 func (c imgBuildTests) buildDefinitionWithBuildArgs(t *testing.T) {
 	busyboxSIF := e2e.BusyboxSIF(t)
 	fileContent := `HOME=/root

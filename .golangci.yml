@@ -38,6 +38,7 @@ linters:
     - maintidx
     - misspell
     - nakedret
+    - nolintlint
     - reassign
     - revive
     - staticcheck
@@ -51,3 +52,10 @@ linters-settings:
 issues:
   max-per-linter: 0
   max-same-issues: 0
+  exclude:
+    - EXC0004
+  exclude-rules:
+    - linters:
+        - gosec
+      text: "^(G107|G204|G306):"
+

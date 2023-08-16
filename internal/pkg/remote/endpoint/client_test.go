@@ -133,7 +133,6 @@ func TestKeyserverClientOpts(t *testing.T) {
 	}
 }
 
-//nolint:dupl
 func TestLibraryClientConfig(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -203,7 +202,6 @@ func TestLibraryClientConfig(t *testing.T) {
 	}
 }
 
-//nolint:dupl
 func TestBuilderClientConfig(t *testing.T) {
 	tests := []struct {
 		name          string
