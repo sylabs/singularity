@@ -2,74 +2,39 @@
 
 ## Changes Since Last Release
 
-### Changed defaults / behaviours
+### OCI-mode
 
-- When building RPM, we will now use `/var/lib/singularity` (rather than
-  `/var/singularity`) to store local state files.
-- `--cwd` is now the preferred form of the flag for setting the container's
-  working directory, though `--pwd` is still supported for compatibility.
-- The way --home is handled when running as root (e.g. `sudo singularity`) or
-  with `--fakeroot` has changed. Previously, we were only modifying the `HOME`
-  environment variable in these cases, while leaving the container's
-  `/etc/passwd` file unchanged (with its homedir field pointing to `/root`,
-  regardless of the value passed to `--home`). With this change, both value of
-  `HOME` and the contents of `/etc/passwd` in the container will reflect the
-  value passed to `--home`.
-- Bind mounts are now performed in the order of their occurrence on the command
-  line, or within the value of the `SINGULARITY_BIND` environment variable.
-  (Previously, image-mounts were always performed first, regardless of order.)
-- Support for image driver plugins, deprecated at 3.11, has been removed.
-  Unprivileged kernel overlay is supported without a plugin. In
-  `singularity.conf`, the `image driver` directive has been removed, and
-  `enable overlay` no longer supports the `driver` option.
-- Bash completions are now install to the modern
-  `share/bash-completion/completions` location, rather than under `etc`.
-- Default OCI config generated with `singularity mount` no longer sets any
-  inheritable / ambient capabilites, matching other OCI runtimes.
-- In OCI-mode, a container run as root, or with `--fakeroot` has OCI default
-  effective/permitted capabilities.
-- Lookup and store user/group information in stage one prior to entering any
-  namespaces to fix issue with winbind not correctly lookup user/group
-  information when using user namespace.
-- `singularity oci mount` now uses, and requires, `squashfuse` to mount a SIF
-  image to an OCI bundle.
-- The `--vm` and related flags to start singularity inside a VM have been
-  removed. This functionality was related to the retired Singularity Desktop /
-  SyOS projects.
-- The keyserver-related commands that were under `remote` have been moved to
-  their own, dedicated `keyserver` command. Run `singularity help keyserver` for
-  more information.
-- The commands related to OCI/Docker registries that were under `remote` have
-  been moved to their own, dedicated `registry` command. Run
-  `singularity help registry` for more information.
-- The the `remote list` subcommand now outputs only remote endpoints (with
-  keyservers and OCI/Docker registries having been moved to separate commands),
-  and the output has been streamlined.
-- Adding a new remote endpoint using the `singularity remote add` command will
-  now set the new endpoint as default. This behavior can be suppressed by
-  supplying the `--no-default` (or `-n`) flag to `remote add`.
-- Singularity uses squashfuse_ll/squashfuse, which is now built from a git
-  submodule unless `--without-squashfuse` is specified as an argument to
-  `mconfig`. When built with `--without-squashfuse`, `squashfuse_ll` or
-  `squashfuse` will be located on `PATH`. Version 0.2.0 or later is required.
-- When `singularity registry login` is used to login to a public OCI registry,
-  the password is not verified at login time.
-- Improved the clarity of `singularity key list` output.
-- Do not mount current working directory when its path in the container and on
-  the host contain symlinks to different locations.
-- Create current working directory in container when it doesn't exist, so that
-  it can be entered. You must now specify `--no-mount home,cwd` instead of just
-  `--no-mount home` to avoid mounting from `$HOME` if you run `singularity` from
-  inside `$HOME`.
-- Running `singularity pull --oci` without a specific output filename will now
-  create an image with the `.oci.sif` suffix instead of `.sif`.
+Singularity 4 introduces OCI-mode as a fully supported feature. It is enabled by
+using the `--oci` flag with the `run / shell / exec / pull` commands, or by
+setting `oci mode = yes` in `singularity.conf`.
 
-### New Features & Functionality
+In OCI-mode:
 
-- Added `--secret` flag (shorthand: `-s`) to `key remove` subcommand, to allow
-  removal of a private key by fingerprint.
-- Added `--private` as a synonym for `--secret` in `key list`, `key export`, and
-  `key remove` subcommands.
+- Container images from OCI sources will be `pull`-ed to an OCI-SIF file. An
+  OCI-SIF file encapsulates the OCI image configuration and squashed filesystem
+  using an OCI, rather than Singularity specific, structure.
+- The `run / shell / exec` commands use a low-level OCI runtime (crun/runc) for container
+  execution.
+- Default operation is compatible with other OCI tools, similar to using
+  `--compat` in Singularity's non-OCI native mode.
+- OCI-modes support running existing Singularity non-OCI-SIF images, and can be
+  made to imitate native mode default behavior by using the `--no-compat` flag.
+
+OCI-mode changes from 3.11 to 4.0 include:
+
+- `run / shell / exec` in OCI-mode now includes support for the following
+  existing CLI flags:
+  - `--add-caps`
+  - `--drop-caps`
+  - `--keep-privs`
+  - `--no-privs`
+  - `--overlay` from directories, bare squashfs and extfs images.
+  - `--workdir`
+  - `--scratch`
+  - `--no-home`
+  - `--no-mount` (dev cannot be disabled in OCI mode
+  - `--no-umask` (with `--no-compat`)
+  - `--writable-tmpfs` (with `--no-compat`)
 - Added `--device` flag to "action" commands (`run`/`exec`/`shell`) when run in
   OCI mode (`--oci`). Currently supports passing one or more (comma-separated)
   fully-qualified CDI device names, and those devices will then be made
@@ -78,57 +43,16 @@
   json files, allowing, for example, users who don't have root access on their
   host machine to nevertheless create CDI mappings (into containers run with
   `--fakeroot`, for example).
-- The `remote status` command will now print the username, realname, and email
-  of the logged-in user, if available.
-- OCI-mode now supports the `--overlay <arg>` flag. `<arg>` can be the path to a
-  writable directory or writable extfs image, in which case changes to the
-  filesystem will persist across runs of the OCI container. Alternatively,
-  `--overlay <arg>:ro` can be used, where `<arg>` is the path to a directory, to
-  a squashfs image, or to an extfs image, to be mounted as a read-only overlay.
-  Multiple overlays can be specified, but all but one must be read-only.
-- OCI-mode now supports the `--workdir <workdir>` option. If this option is
-  specified, `/tmp` and `/var/tmp` will be mapped, respectively, to
-  `<workdir>/tmp` and `<workdir>/var_tmp` on the host, rather than to tmpfs
-  storage. If `--scratch <scratchdir>` is used in conjunction with `--workdir`,
-  scratch directories will be mapped to subdirectories nested under
-  `<workdir>/scratch` on the host, rather than to tmpfs storage.
-- Templating support for definition files: users can now define variables in
-  definition files via a matching pair of double curly brackets. Variables of
-  the form `{{ variable }}` will be replaced by a value defined either by a
-  `variable=value` entry in the `%arguments` section of the definition file, or
-  through new build options `--build-arg` or `--build-arg-file`.
-- If kernel does not support unprivileged overlays, OCI-mode will attempt to use
-  `fuse-overlayfs` and `fusermount` for overlay mounting and unmounting.
-- OCI-mode now supports the `--no-home` flag, to prevent the container home
-  directory from being mounted.
-- OCI-mode now supports the `--no-mount` flag to disable the `proc`, `sys`,
-  `devpts`, `tmp`, and `home` mounts in the container. `dev` cannot be disabled
-  in OCI-mode, and `bind-path` mounts are not supported.
-- OCI-mode now suppports the `SINGULARITY_CONTAINLIBS` env var, to specify
-  libraries to bind into `/.singularity.d/libs/` in the container.
-- OCI-mode now supports the `--no-privs` flag to drop all capabilities from the
-  container process, and enable the NoNewPrivileges flag.
-- OCI-mode now supports the `--keep-privs` flag to keep effective capabilities
-  for the container process (bounding set only for non-root container users).
-- OCI-mode now supports the `--add-caps` and `--drop-caps` flags to modify
-  capabilities of the container process.
-- The `cache` commands now accept `--type oci-sif` to list and clean cached
-  OCI-SIF image conversions of OCI sources.
-- The `pull` command now accepts a new flag `--oci` for OCI image sources. This
-  will create an OCI-SIF image rather than convert to Singularity's native
-  container format.
-- OCI-mode now supports running OCI-SIF images directly from `docker://`,
-  `http://`, `https://` and `oras://`. URIs.
-- OCI-SIF images can be pushed/pulled to/from OCI registries as single file
-  artifacts using `oras://` URIs.
-- OCI-SIF images can be pushed/pulled to/from OCI registries as single layer,
-  squashfs layer format OCI images using `docker://` URIs.
-- The `instance start` command now accepts an optional `--app <name>` argument
-  which invokes start script within the `%appstart <name>` section in the
-  definition file. The `instance stop` command still only requires the instance
-  name.
-- A new `--no-pid` flag for `singularity run/shell/exec` disables the PID namespace
-  inferred by `--containall` and `--compat`.
+- A container run as root, or with `--fakeroot`, has OCI default
+  effective/permitted capabilities.
+- An `--env-file` is evaluated with respect to the host environment, to match
+  native mode behaviour.
+- If the kernel does not support unprivileged overlays, OCI-mode will attempt to
+  use `fuse-overlayfs` and `fusermount` for overlay mounting and unmounting.
+- Support for thee `SINGULARITY_CONTAINLIBS` env var, to specify libraries to
+  bind into `/.singularity.d/libs/` in the container.
+- Support for running OCI-SIF images directly from `docker://`, `http://`,
+  `https://` and `oras://`. URIs.
 - A new `--no-compat` flag can be used with OCI-mode to reduce OCI runtime
   compatibility and emulate singularity's historic native mode behaviour:
   - `$HOME`, `/tmp`, `/var/tmp` are bind mounted from the host.
@@ -142,20 +66,114 @@
     used.
   - When a native (non-OCI-SIF) image is run in OCI-mode, environment variables
     will be shell evaluated on container startup.
+- The `pull` command now accepts a new flag `--oci` for OCI image sources. This
+  will create an OCI-SIF image rather than convert to Singularity's native
+  container format.
+- OCI-SIF images can be pushed/pulled to/from OCI registries as single file
+  artifacts using `oras://` URIs.
+- OCI-SIF images can be pushed/pulled to/from OCI registries as single layer,
+  squashfs layer format OCI images using `docker://` URIs.
 - A new `oci mode` directive in `singularity.conf` can be set to true to enable
   OCI-mode by default. It can be negated with a new `--no-oci` command line flag.
+
+See the [admin guide](https://docs.sylabs.io/guides/latest/admin-guide/) and
+[user guide](https://docs.sylabs.io/guides/latest/user-guide/) for full
+requirements of OCI-mode and usage information.
+
+### Changed defaults / behaviours
+
+#### Packages / Requirements
+
+- RPM packages now use `/var/lib/singularity` (rather than `/var/singularity`)
+  to store local state files.
+- Bash completions are now install to the modern
+  `share/bash-completion/completions` location, rather than under `etc`.
+- The `--vm` and related flags to start singularity inside a VM have been
+  removed. This functionality was related to the retired Singularity Desktop /
+  SyOS projects.
+- Singularity uses squashfuse_ll/squashfuse, which is now built from a git
+  submodule unless `--without-squashfuse` is specified as an argument to
+  `mconfig`. When built with `--without-squashfuse`, `squashfuse_ll` or
+  `squashfuse` will be located on `PATH`. Version 0.2.0 or later is required.
+- The keyserver-related commands that were under `remote` have been moved to
+  their own, dedicated `keyserver` command. Run `singularity help keyserver` for
+  more information.
+
+#### CLI
+
+- The commands related to OCI/Docker registries that were under `remote` have
+  been moved to their own, dedicated `registry` command. Run
+  `singularity help registry` for more information.
+- The `remote list` subcommand now outputs only remote endpoints (with
+  keyservers and OCI/Docker registries having been moved to separate commands),
+  and the output has been streamlined.
+- `--cwd` is now the preferred form of the flag for setting the container's
+  working directory, though `--pwd` is still supported for compatibility.
+- Adding a new remote endpoint using the `singularity remote add` command will
+  now set the new endpoint as default. This behavior can be suppressed by
+  supplying the `--no-default` (or `-n`) flag to `remote add`.
+- Improved the clarity of `singularity key list` output.
+
+#### Runtime Behaviour
+
+- The way `--home` is handled when running as root (e.g. `sudo singularity`) or
+  with `--fakeroot` has changed. Previously, we were only modifying the `HOME`
+  environment variable in these cases, while leaving the container's
+  `/etc/passwd` file unchanged (with its homedir field pointing to `/root`,
+  regardless of the value passed to `--home`). With this change, both value of
+  `HOME` and the contents of `/etc/passwd` in the container will reflect the
+  value passed to `--home`.
+- Bind mounts are now performed in the order of their occurrence on the command
+  line, or within the value of the `SINGULARITY_BIND` environment variable.
+  (Previously, image-mounts were always performed first, regardless of order.)
+- Default OCI config generated with `singularity mount` no longer sets any
+  inheritable / ambient capabilites, matching other OCI runtimes.
+- `singularity oci mount` now uses, and requires, `squashfuse` to mount a SIF
+  image to an OCI bundle.
+- The current working directory is created in the container when it doesn't
+  exist, so that it can be entered. You must now specify `--no-mount home,cwd`
+  instead of just `--no-mount home` to avoid mounting from `$HOME` if you run
+  `singularity` from inside `$HOME`.
+- If the path of the current working directory in the container and on
+  the host contain symlinks to different locations, it will not be mounted.
+
+### New Features & Functionality
+
+- Templating support for definition files: users can now define variables in
+  definition files via a matching pair of double curly brackets. Variables of
+  the form `{{ variable }}` will be replaced by a value defined either by a
+  `variable=value` entry in the `%arguments` section of the definition file, or
+  through new build options `--build-arg` or `--build-arg-file`.
+- Added `--secret` flag (shorthand: `-s`) to `key remove` subcommand, to allow
+  removal of a private key by fingerprint.
+- Added `--private` as a synonym for `--secret` in `key list`, `key export`, and
+  `key remove` subcommands.
+- The `remote status` command will now print the username, realname, and email
+  of the logged-in user, if available.
+- The `cache` commands now accept `--type oci-sif` to list and clean cached
+  OCI-SIF image conversions of OCI sources.
+- The `instance start` command now accepts an optional `--app <name>` argument
+  which invokes start script within the `%appstart <name>` section in the
+  definition file. The `instance stop` command still only requires the instance
+  name.
+- A new `--no-pid` flag for `singularity run/shell/exec` disables the PID namespace
+  inferred by `--containall` and `--compat`.
 - A new `--platform` flag can be used to specify an `OS/Architecture[/Variant]`
   when pulling images from OCI or library sources. When pulling from library
-  sources the optional variant is igored.
+  sources the optional variant is ignored.
 - The `--arch` flag can now be used to specify a required architecture when pulling
   images from OCI, as well as library sources.
 
 ### Developer / API
 
-- Changes in pkg/build/types.Definition struct. New `.FullRaw` field introduced,
+- Support for image driver plugins, deprecated at 3.11, has been removed.
+  Unprivileged kernel overlay is supported without a plugin. In
+  `singularity.conf`, the `image driver` directive has been removed, and
+  `enable overlay` no longer supports the `driver` option.
+- Changes in `pkg/build/types.Definition` struct. New `.FullRaw` field introduced,
   which always contains the raw data for the entire definition file. Behavior of
   `.Raw` field has changed: for multi-stage builds parsed with
-  pkg/build/types/parser.All(), `.Raw` contains the raw content of a single
+  `pkg/build/types/parser.All()`, `.Raw` contains the raw content of a single
   build stage. Otherwise, it is equal to `.FullRaw`.
 - The SingularityCE go module is now `github.com/sylabs/singularity/v4`,
   reflecting the major version of the application.
@@ -165,8 +183,13 @@
 - Fix interaction between `--workdir` when given relative path and `--scratch`.
 - Set correct `$HOME` in `--oci` mode when `mount home = no` in
   `singularity.conf`.
-- In `--oci` mode, an `--env-file` is evaluated with respect to the host
-  environment, to match native mode behaviour.
+- Lookup and store user/group information in stage one prior to entering any
+  namespaces to fix issue with winbind not correctly lookup user/group
+  information when using user namespace.
+- Caching of OCI images is now architecture aware. This fixes behaviour where a
+  user's home directory is shared between systems of different architectures.
+
+-----
 
 ## 3.11.4 \[2023-06-22\]
 
@@ -875,7 +898,7 @@ of use:
   `E2E_DOCKER_PASSWORD` environment variables.
 - Fix privilege handling issue with tests on Go >=1.16.
 
-______________________________________________________________________
+-----
 
 ## v3.7.4 - \[2021-05-26\]
 
