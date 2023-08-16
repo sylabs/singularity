@@ -28,8 +28,11 @@ func SysCtxToPlatform(sysCtx *types.SystemContext) ggcrv1.Platform {
 	if arch == "" {
 		arch = runtime.GOARCH
 	}
+	// Only set variant to the default for the system if arch matches the system arch.
+	// See https://github.com/sylabs/singularity/issues/2049
+	systemArch := arch == runtime.GOARCH
 	variant := sysCtx.VariantChoice
-	if variant == "" {
+	if variant == "" && systemArch {
 		variant = CPUVariant()
 	}
 	arch, variant = normalizeArch(arch, variant)
