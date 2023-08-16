@@ -218,8 +218,16 @@ func (l *Launcher) addDevMounts(mounts *[]specs.Mount) error {
 	// singularity.conf, then we use an OCI-like minimal dev.
 	contained := l.cfg.Contain || l.cfg.ContainAll
 	minimalDev := contained || (l.singularityConf.MountDev == "minimal")
+	// Binding all of /dev like native mode only works with crun
 	if l.cfg.NoCompat && !minimalDev {
-		return l.addDevBind(mounts)
+		rt, err := runtime()
+		if err != nil {
+			return err
+		}
+		if filepath.Base(rt) == "crun" {
+			return l.addDevBind(mounts)
+		}
+		sylog.Warningf("Can only bind /dev when using 'crun' as OCI runtime. Currently using %q. Will use minimal /dev.", rt)
 	}
 
 	*mounts = append(*mounts,

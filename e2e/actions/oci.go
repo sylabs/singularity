@@ -2236,6 +2236,7 @@ func (c actionTests) actionOciNoCompat(t *testing.T) {
 		args     []string
 		exitCode int
 		expect   []e2e.SingularityCmdResultOp
+		requires func(t *testing.T)
 	}
 
 	tests := []test{
@@ -2255,6 +2256,9 @@ func (c actionTests) actionOciNoCompat(t *testing.T) {
 			name:     "fullDev",
 			args:     []string{"--no-compat", imageRef, "sh", "-c", "ls /dev/block"},
 			exitCode: 0,
+			requires: func(t *testing.T) {
+				require.Command(t, "crun")
+			},
 		},
 		// Default bind path /etc/localtime in singularity.conf is bound in
 		{
@@ -2312,6 +2316,7 @@ func (c actionTests) actionOciNoCompat(t *testing.T) {
 	for _, tt := range tests {
 		c.env.RunSingularity(
 			t,
+			e2e.PreRun(tt.requires),
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(e2e.OCIUserProfile),
 			e2e.WithDir(workDir),
