@@ -1,6 +1,6 @@
 # SingularityCE Changelog
 
-## Changes Since Last Release
+## 4.0.0-rc.1 (Release Candidate 1) \[2023-08-17\]
 
 ### OCI-mode
 
