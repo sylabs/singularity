@@ -170,8 +170,6 @@ func (m *Manager) UpdateFromFile(path string) error {
 //
 // Disable context check as it raises a warning throuch lcmanager.New, which is
 // in a dependency we cannot modify to pass a context.
-//
-// nolint:contextcheck
 func (m *Manager) AddProc(pid int) (err error) {
 	if m.group == "" || m.cgroup == nil {
 		return ErrUnitialized
@@ -260,8 +258,6 @@ func checkRootless(group string, systemd bool) (rootless bool, err error) {
 //
 // Disable context check as it raises a warning throuch lcmanager.New, which is
 // in a dependency we cannot modify to pass a context.
-//
-// nolint:contextcheck
 func newManager(resources *specs.LinuxResources, group string, systemd bool) (manager *Manager, err error) {
 	if resources == nil {
 		return nil, fmt.Errorf("non-nil cgroup LinuxResources definition is required")
@@ -389,8 +385,6 @@ func NewManagerWithFile(specPath string, pid int, group string, systemd bool) (m
 //
 // Disable context check as it raises a warning throuch lcmanager.New, which is
 // in a dependency we cannot modify to pass a context.
-//
-// nolint:contextcheck
 func GetManagerForGroup(group string) (manager *Manager, err error) {
 	if group == "" {
 		return nil, fmt.Errorf("cannot load cgroup - no name/path specified")

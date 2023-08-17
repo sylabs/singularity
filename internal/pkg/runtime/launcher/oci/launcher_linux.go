@@ -122,8 +122,6 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 }
 
 // checkOpts ensures that options set are supported by the oci.Launcher.
-//
-// nolint:maintidx
 func checkOpts(lo launcher.Options) error {
 	badOpt := []string{}
 

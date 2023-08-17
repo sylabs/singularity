@@ -19,8 +19,6 @@ import (
 //
 // Disable context check as it raises a warning through the docker dependency we
 // cannot modify to pass a context.
-//
-// nolint:contextcheck
 func CopyWithTar(src, dst string, disableIDMapping bool) error {
 	ar := da.NewDefaultArchiver()
 

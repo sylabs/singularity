@@ -587,7 +587,6 @@ func (c ctx) testDockerLabels(t *testing.T) {
 	)
 }
 
-//nolint:dupl
 func (c ctx) testDockerCMD(t *testing.T) {
 	imageDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "docker-", "")
 	t.Cleanup(func() {

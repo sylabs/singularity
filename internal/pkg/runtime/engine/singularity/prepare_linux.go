@@ -183,7 +183,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return err
 	}
 
-	if sendFd { // nolint:staticcheck
+	if sendFd {
 		fds, err := unix.Socketpair(unix.AF_UNIX, unix.SOCK_STREAM|unix.SOCK_CLOEXEC, 0)
 		if err != nil {
 			return fmt.Errorf("failed to create socketpair to pass file descriptor: %s", err)
