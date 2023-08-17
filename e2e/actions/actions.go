@@ -2414,7 +2414,6 @@ func (c actionTests) actionNoMount(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-
 		if tt.testDefault {
 			c.env.RunSingularity(
 				t,

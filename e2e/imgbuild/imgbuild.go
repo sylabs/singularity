@@ -188,7 +188,6 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 
 		t.Run(profile.String(), func(t *testing.T) {
 			for _, tc := range tt {
-
 				dn, cleanup := c.tempDir(t, "build-from")
 				t.Cleanup(func() {
 					if !t.Failed() {

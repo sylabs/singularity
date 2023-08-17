@@ -169,7 +169,6 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 			sylog.Infof("Use cached image")
 			imagePath = cacheEntry.Path
 		}
-
 	}
 
 	return imagePath, nil

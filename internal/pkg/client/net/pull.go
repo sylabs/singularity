@@ -143,7 +143,6 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 		imagePath = directTo
-
 	} else {
 		cacheEntry, err := imgCache.GetEntry(cache.NetCacheType, hash)
 		if err != nil {
@@ -162,7 +161,6 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 			if err != nil {
 				return "", err
 			}
-
 		} else {
 			sylog.Verbosef("Using image from cache")
 		}
