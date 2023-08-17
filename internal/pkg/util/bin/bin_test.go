@@ -26,9 +26,7 @@ func TestFindOnPath(t *testing.T) {
 	// Find the true path of 'cp' under a sensible PATH=env.DefaultPath
 	// Forcing this avoid issues with PATH across sudo calls for the tests,
 	// differing orders, /usr/bin -> /bin symlinks etc.
-	oldPath := os.Getenv("PATH")
-	os.Setenv("PATH", env.DefaultPath)
-	defer os.Setenv("PATH", oldPath)
+	t.Setenv("PATH", env.DefaultPath)
 	truePath, err := exec.LookPath("cp")
 	if err != nil {
 		t.Fatalf("exec.LookPath failed to find cp: %v", err)
@@ -46,7 +44,7 @@ func TestFindOnPath(t *testing.T) {
 
 	t.Run("bad path", func(t *testing.T) {
 		// Force a PATH that doesn't contain cp
-		os.Setenv("PATH", "/invalid/dir:/another/invalid/dir")
+		t.Setenv("PATH", "/invalid/dir:/another/invalid/dir")
 
 		gotPath, err := findOnPath("cp")
 		if err != nil {
