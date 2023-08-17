@@ -87,6 +87,7 @@ func TestMain(m *testing.M) {
 			}
 		default:
 			// forward signals to e2e test command
+			//nolint:forcetypeassert
 			syscall.Kill(cmdPid, s.(syscall.Signal))
 		case syscall.SIGURG:
 			// ignore goroutine preemption

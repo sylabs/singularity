@@ -202,6 +202,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 		}
 		if err := cmd.Start(); err != nil {
 			if e, ok := err.(*os.PathError); ok {
+				//nolint:forcetypeassert
 				if e.Err.(syscall.Errno) == syscall.ENOEXEC && args[0] != defaultShell {
 					args = append([]string{defaultShell}, args...)
 					goto cmdexec
@@ -263,6 +264,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 				// https://github.com/golang/go/issues/24543.
 				break
 			default:
+				//nolint:forcetypeassert
 				signal := s.(syscall.Signal)
 				// EPERM and EINVAL are deliberately ignored because they can't be
 				// returned in this context, this process is PID 1, so it has the
@@ -291,6 +293,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 			} else if e, ok := err.(*os.SyscallError); ok {
 				// handle possible race with Wait4 call above by ignoring ECHILD
 				// error because child process was already caught
+				//nolint:forcetypeassert
 				if e.Err.(syscall.Errno) != syscall.ECHILD {
 					sylog.Fatalf("error while waiting container process: %s", e.Error())
 				}
@@ -330,6 +333,7 @@ func (e *EngineOperations) PostStartProcess(_ context.Context, pid int) error {
 		return fmt.Errorf("while loading plugins callbacks '%T': %s", callbackType, err)
 	}
 	for _, cb := range callbacks {
+		//nolint:forcetypeassert
 		if err := cb.(singularitycallback.PostStartProcess)(e.CommonConfig, pid); err != nil {
 			return err
 		}

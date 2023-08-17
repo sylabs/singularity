@@ -187,6 +187,7 @@ func Run(t *testing.T) {
 	}
 
 	for _, cf := range configFiles {
+		//nolint:forcetypeassert
 		if fi, err := os.Stat(cf); err != nil {
 			t.Fatalf("%s is not installed on this system: %v", cf, err)
 		} else if !fi.Mode().IsRegular() {

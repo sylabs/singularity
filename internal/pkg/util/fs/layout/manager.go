@@ -275,6 +275,7 @@ func (m *Manager) Chmod(path string, mode os.FileMode) error {
 	if err != nil {
 		return err
 	}
+	//nolint:forcetypeassert
 	switch m.entries[path].(type) {
 	case *file:
 		m.entries[path].(*file).mode = mode
@@ -290,6 +291,7 @@ func (m *Manager) Chown(path string, uid, gid int) error {
 	if err != nil {
 		return err
 	}
+	//nolint:forcetypeassert
 	switch m.entries[path].(type) {
 	case *file:
 		m.entries[path].(*file).uid = uid

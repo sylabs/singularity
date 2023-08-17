@@ -175,6 +175,7 @@ func (i *Image) AuthorizedOwner(owners []string) (bool, error) {
 		return false, fmt.Errorf("failed to get stat for %s", i.Path)
 	}
 
+	//nolint:forcetypeassert
 	uid := fileinfo.Sys().(*syscall.Stat_t).Uid
 	for _, owner := range owners {
 		pw, err := user.GetPwNam(owner)
@@ -199,6 +200,7 @@ func (i *Image) AuthorizedGroup(groups []string) (bool, error) {
 		return false, fmt.Errorf("failed to get stat for %s", i.Path)
 	}
 
+	//nolint:forcetypeassert
 	gid := fileinfo.Sys().(*syscall.Stat_t).Gid
 	for _, group := range groups {
 		gr, err := user.GetGrNam(group)

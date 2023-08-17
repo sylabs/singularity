@@ -52,6 +52,8 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 	if err != nil {
 		return err
 	}
+
+	//nolint:forcetypeassert
 	st := fi.Sys().(*syscall.Stat_t)
 	imageIno := st.Ino
 	// cast to uint64 as st.Dev is uint32 on MIPS

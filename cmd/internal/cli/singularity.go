@@ -471,6 +471,7 @@ func Init(loadPlugins bool) {
 	}
 
 	// load plugins and register commands/flags if any
+	//nolint:forcetypeassert
 	if loadPlugins {
 		callbackType := (clicallback.Command)(nil)
 		callbacks, err := plugin.LoadCallbacks(callbackType)

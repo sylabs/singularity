@@ -116,6 +116,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	if len(callbacks) > 1 {
 		return fmt.Errorf("multiple plugins have registered hook callback for fakeroot")
 	} else if len(callbacks) == 1 {
+		//nolint:forcetypeassert
 		getIDRange = callbacks[0].(fakerootcallback.UserMapping)
 	}
 
@@ -339,6 +340,7 @@ func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (sy
 	}()
 
 	for {
+		//nolint:forcetypeassert
 		select {
 		case s := <-signals:
 			// Signal received
@@ -352,6 +354,7 @@ func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (sy
 				// https://github.com/golang/go/issues/24543.
 				break
 			default:
+				//nolint:forcetypeassert
 				if err := syscall.Kill(pid, s.(syscall.Signal)); err != nil {
 					return status, fmt.Errorf("interrupted by signal %s", s.String())
 				}

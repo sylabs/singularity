@@ -13,6 +13,7 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
+	"reflect"
 	"time"
 
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
@@ -131,7 +132,11 @@ func createLeaf(start time.Time, parentKey crypto.PrivateKey, parent *x509.Certi
 		OCSPServer:     []string{"http://localhost:9999"},
 	}
 
-	return createCertificate(tmpl, parent, key.(crypto.Signer).Public(), parentKey)
+	signer, ok := key.(crypto.Signer)
+	if !ok {
+		return nil, fmt.Errorf("expected signer but got: %v", reflect.TypeOf(key))
+	}
+	return createCertificate(tmpl, parent, signer.Public(), parentKey)
 }
 
 // writeCerts generates certificates and writes them to disk.
