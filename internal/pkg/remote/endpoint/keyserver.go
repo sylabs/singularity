@@ -217,7 +217,7 @@ var defaultClient = &http.Client{
 		// Note - when overriding transport we need to explicitly setup the
 		// proxy parsing from env vars that http.DefaultTransport does.
 		Proxy:           http.ProxyFromEnvironment,
-		TLSClientConfig: &tls.Config{},
+		TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS12},
 	},
 }
 

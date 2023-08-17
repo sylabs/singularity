@@ -2391,7 +2391,8 @@ func (c *container) getFuseFdFromRPC(fds []int) ([]int, error) {
 	newfds := make([]int, 0, 1)
 
 	for _, msg := range msgs {
-		pfds, err := unix.ParseUnixRights(&msg)
+		m := msg
+		pfds, err := unix.ParseUnixRights(&m)
 		if err != nil {
 			return nil, fmt.Errorf("while getting file descriptor: %s", err)
 		}
