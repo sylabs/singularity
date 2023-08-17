@@ -625,12 +625,18 @@ func (l *Launcher) addBindMount(mounts *[]specs.Mount, b bind.Path, allowSUID bo
 		)
 	}
 
+	// /proc and /sys need nosuid,noexec,nodev set explicitly for runc
+	// See: https://github.com/opencontainers/runc/discussions/3801
 	opts := []string{"rbind", "nodev"}
+	if strings.HasPrefix(b.Source, "/proc") || strings.HasPrefix(b.Source, "/sys") {
+		opts = append(opts, "nosuid", "noexec")
+	} else {
+		if !allowSUID {
+			opts = append(opts, "nosuid")
+		}
+	}
 	if b.Readonly() {
 		opts = append(opts, "ro")
-	}
-	if !allowSUID {
-		opts = append(opts, "nosuid")
 	}
 
 	absSource, err := filepath.Abs(b.Source)
