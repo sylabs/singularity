@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,6 +8,7 @@ package cmdline
 import (
 	"fmt"
 	"os"
+	"reflect"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -33,6 +34,16 @@ type Flag struct {
 	// If true, will use pFlag StringArrayVar(P) type, where values are not split on comma.
 	// If false, will use pFlag StringSliceVar(P) type, where a single value is split on commas.
 	StringArray bool
+}
+
+type FlagValTypeErr struct {
+	name     string
+	expected string
+	found    string
+}
+
+func (e FlagValTypeErr) Error() string {
+	return fmt.Sprintf("expected value of flag %q to be of type %s, but encountered %s instead", e.name, e.expected, e.found)
 }
 
 // flagManager manages cobra command flags and store them
@@ -109,11 +120,17 @@ func (m *flagManager) registerFlagForCmd(flag *Flag, cmds ...*cobra.Command) err
 
 func (m *flagManager) registerStringVar(flag *Flag, cmds []*cobra.Command) error {
 	for _, c := range cmds {
+		val, ok := flag.Value.(*string)
+		if !ok {
+			return FlagValTypeErr{name: flag.Name, expected: "string", found: reflect.TypeOf(flag.Value).String()}
+		}
+
 		//nolint:forcetypeassert
+		defaultVal := flag.DefaultValue.(string)
 		if flag.ShortHand != "" {
-			c.Flags().StringVarP(flag.Value.(*string), flag.Name, flag.ShortHand, flag.DefaultValue.(string), flag.Usage)
+			c.Flags().StringVarP(val, flag.Name, flag.ShortHand, defaultVal, flag.Usage)
 		} else {
-			c.Flags().StringVar(flag.Value.(*string), flag.Name, flag.DefaultValue.(string), flag.Usage)
+			c.Flags().StringVar(val, flag.Name, defaultVal, flag.Usage)
 		}
 		m.setFlagOptions(flag, c)
 	}
@@ -122,11 +139,17 @@ func (m *flagManager) registerStringVar(flag *Flag, cmds []*cobra.Command) error
 
 func (m *flagManager) registerStringSliceVar(flag *Flag, cmds []*cobra.Command) error {
 	for _, c := range cmds {
+		val, ok := flag.Value.(*[]string)
+		if !ok {
+			return FlagValTypeErr{name: flag.Name, expected: "[]string", found: reflect.TypeOf(flag.Value).String()}
+		}
+
 		//nolint:forcetypeassert
+		defaultVal := flag.DefaultValue.([]string)
 		if flag.ShortHand != "" {
-			c.Flags().StringSliceVarP(flag.Value.(*[]string), flag.Name, flag.ShortHand, flag.DefaultValue.([]string), flag.Usage)
+			c.Flags().StringSliceVarP(val, flag.Name, flag.ShortHand, defaultVal, flag.Usage)
 		} else {
-			c.Flags().StringSliceVar(flag.Value.(*[]string), flag.Name, flag.DefaultValue.([]string), flag.Usage)
+			c.Flags().StringSliceVar(val, flag.Name, defaultVal, flag.Usage)
 		}
 		m.setFlagOptions(flag, c)
 	}
@@ -135,11 +158,17 @@ func (m *flagManager) registerStringSliceVar(flag *Flag, cmds []*cobra.Command) 
 
 func (m *flagManager) registerStringArrayVar(flag *Flag, cmds []*cobra.Command) error {
 	for _, c := range cmds {
+		val, ok := flag.Value.(*[]string)
+		if !ok {
+			return FlagValTypeErr{name: flag.Name, expected: "[]string", found: reflect.TypeOf(flag.Value).String()}
+		}
+
 		//nolint:forcetypeassert
+		defaultVal := flag.DefaultValue.([]string)
 		if flag.ShortHand != "" {
-			c.Flags().StringArrayVarP(flag.Value.(*[]string), flag.Name, flag.ShortHand, flag.DefaultValue.([]string), flag.Usage)
+			c.Flags().StringArrayVarP(val, flag.Name, flag.ShortHand, defaultVal, flag.Usage)
 		} else {
-			c.Flags().StringArrayVar(flag.Value.(*[]string), flag.Name, flag.DefaultValue.([]string), flag.Usage)
+			c.Flags().StringArrayVar(val, flag.Name, defaultVal, flag.Usage)
 		}
 		m.setFlagOptions(flag, c)
 	}
@@ -149,11 +178,17 @@ func (m *flagManager) registerStringArrayVar(flag *Flag, cmds []*cobra.Command) 
 // registerStringArrayCommas uses StringToStringVarP, a variant to allow commas (and a map of string/string)
 func (m *flagManager) registerStringMapVar(flag *Flag, cmds []*cobra.Command) error {
 	for _, c := range cmds {
+		val, ok := flag.Value.(*map[string]string)
+		if !ok {
+			return FlagValTypeErr{name: flag.Name, expected: "map[string]string", found: reflect.TypeOf(flag.Value).String()}
+		}
+
 		//nolint:forcetypeassert
+		defaultVal := flag.DefaultValue.(map[string]string)
 		if flag.ShortHand != "" {
-			c.Flags().StringToStringVarP(flag.Value.(*map[string]string), flag.Name, flag.ShortHand, flag.DefaultValue.(map[string]string), flag.Usage)
+			c.Flags().StringToStringVarP(val, flag.Name, flag.ShortHand, defaultVal, flag.Usage)
 		} else {
-			c.Flags().StringToStringVar(flag.Value.(*map[string]string), flag.Name, flag.DefaultValue.(map[string]string), flag.Usage)
+			c.Flags().StringToStringVar(val, flag.Name, defaultVal, flag.Usage)
 		}
 		m.setFlagOptions(flag, c)
 	}
@@ -162,11 +197,17 @@ func (m *flagManager) registerStringMapVar(flag *Flag, cmds []*cobra.Command) er
 
 func (m *flagManager) registerBoolVar(flag *Flag, cmds []*cobra.Command) error {
 	for _, c := range cmds {
+		val, ok := flag.Value.(*bool)
+		if !ok {
+			return FlagValTypeErr{name: flag.Name, expected: "bool", found: reflect.TypeOf(flag.Value).String()}
+		}
+
 		//nolint:forcetypeassert
+		defaultVal := flag.DefaultValue.(bool)
 		if flag.ShortHand != "" {
-			c.Flags().BoolVarP(flag.Value.(*bool), flag.Name, flag.ShortHand, flag.DefaultValue.(bool), flag.Usage)
+			c.Flags().BoolVarP(val, flag.Name, flag.ShortHand, defaultVal, flag.Usage)
 		} else {
-			c.Flags().BoolVar(flag.Value.(*bool), flag.Name, flag.DefaultValue.(bool), flag.Usage)
+			c.Flags().BoolVar(val, flag.Name, defaultVal, flag.Usage)
 		}
 		m.setFlagOptions(flag, c)
 	}
@@ -175,11 +216,17 @@ func (m *flagManager) registerBoolVar(flag *Flag, cmds []*cobra.Command) error {
 
 func (m *flagManager) registerIntVar(flag *Flag, cmds []*cobra.Command) error {
 	for _, c := range cmds {
+		val, ok := flag.Value.(*int)
+		if !ok {
+			return FlagValTypeErr{name: flag.Name, expected: "int", found: reflect.TypeOf(flag.Value).String()}
+		}
+
 		//nolint:forcetypeassert
+		defaultVal := flag.DefaultValue.(int)
 		if flag.ShortHand != "" {
-			c.Flags().IntVarP(flag.Value.(*int), flag.Name, flag.ShortHand, flag.DefaultValue.(int), flag.Usage)
+			c.Flags().IntVarP(val, flag.Name, flag.ShortHand, defaultVal, flag.Usage)
 		} else {
-			c.Flags().IntVar(flag.Value.(*int), flag.Name, flag.DefaultValue.(int), flag.Usage)
+			c.Flags().IntVar(val, flag.Name, defaultVal, flag.Usage)
 		}
 		m.setFlagOptions(flag, c)
 	}
@@ -188,11 +235,17 @@ func (m *flagManager) registerIntVar(flag *Flag, cmds []*cobra.Command) error {
 
 func (m *flagManager) registerUint32Var(flag *Flag, cmds []*cobra.Command) error {
 	for _, c := range cmds {
+		val, ok := flag.Value.(*uint32)
+		if !ok {
+			return FlagValTypeErr{name: flag.Name, expected: "uint32", found: reflect.TypeOf(flag.Value).String()}
+		}
+
 		//nolint:forcetypeassert
+		defaultVal := flag.DefaultValue.(uint32)
 		if flag.ShortHand != "" {
-			c.Flags().Uint32VarP(flag.Value.(*uint32), flag.Name, flag.ShortHand, flag.DefaultValue.(uint32), flag.Usage)
+			c.Flags().Uint32VarP(val, flag.Name, flag.ShortHand, defaultVal, flag.Usage)
 		} else {
-			c.Flags().Uint32Var(flag.Value.(*uint32), flag.Name, flag.DefaultValue.(uint32), flag.Usage)
+			c.Flags().Uint32Var(val, flag.Name, defaultVal, flag.Usage)
 		}
 		m.setFlagOptions(flag, c)
 	}
