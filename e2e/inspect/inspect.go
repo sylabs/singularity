@@ -18,6 +18,7 @@ import (
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/exec"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/inspect"
 )
@@ -73,7 +74,12 @@ func (c ctx) singularityInspect(t *testing.T) {
 
 	// First try with -user-xattrs since unsquashfs 4.4 gives an error code if
 	// it can't set system xattrs while rootless.
-	cmd := exec.Command("unsquashfs", "-user-xattrs", "-d", sandboxImage, squashImage)
+	unsquashfsPath, err := bin.FindBin("unsquashfs")
+	if err != nil {
+		t.Fatal("Unable to find 'unsquashfs' binary even though require.Command() was called")
+	}
+
+	cmd := exec.Command(unsquashfsPath, "-user-xattrs", "-d", sandboxImage, squashImage)
 	if res := cmd.Run(t); res.Error != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
