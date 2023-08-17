@@ -29,6 +29,7 @@ type instanceList struct {
 	Instances []instance `json:"instances"`
 }
 
+//nolint:unparam
 func (c *ctx) stopInstance(t *testing.T, instance string, stopArgs ...string) (stdout string, stderr string, success bool) {
 	args := stopArgs
 
@@ -52,6 +53,7 @@ func (c *ctx) stopInstance(t *testing.T, instance string, stopArgs ...string) (s
 	return
 }
 
+//nolint:unparam
 func (c *ctx) execInstance(t *testing.T, instance string, execArgs ...string) (stdout string, stderr string, success bool) {
 	args := []string{"instance://" + instance}
 	args = append(args, execArgs...)

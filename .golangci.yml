@@ -46,6 +46,7 @@ linters:
     - revive
     - staticcheck
     - typecheck
+    - unparam
     - unused
 
 linters-settings:

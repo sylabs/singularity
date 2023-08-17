@@ -32,6 +32,8 @@ type PullOptions struct {
 }
 
 // sysCtx provides authentication and tempDir config for containers/image OCI operations
+//
+//nolint:unparam
 func sysCtx(opts PullOptions) (*ocitypes.SystemContext, error) {
 	// DockerInsecureSkipTLSVerify is set only if --no-https is specified to honor
 	// configuration from /etc/containers/registries.conf because DockerInsecureSkipTLSVerify
