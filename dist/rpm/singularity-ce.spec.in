@@ -108,7 +108,7 @@ container platform designed to be simple, fast, and secure.
 %autosetup -n %{name}-@PACKAGE_VERSION@
 
 %build
-./mconfig -V %{version}-%{release} \
+./mconfig -V @PACKAGE_VERSION@-@PACKAGE_RELEASE@ \
         --prefix=%{_prefix} \
         --exec-prefix=%{_exec_prefix} \
         --bindir=%{_bindir} \
