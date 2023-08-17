@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/v4/e2e/verify/ocspresponder"
+	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
@@ -30,11 +31,18 @@ func (c *ctx) verify(t *testing.T) {
 	intPath := filepath.Join("..", "test", "certs", "intermediate.pem")
 	rootPath := filepath.Join("..", "test", "certs", "root.pem")
 
-	ocspOk := true
-	if err := c.startOCSPResponder(priKeyPath, rootPath); err != nil {
-		t.Errorf("OCSP responder could not start: %s", err)
-		ocspOk = false
-	}
+	ocspOk := false
+	t.Run("startOCSPResponder", func(t *testing.T) {
+		// Skip kernel < 3.11, which is a proxy for EL7 (3.10 kernel) where
+		// algorithms in OCSP chain are not all supported.
+		require.Kernel(t, 3, 11)
+
+		if err := c.startOCSPResponder(priKeyPath, rootPath); err != nil {
+			t.Errorf("OCSP responder could not start: %s", err)
+		} else {
+			ocspOk = true
+		}
+	})
 
 	tests := []struct {
 		name       string
