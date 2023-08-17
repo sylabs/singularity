@@ -47,6 +47,8 @@ type PullOptions struct {
 }
 
 // sysCtx provides authentication and tempDir config for containers/image OCI operations
+//
+//nolint:unparam
 func sysCtx(opts PullOptions) (*ocitypes.SystemContext, error) {
 	// DockerInsecureSkipTLSVerify is set only if --no-https is specified to honor
 	// configuration from /etc/containers/registries.conf because DockerInsecureSkipTLSVerify
@@ -227,7 +229,7 @@ func convertLayoutToOciSif(layoutDir string, digest v1.Hash, imageDest, workDir 
 	img, err = mutate.Apply(img,
 		mutate.ReplaceLayers(squashfsLayer),
 		mutate.SetHistory(v1.History{
-			Created:    v1.Time{time.Now()}, //nolint:govet
+			Created:    v1.Time{Time: time.Now()},
 			CreatedBy:  useragent.Value(),
 			Comment:    "oci-sif created from " + digest.Hex,
 			EmptyLayer: false,
