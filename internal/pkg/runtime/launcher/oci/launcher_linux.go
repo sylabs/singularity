@@ -678,9 +678,7 @@ func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 
 	// Create a bundle - obtain and extract the image.
 	var b ocibundle.Bundle
-
 	switch {
-
 	case strings.HasPrefix(image, "oci-sif:"):
 		b, err = ocisif.New(
 			ocisif.OptBundlePath(bundleDir),

@@ -2041,7 +2041,6 @@ func (c actionTests) actionOciNoMount(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-
 		expectOp := e2e.ExpectOutput(e2e.UnwantedContainMatch, tt.noMatch)
 		if tt.warnMatch != "" {
 			expectOp = e2e.ExpectError(e2e.ContainMatch, tt.warnMatch)
@@ -2134,7 +2133,6 @@ func (c actionTests) actionOciHomeCwdPasswd(t *testing.T) {
 				e2e.ExpectOutput(e2e.RegexMatch, passwdLine),
 			),
 		)
-
 	}
 }
 

@@ -30,7 +30,6 @@ var tests = []struct {
 // Test that this version uses the semantic version format
 func (c ctx) testSemanticVersion(t *testing.T) {
 	for _, tt := range tests {
-
 		checkSemanticVersionFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
 			outputVer := strings.TrimPrefix(string(r.Stdout), "singularity-ce version ")
 			outputVer = strings.TrimSpace(outputVer)
@@ -59,7 +58,6 @@ func (c ctx) testSemanticVersion(t *testing.T) {
 func (c ctx) testEqualVersion(t *testing.T) {
 	tmpVersion := ""
 	for _, tt := range tests {
-
 		checkEqualVersionFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
 			outputVer := strings.TrimPrefix(string(r.Stdout), "singularity-ce version ")
 			outputVer = strings.TrimSpace(outputVer)
@@ -95,7 +93,6 @@ func (c ctx) testEqualVersion(t *testing.T) {
 			}),
 			e2e.ExpectExit(0, checkEqualVersionFn),
 		)
-
 	}
 }
 

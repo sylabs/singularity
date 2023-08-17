@@ -57,7 +57,6 @@ func pullNativeSIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFr
 			if err != nil {
 				return "", err
 			}
-
 		} else {
 			sylog.Infof("Using cached SIF image")
 		}

@@ -47,7 +47,6 @@ var helpOciContentTests = []struct {
 
 func (c ctx) testHelpOciContent(t *testing.T) {
 	for _, tc := range helpOciContentTests {
-
 		name := fmt.Sprintf("help-%s.txt", strings.Join(tc.cmds, "-"))
 
 		testHelpOciContentFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
@@ -68,7 +67,6 @@ func (c ctx) testHelpOciContent(t *testing.T) {
 				}
 			}),
 			e2e.ExpectExit(0, testHelpOciContentFn))
-
 	}
 }
 
@@ -103,7 +101,6 @@ func (c ctx) testCommands(t *testing.T) {
 	}
 
 	for _, tt := range testCommands {
-
 		testFlags := []struct {
 			name string
 			argv string
@@ -118,7 +115,6 @@ func (c ctx) testCommands(t *testing.T) {
 		}
 
 		for _, tf := range testFlags {
-
 			var cmdRun, argRun string
 
 			if tf.name == "PostCommand" || tf.name == "PreCommand" {
@@ -147,7 +143,6 @@ func (c ctx) testCommands(t *testing.T) {
 				}),
 				e2e.ExpectExit(0))
 		}
-
 	}
 }
 
@@ -233,7 +228,6 @@ func (c ctx) testSingularity(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-
 		printSuccessOrFailureFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
 			if r.Stdout != nil {
 				t.Logf(string(r.Stdout) + "\n")

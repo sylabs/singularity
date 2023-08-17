@@ -34,7 +34,6 @@ func (a *SandboxAssembler) Assemble(b *types.Bundle, path string) (err error) {
 		if err != nil {
 			return fmt.Errorf("copy Failed: %v", err)
 		}
-
 	} else {
 		sylog.Debugf("Moving sandbox from %v to %v", b.RootfsPath, path)
 

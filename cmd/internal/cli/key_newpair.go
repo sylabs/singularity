@@ -177,7 +177,6 @@ func collectInput(cmd *cobra.Command) (*keyNewPairOptions, error) {
 			if a == "n" {
 				return nil, errors.New("empty passphrase")
 			}
-
 		}
 
 		genOpts.Password = p

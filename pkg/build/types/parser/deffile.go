@@ -209,7 +209,6 @@ func parseTokenSection(tok string, sections map[string]*types.Script, files *[]t
 		if !appKnown {
 			*appOrder = append(*appOrder, appName)
 		}
-
 	} else {
 		// create section script object if its a non-standard section
 		if _, ok := sections[key]; !ok {
