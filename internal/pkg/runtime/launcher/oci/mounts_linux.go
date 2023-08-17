@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/samber/lo"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/fuse"
@@ -627,16 +628,19 @@ func (l *Launcher) addBindMount(mounts *[]specs.Mount, b bind.Path, allowSUID bo
 
 	// /proc and /sys need nosuid,noexec,nodev set explicitly for runc
 	// See: https://github.com/opencontainers/runc/discussions/3801
-	opts := []string{"rbind", "nodev"}
+	opts := map[string]bool{
+		"rbind": true,
+		"nodev": true,
+	}
 	if strings.HasPrefix(b.Source, "/proc") || strings.HasPrefix(b.Source, "/sys") {
-		opts = append(opts, "nosuid", "noexec")
-	} else {
-		if !allowSUID {
-			opts = append(opts, "nosuid")
-		}
+		opts["nosuid"] = true
+		opts["noexec"] = true
+	}
+	if !allowSUID {
+		opts["nosuid"] = true
 	}
 	if b.Readonly() {
-		opts = append(opts, "ro")
+		opts["ro"] = true
 	}
 
 	absSource, err := filepath.Abs(b.Source)
@@ -661,7 +665,7 @@ func (l *Launcher) addBindMount(mounts *[]specs.Mount, b bind.Path, allowSUID bo
 			Source:      absSource,
 			Destination: b.Destination,
 			Type:        "none",
-			Options:     opts,
+			Options:     lo.Keys(opts),
 		})
 
 	return nil
