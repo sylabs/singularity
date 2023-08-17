@@ -57,7 +57,7 @@ func Test_addBindMount(t *testing.T) {
 					Source:      "/tmp",
 					Destination: "/tmp",
 					Type:        "none",
-					Options:     []string{"rbind", "nodev", "ro", "nosuid"},
+					Options:     []string{"rbind", "nodev", "nosuid", "ro"},
 				},
 			},
 		},
@@ -119,6 +119,38 @@ func Test_addBindMount(t *testing.T) {
 			wantMounts: &[]specs.Mount{},
 			// Should fail because bind-mounting SIFs not supported in OCI mode
 			wantErr: true,
+		},
+		{
+			name: "Proc",
+			b: bind.Path{
+				Source:      "/proc",
+				Destination: "/proc",
+			},
+			userbind: true,
+			wantMounts: &[]specs.Mount{
+				{
+					Source:      "/proc",
+					Destination: "/proc",
+					Type:        "none",
+					Options:     []string{"rbind", "nodev", "nosuid", "noexec"},
+				},
+			},
+		},
+		{
+			name: "Sys",
+			b: bind.Path{
+				Source:      "/sys",
+				Destination: "/sys",
+			},
+			userbind: true,
+			wantMounts: &[]specs.Mount{
+				{
+					Source:      "/sys",
+					Destination: "/sys",
+					Type:        "none",
+					Options:     []string{"rbind", "nodev", "nosuid", "noexec"},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -202,7 +234,7 @@ func TestLauncher_addBindMounts(t *testing.T) {
 					Source:      "/tmp",
 					Destination: "/mnt",
 					Type:        "none",
-					Options:     []string{"rbind", "nodev", "ro", "nosuid"},
+					Options:     []string{"rbind", "nodev", "nosuid", "ro"},
 				},
 			},
 			wantErr: false,
@@ -287,7 +319,7 @@ func TestLauncher_addBindMounts(t *testing.T) {
 					Source:      "/tmp",
 					Destination: "/mnt",
 					Type:        "none",
-					Options:     []string{"rbind", "nodev", "ro", "nosuid"},
+					Options:     []string{"rbind", "nodev", "nosuid", "ro"},
 				},
 			},
 			wantErr: false,
@@ -408,7 +440,7 @@ func TestLauncher_addLibrariesMounts(t *testing.T) {
 					Source:      lib1,
 					Destination: "/.singularity.d/libs/lib1.so",
 					Type:        "none",
-					Options:     []string{"rbind", "nodev", "ro", "nosuid"},
+					Options:     []string{"rbind", "nodev", "nosuid", "ro"},
 				},
 			},
 			wantErr: false,
@@ -424,13 +456,13 @@ func TestLauncher_addLibrariesMounts(t *testing.T) {
 					Source:      lib1,
 					Destination: "/.singularity.d/libs/lib1.so",
 					Type:        "none",
-					Options:     []string{"rbind", "nodev", "ro", "nosuid"},
+					Options:     []string{"rbind", "nodev", "nosuid", "ro"},
 				},
 				{
 					Source:      lib2,
 					Destination: "/.singularity.d/libs/lib2.so",
 					Type:        "none",
-					Options:     []string{"rbind", "nodev", "ro", "nosuid"},
+					Options:     []string{"rbind", "nodev", "nosuid", "ro"},
 				},
 			},
 			wantErr: false,
