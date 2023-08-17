@@ -13,130 +13,129 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/util/capabilities"
 )
 
-const (
+var (
 	// Default OCI capabilities as visible in /proc/status
-	ociDefaultCapString = "00000020a80425fb"
-	// DefaultOCI capabilities with CAP_CHOWN dropped
-	ociDropChownString = "00000020a80425fa"
-	// DefaultOCI capabilities with CAP_SYS_ADMIN added
-	ociAddSysAdminString = "00000020a82425fb"
-	capSysAdminString    = "0000000000200000"
+	ociDefaultCaps = uint64(0x00000020a80425fb)
+	// Default OCI capabilities with CAP_CHOWN dropped
+	ociDropChown = uint64(0x00000020a80425fa)
+	// Default OCI capabilities with CAP_SYS_ADMIN added
+	ociAddSysAdmin = uint64(0x00000020a82425fb)
+	capSysAdmin    = uint64(0x0000000000200000)
 	// No capabilities, as visible in /proc/status
-	nullCapString = "0000000000000000"
+	nullCaps = uint64(0x0000000000000000)
 )
 
 func (c ctx) ociCapabilities(t *testing.T) {
 	e2e.EnsureOCISIF(t, c.env)
 	imageRef := "oci-sif:" + c.env.OCISIFPath
 
-	var rootCaps uint64
+	var fullCaps uint64
 	var err error
 	e2e.Privileged(func(t *testing.T) {
-		rootCaps, err = capabilities.GetProcessEffective()
+		fullCaps, err = capabilities.GetProcessEffective()
 		if err != nil {
 			t.Fatalf("Could not get CapEff: %v", err)
 		}
 	})(t)
-	fullCapString := fmt.Sprintf("%0.16x", rootCaps)
 
 	tests := []struct {
 		name       string
 		options    []string
 		profiles   []e2e.Profile
-		expectInh  string
-		expectPrm  string
-		expectEff  string
-		expectBnd  string
-		expectAmb  string
+		expectInh  uint64
+		expectPrm  uint64
+		expectEff  uint64
+		expectBnd  uint64
+		expectAmb  uint64
 		expectExit int
 	}{
 		{
 			name:      "DefaultUser",
 			profiles:  []e2e.Profile{e2e.OCIUserProfile},
-			expectInh: nullCapString,
-			expectPrm: nullCapString,
-			expectEff: nullCapString,
-			expectBnd: ociDefaultCapString,
-			expectAmb: nullCapString,
+			expectInh: nullCaps,
+			expectPrm: nullCaps,
+			expectEff: nullCaps,
+			expectBnd: ociDefaultCaps,
+			expectAmb: nullCaps,
 		},
 		{
 			name:      "DefaultRoot",
 			profiles:  []e2e.Profile{e2e.OCIRootProfile, e2e.OCIFakerootProfile},
-			expectInh: nullCapString,
-			expectPrm: ociDefaultCapString,
-			expectEff: ociDefaultCapString,
-			expectBnd: ociDefaultCapString,
-			expectAmb: nullCapString,
+			expectInh: nullCaps,
+			expectPrm: ociDefaultCaps,
+			expectEff: ociDefaultCaps,
+			expectBnd: ociDefaultCaps,
+			expectAmb: nullCaps,
 		},
 		{
 			name:      "NoPrivs",
 			options:   []string{"--no-privs"},
 			profiles:  []e2e.Profile{e2e.OCIRootProfile, e2e.OCIFakerootProfile, e2e.OCIUserProfile},
-			expectInh: nullCapString,
-			expectPrm: nullCapString,
-			expectEff: nullCapString,
-			expectBnd: nullCapString,
-			expectAmb: nullCapString,
+			expectInh: nullCaps,
+			expectPrm: nullCaps,
+			expectEff: nullCaps,
+			expectBnd: nullCaps,
+			expectAmb: nullCaps,
 		},
 		{
 			name:      "KeepPrivsUser",
 			options:   []string{"--keep-privs"},
 			profiles:  []e2e.Profile{e2e.OCIUserProfile},
-			expectInh: nullCapString,
-			expectPrm: nullCapString,
-			expectEff: nullCapString,
-			expectBnd: fullCapString,
-			expectAmb: nullCapString,
+			expectInh: nullCaps,
+			expectPrm: nullCaps,
+			expectEff: nullCaps,
+			expectBnd: fullCaps,
+			expectAmb: nullCaps,
 		},
 		{
 			name:      "KeepPrivsRoot",
 			options:   []string{"--keep-privs"},
 			profiles:  []e2e.Profile{e2e.OCIRootProfile, e2e.OCIFakerootProfile},
-			expectInh: nullCapString,
-			expectPrm: fullCapString,
-			expectEff: fullCapString,
-			expectBnd: fullCapString,
-			expectAmb: nullCapString,
+			expectInh: nullCaps,
+			expectPrm: fullCaps,
+			expectEff: fullCaps,
+			expectBnd: fullCaps,
+			expectAmb: nullCaps,
 		},
 		{
 			name:      "DropChownUser",
 			options:   []string{"--drop-caps", "CAP_CHOWN"},
 			profiles:  []e2e.Profile{e2e.OCIUserProfile},
-			expectInh: nullCapString,
-			expectPrm: nullCapString,
-			expectEff: nullCapString,
-			expectBnd: ociDropChownString,
-			expectAmb: nullCapString,
+			expectInh: nullCaps,
+			expectPrm: nullCaps,
+			expectEff: nullCaps,
+			expectBnd: ociDropChown,
+			expectAmb: nullCaps,
 		},
 		{
 			name:      "DropChownRoot",
 			options:   []string{"--drop-caps", "CAP_CHOWN"},
 			profiles:  []e2e.Profile{e2e.OCIRootProfile, e2e.OCIFakerootProfile},
-			expectInh: nullCapString,
-			expectPrm: ociDropChownString,
-			expectEff: ociDropChownString,
-			expectBnd: ociDropChownString,
-			expectAmb: nullCapString,
+			expectInh: nullCaps,
+			expectPrm: ociDropChown,
+			expectEff: ociDropChown,
+			expectBnd: ociDropChown,
+			expectAmb: nullCaps,
 		},
 		{
 			name:      "AddSysAdminUser",
 			options:   []string{"--add-caps", "CAP_SYS_ADMIN"},
 			profiles:  []e2e.Profile{e2e.OCIUserProfile},
-			expectInh: capSysAdminString,
-			expectPrm: capSysAdminString,
-			expectEff: capSysAdminString,
-			expectBnd: ociAddSysAdminString,
-			expectAmb: capSysAdminString,
+			expectInh: capSysAdmin,
+			expectPrm: capSysAdmin,
+			expectEff: capSysAdmin,
+			expectBnd: ociAddSysAdmin,
+			expectAmb: capSysAdmin,
 		},
 		{
 			name:      "AddSysAdminRoot",
 			options:   []string{"--add-caps", "CAP_SYS_ADMIN"},
 			profiles:  []e2e.Profile{e2e.OCIRootProfile, e2e.OCIFakerootProfile},
-			expectInh: nullCapString,
-			expectPrm: ociAddSysAdminString,
-			expectEff: ociAddSysAdminString,
-			expectBnd: ociAddSysAdminString,
-			expectAmb: nullCapString,
+			expectInh: nullCaps,
+			expectPrm: ociAddSysAdmin,
+			expectEff: ociAddSysAdmin,
+			expectBnd: ociAddSysAdmin,
+			expectAmb: nullCaps,
 		},
 	}
 
@@ -152,11 +151,16 @@ func (c ctx) ociCapabilities(t *testing.T) {
 				e2e.WithCommand("exec"),
 				e2e.WithArgs(args...),
 				e2e.ExpectExit(tt.expectExit,
-					e2e.ExpectOutput(e2e.ContainMatch, "CapInh:\t"+tt.expectInh),
-					e2e.ExpectOutput(e2e.ContainMatch, "CapPrm:\t"+tt.expectPrm),
-					e2e.ExpectOutput(e2e.ContainMatch, "CapEff:\t"+tt.expectEff),
-					e2e.ExpectOutput(e2e.ContainMatch, "CapBnd:\t"+tt.expectBnd),
-					e2e.ExpectOutput(e2e.ContainMatch, "CapAmb:\t"+tt.expectAmb),
+					e2e.ExpectOutput(e2e.ContainMatch,
+						fmt.Sprintf("CapInh:\t%0.16x", tt.expectInh&fullCaps)),
+					e2e.ExpectOutput(e2e.ContainMatch,
+						fmt.Sprintf("CapPrm:\t%0.16x", tt.expectPrm&fullCaps)),
+					e2e.ExpectOutput(e2e.ContainMatch,
+						fmt.Sprintf("CapEff:\t%0.16x", tt.expectEff&fullCaps)),
+					e2e.ExpectOutput(e2e.ContainMatch,
+						fmt.Sprintf("CapBnd:\t%0.16x", tt.expectBnd&fullCaps)),
+					e2e.ExpectOutput(e2e.ContainMatch,
+						fmt.Sprintf("CapAmb:\t%0.16x", tt.expectAmb&fullCaps)),
 				),
 			)
 		}
