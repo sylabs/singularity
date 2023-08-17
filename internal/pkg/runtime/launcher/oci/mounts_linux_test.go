@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -154,6 +155,9 @@ func Test_addBindMount(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		for _, m := range *tt.wantMounts {
+			sort.Strings(m.Options)
+		}
 		t.Run(tt.name, func(t *testing.T) {
 			mounts := &[]specs.Mount{}
 			l := &Launcher{
@@ -166,6 +170,9 @@ func Test_addBindMount(t *testing.T) {
 			err := l.addBindMount(mounts, tt.b, tt.allowSUID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("addBindMount() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			for _, m := range *mounts {
+				sort.Strings(m.Options)
 			}
 			if !reflect.DeepEqual(mounts, tt.wantMounts) {
 				t.Errorf("addBindMount() want %v, got %v", tt.wantMounts, mounts)
@@ -361,6 +368,9 @@ func TestLauncher_addBindMounts(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		for _, m := range *tt.wantMounts {
+			sort.Strings(m.Options)
+		}
 		t.Run(tt.name, func(t *testing.T) {
 			l := &Launcher{
 				cfg:             tt.cfg,
@@ -374,6 +384,9 @@ func TestLauncher_addBindMounts(t *testing.T) {
 			}
 			mounts := &[]specs.Mount{}
 			err := l.addUserBindMounts(mounts)
+			for _, m := range *mounts {
+				sort.Strings(m.Options)
+			}
 			if (err != nil) != tt.wantErr {
 				t.Errorf("addBindMount() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -469,6 +482,9 @@ func TestLauncher_addLibrariesMounts(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		for _, m := range *tt.wantMounts {
+			sort.Strings(m.Options)
+		}
 		t.Run(tt.name, func(t *testing.T) {
 			l := &Launcher{
 				cfg:             tt.cfg,
@@ -479,6 +495,9 @@ func TestLauncher_addLibrariesMounts(t *testing.T) {
 			}
 			mounts := &[]specs.Mount{}
 			err := l.addLibrariesMounts(mounts)
+			for _, m := range *mounts {
+				sort.Strings(m.Options)
+			}
 			if (err != nil) != tt.wantErr {
 				t.Errorf("addLibrariesMounts() error = %v, wantErr %v", err, tt.wantErr)
 			}
