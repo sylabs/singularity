@@ -39,6 +39,7 @@ linters:
     - maintidx
     - misspell
     - nakedret
+    - prealloc
     - reassign
     - revive
     - staticcheck
