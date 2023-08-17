@@ -7,6 +7,7 @@
 package docs
 
 // Global content for help and man pages
+// #nosec G101
 const (
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
