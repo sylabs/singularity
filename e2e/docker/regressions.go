@@ -244,6 +244,11 @@ func (c ctx) issue1286(t *testing.T) {
 
 // https://github.com/sylabs/singularity/issues/1528
 // Check that host's TERM value gets passed to OCI container.
+// This test uses fairly fine-grained env vars manipulation which, at the
+// present, is beyond what an API like testing.T.Setenv() enables, and so
+// the tenv linter is turned off here.
+//
+//nolint:tenv
 func (c ctx) issue1528(t *testing.T) {
 	e2e.EnsureOCISIF(t, c.env)
 
