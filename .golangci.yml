@@ -47,6 +47,7 @@ linters:
     - staticcheck
     - tenv
     - typecheck
+    - unparam
     - unused
 
 linters-settings:
