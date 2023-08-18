@@ -45,6 +45,7 @@ linters:
     - reassign
     - revive
     - staticcheck
+    - tenv
     - typecheck
     - unused
 

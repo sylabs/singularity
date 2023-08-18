@@ -64,9 +64,11 @@ func ResetPrivilege(t *testing.T) {
 	if err := unix.Setresgid(origGID, origGID, unprivGID); err != nil {
 		t.Fatalf("failed to reset group identity: %v", err)
 	}
-	if err := os.Setenv("HOME", origHome); err != nil {
-		t.Fatalf("failed to reset HOME environment variable: %v", err)
-	}
+
+	// We might want restoration of HOME env var to persist past this individual
+	// test, so use os.Setenv() rather than t.Setenv()
+	//nolint:tenv
+	os.Setenv("HOME", origHome)
 
 	runtime.UnlockOSThread()
 }
