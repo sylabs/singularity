@@ -8,7 +8,7 @@ GO_LDFLAGS :=
 # Need to disable race detector on ppc64le
 # https://github.com/hpcng/singularity/issues/5914
 uname_m := $(shell uname -m)
-ifeq ($(uname_m),ppc64le)
+ifeq ($(uname_m),$(filter $(uname_m),ppc64le i386 i686))
 GO_BUILDMODE := -buildmode=default
 GO_RACE :=
 else
