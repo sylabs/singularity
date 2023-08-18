@@ -208,7 +208,6 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 			keyInfo:   *b.Opts.EncryptionKeyInfo,
 			plaintext: plaintext,
 		}
-
 	}
 
 	err = createSIF(path, b, fsPath, encOpts, arch)

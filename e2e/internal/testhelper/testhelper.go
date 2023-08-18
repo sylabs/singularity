@@ -106,7 +106,6 @@ func (s *Suite) Run(filter *string) {
 
 			t.Run(name, func(t *testing.T) {
 				for testName, fn := range tests[name] {
-
 					if filterMatch != nil {
 						if !filterMatch.MatchString(testName) {
 							continue

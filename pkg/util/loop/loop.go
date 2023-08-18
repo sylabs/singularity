@@ -217,9 +217,7 @@ func openLoopDev(device, mode int, create bool) (loopFd int, err error) {
 		if err != nil && err != unix.EEXIST {
 			return -1, err
 		}
-
 	} else {
-
 		// If there's another stat error that's likely fatal.. we're done..
 		if err != nil {
 			return -1, fmt.Errorf("could not stat %s: %w", path, err)
@@ -228,7 +226,6 @@ func openLoopDev(device, mode int, create bool) (loopFd int, err error) {
 		if fi.Mode()&os.ModeDevice == 0 {
 			return -1, fmt.Errorf("%s is not a block device", path)
 		}
-
 	}
 
 	// Now open the loop device

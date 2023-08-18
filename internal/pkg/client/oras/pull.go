@@ -29,7 +29,6 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 		imagePath = directTo
-
 	} else {
 		cacheEntry, err := imgCache.GetEntry(cache.OrasCacheType, hash.String())
 		if err != nil {
@@ -52,7 +51,6 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 			if err != nil {
 				return "", err
 			}
-
 		} else {
 			sylog.Infof("Using cached SIF image")
 		}

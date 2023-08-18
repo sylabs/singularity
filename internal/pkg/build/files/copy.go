@@ -90,7 +90,6 @@ func CopyFromHost(src, dstRel, dstRootfs string) error {
 		if err := copyCmd.Run(); err != nil {
 			return fmt.Errorf("while copying %s to %s: %v: %s", paths, dstResolved, args, stderr.String())
 		}
-
 	}
 	return nil
 }
@@ -165,7 +164,6 @@ func CopyFromStage(src, dst, srcRootfs, dstRootfs string, disableIDMapping bool)
 		if err != nil {
 			return fmt.Errorf("while copying %s to %s: %s", paths, dstResolved, err)
 		}
-
 	}
 	return nil
 }

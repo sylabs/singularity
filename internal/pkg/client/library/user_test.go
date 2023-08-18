@@ -85,7 +85,6 @@ func TestGetOCIToken(t *testing.T) {
 				} else {
 					w.WriteHeader(http.StatusNotFound)
 					fmt.Fprintln(w, "Not found")
-
 				}
 			}))
 			defer srv.Close()

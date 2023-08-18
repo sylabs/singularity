@@ -375,7 +375,6 @@ func copyFiles(b *types.Bundle, a *App) error {
 
 	appBase := filepath.Join(b.RootfsPath, "/scif/apps/", a.Name)
 	for _, line := range strings.Split(a.Files, "\n") {
-
 		// skip empty or comment lines
 		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
 			continue
@@ -412,7 +411,6 @@ func writeLabels(b *types.Bundle, a *App) error {
 	labels["SCIF_APP_NAME"] = a.Name
 
 	for _, line := range lines {
-
 		// skip empty or comment lines
 		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
 			continue

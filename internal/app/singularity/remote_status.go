@@ -153,7 +153,6 @@ func doTokenCheck(e *endpoint.Config) error {
 	if err := e.VerifyToken(""); err != nil {
 		fmt.Println("\nAuthentication token is invalid (please login again).")
 		return err
-
 	}
 	fmt.Println("\nValid authentication token set (logged in).")
 	return nil
