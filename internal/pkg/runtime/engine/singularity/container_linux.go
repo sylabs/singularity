@@ -1227,7 +1227,6 @@ func (c *container) addDevMount(system *mount.System) error {
 					return fmt.Errorf("problem resolving 'tty' group gid: %s", err)
 				}
 				options = fmt.Sprintf("%s,gid=%d", options, group.GID)
-
 			} else {
 				sylog.Debugf("Not setting /dev/pts filesystem gid: user namespace enabled")
 			}
@@ -1241,7 +1240,6 @@ func (c *container) addDevMount(system *mount.System) error {
 			if err := c.session.AddSymlink("/dev/ptmx", "/dev/pts/ptmx"); err != nil {
 				return fmt.Errorf("failed to create /dev/ptmx symlink: %s", err)
 			}
-
 		}
 		// add /dev/console mount pointing to original tty if there is one
 		for fd := 0; fd <= 2; fd++ {
@@ -1274,7 +1272,6 @@ func (c *container) addDevMount(system *mount.System) error {
 					consinfo.Rdev == fdinfo.Rdev {
 					sylog.Debugf("Fd %d is tty pointing to nonexistent %s but /dev/console is good", fd, ttylink)
 					ttylink = "/dev/console"
-
 				} else {
 					sylog.Debugf("Fd %d is tty but %s doesn't exist, skipping", fd, ttylink)
 					continue

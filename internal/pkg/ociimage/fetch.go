@@ -122,9 +122,7 @@ func extractArchive(src string, dst string) error {
 
 	for {
 		header, err := tr.Next()
-
 		switch {
-
 		// if no more files are found return
 		case err == io.EOF:
 			return nil

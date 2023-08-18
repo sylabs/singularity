@@ -110,7 +110,6 @@ func PullOCISIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom 
 			if err != nil {
 				return "", err
 			}
-
 		} else {
 			sylog.Infof("Using cached OCI-SIF image")
 		}

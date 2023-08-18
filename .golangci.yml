@@ -49,6 +49,7 @@ linters:
     - typecheck
     - unparam
     - unused
+    - whitespace
 
 linters-settings:
   misspell:

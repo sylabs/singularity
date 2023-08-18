@@ -195,7 +195,6 @@ func NVCLIEnvToFlags(nvidiaEnv []string) (flags []string, err error) {
 		if pair[0] == "NVIDIA_DISABLE_REQUIRE" {
 			disableRequire = true
 		}
-
 	}
 
 	if defaultDriverCaps {

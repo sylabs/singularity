@@ -104,7 +104,6 @@ func (c ctx) testSecurityUnpriv(t *testing.T) {
 			e2e.PreRun(tt.preFn),
 			e2e.ExpectExit(tt.expectExit, tt.expectOp),
 		)
-
 	}
 }
 
@@ -195,7 +194,6 @@ func (c ctx) testSecurityPriv(t *testing.T) {
 			e2e.PreRun(tt.preFn),
 			e2e.ExpectExit(tt.expectExit, tt.expectOp),
 		)
-
 	}
 }
 

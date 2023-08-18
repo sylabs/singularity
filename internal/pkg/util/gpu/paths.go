@@ -191,7 +191,6 @@ func ldCache() (map[string]string, error) {
 			if _, ok := ldCache[libName]; !ok {
 				ldCache[libName] = libPath
 			}
-
 		}
 	}
 	return ldCache, nil

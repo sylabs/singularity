@@ -70,7 +70,6 @@ func fakerootExec() {
 			args[idx] = arg
 			idx++
 		}
-
 	}
 
 	user, err := user.GetPwUID(uint32(os.Getuid()))
@@ -394,7 +393,6 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 	if buildArgs.sandbox {
 		buildFormat = "sandbox"
 		sandboxTarget = true
-
 	}
 
 	dp, err := ociplatform.DefaultPlatform()

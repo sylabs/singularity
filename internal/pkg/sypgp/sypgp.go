@@ -700,7 +700,6 @@ func formatMROutput(mrString string, longOutput bool) (int, []byte, error) {
 				}
 
 				fmt.Fprintf(tw, longFmt, keyFingerprint, keyType, keyBits, keyDateCreated, keyDateExpired, keyStatus)
-
 			} else {
 				// Short output
 				// take only last 8 chars of fingerprint
@@ -801,7 +800,6 @@ func getEncryptionAlgorithmName(n string) (string, error) {
 		return "", err
 	}
 	switch code {
-
 	case 1, 2, 3:
 		algorithmName = "RSA"
 	case 16:
@@ -1160,7 +1158,6 @@ func PushPubkey(ctx context.Context, e *openpgp.Entity, opts ...client.Option) e
 			return fmt.Errorf("unauthorized or missing token")
 		}
 		return fmt.Errorf("key server did not accept PGP key: %v", err)
-
 	}
 	return nil
 }

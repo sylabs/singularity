@@ -157,6 +157,5 @@ func (c ctx) testConcurrentPulls(t *testing.T) {
 			// pull image
 			c.imagePull(t, ts)
 		})
-
 	}
 }

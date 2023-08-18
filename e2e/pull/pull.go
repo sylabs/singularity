@@ -511,7 +511,6 @@ func (c ctx) testPullCmd(t *testing.T) {
 				if tt.pullDir != "" {
 					tt.expectedImage = filepath.Join(tt.pullDir, imageName)
 				}
-
 			}
 
 			// In order to actually test force, there must already be a file present in

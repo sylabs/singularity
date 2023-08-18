@@ -272,7 +272,6 @@ func (m *flagManager) updateCmdFlagFromEnv(cmd *cobra.Command, prefix string) er
 			// First priority goes to prefixed variable
 			val, set := os.LookupEnv(prefix + key)
 			if !set {
-
 				// Determine if environment keys should be looked for without prefix
 				// This annotation just needs to be present, period
 				_, withoutPrefix := flag.Annotations["withoutPrefix"]
