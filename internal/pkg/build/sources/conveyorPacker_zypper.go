@@ -22,6 +22,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/namespaces"
 )
 
 const (
@@ -205,12 +206,18 @@ func (cp *ZypperConveyorPacker) Get(_ context.Context, b *types.Bundle) error {
 	// Create the main portion of zypper config
 	err = cp.genZypperConfig()
 	if err != nil {
-		return fmt.Errorf("while generating zypper config: %v", err)
+		return fmt.Errorf("while generating zypper config: %w", err)
 	}
+
+	umountFunc, err := cp.prepareFakerootRpmMacros()
+	if err != nil {
+		return fmt.Errorf("while generating rpm macros: %w", err)
+	}
+	defer umountFunc()
 
 	err = cp.copyPseudoDevices()
 	if err != nil {
-		return fmt.Errorf("while copying pseudo devices: %v", err)
+		return fmt.Errorf("while copying pseudo devices: %w", err)
 	}
 
 	// Add mirrorURL/installURL as repo
@@ -400,6 +407,120 @@ func (cp *ZypperConveyorPacker) genZypperConfig() (err error) {
 	}
 
 	return nil
+}
+
+// prepareFakerootRpmMacros implements a workaround to allow zypper-based builds
+// to operate in fakeroot mode, by bind-mounting a custom ~/.rpmmacros in the
+// user's homedir inside the user namespace
+// See https://www.suse.com/support/kb/doc/?id=000020364
+func (cp *ZypperConveyorPacker) prepareFakerootRpmMacros() (func(), error) {
+	umountFunc := func() {}
+	if os.Getuid() != 0 {
+		return umountFunc, nil
+	}
+
+	insideUserNs, setgroupsAllowed := namespaces.IsInsideUserNamespace(os.Getpid())
+	if !(insideUserNs && setgroupsAllowed) {
+		return umountFunc, nil
+	}
+
+	// We are in a fakeroot environment - proceed
+
+	// Create temporary "grandparent" directory
+	tmpDir, err := os.MkdirTemp("", "user-rpmmacros-grandparentdir")
+	if err != nil {
+		return umountFunc, fmt.Errorf("could not create temporary dir: %w", err)
+	}
+
+	// Create parent directory inside grandparent directory; parent directory
+	// will serve as target for tmpfs mount that will actually house the custom
+	// .rpmmacros file
+	parentDir := filepath.Join(tmpDir, "parentdir")
+	if err := os.MkdirAll(parentDir, 0o700); err != nil {
+		return umountFunc, fmt.Errorf("could not create parent dir: %w", err)
+	}
+
+	// Mount tmpfs at parentDir
+	if err := syscall.Mount("tmpfs", parentDir, "tmpfs", syscall.MS_NODEV, "mode=1777,size=1m"); err != nil {
+		return umountFunc, fmt.Errorf("error while trying to mount tmpfs for custom .rpmmacros: %w", err)
+	}
+	umountFunc = func() {
+		syscall.Unmount(parentDir, syscall.MNT_DETACH)
+	}
+
+	// Get user's home directory
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return umountFunc, fmt.Errorf("could not get user's homedir: %w", err)
+	}
+
+	homeRpmMacros := filepath.Join(homeDir, ".rpmmacros")
+	si, err := os.Stat(homeRpmMacros)
+	contents := []byte("")
+	// Check if user .rpmmacros already exists
+	if os.IsNotExist(err) {
+		// User .rpmmacros does not exist; create an empty file, just so we have
+		// a mount target
+		if err := os.WriteFile(homeRpmMacros, contents, 0o644); err != nil {
+			return umountFunc, fmt.Errorf("could not blank user .rpmmacros file %q: %w", homeRpmMacros, err)
+		}
+	} else if err != nil {
+		return umountFunc, fmt.Errorf("could not check for the existence of user .rpmmacros: %w", err)
+	} else if si.IsDir() {
+		return umountFunc, fmt.Errorf(".rpmmacros in user's homedir (%q) is a directory", homeDir)
+	} else {
+		// User .rpmmacros is a file and already exists; read its contents
+		contents, err = os.ReadFile(homeRpmMacros)
+		if err != nil {
+			return umountFunc, fmt.Errorf("could not read original %q: %w", homeRpmMacros, err)
+		}
+	}
+
+	// Scan lines of existing .rpmmacros content, looking for %_netsharedpath
+	// line
+	lines := []string{}
+	scanner := bufio.NewScanner(bytes.NewReader(contents))
+	netsharedpathFound := false
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "%_netsharedpath ") {
+			// %_netsharedpath line found; append ":/dev" to existing path
+			// specification
+			line = line + ":/dev"
+			netsharedpathFound = true
+		}
+		lines = append(lines, line)
+	}
+	if err := scanner.Err(); err != nil {
+		return umountFunc, fmt.Errorf("error while reading original user .rpmmacros: %w", err)
+	}
+
+	if !netsharedpathFound {
+		// No %_netsharedpath line found; create one
+		lines = append(lines, "%_netsharedpath /dev")
+	}
+
+	// Make sure custom .rpmmacros file will end in a newline
+	lines = append(lines, "")
+
+	// Write new custom .rpmmacros file to tmpfs location
+	newContents := strings.Join(lines, "\n")
+	sylog.Debugf("Custom .rpmmacros contents: %q", newContents)
+	customRpmMacros := filepath.Join(parentDir, ".rpmmacros")
+	if err := os.WriteFile(customRpmMacros, []byte(newContents), 0o644); err != nil {
+		return umountFunc, fmt.Errorf("could not write contents to custom .rpmmacros file %q: %w", customRpmMacros, err)
+	}
+
+	// Bind-mount custom .rpmmacros over user's .rpmmacros
+	if err := syscall.Mount(customRpmMacros, homeRpmMacros, "bind", syscall.MS_BIND, ""); err != nil {
+		return umountFunc, fmt.Errorf("could not create bind-mount with source %q and target %q: %w", customRpmMacros, homeRpmMacros, err)
+	}
+	umountFunc = func() {
+		syscall.Unmount(homeRpmMacros, syscall.MNT_DETACH)
+		syscall.Unmount(parentDir, syscall.MNT_DETACH)
+	}
+
+	return umountFunc, nil
 }
 
 //nolint:dupl
