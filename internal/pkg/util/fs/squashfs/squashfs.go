@@ -28,12 +28,14 @@ func FUSEMount(ctx context.Context, offset uint64, path, mountPath string) error
 	if err != nil {
 		return err
 	}
+
 	cmd := exec.CommandContext(ctx, squashfuse, args...)
-
-	sylog.Debugf("Executing %s %s", squashfuse, strings.Join(args, " "))
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to mount: %w", err)
+	if outputBytes, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf(
+			"failed to mount: %w (cmdline: %q; output: %q)", err,
+			strings.Join(append([]string{squashfuse}, args...), " "),
+			string(outputBytes),
+		)
 	}
 
 	return nil
