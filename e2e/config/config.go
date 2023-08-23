@@ -15,6 +15,7 @@ import (
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 )
@@ -76,7 +77,11 @@ func (c *configTests) prepImages(t *testing.T) (cleanup func(t *testing.T)) {
 			defer cleanup(t)
 			t.Fatalf("Error creating blank ext3 image: %v: %s", err, out)
 		}
-		cmd = exec.Command("mkfs.ext3", "-d", c.sandboxImage, c.ext3Image)
+		mkfsExt3Cmd, err := bin.FindBin("mkfs.ext3")
+		if err != nil {
+			t.Fatalf("Unable to find 'mkfs.ext3' binary even though require.Command() was called: %v", err)
+		}
+		cmd = exec.Command(mkfsExt3Cmd, "-d", c.sandboxImage, c.ext3Image)
 		if out, err := cmd.CombinedOutput(); err != nil {
 			defer cleanup(t)
 			t.Fatalf("Error creating populated ext3 image: %v: %s", err, out)

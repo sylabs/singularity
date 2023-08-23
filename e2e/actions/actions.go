@@ -26,6 +26,7 @@ import (
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/exec"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
@@ -784,7 +785,11 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
 
-	cmd = exec.Command("mkfs.ext3", "-q", "-F", ext3Img)
+	mkfsExt3Cmd, err := bin.FindBin("mkfs.ext3")
+	if err != nil {
+		t.Fatalf("Unable to find 'mkfs.ext3' binary even though require.Command() was called: %v", err)
+	}
+	cmd = exec.Command(mkfsExt3Cmd, "-q", "-F", ext3Img)
 	if res := cmd.Run(t); res.Error != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
@@ -1940,7 +1945,11 @@ func (c actionTests) bindImage(t *testing.T) {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
 
-	cmd = exec.Command("mkfs.ext3", "-q", "-F", ext3Img)
+	mkfsExt3Cmd, err := bin.FindBin("mkfs.ext3")
+	if err != nil {
+		t.Fatalf("Unable to find 'mkfs.ext3' binary even though require.Command() was called: %v", err)
+	}
+	cmd = exec.Command(mkfsExt3Cmd, "-q", "-F", ext3Img)
 	if res := cmd.Run(t); res.Error != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
