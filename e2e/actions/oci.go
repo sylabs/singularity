@@ -1617,7 +1617,7 @@ func (c actionTests) actionOciBindImage(t *testing.T) {
 
 	mkfsExt3Cmd, err := bin.FindBin("mkfs.ext3")
 	if err != nil {
-		t.Fatal("Unable to find 'mkfs.ext3' binary even though require.Command() was called")
+		t.Fatalf("Unable to find 'mkfs.ext3' binary even though require.Command() was called: %v", err)
 	}
 	cmd = testExec.Command(mkfsExt3Cmd, "-q", "-F", ext3Img)
 	if res := cmd.Run(t); res.Error != nil {

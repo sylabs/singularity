@@ -76,7 +76,7 @@ func (c ctx) singularityInspect(t *testing.T) {
 	// it can't set system xattrs while rootless.
 	unsquashfsPath, err := bin.FindBin("unsquashfs")
 	if err != nil {
-		t.Fatal("Unable to find 'unsquashfs' binary even though require.Command() was called")
+		t.Fatalf("Unable to find 'unsquashfs' binary even though require.Command() was called: %v", err)
 	}
 
 	cmd := exec.Command(unsquashfsPath, "-user-xattrs", "-d", sandboxImage, squashImage)
