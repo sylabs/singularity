@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20190729225929-0e00d9168667
-	github.com/ProtonMail/go-crypto v0.0.0-20230710112148-e01326fd72eb
+	github.com/ProtonMail/go-crypto v0.0.0-20230717121422-5aa5874ade95
 	github.com/adigunhammedolalekan/registry-auth v0.0.0-20200730122110-8cde180a3a60
 	github.com/apex/log v1.9.0
 	github.com/blang/semver/v4 v4.0.0
@@ -21,7 +21,7 @@ require (
 	github.com/docker/go-units v0.5.0
 	github.com/fatih/color v1.15.0
 	github.com/go-log/log v0.2.0
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/gosimple/slug v1.13.1
 	github.com/moby/term v0.5.0
 	github.com/opencontainers/go-digest v1.0.0
@@ -43,7 +43,7 @@ require (
 	github.com/sylabs/scs-build-client v0.8.0
 	github.com/sylabs/scs-key-client v0.7.3
 	github.com/sylabs/scs-library-client v1.4.5
-	github.com/sylabs/sif/v2 v2.12.0
+	github.com/sylabs/sif/v2 v2.13.0
 	github.com/vbauerster/mpb/v8 v8.5.2
 	golang.org/x/crypto v0.12.0
 	golang.org/x/sys v0.11.0
