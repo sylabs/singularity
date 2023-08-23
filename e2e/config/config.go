@@ -79,7 +79,7 @@ func (c *configTests) prepImages(t *testing.T) (cleanup func(t *testing.T)) {
 		}
 		mkfsExt3Cmd, err := bin.FindBin("mkfs.ext3")
 		if err != nil {
-			t.Fatal("Unable to find 'mkfs.ext3' binary even though require.Command() was called")
+			t.Fatalf("Unable to find 'mkfs.ext3' binary even though require.Command() was called: %v", err)
 		}
 		cmd = exec.Command(mkfsExt3Cmd, "-d", c.sandboxImage, c.ext3Image)
 		if out, err := cmd.CombinedOutput(); err != nil {
