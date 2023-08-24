@@ -19,6 +19,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/samber/lo"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -209,11 +210,11 @@ func (cp *ZypperConveyorPacker) Get(_ context.Context, b *types.Bundle) error {
 		return fmt.Errorf("while generating zypper config: %w", err)
 	}
 
-	umountFunc, err := cp.prepareFakerootRpmMacros()
+	cleanupFunc, err := cp.prepareFakerootRpmMacros()
 	if err != nil {
 		return fmt.Errorf("while generating rpm macros: %w", err)
 	}
-	defer umountFunc()
+	defer cleanupFunc()
 
 	err = cp.copyPseudoDevices()
 	if err != nil {
@@ -414,44 +415,63 @@ func (cp *ZypperConveyorPacker) genZypperConfig() (err error) {
 // user's homedir inside the user namespace
 // See https://www.suse.com/support/kb/doc/?id=000020364
 func (cp *ZypperConveyorPacker) prepareFakerootRpmMacros() (func(), error) {
-	umountFunc := func() {}
+	cleanupTasks := [](func()){}
+	cleanupFunc := func() {
+		// Perform tasks in cleanupTasks in reverse order
+		for _, f := range lo.Reverse(cleanupTasks) {
+			f()
+		}
+	}
+
 	if os.Getuid() != 0 {
-		return umountFunc, nil
+		return cleanupFunc, nil
 	}
 
 	insideUserNs, setgroupsAllowed := namespaces.IsInsideUserNamespace(os.Getpid())
 	if !(insideUserNs && setgroupsAllowed) {
-		return umountFunc, nil
+		return cleanupFunc, nil
 	}
 
 	// We are in a fakeroot environment - proceed
 
 	// Create temporary "grandparent" directory
+	sylog.Debugf("Creating 'grandparent' dir for .rpmmacros mount")
 	tmpDir, err := os.MkdirTemp("", "user-rpmmacros-grandparentdir")
 	if err != nil {
-		return umountFunc, fmt.Errorf("could not create temporary dir: %w", err)
+		return cleanupFunc, fmt.Errorf("could not create temporary dir: %w", err)
 	}
+	cleanupTasks = append(cleanupTasks, func() {
+		sylog.Debugf("Removing 'grandparent' dir for .rpmmacros mount: %s", tmpDir)
+		os.RemoveAll(tmpDir)
+	})
 
 	// Create parent directory inside grandparent directory; parent directory
 	// will serve as target for tmpfs mount that will actually house the custom
 	// .rpmmacros file
+	sylog.Debugf("Creating parent dir for .rpmmacros mount")
 	parentDir := filepath.Join(tmpDir, "parentdir")
 	if err := os.MkdirAll(parentDir, 0o700); err != nil {
-		return umountFunc, fmt.Errorf("could not create parent dir: %w", err)
+		return cleanupFunc, fmt.Errorf("could not create parent dir: %w", err)
 	}
+	cleanupTasks = append(cleanupTasks, func() {
+		sylog.Debugf("Removing parent dir for .rpmmacros mount: %s", parentDir)
+		os.RemoveAll(parentDir)
+	})
 
 	// Mount tmpfs at parentDir
+	sylog.Debugf("Mounting tmpfs at parentDir: %s", parentDir)
 	if err := syscall.Mount("tmpfs", parentDir, "tmpfs", syscall.MS_NODEV, "mode=1777,size=1m"); err != nil {
-		return umountFunc, fmt.Errorf("error while trying to mount tmpfs for custom .rpmmacros: %w", err)
+		return cleanupFunc, fmt.Errorf("error while trying to mount tmpfs for custom .rpmmacros: %w", err)
 	}
-	umountFunc = func() {
+	cleanupTasks = append(cleanupTasks, func() {
+		sylog.Debugf("Unmounting tmpfs from parentDir: %s", parentDir)
 		syscall.Unmount(parentDir, syscall.MNT_DETACH)
-	}
+	})
 
 	// Get user's home directory
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return umountFunc, fmt.Errorf("could not get user's homedir: %w", err)
+		return cleanupFunc, fmt.Errorf("could not get user's homedir: %w", err)
 	}
 
 	homeRpmMacros := filepath.Join(homeDir, ".rpmmacros")
@@ -462,17 +482,17 @@ func (cp *ZypperConveyorPacker) prepareFakerootRpmMacros() (func(), error) {
 		// User .rpmmacros does not exist; create an empty file, just so we have
 		// a mount target
 		if err := os.WriteFile(homeRpmMacros, contents, 0o644); err != nil {
-			return umountFunc, fmt.Errorf("could not blank user .rpmmacros file %q: %w", homeRpmMacros, err)
+			return cleanupFunc, fmt.Errorf("could not blank user .rpmmacros file %q: %w", homeRpmMacros, err)
 		}
 	} else if err != nil {
-		return umountFunc, fmt.Errorf("could not check for the existence of user .rpmmacros: %w", err)
+		return cleanupFunc, fmt.Errorf("could not check for the existence of user .rpmmacros: %w", err)
 	} else if si.IsDir() {
-		return umountFunc, fmt.Errorf(".rpmmacros in user's homedir (%q) is a directory", homeDir)
+		return cleanupFunc, fmt.Errorf(".rpmmacros in user's homedir (%q) is a directory", homeDir)
 	} else {
 		// User .rpmmacros is a file and already exists; read its contents
 		contents, err = os.ReadFile(homeRpmMacros)
 		if err != nil {
-			return umountFunc, fmt.Errorf("could not read original %q: %w", homeRpmMacros, err)
+			return cleanupFunc, fmt.Errorf("could not read original %q: %w", homeRpmMacros, err)
 		}
 	}
 
@@ -492,7 +512,7 @@ func (cp *ZypperConveyorPacker) prepareFakerootRpmMacros() (func(), error) {
 		lines = append(lines, line)
 	}
 	if err := scanner.Err(); err != nil {
-		return umountFunc, fmt.Errorf("error while reading original user .rpmmacros: %w", err)
+		return cleanupFunc, fmt.Errorf("error while reading original user .rpmmacros: %w", err)
 	}
 
 	if !netsharedpathFound {
@@ -507,20 +527,26 @@ func (cp *ZypperConveyorPacker) prepareFakerootRpmMacros() (func(), error) {
 	newContents := strings.Join(lines, "\n")
 	sylog.Debugf("Custom .rpmmacros contents: %q", newContents)
 	customRpmMacros := filepath.Join(parentDir, ".rpmmacros")
+	sylog.Debugf("Writing custom .rpmmacros at: %s", customRpmMacros)
 	if err := os.WriteFile(customRpmMacros, []byte(newContents), 0o644); err != nil {
-		return umountFunc, fmt.Errorf("could not write contents to custom .rpmmacros file %q: %w", customRpmMacros, err)
+		return cleanupFunc, fmt.Errorf("could not write contents to custom .rpmmacros file %q: %w", customRpmMacros, err)
 	}
+	cleanupTasks = append(cleanupTasks, func() {
+		sylog.Debugf("Removing custom .rpmmacros from: %s", customRpmMacros)
+		os.RemoveAll(customRpmMacros)
+	})
 
 	// Bind-mount custom .rpmmacros over user's .rpmmacros
+	sylog.Debugf("Bind-mounting custom .rpmmacros at: %s", homeRpmMacros)
 	if err := syscall.Mount(customRpmMacros, homeRpmMacros, "bind", syscall.MS_BIND, ""); err != nil {
-		return umountFunc, fmt.Errorf("could not create bind-mount with source %q and target %q: %w", customRpmMacros, homeRpmMacros, err)
+		return cleanupFunc, fmt.Errorf("could not create bind-mount with source %q and target %q: %w", customRpmMacros, homeRpmMacros, err)
 	}
-	umountFunc = func() {
+	cleanupTasks = append(cleanupTasks, func() {
+		sylog.Debugf("Unmounting custom .rpmmacros from: %s", homeRpmMacros)
 		syscall.Unmount(homeRpmMacros, syscall.MNT_DETACH)
-		syscall.Unmount(parentDir, syscall.MNT_DETACH)
-	}
+	})
 
-	return umountFunc, nil
+	return cleanupFunc, nil
 }
 
 //nolint:dupl
