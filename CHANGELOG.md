@@ -1,5 +1,14 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Improved help text for `compile` and `install` subcommands of `plugin`
+  command. Thanks to tonghuaroot
+  ([https://github.com/tonghuaroot](https://github.com/tonghuaroot)) for the
+  suggested improvements.
+
 ## 3.11.4 \[2023-06-22\]
 
 ### Changed defaults / behaviours
