@@ -1,5 +1,14 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Improved help text for `compile` and `install` subcommands of `plugin`
+  command. Thanks to tonghuaroot
+  ([https://github.com/tonghuaroot](https://github.com/tonghuaroot)) for the
+  suggested improvements.
+
 ## 4.0.0-rc.1 (Release Candidate 1) \[2023-08-17\]
 
 ### OCI-mode
