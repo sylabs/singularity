@@ -26,7 +26,11 @@ const (
 	PluginCompileLong  string = `
   The 'plugin compile' command allows a developer to compile a Singularity 
   plugin in the expected environment. The provided host directory is the 
-  location of the plugin's source code. A compiled plugin is packed into a SIF file.`
+  location of the plugin's source code. A compiled plugin is packed into a SIF
+  file.
+  
+  NOTE: Before using this command, make sure that you trust the origin of the
+  plugin, and that you are certain it does not contain any malicious code.`
 	PluginCompileExample string = `
   $ singularity plugin compile $HOME/singularity/test-plugin`
 )
@@ -37,7 +41,10 @@ const (
 	PluginInstallShort string = `Install a compiled Singularity plugin`
 	PluginInstallLong  string = `
   The 'plugin install' command installs the compiled plugin found at plugin_path
-  into the appropriate directory on the host.`
+  into the appropriate directory on the host.
+  
+  NOTE: Before using this command, make sure that you trust the origin of the
+  plugin, and that you are certain it does not contain any malicious code.`
 	PluginInstallExample string = `
   $ singularity plugin install $HOME/singularity/test-plugin/test-plugin.sif`
 )
