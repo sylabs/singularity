@@ -8,6 +8,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -25,6 +26,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/native"
 	ocilauncher "github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/oci"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/uri"
+	"github.com/sylabs/singularity/v4/pkg/ocibundle/ocisif"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
@@ -45,6 +47,12 @@ func getCacheHandle(cfg cache.Config) *cache.Handle {
 
 	return h
 }
+
+type contextKey int
+
+const (
+	keyOrigImageURI contextKey = iota
+)
 
 // actionPreRun will:
 //   - do the proper path unsetting;
@@ -78,7 +86,8 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 		utsNamespace = true
 	}
 
-	replaceURIWithImage(cmd.Context(), cmd, args)
+	origImageURI := replaceURIWithImage(cmd.Context(), cmd, args)
+	cmd.SetContext(context.WithValue(cmd.Context(), keyOrigImageURI, &origImageURI))
 }
 
 func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, pullFrom string) (string, error) {
@@ -146,12 +155,13 @@ func handleNet(ctx context.Context, imgCache *cache.Handle, pullFrom string) (st
 	return net.Pull(ctx, imgCache, pullFrom, tmpDir)
 }
 
-func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string) {
-	t, _ := uri.Split(args[0])
+func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string) string {
+	origImageURI := args[0]
+	t, _ := uri.Split(origImageURI)
 	// If joining an instance (instance://xxx), or we have a bare filename then
 	// no retrieval / conversion is required.
 	if t == "instance" || t == "" {
-		return
+		return origImageURI
 	}
 
 	var image string
@@ -165,23 +175,33 @@ func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string)
 
 	switch t {
 	case uri.Library:
-		image, err = handleLibrary(ctx, imgCache, args[0])
+		image, err = handleLibrary(ctx, imgCache, origImageURI)
 	case uri.Oras:
-		image, err = handleOras(ctx, imgCache, cmd, args[0])
+		image, err = handleOras(ctx, imgCache, cmd, origImageURI)
 	case uri.Shub:
-		image, err = handleShub(ctx, imgCache, args[0])
+		image, err = handleShub(ctx, imgCache, origImageURI)
 	case oci.IsSupported(t):
-		image, err = handleOCI(ctx, imgCache, cmd, args[0])
+		image, err = handleOCI(ctx, imgCache, cmd, origImageURI)
 	case uri.HTTP:
-		image, err = handleNet(ctx, imgCache, args[0])
+		image, err = handleNet(ctx, imgCache, origImageURI)
 	case uri.HTTPS:
-		image, err = handleNet(ctx, imgCache, args[0])
+		image, err = handleNet(ctx, imgCache, origImageURI)
 	default:
 		sylog.Fatalf("Unsupported transport type: %s", t)
 	}
 
+	var mountErr *ocisif.UnavailableError
+	if errors.As(err, &mountErr) {
+		if !canOCIFallback {
+			sylog.Fatalf("OCI-SIF functionality could not be used, and fallback to unpacking OCI bundle in temporary dir disallowed (original error msg: %s)", err)
+		}
+
+		sylog.Warningf("OCI-SIF functionality could not be used, falling back to unpacking OCI bundle in temporary dir (original error msg: %s)", err)
+		return origImageURI
+	}
+
 	if err != nil {
-		sylog.Fatalf("Unable to handle %s uri: %v", args[0], err)
+		sylog.Fatalf("Unable to handle %s uri: %v", origImageURI, err)
 	}
 
 	// TODO - drop once we have implemented prefix-less oci-sif vs native sif detection.
@@ -190,6 +210,8 @@ func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string)
 	}
 
 	args[0] = image
+
+	return origImageURI
 }
 
 // ExecCmd represents the exec command
@@ -392,6 +414,33 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 			return fmt.Errorf("while configuring container: %s", err)
 		}
 	}
+
+	err = l.Exec(cmd.Context(), ep)
+	var mountErr *ocisif.UnavailableError
+	if !(errors.As(err, &mountErr) && strings.HasPrefix(ep.Image, "oci-sif:")) {
+		return err
+	}
+
+	if !canOCIFallback {
+		return fmt.Errorf("OCI-SIF functionality could not be used, and fallback to unpacking OCI bundle in temporary dir disallowed (original error msg: %w)", err)
+	}
+
+	sylog.Warningf("OCI-SIF functionality could not be used, falling back to unpacking OCI bundle in temporary dir (original error msg: %s)", err)
+	// Create a cache handle only when we know we are using a URI
+	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
+	if imgCache == nil {
+		sylog.Fatalf("failed to create a new image cache handle")
+	}
+	origImageURIPtr := cmd.Context().Value(keyOrigImageURI)
+	if origImageURIPtr == nil {
+		return fmt.Errorf("unable to recover original image URI from context while attempting temp-dir OCI fallback (original OCI-SIF err: %w)", mountErr)
+	}
+
+	origImageURI, ok := origImageURIPtr.(*string)
+	if !ok {
+		return fmt.Errorf("unable to recover original image URI (expected string, found: %T) from context while attempting temp-dir OCI fallback (original OCI-SIF err: %w)", origImageURIPtr, mountErr)
+	}
+	ep.Image = *origImageURI
 
 	return l.Exec(cmd.Context(), ep)
 }
