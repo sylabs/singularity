@@ -13,7 +13,7 @@ require (
 	github.com/containerd/containerd v1.7.5
 	github.com/containernetworking/cni v1.1.2
 	github.com/containernetworking/plugins v1.3.0
-	github.com/containers/common v0.55.3
+	github.com/containers/common v0.55.4
 	github.com/containers/image/v5 v5.27.0
 	github.com/cyphar/filepath-securejoin v0.2.3
 	github.com/docker/distribution v2.8.2+incompatible
@@ -74,7 +74,7 @@ require (
 	github.com/container-orchestrated-devices/container-device-interface v0.5.4 // indirect
 	github.com/containers/libtrust v0.0.0-20230121012942-c1716e8a8d01 // indirect
 	github.com/containers/ocicrypt v1.1.7 // indirect
-	github.com/containers/storage v1.48.0 // indirect
+	github.com/containers/storage v1.48.1 // indirect
 	github.com/coreos/go-iptables v0.6.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
