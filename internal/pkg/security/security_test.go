@@ -119,6 +119,7 @@ func TestConfigure(t *testing.T) {
 			var err error
 
 			mainthread.Execute(func() {
+				//nolint:gosec
 				err = Configure(&s.spec)
 			})
 

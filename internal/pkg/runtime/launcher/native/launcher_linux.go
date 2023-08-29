@@ -417,6 +417,7 @@ func (l *Launcher) setTargetIDs() (uid, gid uint32, err error) {
 			targetGID = append(targetGID, int(g))
 		}
 		if len(gids) > 0 {
+			//nolint:gosec
 			gid = uint32(targetGID[0])
 		}
 

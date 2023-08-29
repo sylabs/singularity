@@ -20,6 +20,7 @@ const (
 	// emptyConfigSize is the size of the empty config
 	emptyConfigSize = 2
 	// emptyConfigDigest is the sha256 digest of the empty value
+	//nolint:gosec
 	emptyConfigDigest = "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
 
 	// SifConfigMediaTypeV1 is the config descriptor mediaType for a SIF image.
