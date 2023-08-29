@@ -25,6 +25,14 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
+type UnavailableError struct {
+	Underlying error
+}
+
+func (e UnavailableError) Error() string {
+	return e.Underlying.Error()
+}
+
 // Bundle is a native OCI bundle, created from imageRef.
 type Bundle struct {
 	// imageRef is the reference to the OCI image source, e.g. oci-sif:alpine.sif
@@ -163,10 +171,8 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	// Initial image mount onto rootfs dir
 	sylog.Debugf("Mounting squashfs rootfs from %q to %q", imgFile, tools.RootFs(b.bundlePath).Path())
 	if err := mount(ctx, imgFile, tools.RootFs(b.bundlePath).Path(), rootfsLayer.Digest); err != nil {
-		if errCleanup := b.Delete(ctx); errCleanup != nil {
-			sylog.Errorf("While removing temporary bundle: %v", errCleanup)
-		}
-		return fmt.Errorf("while mounting squashfs layer: %w", err)
+		b.Delete(ctx)
+		return &UnavailableError{Underlying: fmt.Errorf("while mounting squashfs layer: %w", err)}
 	}
 	b.imageMounted = true
 

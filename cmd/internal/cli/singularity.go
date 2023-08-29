@@ -83,8 +83,10 @@ var (
 	forceOverwrite bool
 
 	// Use OCI runtime and OCI SIF?
-	isOCI bool
-	noOCI bool
+	isOCI          bool
+	noOCI          bool
+	canOCIFallback bool
+	noOCIFallback  bool
 
 	// Platform for retrieving images
 	arch     string
@@ -277,12 +279,22 @@ var commonOCIFlag = cmdline.Flag{
 
 // --no-oci
 var commonNoOCIFlag = cmdline.Flag{
-	ID:           "actionNoOCI",
+	ID:           "commonNoOCI",
 	Value:        &noOCI,
 	DefaultValue: false,
 	Name:         "no-oci",
 	Usage:        "Launch container with native runtime",
 	EnvKeys:      []string{"NO_OCI"},
+}
+
+// --no-oci-fallback
+var actionNoOCIFallbackFlag = cmdline.Flag{
+	ID:           "actionNoOCIFallback",
+	Value:        &noOCIFallback,
+	DefaultValue: false,
+	Name:         "no-oci-fallback",
+	Usage:        "Require OCI-SIF functionality for OCI mode, disallowing OCI temp dir fallback",
+	EnvKeys:      []string{"NO_OCI_FALLBACK"},
 }
 
 // --arch
@@ -408,7 +420,15 @@ func persistentPreRun(*cobra.Command, []string) error {
 		isOCI = false
 	}
 
-	// If we need to enter a namespace (oci-mode) do the re-exec now, before any other handling happens.
+	// Honor 'oci fallback' in singularity.conf, and allow negation with
+	// `--no-oci-fallback`.
+	canOCIFallback = config.OCIFallback
+	if noOCIFallback {
+		canOCIFallback = false
+	}
+
+	// If we need to enter a namespace (oci-mode) do the re-exec now, before any
+	// other handling happens.
 	if err := maybeReExec(); err != nil {
 		return err
 	}

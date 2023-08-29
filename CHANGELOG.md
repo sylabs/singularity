@@ -28,6 +28,12 @@ In OCI-mode:
   `--compat` in Singularity's non-OCI native mode.
 - OCI-modes support running existing Singularity non-OCI-SIF images, and can be
   made to imitate native mode default behavior by using the `--no-compat` flag.
+- If system does not meet the requirements for using OCI-SIF, OCI mode will fall
+  back to a filesystem-based strategy: the OCI container will be unpacked into a
+  temporary directory and run from there.
+  - This fallback strategy can be disabled by setting "oci fallback = no" in
+    `singularity.conf`, or by passing `--no-oci-fallback` to the relevant `run /
+    shell / exec` command.
 
 OCI-mode changes from 3.11 to 4.0 include:
 
