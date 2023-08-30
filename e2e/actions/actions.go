@@ -2557,6 +2557,25 @@ func (c actionTests) actionNoSIFFUSE(t *testing.T) {
 	}
 }
 
+// actionTmpSandboxFlag tests the command-line option prohibiting unpacking of image
+// files into temporary sandbox dirs.
+func (c actionTests) actionTmpSandboxFlag(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	profiles := []e2e.Profile{e2e.UserProfile, e2e.RootProfile, e2e.FakerootProfile, e2e.UserNamespaceProfile}
+
+	for _, p := range profiles {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(p.String()),
+			e2e.WithProfile(p),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs("--sif-fuse=false", "--no-tmp-sandbox", "-u", c.env.ImagePath, "/bin/true"),
+			e2e.ExpectExit(255),
+		)
+	}
+}
+
 // Make sure --workdir and --scratch work together nicely even when workdir is a
 // relative path. Test needs to be run in non-parallel mode, because it changes
 // the current working directory of the host.
@@ -2684,6 +2703,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"invalidRemote":                np(c.invalidRemote),              // GHSA-5mv9-q7fq-9394
 		"SIFFUSE":                      np(c.actionSIFFUSE),              // test --sif-fuse
 		"NoSIFFUSE":                    np(c.actionNoSIFFUSE),            // test absence of squashfs and CleanupHost()
+		"TmpSandboxFlag":               c.actionTmpSandboxFlag,           // test --no-tmp-sandbox flag
 		"relWorkdirScratch":            np(c.relWorkdirScratch),          // test relative --workdir with --scratch
 		"ociRelWorkdirScratch":         np(c.actionOciRelWorkdirScratch), // test relative --workdir with --scratch in OCI mode
 		//
