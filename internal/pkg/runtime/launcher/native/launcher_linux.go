@@ -991,12 +991,19 @@ func (l *Launcher) prepareImage(c context.Context, image string) error {
 	// namespace or if we are currently running inside a
 	// user namespace
 	if (l.cfg.Namespaces.User || insideUserNs) && fs.IsFile(image) {
+		// Honor 'tmp sandbox' in singularity.conf, and allow negation with
+		// `--no-tmp-sandbox`.
+		canUseTmpSandbox := l.engineConfig.File.TmpSandboxAllowed
+		if l.cfg.NoTmpSandbox {
+			canUseTmpSandbox = false
+		}
+
 		tryFUSE := l.cfg.SIFFUSE || l.engineConfig.File.SIFFUSE
 		if tryFUSE && l.cfg.Fakeroot {
 			return fmt.Errorf("fakeroot is not currently supported with FUSE SIF mounts")
 		}
 
-		fuse, tempDir, imageDir, err := handleImage(c, image, tryFUSE)
+		fuse, tempDir, imageDir, err := handleImage(c, image, tryFUSE, canUseTmpSandbox)
 		if err != nil {
 			return fmt.Errorf("while handling %s: %w", image, err)
 		}
@@ -1022,7 +1029,7 @@ func (l *Launcher) prepareImage(c context.Context, image string) error {
 // caller's responsibility to remove tempDir when no longer needed. If isFUSE is
 // returned true, then the imageDir is a FUSE mount, and must be unmounted
 // during cleanup.
-func handleImage(ctx context.Context, filename string, tryFUSE bool) (isFUSE bool, tempDir, imageDir string, err error) {
+func handleImage(ctx context.Context, filename string, tryFUSE, canUseTmpSandbox bool) (isFUSE bool, tempDir, imageDir string, err error) {
 	img, err := imgutil.Init(filename, false)
 	if err != nil {
 		return false, "", "", fmt.Errorf("could not open image %s: %s", filename, err)
@@ -1062,6 +1069,9 @@ func handleImage(ctx context.Context, filename string, tryFUSE bool) (isFUSE boo
 	}
 
 	// Fall back to extraction to directory
+	if !canUseTmpSandbox {
+		return false, "", "", fmt.Errorf("unpacking image to temporary sandbox dir required, but is prohibited by 'tmp sandbox = no' in singularity.conf or --no-tmp-sandbox command-line flag")
+	}
 	err = extractImage(img, imageDir)
 	if err == nil {
 		return false, tempDir, imageDir, nil
