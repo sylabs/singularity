@@ -48,10 +48,10 @@ func getCacheHandle(cfg cache.Config) *cache.Handle {
 	return h
 }
 
-type contextKey int
+type contextKey string
 
 const (
-	keyOrigImageURI contextKey = iota
+	keyOrigImageURI contextKey = "origImageURI"
 )
 
 // actionPreRun will:
@@ -192,11 +192,11 @@ func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string)
 
 	var mountErr *ocisif.UnavailableError
 	if errors.As(err, &mountErr) {
-		if !canOCIFallback {
-			sylog.Fatalf("OCI-SIF functionality could not be used, and fallback to unpacking OCI bundle in temporary dir disallowed (original error msg: %s)", err)
+		if !canUseTmpSandbox {
+			sylog.Fatalf("OCI-SIF functionality could not be used, and fallback to unpacking OCI bundle in temporary sandbox dir disallowed (original error msg: %s)", err)
 		}
 
-		sylog.Warningf("OCI-SIF functionality could not be used, falling back to unpacking OCI bundle in temporary dir (original error msg: %s)", err)
+		sylog.Warningf("OCI-SIF functionality could not be used, falling back to unpacking OCI bundle in temporary sandbox dir (original error msg: %s)", err)
 		return origImageURI
 	}
 
@@ -382,6 +382,7 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 		launcher.OptDevice(device),
 		launcher.OptCdiDirs(cdiDirs),
 		launcher.OptNoCompat(noCompat),
+		launcher.OptNoTmpSandbox(noTmpSandbox),
 	}
 
 	// Explicitly use the interface type here, as we will add alternative launchers later...
@@ -421,11 +422,11 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 		return err
 	}
 
-	if !canOCIFallback {
-		return fmt.Errorf("OCI-SIF functionality could not be used, and fallback to unpacking OCI bundle in temporary dir disallowed (original error msg: %w)", err)
+	if !canUseTmpSandbox {
+		return fmt.Errorf("OCI-SIF functionality could not be used, and fallback to unpacking OCI bundle in temporary sandbox dir disallowed (original error msg: %w)", err)
 	}
 
-	sylog.Warningf("OCI-SIF functionality could not be used, falling back to unpacking OCI bundle in temporary dir (original error msg: %s)", err)
+	sylog.Warningf("OCI-SIF functionality could not be used, falling back to unpacking OCI bundle in temporary sandbox dir (original error msg: %s)", err)
 	// Create a cache handle only when we know we are using a URI
 	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
 	if imgCache == nil {

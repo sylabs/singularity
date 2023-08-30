@@ -890,7 +890,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionProotFlag, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&commonOCIFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&commonNoOCIFlag, actionsInstanceCmd...)
-		cmdManager.RegisterFlagForCmd(&actionNoOCIFallbackFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionNoTmpSandbox, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionDevice, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&actionCdiDirs, actionsCmd...)
 	})

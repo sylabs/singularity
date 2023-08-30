@@ -77,7 +77,7 @@ type File struct {
 	SystemdCgroups          bool     `default:"yes" authorized:"yes,no" directive:"systemd cgroups"`
 	SIFFUSE                 bool     `default:"no" authorized:"yes,no" directive:"sif fuse"`
 	OCIMode                 bool     `default:"no" authorized:"yes,no" directive:"oci mode"`
-	OCIFallback             bool     `default:"yes" authorized:"yes,no" directive:"oci fallback"`
+	TmpSandboxAllowed       bool     `default:"yes" authorized:"yes,no" directive:"tmp sandbox"`
 }
 
 const TemplateAsset = `# SINGULARITY.CONF

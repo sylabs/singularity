@@ -149,6 +149,9 @@ type Options struct {
 	// This will be used by a launcher handling OCI images directly.
 	SysContext *types.SystemContext
 
+	// NoTmpSandbox prohibits unpacking of images into temporary sandbox dirs.
+	NoTmpSandbox bool
+
 	// Devices contains the list of device mappings (if any), e.g. CDI mappings.
 	Devices []string
 
@@ -505,6 +508,14 @@ func OptKeyInfo(ki *cryptkey.KeyInfo) Option {
 func OptSIFFuse(b bool) Option {
 	return func(lo *Options) error {
 		lo.SIFFUSE = b
+		return nil
+	}
+}
+
+// OptNoTmpSandbox prohibits unpacking of images into temporary sandbox dirs.
+func OptNoTmpSandbox(b bool) Option {
+	return func(lo *Options) error {
+		lo.NoTmpSandbox = b
 		return nil
 	}
 }
