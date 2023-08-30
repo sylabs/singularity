@@ -400,7 +400,7 @@ func persistentPreRun(*cobra.Command, []string) error {
 	singularityconf.SetCurrentConfig(config)
 
 	// Honor 'oci mode' in singularity.conf, and allow negation with `--no-oci`.
-	if isOCI && !isOCI {
+	if isOCI && noOCI {
 		return fmt.Errorf("--oci and --no-oci cannot be used together")
 	}
 	isOCI = isOCI || config.OCIMode
