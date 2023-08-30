@@ -29,6 +29,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	obocisif "github.com/sylabs/singularity/v4/pkg/ocibundle/ocisif"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
@@ -92,7 +93,7 @@ func PullOCISIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom 
 
 	if directTo != "" {
 		if err := createOciSif(ctx, sys, imgCache, pullFrom, directTo, opts); err != nil {
-			return "", fmt.Errorf("while creating OCI-SIF: %v", err)
+			return "", fmt.Errorf("while creating OCI-SIF: %w", err)
 		}
 		imagePath = directTo
 	} else {
@@ -103,7 +104,7 @@ func PullOCISIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom 
 		defer cacheEntry.CleanTmp()
 		if !cacheEntry.Exists {
 			if err := createOciSif(ctx, sys, imgCache, pullFrom, cacheEntry.TmpPath, opts); err != nil {
-				return "", fmt.Errorf("while creating OCI-SIF: %v", err)
+				return "", fmt.Errorf("while creating OCI-SIF: %w", err)
 			}
 
 			err = cacheEntry.Finalize()
@@ -223,7 +224,7 @@ func convertLayoutToOciSif(layoutDir string, digest v1.Hash, imageDest, workDir 
 	}
 	squashfsLayer, err := mutate.SquashfsLayer(layers[0], workDir)
 	if err != nil {
-		return fmt.Errorf("while converting to squashfs format: %w", err)
+		return &obocisif.UnavailableError{Underlying: fmt.Errorf("while converting to squashfs format: %w", err)}
 	}
 	img, err = mutate.Apply(img,
 		mutate.ReplaceLayers(squashfsLayer),

@@ -82,6 +82,10 @@ var (
 	tmpDir         string
 	forceOverwrite bool
 
+	// Options controlling the unpacking of images to temporary sandboxes
+	canUseTmpSandbox bool
+	noTmpSandbox     bool
+
 	// Use OCI runtime and OCI SIF?
 	isOCI bool
 	noOCI bool
@@ -277,12 +281,22 @@ var commonOCIFlag = cmdline.Flag{
 
 // --no-oci
 var commonNoOCIFlag = cmdline.Flag{
-	ID:           "actionNoOCI",
+	ID:           "commonNoOCI",
 	Value:        &noOCI,
 	DefaultValue: false,
 	Name:         "no-oci",
 	Usage:        "Launch container with native runtime",
 	EnvKeys:      []string{"NO_OCI"},
+}
+
+// --no-tmp-sandbox
+var actionNoTmpSandbox = cmdline.Flag{
+	ID:           "actionNoTmpSandbox",
+	Value:        &noTmpSandbox,
+	DefaultValue: false,
+	Name:         "no-tmp-sandbox",
+	Usage:        "Prohibits unpacking of images into temporary sandbox dirs",
+	EnvKeys:      []string{"NO_TMP_SANDBOX"},
 }
 
 // --arch
@@ -408,7 +422,15 @@ func persistentPreRun(*cobra.Command, []string) error {
 		isOCI = false
 	}
 
-	// If we need to enter a namespace (oci-mode) do the re-exec now, before any other handling happens.
+	// Honor 'tmp sandbox' in singularity.conf, and allow negation with
+	// `--no-tmp-sandbox`.
+	canUseTmpSandbox = config.TmpSandboxAllowed
+	if noTmpSandbox {
+		canUseTmpSandbox = false
+	}
+
+	// If we need to enter a namespace (oci-mode) do the re-exec now, before any
+	// other handling happens.
 	if err := maybeReExec(); err != nil {
 		return err
 	}

@@ -683,7 +683,7 @@ func (e *EngineConfig) SetImageFuse(fuse bool) {
 	e.JSON.ImageFuse = fuse
 }
 
-// GetFakeroot returns if the ImageDir is a FUSE mount or not.
+// GetImageFuse returns if the ImageDir is a FUSE mount or not.
 func (e *EngineConfig) GetImageFuse() bool {
 	return e.JSON.ImageFuse
 }
