@@ -344,6 +344,15 @@ func (c actionTests) actionOciExec(t *testing.T) {
 				e2e.ExpectOutput(e2e.UnwantedExactMatch, "1"),
 			},
 		},
+		// Can't use `--no-oci` with `--oci` (implied by OCI profiles)
+		{
+			name: "no-oci",
+			argv: []string{"--no-oci", c.env.OCISIFPath, "/bin/true"},
+			exit: 255,
+			wantOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectError(e2e.ContainMatch, "--oci and --no-oci cannot be used together"),
+			},
+		},
 	}
 	for _, profile := range e2e.OCIProfiles {
 		t.Run(profile.String(), func(t *testing.T) {
