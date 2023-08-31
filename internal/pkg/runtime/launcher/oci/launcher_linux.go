@@ -693,6 +693,13 @@ func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 		)
 		l.nativeSIF = true
 	default:
+		canUseTmpSandbox := l.singularityConf.TmpSandboxAllowed
+		if l.cfg.NoTmpSandbox {
+			canUseTmpSandbox = false
+		}
+		if !canUseTmpSandbox {
+			return fmt.Errorf("unpacking image to temporary sandbox dir required, but is prohibited by 'tmp sandbox = no' in singularity.conf or --no-tmp-sandbox command-line flag")
+		}
 		b, err = native.New(
 			native.OptBundlePath(bundleDir),
 			native.OptImageRef(image),
