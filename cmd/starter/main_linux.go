@@ -1,9 +1,16 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package main
+
+// Note that the inclusion of builddir here only works when mconfig -b has not
+//  renamed it; that is handled via a setting of CGO_CFLAGS in mconfig. It is
+//  included here also so that Go tools such as code editors and linters can
+//  find config.h when the default builddir is used.
 
 // #cgo CFLAGS: -I${SRCDIR}/../../builddir
 // #include <config.h>
