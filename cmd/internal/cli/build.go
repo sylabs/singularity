@@ -297,7 +297,7 @@ var buildVarArgsFlag = cmdline.Flag{
 	Value:        &buildArgs.buildVarArgs,
 	DefaultValue: []string{},
 	Name:         "build-arg",
-	Usage:        "defines variable=value to replace {{ variable }} entries in build definition file",
+	Usage:        "provide value to replace {{ variable }} entries in build definition file, in variable=value format",
 }
 
 // --build-arg-file
