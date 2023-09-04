@@ -1,0 +1,44 @@
+# SingularityCE on Alma Linux 9
+# 
+# Usage:
+#
+#   $ limactl start ./singularity-ce.yml
+#   $ limactl shell singularity-ce singularity run library://alpine
+
+images:
+- location: "https://repo.almalinux.org/almalinux/9/cloud/x86_64/images/AlmaLinux-9-GenericCloud-latest.x86_64.qcow2"
+  arch: "x86_64"
+- location: "https://repo.almalinux.org/almalinux/9/cloud/aarch64/images/AlmaLinux-9-GenericCloud-latest.aarch64.qcow2"
+  arch: "aarch64"
+
+mounts:
+- location: "~"
+- location: "/tmp/lima"
+
+containerd:
+  system: false
+  user: false
+
+provision:
+- mode: system
+  script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    dnf -y install --enablerepo=epel singularity-ce
+    dnf -y install dnf-plugins-core
+    dnf -y copr enable dctrud/squashfs-tools-ng
+    dnf -y install squashfs-tools-ng 
+
+probes:
+- script: |
+    #!/bin/bash
+    set -eux -o pipefail
+    if ! timeout 30s bash -c "until command -v singularity >/dev/null 2>&1; do sleep 3; done"; then
+      echo >&2 "singularity is not installed yet"
+      exit 1
+    fi
+  hint: See "/var/log/cloud-init-output.log" in the guest
+
+message: |
+  To run `singularity` inside your lima VM:
+    $ limactl shell {{.Name}} singularity run library://alpine
