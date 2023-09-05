@@ -1,6 +1,18 @@
 # SingularityCE Changelog
 
-## Changes Since Last Release
+## 4.0.0-rc.2 (Release Candidate 2) \[2023-09-05\]
+
+### OCI-mode
+
+- If system does not meet the requirements for using OCI-SIF, OCI mode will fall
+  back to a filesystem-based strategy: the OCI container will be unpacked into a
+  temporary sandbox dir and run from there.
+
+### New Features & Functionality
+
+- Execution flows that unpack an image into a temporary sandbox dir can now be
+  disabled, by setting "tmp sandbox = no" in `singularity.conf` or by passing
+  `--no-tmp-sandbox` to the relevant `run / shell / exec` command.
 
 ### Bug Fixes
 
@@ -8,6 +20,7 @@
   command. Thanks to tonghuaroot
   ([https://github.com/tonghuaroot](https://github.com/tonghuaroot)) for the
   suggested improvements.
+- Fix compilation with the `mconfig` `-b` option (custom builddir).
 
 ## 4.0.0-rc.1 (Release Candidate 1) \[2023-08-17\]
 
@@ -24,9 +37,6 @@ In OCI-mode:
   using an OCI, rather than Singularity specific, structure.
 - The `run / shell / exec` commands use a low-level OCI runtime (crun/runc) for container
   execution.
-- If system does not meet the requirements for using OCI-SIF, OCI mode will fall
-  back to a filesystem-based strategy: the OCI container will be unpacked into a
-  temporary sandbox dir and run from there.
 - Default operation is compatible with other OCI tools, similar to using
   `--compat` in Singularity's non-OCI native mode.
 - OCI-modes support running existing Singularity non-OCI-SIF images, and can be
@@ -178,9 +188,6 @@ requirements of OCI-mode and usage information.
   sources the optional variant is ignored.
 - The `--arch` flag can now be used to specify a required architecture when pulling
   images from OCI, as well as library sources.
-- Execution flows that unpack an image into a temporary sandbox dir can now be
-  disabled, by setting "tmp sandbox = no" in `singularity.conf` or by passing
-  `--no-tmp-sandbox` to the relevant `run / shell / exec` command.
 
 ### Developer / API
 
