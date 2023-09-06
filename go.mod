@@ -50,7 +50,7 @@ require (
 	github.com/sylabs/scs-library-client v1.4.5
 	github.com/sylabs/sif/v2 v2.13.0
 	github.com/vbauerster/mpb/v8 v8.6.1
-	golang.org/x/crypto v0.12.0
+	golang.org/x/crypto v0.13.0
 	golang.org/x/sys v0.12.0
 	golang.org/x/term v0.12.0
 	golang.org/x/text v0.13.0
