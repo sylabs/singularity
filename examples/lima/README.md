@@ -22,12 +22,20 @@ Configuration of the VM will take a couple of minutes.
 You can then enter the VM interactively, and run `singularity`
 commmands inside it:
 
-```sh
+```shell
 limactl shell singularity-ce
 singularity run library://alpine
 ```
 
-Your home directory will be shared from your Mac, into the VM.
+Your home directory will be shared from your Mac, into the VM. However, since
+macOS places home directories under `/Users` (rather than `/home`),
+SingularityCE will not mount your home directory in the container unless you
+explicitly specify your macOS homedir, as shown here:
+
+```shell
+   limactl shell singularity-ce
+   singularity run -H /Users/myuser library://alpine
+```
 
 Alternatively, to run SingularityCE directly:
 
@@ -35,9 +43,15 @@ Alternatively, to run SingularityCE directly:
 limactl shell singularity-ce singularity run library://alpine
 ```
 
+Or, with homedir mounting:
+
+```shell
+limactl shell singularity-ce singularity run -H /Users/myuser library://alpine
+```
+
 To stop the VM:
 
-``` shell
+```shell
 limactl stop singularity-ce
 ```
 
