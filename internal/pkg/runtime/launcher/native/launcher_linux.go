@@ -486,7 +486,7 @@ func (l *Launcher) checkImage() error {
 	}
 
 	if img.Type == image.OCISIF {
-		return fmt.Errorf("native runtime does not support OCI-SIF images, use --oci mode")
+		return fmt.Errorf("encountered OCI-SIF image, which is only supported on singularity versions 4.0 and above")
 	}
 
 	if err := l.checkEncryptionKey(img); err != nil {
@@ -1050,6 +1050,10 @@ func handleImage(ctx context.Context, filename string, tryFUSE bool) (isFUSE boo
 		return false, "", "", fmt.Errorf("could not open image %s: %s", filename, err)
 	}
 	defer img.File.Close()
+
+	if img.Type == image.OCISIF {
+		return false, "", "", fmt.Errorf("encountered OCI-SIF image, which is only supported on singularity versions 4.0 and above")
+	}
 
 	part, err := img.GetRootFsPartition()
 	if err != nil {
