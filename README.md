@@ -100,15 +100,15 @@ fixes and security patches are available for all supported language versions.
 
 ## Citing Singularity
 
-The SingularityCE software may be cited using our Zenodo DOI `10.5281/zenodo.5564905`:
+The SingularityCE software may be cited using our Zenodo DOI `10.5281/zenodo.5570766`:
 
-> SingularityCE Developers (2021) SingularityCE. 10.5281/zenodo.5564905
-> <https://doi.org/10.5281/zenodo.5564905>
+> SingularityCE Developers (2021) SingularityCE. 10.5281/zenodo.5570766
+> <https://doi.org/10.5281/zenodo.5570766>
 
 This is an 'all versions' DOI for referencing SingularityCE in a manner that is
 not version-specific. You may wish to reference the particular version of
 SingularityCE used in your work. Zenodo creates a unique DOI for each release,
-and these can be found in the 'Versions' sidebar on the [Zenodo record page](https://doi.org/10.5281/zenodo.5564905).
+and these can be found in the 'Versions' sidebar on the [Zenodo record page](https://doi.org/10.5281/zenodo.5570766).
 
 Please also consider citing the original publication describing Singularity:
 
