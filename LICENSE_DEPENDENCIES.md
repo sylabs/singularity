@@ -17,11 +17,11 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/Netflix/go-expect/blob/master/LICENSE>
 
-## github.com/container-orchestrated-devices/container-device-interface
+## github.com/container-orchestrated-devices/container-device-interface/pkg/parser
 
 **License:** Apache-2.0
 
-**License URL:** <https://github.com/container-orchestrated-devices/container-device-interface/blob/master/LICENSE>
+**License URL:** <https://github.com/container-orchestrated-devices/container-device-interface/blob/master/pkg/parser/LICENSE>
 
 ## github.com/containerd/containerd
 
@@ -304,12 +304,6 @@ The dependencies and their licenses are as follows:
 **License:** Apache-2.0
 
 **License URL:** <https://github.com/opencontainers/runtime-spec/blob/master/specs-go/LICENSE>
-
-## github.com/opencontainers/runtime-tools
-
-**License:** Apache-2.0
-
-**License URL:** <https://github.com/opencontainers/runtime-tools/blob/master/LICENSE>
 
 ## github.com/opencontainers/selinux
 
@@ -665,12 +659,6 @@ The dependencies and their licenses are as follows:
 
 **Project URL:** <https://golang.org/x/exp>
 
-## golang.org/x/mod/semver
-
-**License:** BSD-3-Clause
-
-**Project URL:** <https://golang.org/x/mod/semver>
-
 ## golang.org/x/net
 
 **License:** BSD-3-Clause
@@ -958,12 +946,6 @@ The dependencies and their licenses are as follows:
 **License:** MIT
 
 **Project URL:** <https://gopkg.in/yaml.v3>
-
-## sigs.k8s.io/yaml
-
-**License:** MIT
-
-**Project URL:** <https://sigs.k8s.io/yaml>
 
 ## github.com/gosimple/slug
 

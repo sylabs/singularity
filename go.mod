@@ -13,7 +13,7 @@ require (
 	github.com/containerd/containerd v1.7.6
 	github.com/containernetworking/cni v1.1.2
 	github.com/containernetworking/plugins v1.3.0
-	github.com/containers/common v0.55.4
+	github.com/containers/common v0.56.0
 	github.com/containers/image/v5 v5.28.0
 	github.com/cyphar/filepath-securejoin v0.2.4
 	github.com/docker/distribution v2.8.2+incompatible
@@ -72,10 +72,10 @@ require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cilium/ebpf v0.9.1 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
-	github.com/container-orchestrated-devices/container-device-interface v0.5.4 // indirect
+	github.com/container-orchestrated-devices/container-device-interface v0.6.1 // indirect
 	github.com/containers/libtrust v0.0.0-20230121012942-c1716e8a8d01 // indirect
 	github.com/containers/ocicrypt v1.1.8 // indirect
-	github.com/containers/storage v1.50.1 // indirect
+	github.com/containers/storage v1.50.2 // indirect
 	github.com/coreos/go-iptables v0.6.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
@@ -185,7 +185,6 @@ require (
 	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
 replace oras.land/oras-go => github.com/sylabs/oras-go v1.2.4-0.20230628133146-a64659fc0454
