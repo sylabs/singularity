@@ -31,6 +31,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/build/oci"
 	"github.com/sylabs/singularity/internal/pkg/cache"
 	"github.com/sylabs/singularity/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/sylabs/singularity/pkg/image"
 	"github.com/sylabs/singularity/pkg/ocibundle"
 	"github.com/sylabs/singularity/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/pkg/sylog"
@@ -203,6 +204,13 @@ func (b *Bundle) fetchLayout(ctx context.Context) (layoutRef types.ImageReferenc
 
 	parts := strings.SplitN(b.imageRef, ":", 2)
 	if len(parts) < 2 {
+		isOCISIF, err := checkForOCISIF(b.imageRef)
+		if err != nil {
+			return nil, "", nil, err
+		}
+		if isOCISIF {
+			return nil, "", nil, fmt.Errorf("encountered OCI-SIF image, which is only supported on singularity versions 4.0 and above")
+		}
 		return nil, "", nil, fmt.Errorf("could not parse image ref: %s", b.imageRef)
 	}
 	var srcRef types.ImageReference
@@ -265,6 +273,16 @@ func (b *Bundle) fetchLayout(ctx context.Context) (layoutRef types.ImageReferenc
 	}
 
 	return tmpfsRef, tmpDir, cleanup, nil
+}
+
+func checkForOCISIF(filename string) (bool, error) {
+	img, err := image.Init(filename, false)
+	if err != nil {
+		return false, fmt.Errorf("could not open image %s: %s", filename, err)
+	}
+	defer img.File.Close()
+
+	return (img.Type == image.OCISIF), nil
 }
 
 func (b *Bundle) extractImage(ctx context.Context, layoutDir string, manifest imgspecv1.Manifest) error {

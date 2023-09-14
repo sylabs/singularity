@@ -37,6 +37,7 @@ import (
 	"github.com/sylabs/singularity/internal/pkg/util/shell/interpreter"
 	"github.com/sylabs/singularity/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/internal/pkg/util/user"
+	"github.com/sylabs/singularity/pkg/image"
 	imgutil "github.com/sylabs/singularity/pkg/image"
 	clicallback "github.com/sylabs/singularity/pkg/plugin/callback/cli"
 	singularitycallback "github.com/sylabs/singularity/pkg/plugin/callback/runtime/engine/singularity"
@@ -131,12 +132,12 @@ func (l *Launcher) Exec(ctx context.Context, image string, process string, args 
 	l.engineConfig.SetOverlayImage(l.cfg.OverlayPaths)
 	l.engineConfig.SetWritableImage(l.cfg.Writable)
 
-	// Check key is available for encrypted image, if applicable.
+	// Check image is something we can run, and key is available for encrypted image, if applicable.
 	// If we are joining an instance, then any encrypted image is already mounted.
 	if !l.engineConfig.GetInstanceJoin() {
-		err = l.checkEncryptionKey()
+		err = l.checkImage()
 		if err != nil {
-			sylog.Fatalf("While checking container encryption: %s", err)
+			sylog.Fatalf("While checking image: %s", err)
 		}
 	}
 
@@ -478,14 +479,31 @@ func (l *Launcher) setImageOrInstance(image string, name string) error {
 	return nil
 }
 
-// checkEncryptionKey verifies key material is available if the image is encrypted.
-// Allows us to fail fast if required key material is not available / usable.
-func (l *Launcher) checkEncryptionKey() error {
-	sylog.Debugf("Checking for encrypted system partition")
+func (l *Launcher) checkImage() error {
 	img, err := imgutil.Init(l.engineConfig.GetImage(), false)
 	if err != nil {
 		return fmt.Errorf("could not open image %s: %w", l.engineConfig.GetImage(), err)
 	}
+
+	if img.Type == image.OCISIF {
+		return fmt.Errorf("encountered OCI-SIF image, which is only supported on singularity versions 4.0 and above")
+	}
+
+	if err := l.checkEncryptionKey(img); err != nil {
+		return err
+	}
+
+	// don't defer this call as in all cases it won't be
+	// called before execing starter, so it would leak the
+	// image file descriptor to the container process
+	img.File.Close()
+	return nil
+}
+
+// checkEncryptionKey verifies key material is available if the image is encrypted.
+// Allows us to fail fast if required key material is not available / usable.
+func (l *Launcher) checkEncryptionKey(img *imgutil.Image) error {
+	sylog.Debugf("Checking for encrypted system partition")
 
 	part, err := img.GetRootFsPartition()
 	if err != nil {
@@ -507,10 +525,6 @@ func (l *Launcher) checkEncryptionKey() error {
 
 		l.engineConfig.SetEncryptionKey(plaintextKey)
 	}
-	// don't defer this call as in all cases it won't be
-	// called before execing starter, so it would leak the
-	// image file descriptor to the container process
-	img.File.Close()
 	return nil
 }
 
@@ -1036,6 +1050,10 @@ func handleImage(ctx context.Context, filename string, tryFUSE bool) (isFUSE boo
 		return false, "", "", fmt.Errorf("could not open image %s: %s", filename, err)
 	}
 	defer img.File.Close()
+
+	if img.Type == image.OCISIF {
+		return false, "", "", fmt.Errorf("encountered OCI-SIF image, which is only supported on singularity versions 4.0 and above")
+	}
 
 	part, err := img.GetRootFsPartition()
 	if err != nil {
