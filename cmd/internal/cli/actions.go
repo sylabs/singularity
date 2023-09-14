@@ -25,6 +25,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/native"
 	ocilauncher "github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/oci"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/image"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/v4/pkg/ocibundle/ocisif"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
@@ -198,15 +199,6 @@ func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string)
 
 		sylog.Warningf("OCI-SIF functionality could not be used, falling back to unpacking OCI bundle in temporary sandbox dir (original error msg: %s)", err)
 		return origImageURI
-	}
-
-	if err != nil {
-		sylog.Fatalf("Unable to handle %s uri: %v", origImageURI, err)
-	}
-
-	// TODO - drop once we have implemented prefix-less oci-sif vs native sif detection.
-	if isOCI {
-		image = "oci-sif:" + image
 	}
 
 	args[0] = image
@@ -416,17 +408,21 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 		}
 	}
 
-	err = l.Exec(cmd.Context(), ep)
+	execErr := l.Exec(cmd.Context(), ep)
 	var mountErr *ocisif.UnavailableError
-	if !(errors.As(err, &mountErr) && strings.HasPrefix(ep.Image, "oci-sif:")) {
-		return err
+	isOCISIF, ocisifCheckErr := image.IsOCISIF(ep.Image)
+	if ocisifCheckErr != nil {
+		return ocisifCheckErr
+	}
+	if !(errors.As(execErr, &mountErr) && isOCISIF) {
+		return execErr
 	}
 
 	if !canUseTmpSandbox {
-		return fmt.Errorf("OCI-SIF functionality could not be used, and fallback to unpacking OCI bundle in temporary sandbox dir disallowed (original error msg: %w)", err)
+		return fmt.Errorf("OCI-SIF functionality could not be used, and fallback to unpacking OCI bundle in temporary sandbox dir disallowed (original error msg: %w)", execErr)
 	}
 
-	sylog.Warningf("OCI-SIF functionality could not be used, falling back to unpacking OCI bundle in temporary sandbox dir (original error msg: %s)", err)
+	sylog.Warningf("OCI-SIF functionality could not be used, falling back to unpacking OCI bundle in temporary sandbox dir (original error msg: %s)", execErr)
 	// Create a cache handle only when we know we are using a URI
 	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
 	if imgCache == nil {
@@ -434,12 +430,12 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 	}
 	origImageURIPtr := cmd.Context().Value(keyOrigImageURI)
 	if origImageURIPtr == nil {
-		return fmt.Errorf("unable to recover original image URI from context while attempting temp-dir OCI fallback (original OCI-SIF err: %w)", mountErr)
+		return fmt.Errorf("unable to recover original image URI from context while attempting temp-dir OCI fallback (original OCI-SIF error: %w)", mountErr)
 	}
 
 	origImageURI, ok := origImageURIPtr.(*string)
 	if !ok {
-		return fmt.Errorf("unable to recover original image URI (expected string, found: %T) from context while attempting temp-dir OCI fallback (original OCI-SIF err: %w)", origImageURIPtr, mountErr)
+		return fmt.Errorf("unable to recover original image URI (expected string, found: %T) from context while attempting temp-dir OCI fallback (original OCI-SIF error: %w)", origImageURIPtr, mountErr)
 	}
 	ep.Image = *origImageURI
 
