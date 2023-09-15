@@ -62,6 +62,8 @@ func (f *ociSifFormat) lock(*Image) error {
 	return nil
 }
 
+// IsOCISIF receives a path to an image file and returns a boolean indicating
+// whether the file is an OCI-SIF image.
 func IsOCISIF(filename string) (bool, error) {
 	img, err := Init(filename, false)
 	if err != nil {
