@@ -25,8 +25,8 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/native"
 	ocilauncher "github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/oci"
-	"github.com/sylabs/singularity/v4/internal/pkg/util/image"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/uri"
+	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/ocibundle/ocisif"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -199,6 +199,10 @@ func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string)
 
 		sylog.Warningf("OCI-SIF functionality could not be used, falling back to unpacking OCI bundle in temporary sandbox dir (original error msg: %s)", err)
 		return origImageURI
+	}
+
+	if err != nil {
+		sylog.Fatalf("Unable to handle %s uri: %v", origImageURI, err)
 	}
 
 	args[0] = image

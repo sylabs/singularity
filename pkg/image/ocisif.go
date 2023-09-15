@@ -7,6 +7,7 @@ package image
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 
 	"github.com/sylabs/sif/v2/pkg/sif"
@@ -59,4 +60,14 @@ func (f *ociSifFormat) openMode(bool) int {
 
 func (f *ociSifFormat) lock(*Image) error {
 	return nil
+}
+
+func IsOCISIF(filename string) (bool, error) {
+	img, err := Init(filename, false)
+	if err != nil {
+		return false, fmt.Errorf("could not open image %s: %s", filename, err)
+	}
+	defer img.File.Close()
+
+	return (img.Type == OCISIF), nil
 }
