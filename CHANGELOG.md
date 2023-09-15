@@ -216,6 +216,21 @@ requirements of OCI-mode and usage information.
 
 -----
 
+## 3.11.5 \[2023-09-15\]
+
+### Changed defaults / behaviours
+
+- If commands that expect an image file are given an OCI-SIF image, an error
+  will be generated advising the user that this format is only supported in
+  versions 4.0 and up.
+
+### Bug Fixes
+
+- Improved help text for `compile` and `install` subcommands of `plugin`
+  command. Thanks to tonghuaroot
+  ([https://github.com/tonghuaroot](https://github.com/tonghuaroot)) for the
+  suggested improvements.
+
 ## 3.11.4 \[2023-06-22\]
 
 ### Changed defaults / behaviours
