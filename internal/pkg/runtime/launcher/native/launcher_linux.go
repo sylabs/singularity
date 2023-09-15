@@ -1168,7 +1168,9 @@ func squashfuseMount(ctx context.Context, img *imgutil.Image, imageDir string) (
 		return fmt.Errorf("failed to get partition descriptor: %w", err)
 	}
 
-	return squashfs.FUSEMount(ctx, uint64(d.Offset()), img.Path, imageDir)
+	_, err = squashfs.FUSEMount(ctx, uint64(d.Offset()), img.Path, imageDir)
+
+	return err
 }
 
 // starterInteractive executes the starter binary to run an image interactively, given the supplied engineConfig

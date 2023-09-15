@@ -15,7 +15,7 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/image"
 )
 
-func FUSEMount(ctx context.Context, offset uint64, path, mountPath string) error {
+func FUSEMount(ctx context.Context, offset uint64, path, mountPath string) (*fuse.ImageMount, error) {
 	im := fuse.ImageMount{
 		Type:       image.SQUASHFS,
 		Readonly:   true,
@@ -29,7 +29,7 @@ func FUSEMount(ctx context.Context, offset uint64, path, mountPath string) error
 	}
 	im.SetMountPoint(filepath.Clean(mountPath))
 
-	return im.Mount(ctx)
+	return &im, im.Mount(ctx)
 }
 
 func FUSEUnmount(ctx context.Context, mountPath string) error {
