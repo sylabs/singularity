@@ -6,6 +6,7 @@
 package overlay
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -281,7 +282,9 @@ func DetachAndDelete(overlayDir string) error {
 }
 
 // DetachMount performs an unmount system call on the specified directory.
-func DetachMount(dir string) error {
+//
+//nolint:revive,nolintlint
+func DetachMount(ctx context.Context, dir string) error {
 	sylog.Debugf("Calling syscall.Unmount() to detach %q", dir)
 	if err := syscall.Unmount(dir, syscall.MNT_DETACH); err != nil {
 		return fmt.Errorf("failed to detach %s: %w", dir, err)

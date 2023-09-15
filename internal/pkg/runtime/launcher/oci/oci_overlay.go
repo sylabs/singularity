@@ -6,6 +6,7 @@
 package oci
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/overlay"
@@ -18,8 +19,8 @@ import (
 // tmpfs. This tmpfs is always writable so that the launcher and runtime are
 // able to add content to the container. Whether it is writable from inside the
 // container is controlled by the runtime config.
-func WrapWithWritableTmpFs(f func() error, bundleDir string, allowSetuid bool) error {
-	overlayDir, err := prepareWritableTmpfs(bundleDir, allowSetuid)
+func WrapWithWritableTmpFs(ctx context.Context, f func() error, bundleDir string, allowSetuid bool) error {
+	overlayDir, err := prepareWritableTmpfs(ctx, bundleDir, allowSetuid)
 	sylog.Debugf("Done with prepareWritableTmpfs; overlayDir is: %q", overlayDir)
 	if err != nil {
 		return err
@@ -28,7 +29,7 @@ func WrapWithWritableTmpFs(f func() error, bundleDir string, allowSetuid bool) e
 	err = f()
 
 	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
-	if cleanupErr := cleanupWritableTmpfs(bundleDir, overlayDir); cleanupErr != nil {
+	if cleanupErr := cleanupWritableTmpfs(ctx, bundleDir, overlayDir); cleanupErr != nil {
 		sylog.Errorf("While cleaning up writable tmpfs: %v", cleanupErr)
 	}
 
@@ -37,7 +38,7 @@ func WrapWithWritableTmpFs(f func() error, bundleDir string, allowSetuid bool) e
 }
 
 // WrapWithOverlays runs a function wrapped with prep / cleanup steps for overlays.
-func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string, allowSetuid bool) error {
+func WrapWithOverlays(ctx context.Context, f func() error, bundleDir string, overlayPaths []string, allowSetuid bool) error {
 	writableOverlayFound := false
 	s := overlay.Set{}
 	for _, p := range overlayPaths {
@@ -64,7 +65,7 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string, a
 	}
 
 	rootFsDir := tools.RootFs(bundleDir).Path()
-	err := s.Mount(rootFsDir)
+	err := s.Mount(ctx, rootFsDir)
 	if err != nil {
 		return err
 	}
@@ -72,11 +73,11 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string, a
 	if writableOverlayFound {
 		err = f()
 	} else {
-		err = WrapWithWritableTmpFs(f, bundleDir, allowSetuid)
+		err = WrapWithWritableTmpFs(ctx, f, bundleDir, allowSetuid)
 	}
 
 	// Cleanup actions log errors, but don't return - so we get as much cleanup done as possible.
-	if cleanupErr := s.Unmount(rootFsDir); cleanupErr != nil {
+	if cleanupErr := s.Unmount(ctx, rootFsDir); cleanupErr != nil {
 		sylog.Errorf("While unmounting rootfs overlay: %v", cleanupErr)
 	}
 
@@ -84,16 +85,16 @@ func WrapWithOverlays(f func() error, bundleDir string, overlayPaths []string, a
 	return err
 }
 
-func prepareWritableTmpfs(bundleDir string, allowSetuid bool) (string, error) {
+func prepareWritableTmpfs(ctx context.Context, bundleDir string, allowSetuid bool) (string, error) {
 	sylog.Debugf("Configuring writable tmpfs overlay for %s", bundleDir)
 	c := singularityconf.GetCurrentConfig()
 	if c == nil {
 		return "", fmt.Errorf("singularity configuration is not initialized")
 	}
-	return tools.CreateOverlayTmpfs(bundleDir, int(c.SessiondirMaxSize), allowSetuid)
+	return tools.CreateOverlayTmpfs(ctx, bundleDir, int(c.SessiondirMaxSize), allowSetuid)
 }
 
-func cleanupWritableTmpfs(bundleDir, overlayDir string) error {
+func cleanupWritableTmpfs(ctx context.Context, bundleDir, overlayDir string) error {
 	sylog.Debugf("Cleaning up writable tmpfs overlay for %s", bundleDir)
-	return tools.DeleteOverlayTmpfs(bundleDir, overlayDir)
+	return tools.DeleteOverlayTmpfs(ctx, bundleDir, overlayDir)
 }

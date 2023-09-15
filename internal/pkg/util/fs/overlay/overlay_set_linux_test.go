@@ -6,6 +6,7 @@
 package overlay
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -60,6 +61,7 @@ func wrapOverlayTest(f func(t *testing.T)) func(t *testing.T) {
 
 func TestAllTypesAtOnce(t *testing.T) {
 	wrapOverlayTest(func(t *testing.T) {
+		ctx := context.Background()
 		s := Set{}
 
 		tmpRoOlDir := mkTempOlDirOrFatal(t)
@@ -90,12 +92,12 @@ func TestAllTypesAtOnce(t *testing.T) {
 		s.WritableOverlay = i
 
 		rootfsDir := mkTempDirOrFatal(t)
-		if err := s.Mount(rootfsDir); err != nil {
+		if err := s.Mount(ctx, rootfsDir); err != nil {
 			t.Fatalf("failed to mount overlay set: %s", err)
 		}
 		t.Cleanup(func() {
 			if t.Failed() {
-				s.Unmount(rootfsDir)
+				s.Unmount(ctx, rootfsDir)
 			}
 		})
 
@@ -118,7 +120,7 @@ func TestAllTypesAtOnce(t *testing.T) {
 			}
 		}
 
-		if err := s.Unmount(rootfsDir); err != nil {
+		if err := s.Unmount(ctx, rootfsDir); err != nil {
 			t.Errorf("while trying to unmount overlay set: %s", err)
 		}
 	})(t)
@@ -127,13 +129,14 @@ func TestAllTypesAtOnce(t *testing.T) {
 func TestPersistentWriteToDir(t *testing.T) {
 	wrapOverlayTest(func(t *testing.T) {
 		tmpRwOlDir := mkTempOlDirOrFatal(t)
+		ctx := context.Background()
 		i, err := NewItemFromString(tmpRwOlDir)
 		if err != nil {
 			t.Fatalf("failed to create writable-dir overlay item (%q): %s", tmpRwOlDir, err)
 		}
 		s := Set{WritableOverlay: i}
 
-		performPersistentWriteTest(t, s)
+		performPersistentWriteTest(ctx, t, s)
 	})(t)
 }
 
@@ -142,6 +145,7 @@ func TestPersistentWriteToExtfsImg(t *testing.T) {
 	require.Command(t, "fuse-overlayfs")
 	require.Command(t, "fusermount")
 	tmpDir := mkTempDirOrFatal(t)
+	ctx := context.Background()
 
 	// Create a copy of the extfs test image to be used for testing writable
 	// extfs image overlays
@@ -157,10 +161,10 @@ func TestPersistentWriteToExtfsImg(t *testing.T) {
 	}
 	s := Set{WritableOverlay: i}
 
-	performPersistentWriteTest(t, s)
+	performPersistentWriteTest(ctx, t, s)
 }
 
-func performPersistentWriteTest(t *testing.T, s Set) {
+func performPersistentWriteTest(ctx context.Context, t *testing.T, s Set) {
 	rootfsDir := mkTempDirOrFatal(t)
 
 	// This cleanup will serve adequately for both iterations of the overlay-set
@@ -171,11 +175,11 @@ func performPersistentWriteTest(t *testing.T, s Set) {
 	// expected contents.
 	t.Cleanup(func() {
 		if t.Failed() {
-			s.Unmount(rootfsDir)
+			s.Unmount(ctx, rootfsDir)
 		}
 	})
 
-	if err := s.Mount(rootfsDir); err != nil {
+	if err := s.Mount(ctx, rootfsDir); err != nil {
 		t.Fatalf("failed to mount overlay set: %s", err)
 	}
 	expectStr := "my_test_string"
@@ -186,11 +190,11 @@ func performPersistentWriteTest(t *testing.T, s Set) {
 		t.Fatalf("while trying to write file inside mounted overlay-set: %s", err)
 	}
 
-	if err := s.Unmount(rootfsDir); err != nil {
+	if err := s.Unmount(ctx, rootfsDir); err != nil {
 		t.Fatalf("while trying to unmount overlay set: %s", err)
 	}
 
-	if err := s.Mount(rootfsDir); err != nil {
+	if err := s.Mount(ctx, rootfsDir); err != nil {
 		t.Fatalf("failed to mount overlay set: %s", err)
 	}
 	data, err := os.ReadFile(testFileMountedPath)
@@ -201,7 +205,7 @@ func performPersistentWriteTest(t *testing.T, s Set) {
 	if foundStr != expectStr {
 		t.Errorf("incorrect file contents in mounted overlay set: expected %q, but found: %q", expectStr, foundStr)
 	}
-	if err := s.Unmount(rootfsDir); err != nil {
+	if err := s.Unmount(ctx, rootfsDir); err != nil {
 		t.Errorf("while trying to unmount overlay set: %s", err)
 	}
 }
@@ -212,6 +216,7 @@ func TestDuplicateItemsInSet(t *testing.T) {
 		var rwI *Item
 		var err error
 
+		ctx := context.Background()
 		s := Set{}
 
 		// First, test mounting of an overlay set with only readonly items, one of
@@ -223,9 +228,9 @@ func TestDuplicateItemsInSet(t *testing.T) {
 		addROItemOrFatal(t, &s, mkTempOlDirOrFatal(t)+":ro")
 
 		rootfsDir = mkTempDirOrFatal(t)
-		if err := s.Mount(rootfsDir); err == nil {
+		if err := s.Mount(ctx, rootfsDir); err == nil {
 			t.Errorf("unexpected success: Mounting overlay.Set with duplicate (%q) should have failed", roI2.SourcePath)
-			if err := s.Unmount(rootfsDir); err != nil {
+			if err := s.Unmount(ctx, rootfsDir); err != nil {
 				t.Fatalf("could not unmount erroneous successful mount of overlay set: %s", err)
 			}
 		}
@@ -240,9 +245,9 @@ func TestDuplicateItemsInSet(t *testing.T) {
 		s.WritableOverlay = rwI
 
 		rootfsDir = mkTempDirOrFatal(t)
-		if err := s.Mount(rootfsDir); err == nil {
+		if err := s.Mount(ctx, rootfsDir); err == nil {
 			t.Errorf("unexpected success: Mounting overlay.Set with duplicate (%q) should have failed", roI2.SourcePath)
-			if err := s.Unmount(rootfsDir); err != nil {
+			if err := s.Unmount(ctx, rootfsDir); err != nil {
 				t.Fatalf("could not unmount erroneous successful mount of overlay set: %s", err)
 			}
 		}

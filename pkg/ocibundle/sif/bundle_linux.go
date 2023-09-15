@@ -137,7 +137,7 @@ func (s *sifBundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	}
 
 	if s.writable {
-		if err := tools.CreateOverlay(s.bundlePath); err != nil {
+		if err := tools.CreateOverlay(ctx, s.bundlePath); err != nil {
 			// best effort to release FUSE mount
 			squashfs.FUSEUnmount(ctx, rootFs)
 			tools.DeleteBundle(s.bundlePath)
@@ -161,7 +161,7 @@ func (s *sifBundle) Update(_ context.Context, ociConfig *specs.Spec) error {
 func (s *sifBundle) Delete(ctx context.Context) error {
 	overlayExists := fs.IsDir(filepath.Join(s.bundlePath, "overlay"))
 	if s.writable && overlayExists {
-		if err := tools.DeleteOverlay(s.bundlePath); err != nil {
+		if err := tools.DeleteOverlay(ctx, s.bundlePath); err != nil {
 			return fmt.Errorf("delete error: %s", err)
 		}
 	}

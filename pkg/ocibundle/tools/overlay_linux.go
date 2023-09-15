@@ -6,6 +6,7 @@
 package tools
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,7 +19,7 @@ import (
 
 // CreateOverlay creates a writable overlay using a directory inside the OCI
 // bundle.
-func CreateOverlay(bundlePath string) error {
+func CreateOverlay(ctx context.Context, bundlePath string) error {
 	oldumask := syscall.Umask(0)
 	defer syscall.Umask(oldumask)
 
@@ -41,16 +42,16 @@ func CreateOverlay(bundlePath string) error {
 		Readonly:   false,
 	}}
 
-	return olSet.Mount(RootFs(bundlePath).Path())
+	return olSet.Mount(ctx, RootFs(bundlePath).Path())
 }
 
 // DeleteOverlay deletes an overlay previously created using a directory inside
 // the OCI bundle.
-func DeleteOverlay(bundlePath string) error {
+func DeleteOverlay(ctx context.Context, bundlePath string) error {
 	olDir := filepath.Join(bundlePath, "overlay")
 	rootFsDir := RootFs(bundlePath).Path()
 
-	if err := overlay.DetachMount(rootFsDir); err != nil {
+	if err := overlay.DetachMount(ctx, rootFsDir); err != nil {
 		return err
 	}
 
@@ -58,7 +59,7 @@ func DeleteOverlay(bundlePath string) error {
 }
 
 // CreateOverlay creates a writable overlay using tmpfs.
-func CreateOverlayTmpfs(bundlePath string, sizeMiB int, allowSetuid bool) (string, error) {
+func CreateOverlayTmpfs(ctx context.Context, bundlePath string, sizeMiB int, allowSetuid bool) (string, error) {
 	var err error
 
 	oldumask := syscall.Umask(0)
@@ -104,7 +105,7 @@ func CreateOverlayTmpfs(bundlePath string, sizeMiB int, allowSetuid bool) (strin
 	oi.SetAllowSetuid(allowSetuid)
 	olSet := overlay.Set{WritableOverlay: &oi}
 
-	err = olSet.Mount(RootFs(bundlePath).Path())
+	err = olSet.Mount(ctx, RootFs(bundlePath).Path())
 	if err != nil {
 		return "", err
 	}
@@ -113,16 +114,16 @@ func CreateOverlayTmpfs(bundlePath string, sizeMiB int, allowSetuid bool) (strin
 }
 
 // DeleteOverlayTmpfs deletes an overlay previously created using tmpfs.
-func DeleteOverlayTmpfs(bundlePath, olDir string) error {
+func DeleteOverlayTmpfs(ctx context.Context, bundlePath, olDir string) error {
 	rootFsDir := RootFs(bundlePath).Path()
 
-	if err := overlay.DetachMount(rootFsDir); err != nil {
+	if err := overlay.DetachMount(ctx, rootFsDir); err != nil {
 		return err
 	}
 
 	// Because CreateOverlayTmpfs() mounts the tmpfs on olDir, and then
 	// calls ApplyOverlay(), there needs to be an extra unmount in the this case
-	if err := overlay.DetachMount(olDir); err != nil {
+	if err := overlay.DetachMount(ctx, olDir); err != nil {
 		return err
 	}
 
