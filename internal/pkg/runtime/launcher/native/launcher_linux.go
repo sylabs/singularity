@@ -20,7 +20,7 @@ import (
 
 	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runtime-spec/specs-go"
-	sifuser "github.com/sylabs/sif/v2/pkg/user"
+	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/image/unpacker"
@@ -33,6 +33,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/squashfs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/gpu"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
@@ -1156,18 +1157,18 @@ func squashfuseMount(ctx context.Context, img *imgutil.Image, imageDir string) (
 	}
 	sylog.Infof("Mounting SIF with FUSE...")
 
-	squashfusePath, err := bin.FindBin("squashfuse")
+	f, err := sif.LoadContainerFromPath(img.Path, sif.OptLoadWithFlag(os.O_RDONLY))
 	if err != nil {
-		return fmt.Errorf("squashfuse is required: %w", err)
+		return fmt.Errorf("failed to load image: %w", err)
 	}
-	if _, err := bin.FindBin("fusermount"); err != nil {
-		return fmt.Errorf("fusermount is required: %w", err)
+	defer func() { _ = f.UnloadContainer() }()
+
+	d, err := f.GetDescriptor(sif.WithPartitionType(sif.PartPrimSys))
+	if err != nil {
+		return fmt.Errorf("failed to get partition descriptor: %w", err)
 	}
 
-	return sifuser.Mount(ctx, img.Path, imageDir,
-		sifuser.OptMountStdout(os.Stdout),
-		sifuser.OptMountStderr(os.Stderr),
-		sifuser.OptMountSquashfusePath(squashfusePath))
+	return squashfs.FUSEMount(ctx, uint64(d.Offset()), img.Path, imageDir)
 }
 
 // starterInteractive executes the starter binary to run an image interactively, given the supplied engineConfig
