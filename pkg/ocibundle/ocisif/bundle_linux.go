@@ -206,7 +206,8 @@ func (b *Bundle) writeConfig(g *generate.Generator) error {
 func (b *Bundle) imageFile() (path string, err error) {
 	parts := strings.SplitN(b.imageRef, ":", 2)
 	if len(parts) < 2 {
-		return "", fmt.Errorf("could not parse image ref: %s", b.imageRef)
+		sylog.Debugf("Image ref %q lacks transport prefix; assuming OCI-SIF.", b.imageRef)
+		return parts[0], nil
 	}
 
 	if parts[0] != "oci-sif" {

@@ -35,6 +35,7 @@ func TestFromImageRef(t *testing.T) {
 		imageRef string
 	}{
 		{"oci-sif", "oci-sif:" + ociSif},
+		{"oci-sif-no-transport", ociSif},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
