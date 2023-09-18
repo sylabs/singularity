@@ -6,8 +6,14 @@
 package fuse
 
 import (
+	"context"
+	"path/filepath"
 	"testing"
+
+	"github.com/sylabs/singularity/v4/pkg/image"
 )
+
+var squashfsImgPath = filepath.Join("..", "..", "..", "..", "..", "test", "images", "squashfs-for-overlay.img")
 
 func TestExtraOptOverrides(t *testing.T) {
 	testOneOverride(t, "rw")
@@ -18,23 +24,51 @@ func TestExtraOptOverrides(t *testing.T) {
 }
 
 func testOneOverride(t *testing.T, s string) {
+	ctx := context.Background()
+
 	m := ImageMount{
-		ExtraOpts: []string{s},
+		Type:       image.SQUASHFS,
+		SourcePath: squashfsImgPath,
 	}
 
-	opts, err := m.generateMountOpts()
-	if err == nil {
-		t.Errorf("Failed to weed out %q mount option; opts: %#v", s, opts)
+	if err := m.Mount(ctx); err != nil {
+		t.Fatalf("Baseline mount of %q failed: %v", m.SourcePath, err)
+	}
+	if err := m.Unmount(ctx); err != nil {
+		t.Fatalf("Baseline unmount of %q failed: %v", m.SourcePath, err)
+	}
+
+	m.ExtraOpts = []string{s}
+
+	if err := m.Mount(ctx); err == nil {
+		t.Errorf("Failed to block %q mount option.", s)
+		if err := m.Unmount(ctx); err != nil {
+			t.Fatalf("Post-test unmount of %q failed: %v", m.SourcePath, err)
+		}
 	}
 }
 
 func TestAllOverridesAtOnce(t *testing.T) {
+	ctx := context.Background()
+
 	m := ImageMount{
-		ExtraOpts: []string{"suid", "allow_other", "rw", "dev"},
+		Type:       image.SQUASHFS,
+		SourcePath: squashfsImgPath,
 	}
 
-	opts, err := m.generateMountOpts()
-	if err == nil {
-		t.Errorf("Failed to properly filter mount options; opts: %#v", opts)
+	if err := m.Mount(ctx); err != nil {
+		t.Fatalf("Baseline mount of %q failed: %v", m.SourcePath, err)
+	}
+	if err := m.Unmount(ctx); err != nil {
+		t.Fatalf("Baseline unmount of %q failed: %v", m.SourcePath, err)
+	}
+
+	m.ExtraOpts = []string{"suid", "allow_other", "rw", "dev"}
+
+	if err := m.Mount(ctx); err == nil {
+		t.Errorf("Failed to block mount options (%q).", m.ExtraOpts)
+		if err := m.Unmount(ctx); err != nil {
+			t.Fatalf("Post-test unmount of %q failed: %v", m.SourcePath, err)
+		}
 	}
 }
