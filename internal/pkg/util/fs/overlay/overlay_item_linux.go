@@ -6,6 +6,7 @@
 package overlay
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -143,14 +144,14 @@ func (i *Item) GetParentDir() (string, error) {
 // Mount performs the necessary steps to mount an individual Item. Note that
 // this method does not mount the assembled overlay itself. That happens in
 // Set.Mount().
-func (i *Item) Mount() error {
+func (i *Item) Mount(ctx context.Context) error {
 	var err error
 	switch i.Type {
 	case image.SANDBOX:
 		err = i.mountDir()
 
 	case image.SQUASHFS, image.EXT3:
-		err = i.mountWithFuse()
+		err = i.mountWithFuse(ctx)
 
 	default:
 		return fmt.Errorf("internal error: unrecognized image type in overlay.Item.Mount() (type: %v)", i.Type)
@@ -236,7 +237,7 @@ func (i *Item) mountDir() error {
 }
 
 // mountWithFuse mounts an image to a temporary directory
-func (i *Item) mountWithFuse() error {
+func (i *Item) mountWithFuse(ctx context.Context) error {
 	parentDir, err := i.GetParentDir()
 	if err != nil {
 		return err
@@ -251,7 +252,7 @@ func (i *Item) mountWithFuse() error {
 		AllowDev:     i.allowDev,
 	}
 
-	if err := im.Mount(); err != nil {
+	if err := im.Mount(ctx); err != nil {
 		return err
 	}
 
@@ -263,13 +264,13 @@ func (i *Item) mountWithFuse() error {
 // Unmount performs the necessary steps to unmount an individual Item. Note that
 // this method does not unmount the overlay itself. That happens in
 // Set.Unmount().
-func (i Item) Unmount() error {
+func (i Item) Unmount(ctx context.Context) error {
 	switch i.Type {
 	case image.SANDBOX:
-		return i.unmountDir()
+		return i.unmountDir(ctx)
 
 	case image.SQUASHFS, image.EXT3:
-		return i.unmountFuse()
+		return i.unmountFuse(ctx)
 
 	default:
 		return fmt.Errorf("internal error: unrecognized image type in overlay.Item.Unmount() (type: %v)", i.Type)
@@ -277,14 +278,14 @@ func (i Item) Unmount() error {
 }
 
 // unmountDir unmounts directory-based Items.
-func (i Item) unmountDir() error {
-	return DetachMount(i.StagingDir)
+func (i Item) unmountDir(ctx context.Context) error {
+	return DetachMount(ctx, i.StagingDir)
 }
 
 // unmountFuse unmounts FUSE-based Items.
-func (i Item) unmountFuse() error {
+func (i Item) unmountFuse(ctx context.Context) error {
 	defer os.Remove(i.StagingDir)
-	err := fsfuse.UnmountWithFuse(i.StagingDir)
+	err := fsfuse.UnmountWithFuse(ctx, i.StagingDir)
 	if err != nil {
 		return fmt.Errorf("error while trying to unmount image %q from %s: %w", i.SourcePath, i.StagingDir, err)
 	}

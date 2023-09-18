@@ -228,5 +228,8 @@ func mount(ctx context.Context, path, mountPath string, digest v1.Hash) error {
 	if err != nil {
 		return fmt.Errorf("failed to get partition descriptor: %w", err)
 	}
-	return squashfs.FUSEMount(ctx, uint64(d.Offset()), path, mountPath)
+
+	_, err = squashfs.FUSEMount(ctx, uint64(d.Offset()), path, mountPath)
+
+	return err
 }

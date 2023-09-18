@@ -10,8 +10,7 @@ import (
 	"fmt"
 	"os"
 
-	sifuser "github.com/sylabs/sif/v2/pkg/user"
-	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/squashfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
@@ -20,16 +19,7 @@ import (
 func (e *EngineOperations) CleanupHost(ctx context.Context) (err error) {
 	if e.EngineConfig.GetImageFuse() {
 		sylog.Infof("Unmounting SIF with FUSE...")
-		fusermountPath, err := bin.FindBin("fusermount")
-		if err != nil {
-			return fmt.Errorf("while unmounting fuse directory: %s: %w", e.EngineConfig.GetImage(), err)
-		}
-
-		err = sifuser.Unmount(ctx, e.EngineConfig.GetImage(),
-			sifuser.OptUnmountStdout(os.Stdout),
-			sifuser.OptUnmountStderr(os.Stderr),
-			sifuser.OptUnmountFusermountPath(fusermountPath))
-		if err != nil {
+		if err := squashfs.FUSEUnmount(ctx, e.EngineConfig.GetImage()); err != nil {
 			return fmt.Errorf("while unmounting fuse directory: %s: %w", e.EngineConfig.GetImage(), err)
 		}
 

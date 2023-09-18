@@ -765,7 +765,7 @@ func (l *Launcher) RunWrapped(ctx context.Context, containerID, bundlePath, pidF
 			if err := os.MkdirAll(im.GetMountPoint(), 0o755); err != nil {
 				return err
 			}
-			if err := im.Mount(); err != nil {
+			if err := im.Mount(ctx); err != nil {
 				return err
 			}
 		}
@@ -784,17 +784,17 @@ func (l *Launcher) RunWrapped(ctx context.Context, containerID, bundlePath, pidF
 		err = Run(ctx, containerID, absBundle, pidFile, systemdCgroups)
 
 		for _, im := range l.imageMountsByMountpoint {
-			im.Unmount()
+			im.Unmount(ctx)
 		}
 
 		return err
 	}
 
 	if len(l.cfg.OverlayPaths) > 0 {
-		return WrapWithOverlays(runFunc, absBundle, l.cfg.OverlayPaths, l.cfg.AllowSUID)
+		return WrapWithOverlays(ctx, runFunc, absBundle, l.cfg.OverlayPaths, l.cfg.AllowSUID)
 	}
 
-	return WrapWithWritableTmpFs(runFunc, absBundle, l.cfg.AllowSUID)
+	return WrapWithWritableTmpFs(ctx, runFunc, absBundle, l.cfg.AllowSUID)
 }
 
 // getCgroup will return a cgroup path and resources for the runtime to create.

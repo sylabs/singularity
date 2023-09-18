@@ -6,6 +6,7 @@
 package overlay
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -189,6 +190,8 @@ func TestUpperAndWorkCreation(t *testing.T) {
 }
 
 func TestDirMounts(t *testing.T) {
+	ctx := context.Background()
+
 	tests := []struct {
 		name            string
 		olStr           string
@@ -243,13 +246,13 @@ func TestDirMounts(t *testing.T) {
 			item.SetAllowSetuid(tt.allowSetUID)
 			item.SetAllowDev(tt.allowDev)
 
-			if err := item.Mount(); err != nil {
+			if err := item.Mount(ctx); err != nil {
 				t.Fatalf("while trying to mount dir %q: %s", tt.olStr, err)
 			}
 
 			checkMountOpts(t, item.StagingDir, tt.expectMountOpts)
 
-			if err := item.Unmount(); err != nil {
+			if err := item.Unmount(ctx); err != nil {
 				t.Errorf("while trying to unmount dir %q: %s", tt.olStr, err)
 			}
 		})
@@ -258,6 +261,7 @@ func TestDirMounts(t *testing.T) {
 
 func TestImageRO(t *testing.T) {
 	require.Command(t, "fusermount")
+	ctx := context.Background()
 
 	tests := []struct {
 		name            string
@@ -340,11 +344,11 @@ func TestImageRO(t *testing.T) {
 				t.Errorf("item.Type is %v (should be %v)", item.Type, tt.typeCode)
 			}
 
-			if err := item.Mount(); err != nil {
+			if err := item.Mount(ctx); err != nil {
 				t.Fatalf("unable to mount image for reading: %s", err)
 			}
 			t.Cleanup(func() {
-				item.Unmount()
+				item.Unmount(ctx)
 			})
 
 			testFileStagedPath := filepath.Join(item.GetMountDir(), testFilePath)
@@ -359,6 +363,7 @@ func TestExtfsRW(t *testing.T) {
 	require.Command(t, "fuse-overlayfs")
 	require.Command(t, "fusermount")
 	tmpDir := mkTempDirOrFatal(t)
+	ctx := context.Background()
 
 	// Create a copy of the extfs test image to be used for testing writable
 	// extfs image overlays
@@ -377,11 +382,11 @@ func TestExtfsRW(t *testing.T) {
 		t.Errorf("item.Type is %v (should be %v)", item.Type, image.EXT3)
 	}
 
-	if err := item.Mount(); err != nil {
+	if err := item.Mount(ctx); err != nil {
 		t.Fatalf("unable to mount extfs image for reading & writing: %s", err)
 	}
 	t.Cleanup(func() {
-		item.Unmount()
+		item.Unmount(ctx)
 	})
 
 	testFileStagedPath := filepath.Join(item.GetMountDir(), testFilePath)

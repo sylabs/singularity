@@ -8,6 +8,7 @@
 package overlay
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -44,7 +45,7 @@ type Set struct {
 
 // Mount prepares and mounts the entire Set onto the specified rootfs
 // directory.
-func (s Set) Mount(rootFsDir string) error {
+func (s Set) Mount(ctx context.Context, rootFsDir string) error {
 	// Perform identity mounts for this Set
 	dups := lo.FindDuplicatesBy(s.ReadonlyOverlays, func(item *Item) string {
 		return item.SourcePath
@@ -55,16 +56,16 @@ func (s Set) Mount(rootFsDir string) error {
 		}))
 	}
 
-	if err := s.performIndividualMounts(); err != nil {
+	if err := s.performIndividualMounts(ctx); err != nil {
 		return err
 	}
 
 	// Perform actual overlay mount
-	return s.performFinalMount(rootFsDir)
+	return s.performFinalMount(ctx, rootFsDir)
 }
 
 // UnmountOverlay ummounts a Set from a specified rootfs directory.
-func (s Set) Unmount(rootFsDir string) error {
+func (s Set) Unmount(ctx context.Context, rootFsDir string) error {
 	unprivOls, err := UnprivOverlaysSupported()
 	if err != nil {
 		return fmt.Errorf("while checking for unprivileged overlay support in kernel: %w", err)
@@ -72,21 +73,21 @@ func (s Set) Unmount(rootFsDir string) error {
 
 	useKernelMount := unprivOls && !s.hasWritableExtfsImg()
 	if useKernelMount {
-		err = DetachMount(rootFsDir)
+		err = DetachMount(ctx, rootFsDir)
 	} else {
-		err = fsfuse.UnmountWithFuse(rootFsDir)
+		err = fsfuse.UnmountWithFuse(ctx, rootFsDir)
 	}
 
 	if err != nil {
 		return err
 	}
 
-	return s.detachIndividualMounts()
+	return s.detachIndividualMounts(ctx)
 }
 
 // performIndividualMounts creates the mounts that furnish the individual
 // elements of the Set.
-func (s Set) performIndividualMounts() error {
+func (s Set) performIndividualMounts(ctx context.Context) error {
 	overlaysToBind := s.ReadonlyOverlays
 	if s.WritableOverlay != nil {
 		overlaysToBind = append(overlaysToBind, s.WritableOverlay)
@@ -94,7 +95,7 @@ func (s Set) performIndividualMounts() error {
 
 	// Try to do initial bind-mounts
 	for _, o := range overlaysToBind {
-		if err := o.Mount(); err != nil {
+		if err := o.Mount(ctx); err != nil {
 			return err
 		}
 	}
@@ -105,7 +106,7 @@ func (s Set) performIndividualMounts() error {
 // performFinalMount performs the final step in mounting a Set, namely mounting
 // of the overlay with its full-fledged options string, representing all the
 // individual Items (writable and read-only) that comprise the Set.
-func (s Set) performFinalMount(rootFsDir string) error {
+func (s Set) performFinalMount(ctx context.Context, rootFsDir string) error {
 	// Try to perform actual mount
 	options := s.options(rootFsDir)
 	unprivOls, err := UnprivOverlaysSupported()
@@ -143,7 +144,7 @@ func (s Set) performFinalMount(rootFsDir string) error {
 		}
 
 		sylog.Debugf("Mounting overlay (via fuse-overlayfs) with rootFsDir %q, options: %q", rootFsDir, options)
-		execCmd := exec.Command(fuseOlFsCmd, "-o", options, rootFsDir)
+		execCmd := exec.CommandContext(ctx, fuseOlFsCmd, "-o", options, rootFsDir)
 		execCmd.Stderr = os.Stderr
 		_, err = execCmd.Output()
 		if err != nil {
@@ -182,7 +183,7 @@ func (s Set) hasWritableExtfsImg() bool {
 
 // detachIndividualMounts detaches the bind mounts & remounts created by
 // performIndividualMounts, above.
-func (s Set) detachIndividualMounts() error {
+func (s Set) detachIndividualMounts(ctx context.Context) error {
 	overlaysToDetach := s.ReadonlyOverlays
 	if s.WritableOverlay != nil {
 		overlaysToDetach = append(overlaysToDetach, s.WritableOverlay)
@@ -192,7 +193,7 @@ func (s Set) detachIndividualMounts() error {
 	// then return the first error encountered.
 	errors := []error{}
 	for _, overlay := range overlaysToDetach {
-		err := overlay.Unmount()
+		err := overlay.Unmount(ctx)
 		if err != nil {
 			sylog.Errorf("Error encountered trying to detach identity mount %s: %s", overlay.StagingDir, err)
 			errors = append(errors, err)
