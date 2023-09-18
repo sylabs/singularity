@@ -24,6 +24,12 @@ type ImageMount struct {
 	// values in pkg/image)
 	Type int
 
+	// UID is the value to pass to the uid option when mounting
+	UID int
+
+	// GID is the value to pass to the gid option when mounting
+	GID int
+
 	// Readonly represents whether this is a Readonly overlay
 	Readonly bool
 
@@ -147,10 +153,6 @@ func (i *ImageMount) generateCmdArgs() ([]string, error) {
 }
 
 func (i ImageMount) generateMountOpts() ([]string, error) {
-	// TODO: Think through what makes sense for file ownership in FUSE-mounted
-	// images, vis a vis id-mappings and user-namespaces.
-	opts := []string{"uid=0", "gid=0"}
-
 	// Create a map of the extra mount options that have been requested, so we
 	// can catch attempts to overwrite builtin struct fields.
 	extraOptsMap := lo.SliceToMap(i.ExtraOpts, func(s string) (string, *string) {
@@ -161,6 +163,18 @@ func (i ImageMount) generateMountOpts() ([]string, error) {
 
 		return strings.ToLower(splitted[0]), &splitted[1]
 	})
+
+	opts := []string{}
+
+	if err := checkProhibitedOpt(extraOptsMap, "uid"); err != nil {
+		return opts, err
+	}
+	opts = append(opts, fmt.Sprintf("uid=%d", i.UID))
+
+	if err := checkProhibitedOpt(extraOptsMap, "gid"); err != nil {
+		return opts, err
+	}
+	opts = append(opts, fmt.Sprintf("gid=%d", i.GID))
 
 	if err := checkProhibitedOpt(extraOptsMap, "ro"); err != nil {
 		return opts, err

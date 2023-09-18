@@ -15,12 +15,26 @@ import (
 
 var squashfsImgPath = filepath.Join("..", "..", "..", "..", "..", "test", "images", "squashfs-for-overlay.img")
 
+var optsToTest = []string{
+	"uid=0",
+	"gid=0",
+	"uid=23",
+	"gid=67",
+	"uid=2345",
+	"gid=6789",
+	"rw",
+	"ro",
+	"dev",
+	"nodev",
+	"suid",
+	"nosuid",
+	"allow_other",
+}
+
 func TestExtraOptOverrides(t *testing.T) {
-	testOneOverride(t, "rw")
-	testOneOverride(t, "ro")
-	testOneOverride(t, "dev")
-	testOneOverride(t, "suid")
-	testOneOverride(t, "allow_other")
+	for _, opt := range optsToTest {
+		testOneOverride(t, opt)
+	}
 }
 
 func testOneOverride(t *testing.T, s string) {
@@ -63,7 +77,7 @@ func TestAllOverridesAtOnce(t *testing.T) {
 		t.Fatalf("Baseline unmount of %q failed: %v", m.SourcePath, err)
 	}
 
-	m.ExtraOpts = []string{"suid", "allow_other", "rw", "dev"}
+	m.ExtraOpts = optsToTest[:]
 
 	if err := m.Mount(ctx); err == nil {
 		t.Errorf("Failed to block mount options (%q).", m.ExtraOpts)

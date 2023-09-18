@@ -18,12 +18,12 @@ import (
 func FUSEMount(ctx context.Context, offset uint64, path, mountPath string) (*fuse.ImageMount, error) {
 	im := fuse.ImageMount{
 		Type:       image.SQUASHFS,
+		UID:        os.Getuid(),
+		GID:        os.Getgid(),
 		Readonly:   true,
 		SourcePath: filepath.Clean(path),
 		ExtraOpts: []string{
 			fmt.Sprintf("offset=%d", offset),
-			fmt.Sprintf("uid=%d", os.Getuid()),
-			fmt.Sprintf("gid=%d", os.Getgid()),
 		},
 	}
 	im.SetMountPoint(filepath.Clean(mountPath))
