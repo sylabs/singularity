@@ -21,7 +21,6 @@ func FUSEMount(ctx context.Context, offset uint64, path, mountPath string) (*fus
 		Readonly:   true,
 		SourcePath: filepath.Clean(path),
 		ExtraOpts: []string{
-			"ro",
 			fmt.Sprintf("offset=%d", offset),
 			fmt.Sprintf("uid=%d", os.Getuid()),
 			fmt.Sprintf("gid=%d", os.Getgid()),

@@ -132,7 +132,10 @@ func (i *ImageMount) generateCmdArgs() ([]string, error) {
 		}
 	}()
 
-	opts := i.generateMountOpts()
+	opts, err := i.generateMountOpts()
+	if err != nil {
+		return args, err
+	}
 
 	if len(opts) > 0 {
 		args = append(args, "-o", strings.Join(opts, ","))
@@ -144,13 +147,13 @@ func (i *ImageMount) generateCmdArgs() ([]string, error) {
 	return args, nil
 }
 
-func (i ImageMount) generateMountOpts() []string {
+func (i ImageMount) generateMountOpts() ([]string, error) {
 	// TODO: Think through what makes sense for file ownership in FUSE-mounted
 	// images, vis a vis id-mappings and user-namespaces.
 	opts := []string{"uid=0", "gid=0"}
 
 	// Create a map of the extra mount options that have been requested, so we
-	// can weed out attempts to overwrite builtin struct fields.
+	// can catch attempts to overwrite builtin struct fields.
 	extraOptsMap := lo.SliceToMap(i.ExtraOpts, func(s string) (string, mo.Option[string]) {
 		splitted := strings.SplitN(s, "=", 2)
 		if len(splitted) < 2 {
@@ -160,8 +163,12 @@ func (i ImageMount) generateMountOpts() []string {
 		return strings.ToLower(splitted[0]), mo.Some(splitted[1])
 	})
 
-	weedOutMountOpt(&extraOptsMap, "ro")
-	weedOutMountOpt(&extraOptsMap, "rw")
+	if maps.HasKey(extraOptsMap, "ro") {
+		return opts, fmt.Errorf("cannot pass 'ro' as extra FUSE-mount option, as it is handled by an internal field")
+	}
+	if maps.HasKey(extraOptsMap, "rw") {
+		return opts, fmt.Errorf("cannot pass 'rw' as extra FUSE-mount option, as it is handled by an internal field")
+	}
 	if i.Readonly {
 		// Not strictly necessary as will be read-only in assembled overlay,
 		// however this stops any erroneous writes through the stagingDir.
@@ -169,16 +176,22 @@ func (i ImageMount) generateMountOpts() []string {
 	}
 
 	// FUSE defaults to nosuid,nodev - attempt to reverse if AllowDev/Setuid requested.
-	weedOutMountOpt(&extraOptsMap, "dev")
+	if maps.HasKey(extraOptsMap, "dev") {
+		return opts, fmt.Errorf("cannot pass 'dev' as extra FUSE-mount option, as it is handled by an internal field")
+	}
 	if i.AllowDev {
 		opts = append(opts, "dev")
 	}
-	weedOutMountOpt(&extraOptsMap, "suid")
+	if maps.HasKey(extraOptsMap, "suid") {
+		return opts, fmt.Errorf("cannot pass 'suid' as extra FUSE-mount option, as it is handled by an internal field")
+	}
 	if i.AllowSetuid {
 		opts = append(opts, "suid")
 	}
 
-	weedOutMountOpt(&extraOptsMap, "allow_other")
+	if maps.HasKey(extraOptsMap, "allow_other") {
+		return opts, fmt.Errorf("cannot pass 'allow_other' as extra FUSE-mount option, as it is handled by an internal field")
+	}
 	if i.AllowOther {
 		opts = append(opts, "allow_other")
 	}
@@ -186,14 +199,7 @@ func (i ImageMount) generateMountOpts() []string {
 	filteredExtraOpts := lo.MapToSlice(extraOptsMap, rebuildOpt)
 	opts = append(opts, filteredExtraOpts...)
 
-	return opts
-}
-
-func weedOutMountOpt(extraOptsMap *map[string]mo.Option[string], k string) {
-	if maps.HasKey(*extraOptsMap, k) {
-		sylog.Warningf("Passing extra FUSE-mount option %q would override built-in field; ignoring", rebuildOpt(k, (*extraOptsMap)[k]))
-		delete(*extraOptsMap, k)
-	}
+	return opts, nil
 }
 
 func rebuildOpt(k string, v mo.Option[string]) string {
