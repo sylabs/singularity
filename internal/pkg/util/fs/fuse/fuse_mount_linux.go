@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/samber/lo"
-	"github.com/samber/mo"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -154,13 +153,13 @@ func (i ImageMount) generateMountOpts() ([]string, error) {
 
 	// Create a map of the extra mount options that have been requested, so we
 	// can catch attempts to overwrite builtin struct fields.
-	extraOptsMap := lo.SliceToMap(i.ExtraOpts, func(s string) (string, mo.Option[string]) {
+	extraOptsMap := lo.SliceToMap(i.ExtraOpts, func(s string) (string, *string) {
 		splitted := strings.SplitN(s, "=", 2)
 		if len(splitted) < 2 {
-			return strings.ToLower(s), mo.None[string]()
+			return strings.ToLower(s), nil
 		}
 
-		return strings.ToLower(splitted[0]), mo.Some(splitted[1])
+		return strings.ToLower(splitted[0]), &splitted[1]
 	})
 
 	if maps.HasKey(extraOptsMap, "ro") {
@@ -202,11 +201,11 @@ func (i ImageMount) generateMountOpts() ([]string, error) {
 	return opts, nil
 }
 
-func rebuildOpt(k string, v mo.Option[string]) string {
-	if v.IsAbsent() {
+func rebuildOpt(k string, v *string) string {
+	if v == nil {
 		return k
 	}
-	return k + "=" + v.MustGet()
+	return k + "=" + *v
 }
 
 func (i ImageMount) GetMountPoint() string {
