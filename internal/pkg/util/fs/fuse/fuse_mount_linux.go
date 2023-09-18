@@ -162,11 +162,11 @@ func (i ImageMount) generateMountOpts() ([]string, error) {
 		return strings.ToLower(splitted[0]), &splitted[1]
 	})
 
-	if maps.HasKey(extraOptsMap, "ro") {
-		return opts, fmt.Errorf("cannot pass 'ro' as extra FUSE-mount option, as it is handled by an internal field")
+	if err := checkProhibitedOpt(extraOptsMap, "ro"); err != nil {
+		return opts, err
 	}
-	if maps.HasKey(extraOptsMap, "rw") {
-		return opts, fmt.Errorf("cannot pass 'rw' as extra FUSE-mount option, as it is handled by an internal field")
+	if err := checkProhibitedOpt(extraOptsMap, "rw"); err != nil {
+		return opts, err
 	}
 	if i.Readonly {
 		// Not strictly necessary as will be read-only in assembled overlay,
@@ -175,21 +175,27 @@ func (i ImageMount) generateMountOpts() ([]string, error) {
 	}
 
 	// FUSE defaults to nosuid,nodev - attempt to reverse if AllowDev/Setuid requested.
-	if maps.HasKey(extraOptsMap, "dev") {
-		return opts, fmt.Errorf("cannot pass 'dev' as extra FUSE-mount option, as it is handled by an internal field")
+	if err := checkProhibitedOpt(extraOptsMap, "dev"); err != nil {
+		return opts, err
+	}
+	if err := checkProhibitedOpt(extraOptsMap, "nodev"); err != nil {
+		return opts, err
 	}
 	if i.AllowDev {
 		opts = append(opts, "dev")
 	}
-	if maps.HasKey(extraOptsMap, "suid") {
-		return opts, fmt.Errorf("cannot pass 'suid' as extra FUSE-mount option, as it is handled by an internal field")
+	if err := checkProhibitedOpt(extraOptsMap, "suid"); err != nil {
+		return opts, err
+	}
+	if err := checkProhibitedOpt(extraOptsMap, "nosuid"); err != nil {
+		return opts, err
 	}
 	if i.AllowSetuid {
 		opts = append(opts, "suid")
 	}
 
-	if maps.HasKey(extraOptsMap, "allow_other") {
-		return opts, fmt.Errorf("cannot pass 'allow_other' as extra FUSE-mount option, as it is handled by an internal field")
+	if err := checkProhibitedOpt(extraOptsMap, "allow_other"); err != nil {
+		return opts, err
 	}
 	if i.AllowOther {
 		opts = append(opts, "allow_other")
@@ -199,6 +205,14 @@ func (i ImageMount) generateMountOpts() ([]string, error) {
 	opts = append(opts, filteredExtraOpts...)
 
 	return opts, nil
+}
+
+func checkProhibitedOpt(extraOptsMap map[string]*string, opt string) error {
+	if maps.HasKey(extraOptsMap, opt) {
+		return fmt.Errorf("cannot pass %q as extra FUSE-mount option, as it is handled by an internal field", opt)
+	}
+
+	return nil
 }
 
 func rebuildOpt(k string, v *string) string {
