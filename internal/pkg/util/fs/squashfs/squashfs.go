@@ -20,7 +20,7 @@ func FUSEMount(ctx context.Context, offset uint64, path, mountPath string) (*fus
 		Type:       image.SQUASHFS,
 		Readonly:   true,
 		SourcePath: filepath.Clean(path),
-		ExtraMountOpts: []string{
+		ExtraOpts: []string{
 			"ro",
 			fmt.Sprintf("offset=%d", offset),
 			fmt.Sprintf("uid=%d", os.Getuid()),

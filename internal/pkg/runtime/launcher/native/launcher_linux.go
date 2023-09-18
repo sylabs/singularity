@@ -1161,7 +1161,6 @@ func squashfuseMount(ctx context.Context, img *imgutil.Image, imageDir string) (
 	if err != nil {
 		return fmt.Errorf("failed to load image: %w", err)
 	}
-	defer func() { _ = f.UnloadContainer() }()
 
 	d, err := f.GetDescriptor(sif.WithPartitionType(sif.PartPrimSys))
 	if err != nil {

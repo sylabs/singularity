@@ -19,7 +19,9 @@ import (
 func (e *EngineOperations) CleanupHost(ctx context.Context) (err error) {
 	if e.EngineConfig.GetImageFuse() {
 		sylog.Infof("Unmounting SIF with FUSE...")
-		squashfs.FUSEUnmount(ctx, e.EngineConfig.GetImage())
+		if err := squashfs.FUSEUnmount(ctx, e.EngineConfig.GetImage()); err != nil {
+			return fmt.Errorf("while unmounting fuse directory: %s: %w", e.EngineConfig.GetImage(), err)
+		}
 
 		if tempDir := e.EngineConfig.GetDeleteTempDir(); tempDir != "" {
 			sylog.Infof("Removing image tempDir %s", tempDir)
