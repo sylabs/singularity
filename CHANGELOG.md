@@ -1,28 +1,6 @@
 # SingularityCE Changelog
 
-## 4.0.0-rc.2 (Release Candidate 2) \[2023-09-05\]
-
-### OCI-mode
-
-- If system does not meet the requirements for using OCI-SIF, OCI mode will fall
-  back to a filesystem-based strategy: the OCI container will be unpacked into a
-  temporary sandbox dir and run from there.
-
-### New Features & Functionality
-
-- Execution flows that unpack an image into a temporary sandbox dir can now be
-  disabled, by setting "tmp sandbox = no" in `singularity.conf` or by passing
-  `--no-tmp-sandbox` to the relevant `run / shell / exec` command.
-
-### Bug Fixes
-
-- Improved help text for `compile` and `install` subcommands of `plugin`
-  command. Thanks to tonghuaroot
-  ([https://github.com/tonghuaroot](https://github.com/tonghuaroot)) for the
-  suggested improvements.
-- Fix compilation with the `mconfig` `-b` option (custom builddir).
-
-## 4.0.0-rc.1 (Release Candidate 1) \[2023-08-17\]
+## 4.0.0 \[2023-09-19\]
 
 ### OCI-mode
 
@@ -188,6 +166,9 @@ requirements of OCI-mode and usage information.
   sources the optional variant is ignored.
 - The `--arch` flag can now be used to specify a required architecture when pulling
   images from OCI, as well as library sources.
+- Execution flows that unpack an image into a temporary sandbox dir can now be
+  disabled, by setting "tmp sandbox = no" in `singularity.conf` or by passing
+  `--no-tmp-sandbox` to the relevant `run / shell / exec` command.
 
 ### Developer / API
 
@@ -213,8 +194,24 @@ requirements of OCI-mode and usage information.
   information when using user namespace.
 - Caching of OCI images is now architecture aware. This fixes behaviour where a
   user's home directory is shared between systems of different architectures.
+- Fix compilation with the `mconfig` `-b` option (custom builddir).
 
 -----
+
+## 3.11.5 \[2023-09-15\]
+
+### Changed defaults / behaviours
+
+- If commands that expect an image file are given an OCI-SIF image, an error
+  will be generated advising the user that this format is only supported in
+  versions 4.0 and up.
+
+### Bug Fixes
+
+- Improved help text for `compile` and `install` subcommands of `plugin`
+  command. Thanks to tonghuaroot
+  ([https://github.com/tonghuaroot](https://github.com/tonghuaroot)) for the
+  suggested improvements.
 
 ## 3.11.4 \[2023-06-22\]
 
