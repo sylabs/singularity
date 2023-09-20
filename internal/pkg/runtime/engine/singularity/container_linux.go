@@ -89,6 +89,11 @@ type container struct {
 	skipCwd       bool
 }
 
+const (
+	tmpPath    = "/tmp"
+	vartmpPath = "/var/tmp"
+)
+
 //nolint:maintidx
 func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, pid int) error {
 	var err error
@@ -226,9 +231,24 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 	if err := c.addUserbindsMount(system); err != nil {
 		return err
 	}
-	if err := c.addTmpMount(system); err != nil {
+
+	// The source of /tmp and /var/tmp may be a tmpfs (--contain) or within a
+	// --workdir. This interacts with session setup, so must be handled now.
+	tmpSource, vartmpSource, err := c.createTmpSource()
+	if err != nil {
 		return err
 	}
+	// The actual addition of the mount of /tmp & /var/tmp must be delayed until
+	// we can inspect /var/tmp in the rootfs to see if it is a symlink to /tmp.
+	if tmpSource != "" {
+		f := func(system *mount.System) error {
+			return c.addTmpMount(system, tmpSource, vartmpSource)
+		}
+		if err := system.RunBeforeTag(mount.TmpTag, f); err != nil {
+			return err
+		}
+	}
+
 	if err := c.addScratchMount(system); err != nil {
 		return err
 	}
@@ -1695,60 +1715,58 @@ func (c *container) addUserbindsMount(system *mount.System) error {
 	return nil
 }
 
-func (c *container) addTmpMount(system *mount.System) error {
-	const (
-		tmpPath    = "/tmp"
-		varTmpPath = "/var/tmp"
-	)
-
+// createTmpSource will create directories that are used as the source of /tmp
+// and /var/tmp binds, if necessary. It returns the paths to be used as the
+// source of the mounts, or "" for both if they should be skipped.
+func (c *container) createTmpSource() (tmpSource, vartmpSource string, err error) {
 	sylog.Debugf("Checking for 'mount tmp' in configuration file")
 	if !c.engine.EngineConfig.File.MountTmp || c.engine.EngineConfig.GetNoTmp() {
 		sylog.Verbosef("Skipping tmp dir mounting (per config)")
-		return nil
+		return "", "", nil
 	}
 
-	tmpSource := tmpPath
-	vartmpSource := varTmpPath
+	tmpSource = tmpPath
+	vartmpSource = vartmpPath
 
 	if c.engine.EngineConfig.GetContain() {
 		workdir := c.engine.EngineConfig.GetWorkdir()
 		if workdir != "" {
 			if !c.engine.EngineConfig.File.UserBindControl {
 				sylog.Warningf("User bind control is disabled by system administrator")
-				return nil
+				return "", "", nil
 			}
 
 			vartmpSource = "var_tmp"
 
 			workdir, err := filepath.Abs(filepath.Clean(workdir))
 			if err != nil {
-				return fmt.Errorf("can't determine absolute path of workdir %s: %s", workdir, err)
+				return "", "", fmt.Errorf("can't determine absolute path of workdir %s: %s", workdir, err)
 			}
 
 			tmpSource = filepath.Join(workdir, tmpSource)
 			vartmpSource = filepath.Join(workdir, vartmpSource)
 
 			if err := fs.Mkdir(tmpSource, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
-				return fmt.Errorf("failed to create %s: %s", tmpSource, err)
+				return "", "", fmt.Errorf("failed to create %s: %s", tmpSource, err)
 			}
 			if err := fs.Mkdir(vartmpSource, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
-				return fmt.Errorf("failed to create %s: %s", vartmpSource, err)
+				return "", "", fmt.Errorf("failed to create %s: %s", vartmpSource, err)
 			}
 		} else {
 			if _, err := c.session.GetPath(tmpSource); err != nil {
 				if err := c.session.AddDir(tmpSource); err != nil {
-					return err
+					return "", "", err
 				}
 				if err := c.session.Chmod(tmpSource, os.ModeSticky|0o777); err != nil {
-					return err
+					return "", "", err
 				}
 			}
 			if _, err := c.session.GetPath(vartmpSource); err != nil {
 				if err := c.session.AddDir(vartmpSource); err != nil {
-					return err
+					return "", "", err
 				}
 				if err := c.session.Chmod(vartmpSource, os.ModeSticky|0o777); err != nil {
-					return err
+					return "", "", err
 				}
 			}
 			tmpSource, _ = c.session.GetPath(tmpSource)
@@ -1757,22 +1775,39 @@ func (c *container) addTmpMount(system *mount.System) error {
 	}
 
 	c.session.OverrideDir(tmpPath, tmpSource)
-	c.session.OverrideDir(varTmpPath, vartmpSource)
+	c.session.OverrideDir(vartmpPath, vartmpSource)
+
+	return tmpSource, vartmpSource, nil
+}
+
+// addTmpMount adds bind mount definitions for /tmp and /var/tmp in the
+// container, from the provided sources. /var/tmp is not mounted if it is a
+// symlink to /tmp in the container rootfs.
+func (c *container) addTmpMount(system *mount.System, tmpSource, vartmpSource string) error {
+	tmpResolved := fs.EvalRelative(tmpPath, c.session.FinalPath())
+	varTmpResolved := fs.EvalRelative(vartmpPath, c.session.FinalPath())
+	sylog.Debugf("Container /tmp resolves to %q", tmpResolved)
+	sylog.Debugf("Container /var/tmp resolves to %q", varTmpResolved)
 
 	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 
 	if err := system.Points.AddBind(mount.TmpTag, tmpSource, tmpPath, flags); err == nil {
 		system.Points.AddRemount(mount.TmpTag, tmpPath, flags)
-		sylog.Verbosef("Default mount: %s:%s", tmpPath, tmpPath)
+		sylog.Verbosef("Default mount: %s:%s", tmpSource, tmpPath)
 	} else {
 		return fmt.Errorf("could not mount container's %s directory: %s", tmpPath, err)
 	}
 
-	if err := system.Points.AddBind(mount.TmpTag, vartmpSource, varTmpPath, flags); err == nil {
-		system.Points.AddRemount(mount.TmpTag, varTmpPath, flags)
-		sylog.Verbosef("Default mount: %s:%s", varTmpPath, varTmpPath)
+	if varTmpResolved == tmpResolved {
+		sylog.Debugf("Container /tmp and /var/tmp resolve to same location. Skipping /var/tmp bind mount.")
+		return nil
+	}
+
+	if err := system.Points.AddBind(mount.TmpTag, vartmpSource, vartmpPath, flags); err == nil {
+		system.Points.AddRemount(mount.TmpTag, vartmpPath, flags)
+		sylog.Verbosef("Default mount: %s:%s", vartmpSource, vartmpPath)
 	} else {
-		return fmt.Errorf("could not mount container's %s directory: %s", varTmpPath, err)
+		return fmt.Errorf("could not mount container's %s directory: %s", vartmpPath, err)
 	}
 	return nil
 }
