@@ -1,0 +1,6 @@
+Bootstrap: library
+From: alpine:3.11.5
+
+%setup
+mv  "${SINGULARITY_ROOTFS}/var/tmp" "${SINGULARITY_ROOTFS}/var/tmpold"
+ln -s ../tmp "${SINGULARITY_ROOTFS}/var/tmp"

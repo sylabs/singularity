@@ -1,5 +1,12 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Don't bind `/var/tmp` on top of `/tmp` in the container, where `/var/tmp`
+  resolves to same location as `/tmp`.
+
 ## 4.0.0 \[2023-09-19\]
 
 ### OCI-mode
