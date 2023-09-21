@@ -732,12 +732,36 @@ func (c actionTests) issue1950(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 
-	// If /var/tmp is *not* mounted over /tmp, then our canary file should *not* be accessible.
-	c.env.RunSingularity(
-		t,
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("exec"),
-		e2e.WithArgs(image, "cat", varTmpCanary),
-		e2e.ExpectExit(1),
-	)
+	tests := []struct {
+		name      string
+		profile   e2e.Profile
+		extraArgs []string
+	}{
+		{
+			name:    "native",
+			profile: e2e.UserProfile,
+		},
+		{
+			name:      "oci no-compat",
+			profile:   e2e.OCIUserProfile,
+			extraArgs: []string{"--no-compat"},
+		},
+		{
+			name:      "oci binds",
+			profile:   e2e.OCIUserProfile,
+			extraArgs: []string{"-B", "/tmp", "-B", "/var/tmp"},
+		},
+	}
+
+	for _, tt := range tests {
+		// If /var/tmp is *not* mounted over /tmp, then our canary file should *not* be accessible.
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(tt.profile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(append(tt.extraArgs, image, "cat", varTmpCanary)...),
+			e2e.ExpectExit(1),
+		)
+	}
 }

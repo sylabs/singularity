@@ -25,6 +25,7 @@ import (
 	"github.com/google/uuid"
 	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/samber/lo"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
@@ -53,6 +54,11 @@ var (
 	ErrNotImplemented    = errors.New("not implemented by OCI launcher")
 
 	unsupportedNoMount = []string{"cwd"}
+)
+
+const (
+	tmpPath    = "/tmp"
+	vartmpPath = "/var/tmp"
 )
 
 // Launcher will holds configuration for, and will launch a container using an
@@ -397,7 +403,24 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 		return err
 	}
 
+	l.handleTmpVarTmpSymlink(spec)
+
 	return b.Update(ctx, spec)
+}
+
+func (l *Launcher) handleTmpVarTmpSymlink(spec *specs.Spec) {
+	tmpResolved := fs.EvalRelative(tmpPath, spec.Root.Path)
+	varTmpResolved := fs.EvalRelative(vartmpPath, spec.Root.Path)
+	sylog.Debugf("Container /tmp resolves to %q", tmpResolved)
+	sylog.Debugf("Container /var/tmp resolves to %q", varTmpResolved)
+
+	if varTmpResolved != tmpResolved {
+		return
+	}
+
+	spec.Mounts = lo.Filter(spec.Mounts, func(m specs.Mount, _ int) bool {
+		return (m.Destination != vartmpPath)
+	})
 }
 
 // prepareEtc creates modified container-specific /etc files and adds them to
