@@ -733,23 +733,33 @@ func (c actionTests) issue1950(t *testing.T) {
 	)
 
 	tests := []struct {
-		name      string
-		profile   e2e.Profile
-		extraArgs []string
+		name       string
+		profile    e2e.Profile
+		extraArgs  []string
+		expectExit int
 	}{
 		{
-			name:    "native",
-			profile: e2e.UserProfile,
+			name:       "native",
+			profile:    e2e.UserProfile,
+			expectExit: 1,
 		},
 		{
-			name:      "oci no-compat",
-			profile:   e2e.OCIUserProfile,
-			extraArgs: []string{"--no-compat"},
+			name:       "native binds",
+			profile:    e2e.OCIUserProfile,
+			extraArgs:  []string{"-B", "/tmp", "-B", "/var/tmp"},
+			expectExit: 0,
 		},
 		{
-			name:      "oci binds",
-			profile:   e2e.OCIUserProfile,
-			extraArgs: []string{"-B", "/tmp", "-B", "/var/tmp"},
+			name:       "oci no-compat",
+			profile:    e2e.OCIUserProfile,
+			extraArgs:  []string{"--no-compat"},
+			expectExit: 1,
+		},
+		{
+			name:       "oci binds",
+			profile:    e2e.OCIUserProfile,
+			extraArgs:  []string{"-B", "/tmp", "-B", "/var/tmp"},
+			expectExit: 0,
 		},
 	}
 
@@ -761,7 +771,7 @@ func (c actionTests) issue1950(t *testing.T) {
 			e2e.WithProfile(tt.profile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(append(tt.extraArgs, image, "cat", varTmpCanary)...),
-			e2e.ExpectExit(1),
+			e2e.ExpectExit(tt.expectExit),
 		)
 	}
 }
