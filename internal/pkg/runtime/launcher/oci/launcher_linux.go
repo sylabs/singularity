@@ -424,7 +424,7 @@ func (l *Launcher) handleVarTmpToTmpSymlink(spec *specs.Spec) {
 		return
 	}
 
-	// Get the default mounts that generated whose destination path is /var/tmp
+	// Get the default mounts whose destination path is /var/tmp
 	vartmpDefaultMounts := lo.Filter(l.defaultTmpMounts, func(m specs.Mount, _ int) bool {
 		return (m.Destination == vartmpPath)
 	})
