@@ -777,7 +777,7 @@ func (c actionTests) issue1950(t *testing.T) {
 		},
 		{
 			name:       "native binds",
-			profile:    e2e.OCIUserProfile,
+			profile:    e2e.UserProfile,
 			extraArgs:  []string{"-B", "/tmp", "-B", "/var/tmp"},
 			canaryFile: vartmpCanary,
 			expectExit: 0,
