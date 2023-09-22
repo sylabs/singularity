@@ -25,6 +25,7 @@ import (
 	"github.com/google/uuid"
 	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/samber/lo"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
@@ -55,6 +56,11 @@ var (
 	unsupportedNoMount = []string{"cwd"}
 )
 
+const (
+	tmpPath    = "/tmp"
+	vartmpPath = "/var/tmp"
+)
+
 // Launcher will holds configuration for, and will launch a container using an
 // OCI runtime.
 type Launcher struct {
@@ -78,6 +84,9 @@ type Launcher struct {
 	// imageMountsByMountpoint is the set of FUSE image mounts to be carried out
 	// before the container is run, mapped by their mountpoint.
 	imageMountsByMountpoint map[string]*fuse.ImageMount
+	// defaultTmpMountIndices contains the indices of mounts added by
+	// addTmpMounts() within the spec.Mounts slice.
+	defaultTmpMountIndices []int
 }
 
 // NewLauncher returns a oci.Launcher with an initial configuration set by opts.
@@ -397,7 +406,33 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 		return err
 	}
 
+	l.handleVarTmpToTmpSymlink(spec)
+
 	return b.Update(ctx, spec)
+}
+
+func (l *Launcher) handleVarTmpToTmpSymlink(spec *specs.Spec) {
+	tmpResolved := fs.EvalRelative(tmpPath, spec.Root.Path)
+	vartmpResolved := fs.EvalRelative(vartmpPath, spec.Root.Path)
+	sylog.Debugf("Container /tmp resolves to %q", tmpResolved)
+	sylog.Debugf("Container /var/tmp resolves to %q", vartmpResolved)
+
+	// If /var/tmp doesn't point to the same place as /tmp after resolving
+	// symlinks, then there's nothing more to do here.
+	if vartmpResolved != tmpResolved {
+		return
+	}
+
+	indicesToRemove := make(map[int]bool)
+	for _, index := range l.defaultTmpMountIndices {
+		if spec.Mounts[index].Destination == vartmpPath {
+			indicesToRemove[index] = true
+		}
+	}
+
+	spec.Mounts = lo.Reject(spec.Mounts, func(_ specs.Mount, i int) bool {
+		return indicesToRemove[i]
+	})
 }
 
 // prepareEtc creates modified container-specific /etc files and adds them to

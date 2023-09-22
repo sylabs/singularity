@@ -47,9 +47,18 @@ func (l *Launcher) getMounts() ([]specs.Mount, error) {
 	if err := l.addDevMounts(mounts); err != nil {
 		return nil, fmt.Errorf("while configuring devpts mount: %w", err)
 	}
+
+	// To facilitate handleVarTmpToTmpSymlink(), store indices of mounts added
+	// by addTmpMounts(), in addition to adding them to spec.
+	mountsCount := len(*mounts)
 	if err := l.addTmpMounts(mounts); err != nil {
 		return nil, fmt.Errorf("while configuring tmp mounts: %w", err)
 	}
+	for mountsCount < len(*mounts) {
+		l.defaultTmpMountIndices = append(l.defaultTmpMountIndices, mountsCount)
+		mountsCount++
+	}
+
 	if err := l.addHomeMount(mounts); err != nil {
 		return nil, fmt.Errorf("while configuring home mount: %w", err)
 	}

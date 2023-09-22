@@ -705,24 +705,54 @@ func (c actionTests) issue1950(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	varTmpHostResolved, err := filepath.EvalSymlinks("/var/tmp")
+	vartmpHostResolved, err := filepath.EvalSymlinks("/var/tmp")
 	if err != nil {
 		t.Error(err)
 	}
-	if varTmpHostResolved == tmpHostResolved {
+	if vartmpHostResolved == tmpHostResolved {
 		t.Skipf("/var/tmp links to /tmp on host")
 	}
 
 	// Create a canary file in the host /var/tmp
-	varTmpCanary, err := e2e.WriteTempFile("/var/tmp", "issue-1950", "")
+	vartmpCanary, err := e2e.WriteTempFile("/var/tmp", "issue-1950", "")
 	if err != nil {
 		t.Error(err)
 	}
-	defer os.Remove(varTmpCanary)
+	defer os.Remove(vartmpCanary)
 
 	// Build an image in which /var/tmp is a symlink to /tmp
-	dir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue1950-", "")
-	defer e2e.Privileged(cleanup)(t)
+	dir, dirCleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue1950-", "")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			e2e.Privileged(dirCleanup)(t)
+		}
+	})
+
+	workdir, workdirCleanup := e2e.MakeTempDir(t, c.env.TestDir, "issue1950-workdir-", "")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			e2e.Privileged(workdirCleanup)(t)
+		}
+	})
+
+	workdirVartmp := filepath.Join(workdir, "var_tmp")
+	if err := os.Mkdir(workdirVartmp, 0o755); err != nil {
+		t.Fatalf("could not create subdir 'var_tmp' in %q: %v", workdir, err)
+	}
+	workdirVartmpCanary, err := e2e.WriteTempFile(workdirVartmp, "issue-1950", "")
+	if err != nil {
+		t.Error(err)
+	}
+
+	workdirTmp := filepath.Join(workdir, "tmp")
+	if err := os.Mkdir(workdirTmp, 0o755); err != nil {
+		t.Fatalf("could not create subdir 'var_tmp' in %q: %v", workdir, err)
+	}
+	workdirTmpCanary, err := e2e.WriteTempFile(workdirTmp, "issue-1950", "")
+	if err != nil {
+		t.Error(err)
+	}
+
 	image := filepath.Join(dir, "issue_1950.sif")
 	c.env.RunSingularity(
 		t,
@@ -732,12 +762,79 @@ func (c actionTests) issue1950(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 
-	// If /var/tmp is *not* mounted over /tmp, then our canary file should *not* be accessible.
-	c.env.RunSingularity(
-		t,
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("exec"),
-		e2e.WithArgs(image, "cat", varTmpCanary),
-		e2e.ExpectExit(1),
-	)
+	tests := []struct {
+		name       string
+		profile    e2e.Profile
+		extraArgs  []string
+		canaryFile string
+		expectExit int
+	}{
+		{
+			name:       "native",
+			profile:    e2e.UserProfile,
+			canaryFile: vartmpCanary,
+			expectExit: 1,
+		},
+		{
+			name:       "native binds",
+			profile:    e2e.OCIUserProfile,
+			extraArgs:  []string{"-B", "/tmp", "-B", "/var/tmp"},
+			canaryFile: vartmpCanary,
+			expectExit: 0,
+		},
+		{
+			name:       "native workdir var_tmp",
+			profile:    e2e.UserProfile,
+			extraArgs:  []string{"--contain", "--workdir", workdir},
+			canaryFile: filepath.Join("/var/tmp", filepath.Base(workdirVartmpCanary)),
+			expectExit: 1,
+		},
+		{
+			name:       "native workdir tmp",
+			profile:    e2e.UserProfile,
+			extraArgs:  []string{"--contain", "--workdir", workdir},
+			canaryFile: filepath.Join("/tmp", filepath.Base(workdirTmpCanary)),
+			expectExit: 0,
+		},
+		{
+			name:       "oci no-compat",
+			profile:    e2e.OCIUserProfile,
+			extraArgs:  []string{"--no-compat"},
+			canaryFile: vartmpCanary,
+			expectExit: 1,
+		},
+		{
+			name:       "oci binds",
+			profile:    e2e.OCIUserProfile,
+			extraArgs:  []string{"-B", "/tmp", "-B", "/var/tmp"},
+			canaryFile: vartmpCanary,
+			expectExit: 0,
+		},
+		{
+			name:       "oci workdir var_tmp",
+			profile:    e2e.OCIUserProfile,
+			extraArgs:  []string{"--workdir", workdir},
+			canaryFile: filepath.Join("/var/tmp", filepath.Base(workdirVartmpCanary)),
+			expectExit: 1,
+		},
+		{
+			name:       "oci workdir tmp",
+			profile:    e2e.OCIUserProfile,
+			extraArgs:  []string{"--workdir", workdir},
+			canaryFile: filepath.Join("/tmp", filepath.Base(workdirTmpCanary)),
+			expectExit: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		// If /var/tmp is *not* mounted over /tmp, then our canary file should *not* be accessible.
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(tt.profile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(append(tt.extraArgs, image, "cat", tt.canaryFile)...),
+			e2e.ExpectExit(tt.expectExit),
+		)
+	}
 }
