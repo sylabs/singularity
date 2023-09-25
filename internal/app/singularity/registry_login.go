@@ -12,11 +12,10 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/remote"
-	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // RegistryLogin logs in to an OCI/Docker registry.
-func RegistryLogin(usrConfigFile string, args *LoginArgs) (err error) {
+func RegistryLogin(usrConfigFile string, args *LoginArgs, ociAuthFile string) (err error) {
 	// opening config file
 	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, 0o600)
 	if err != nil {
@@ -34,7 +33,7 @@ func RegistryLogin(usrConfigFile string, args *LoginArgs) (err error) {
 		return err
 	}
 
-	if err := c.Login(args.Name, args.Username, args.Password, args.Insecure); err != nil {
+	if err := c.Login(args.Name, args.Username, args.Password, args.Insecure, ociAuthFile); err != nil {
 		return fmt.Errorf("while login to %s: %s", args.Name, err)
 	}
 
@@ -55,6 +54,5 @@ func RegistryLogin(usrConfigFile string, args *LoginArgs) (err error) {
 		return fmt.Errorf("failed to flush configuration file %s: %s", file.Name(), err)
 	}
 
-	sylog.Infof("Token stored in %s", file.Name())
 	return nil
 }

@@ -143,6 +143,8 @@ func init() {
 
 		cmdManager.RegisterFlagForCmd(&commonArchFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&commonPlatformFlag, PullCmd)
+
+		cmdManager.RegisterFlagForCmd(&commonAuthFileFlag, PullCmd)
 	})
 }
 
@@ -295,13 +297,14 @@ func pullRun(cmd *cobra.Command, args []string) {
 		}
 
 		pullOpts := oci.PullOptions{
-			TmpDir:     tmpDir,
-			OciAuth:    ociAuth,
-			DockerHost: dockerHost,
-			NoHTTPS:    noHTTPS,
-			NoCleanUp:  buildArgs.noCleanUp,
-			OciSif:     isOCI,
-			Platform:   getOCIPlatform(),
+			TmpDir:      tmpDir,
+			OciAuth:     ociAuth,
+			DockerHost:  dockerHost,
+			NoHTTPS:     noHTTPS,
+			NoCleanUp:   buildArgs.noCleanUp,
+			OciSif:      isOCI,
+			Platform:    getOCIPlatform(),
+			OciAuthFile: ociAuthFile,
 		}
 
 		_, err = oci.PullToFile(ctx, imgCache, pullTo, pullFrom, pullOpts)

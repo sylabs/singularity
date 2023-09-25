@@ -182,7 +182,7 @@ var PushCmd = &cobra.Command{
 			if err != nil {
 				sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 			}
-			if err := oci.Push(cmd.Context(), file, ref, ociAuth); err != nil {
+			if err := oci.Push(cmd.Context(), file, ref, ociAuth, ociAuthFile); err != nil {
 				sylog.Fatalf("Unable to push image to oci registry: %v", err)
 			}
 			sylog.Infof("Upload complete")

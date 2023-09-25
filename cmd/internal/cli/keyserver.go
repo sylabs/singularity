@@ -202,7 +202,7 @@ var KeyserverLogoutCmd = &cobra.Command{
 			name = args[0]
 		}
 
-		if err := singularity.KeyserverLogout(remoteConfig, name); err != nil {
+		if err := singularity.OtherLogout(remoteConfig, name); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 		sylog.Infof("Logout succeeded")

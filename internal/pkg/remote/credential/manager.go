@@ -16,14 +16,14 @@ var Manager = new(manager)
 type manager struct{}
 
 // Login allows to log into a service like a Docker/OCI registry or a keyserver.
-func (m *manager) Login(uri, username, password string, insecure bool) (*Config, error) {
+func (m *manager) Login(uri, username, password string, insecure bool, ociAuthFile string) (*Config, error) {
 	u, err := url.Parse(uri)
 	if err != nil {
 		return nil, err
 	}
 
 	if handler, ok := loginHandlers[u.Scheme]; ok {
-		return handler.login(u, username, password, insecure)
+		return handler.login(u, username, password, insecure, ociAuthFile)
 	}
 
 	return nil, fmt.Errorf("%s transport is not supported", u.Scheme)

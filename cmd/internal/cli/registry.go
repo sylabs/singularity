@@ -68,6 +68,8 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&registryLoginUsernameFlag, RegistryLoginCmd)
 		cmdManager.RegisterFlagForCmd(&registryLoginPasswordFlag, RegistryLoginCmd)
 		cmdManager.RegisterFlagForCmd(&registryLoginPasswordStdinFlag, RegistryLoginCmd)
+
+		cmdManager.RegisterFlagForCmd(&commonAuthFileFlag, RegistryLoginCmd)
 	})
 }
 
@@ -87,7 +89,7 @@ var RegistryCmd = &cobra.Command{
 var RegistryLoginCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := singularity.RegistryLogin(remoteConfig, ObtainLoginArgs(args[0])); err != nil {
+		if err := singularity.RegistryLogin(remoteConfig, ObtainLoginArgs(args[0]), ociAuthFile); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
@@ -110,7 +112,7 @@ var RegistryLogoutCmd = &cobra.Command{
 			name = args[0]
 		}
 
-		if err := singularity.RegistryLogout(remoteConfig, name); err != nil {
+		if err := singularity.OtherLogout(remoteConfig, name); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 		sylog.Infof("Logout succeeded")

@@ -16,6 +16,8 @@ import (
 	"os"
 	"time"
 
+	ociconfig "github.com/containers/image/v5/pkg/docker/config"
+	ocitypes "github.com/containers/image/v5/types"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/cli/cli/config/types"
@@ -25,6 +27,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
@@ -33,7 +36,7 @@ var loginHandlers = make(map[string]loginHandler)
 
 // loginHandler interface implements login and logout for a specific scheme.
 type loginHandler interface {
-	login(url *url.URL, username, password string, insecure bool) (*Config, error)
+	login(url *url.URL, username, password string, insecure bool, ociAuthFile string) (*Config, error)
 	logout(url *url.URL) error
 }
 
@@ -69,7 +72,7 @@ func ensurePassword(password string) (string, error) {
 // ociHandler handle login/logout for services with docker:// and oras:// scheme.
 type ociHandler struct{}
 
-func (h *ociHandler) login(u *url.URL, username, password string, insecure bool) (*Config, error) {
+func (h *ociHandler) login(u *url.URL, username, password string, insecure bool, ociAuthFile string) (*Config, error) {
 	if u == nil {
 		return nil, fmt.Errorf("URL not provided for login")
 	}
@@ -85,6 +88,14 @@ func (h *ociHandler) login(u *url.URL, username, password string, insecure bool)
 
 	if err := checkOCILogin(regName, username, password, insecure); err != nil {
 		return nil, err
+	}
+
+	if ociAuthFile != "" {
+		sysCtx := ocitypes.SystemContext{AuthFilePath: ociAuthFile}
+		if _, err := ociconfig.SetCredentials(&sysCtx, regName, username, pass); err != nil {
+			return nil, err
+		}
+		return nil, nil
 	}
 
 	ociConfig := syfs.DockerConf()
@@ -118,6 +129,8 @@ func (h *ociHandler) login(u *url.URL, username, password string, insecure bool)
 	}); err != nil {
 		return nil, fmt.Errorf("while trying to store new credentials: %w", err)
 	}
+
+	sylog.Infof("Token stored in %s", ociConfig)
 
 	return &Config{
 		URI:      u.String(),
@@ -185,7 +198,8 @@ func (h *ociHandler) logout(u *url.URL) error {
 // keyserverHandler handle login/logout for keyserver service.
 type keyserverHandler struct{}
 
-func (h *keyserverHandler) login(u *url.URL, username, password string, insecure bool) (*Config, error) {
+//nolint:revive,nolintlint
+func (h *keyserverHandler) login(u *url.URL, username, password string, insecure bool, ociAuthFile string) (*Config, error) {
 	pass, err := ensurePassword(password)
 	if err != nil {
 		return nil, err

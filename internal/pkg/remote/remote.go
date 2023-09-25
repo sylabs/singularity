@@ -223,7 +223,7 @@ func (c *Config) GetRemote(name string) (*endpoint.Config, error) {
 
 // Login validates and stores credentials for a service like Docker/OCI registries
 // and keyservers.
-func (c *Config) Login(uri, username, password string, insecure bool) error {
+func (c *Config) Login(uri, username, password string, insecure bool, ociAuthFile string) error {
 	_, err := remoteutil.NormalizeKeyserverURI(uri)
 	// if there is no error, we consider it as a keyserver
 	if err == nil {
@@ -253,7 +253,7 @@ func (c *Config) Login(uri, username, password string, insecure bool) error {
 		}
 	}
 
-	credConfig, err := credential.Manager.Login(uri, username, password, insecure)
+	credConfig, err := credential.Manager.Login(uri, username, password, insecure, ociAuthFile)
 	if err != nil {
 		return err
 	}

@@ -893,5 +893,6 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionNoTmpSandbox, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionDevice, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&actionCdiDirs, actionsCmd...)
+		cmdManager.RegisterFlagForCmd(&commonAuthFileFlag, actionsCmd...)
 	})
 }
