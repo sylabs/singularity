@@ -9,6 +9,7 @@ package credential
 import (
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -104,8 +105,7 @@ func (h *ociHandler) login(u *url.URL, username, password string, insecure bool)
 	}
 
 	cf.AuthConfigs[regName] = types.AuthConfig{
-		Username: username,
-		Password: pass,
+		Auth: base64.StdEncoding.EncodeToString([]byte(username + ":" + pass)),
 	}
 
 	configData, err := json.Marshal(cf)
