@@ -9,24 +9,17 @@ package credential
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
-	ociconfig "github.com/containers/image/v5/pkg/docker/config"
-	ocitypes "github.com/containers/image/v5/types"
-	"github.com/docker/cli/cli/config"
-	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/cli/cli/config/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
-	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/interactive"
-	"github.com/sylabs/singularity/v4/pkg/syfs"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/ociauth"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
@@ -36,8 +29,8 @@ var loginHandlers = make(map[string]loginHandler)
 
 // loginHandler interface implements login and logout for a specific scheme.
 type loginHandler interface {
-	login(url *url.URL, username, password string, insecure bool, ociAuthFile string) (*Config, error)
-	logout(url *url.URL) error
+	login(url *url.URL, username, password string, insecure bool, reqAuthFile string) (*Config, error)
+	logout(url *url.URL, reqAuthFile string) error
 }
 
 func init() {
@@ -72,11 +65,11 @@ func ensurePassword(password string) (string, error) {
 // ociHandler handle login/logout for services with docker:// and oras:// scheme.
 type ociHandler struct{}
 
-func (h *ociHandler) login(u *url.URL, username, password string, insecure bool, ociAuthFile string) (*Config, error) {
+func (h *ociHandler) login(u *url.URL, username, password string, insecure bool, reqAuthFile string) (*Config, error) {
 	if u == nil {
 		return nil, fmt.Errorf("URL not provided for login")
 	}
-	regName := u.Host + u.Path
+	registry := u.Host + u.Path
 
 	if username == "" {
 		return nil, fmt.Errorf("Docker/OCI registry requires a username")
@@ -86,38 +79,19 @@ func (h *ociHandler) login(u *url.URL, username, password string, insecure bool,
 		return nil, err
 	}
 
-	if err := checkOCILogin(regName, username, password, insecure); err != nil {
+	if err := checkOCILogin(registry, username, password, insecure); err != nil {
 		return nil, err
 	}
 
-	if ociAuthFile != "" {
-		sysCtx := ocitypes.SystemContext{AuthFilePath: ociAuthFile}
-		if _, err := ociconfig.SetCredentials(&sysCtx, regName, username, pass); err != nil {
-			return nil, err
-		}
-		return nil, nil
+	cf, err := ociauth.ConfigFileFromPath(ociauth.ChooseAuthFile(reqAuthFile))
+	if err != nil {
+		return nil, fmt.Errorf("while loading existing OCI registry credentials from %q: %w", ociauth.ChooseAuthFile(reqAuthFile), err)
 	}
 
-	ociConfig := syfs.DockerConf()
-
-	cf := configfile.New(syfs.DockerConf())
-	if fs.IsFile(ociConfig) {
-		f, err := os.Open(ociConfig)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-		cf, err = config.LoadFromReader(f)
-		if err != nil {
-			return nil, err
-		}
-		cf.Filename = syfs.DockerConf()
-	}
-
-	creds := cf.GetCredentialsStore(regName)
+	creds := cf.GetCredentialsStore(registry)
 
 	// DockerHub requires special logic for historical reasons.
-	serverAddress := regName
+	serverAddress := registry
 	if serverAddress == name.DefaultRegistry {
 		serverAddress = authn.DefaultAuthKey
 	}
@@ -130,7 +104,7 @@ func (h *ociHandler) login(u *url.URL, username, password string, insecure bool,
 		return nil, fmt.Errorf("while trying to store new credentials: %w", err)
 	}
 
-	sylog.Infof("Token stored in %s", ociConfig)
+	sylog.Infof("Token stored in %s", cf.Filename)
 
 	return &Config{
 		URI:      u.String(),
@@ -162,44 +136,40 @@ func checkOCILogin(regName string, username, password string, insecure bool) err
 	return nil
 }
 
-func (h *ociHandler) logout(u *url.URL) error {
-	ociConfig := syfs.DockerConf()
-	ociConfigNew := syfs.DockerConf() + ".new"
-	cf := configfile.New(syfs.DockerConf())
-	if fs.IsFile(ociConfig) {
-		f, err := os.Open(ociConfig)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		cf, err = config.LoadFromReader(f)
-		if err != nil {
-			return err
-		}
+func (h *ociHandler) logout(u *url.URL, reqAuthFile string) error {
+	if u == nil {
+		return fmt.Errorf("URL not provided for logout")
 	}
-
 	registry := u.Host + u.Path
-	if _, ok := cf.AuthConfigs[registry]; !ok {
-		return fmt.Errorf("%q is not logged in", registry)
-	}
 
-	delete(cf.AuthConfigs, registry)
-
-	configData, err := json.Marshal(cf)
+	cf, err := ociauth.ConfigFileFromPath(ociauth.ChooseAuthFile(reqAuthFile))
 	if err != nil {
-		return err
+		return fmt.Errorf("while loading existing OCI registry credentials from %q: %w", ociauth.ChooseAuthFile(reqAuthFile), err)
 	}
-	if err := os.WriteFile(ociConfigNew, configData, 0o600); err != nil {
-		return err
+
+	if _, ok := cf.GetAuthConfigs()[registry]; !ok {
+		return fmt.Errorf("there is no existing login to registry %q", registry)
 	}
-	return os.Rename(ociConfigNew, ociConfig)
+
+	creds := cf.GetCredentialsStore(registry)
+	if _, err := creds.Get(registry); err != nil {
+		return fmt.Errorf("there is no existing login to registry %q", registry)
+	}
+
+	if err := creds.Erase(registry); err != nil {
+		return fmt.Errorf("while deleting OCI credentials for registry %q: %w", registry, err)
+	}
+
+	sylog.Infof("Token removed from %s", cf.Filename)
+
+	return nil
 }
 
 // keyserverHandler handle login/logout for keyserver service.
 type keyserverHandler struct{}
 
 //nolint:revive,nolintlint
-func (h *keyserverHandler) login(u *url.URL, username, password string, insecure bool, ociAuthFile string) (*Config, error) {
+func (h *keyserverHandler) login(u *url.URL, username, password string, insecure bool, reqAuthFile string) (*Config, error) {
 	pass, err := ensurePassword(password)
 	if err != nil {
 		return nil, err
@@ -249,6 +219,7 @@ func (h *keyserverHandler) login(u *url.URL, username, password string, insecure
 	}, nil
 }
 
-func (h *keyserverHandler) logout(_ *url.URL) error {
+//nolint:revive,nolintlint
+func (h *keyserverHandler) logout(_ *url.URL, reqAuthFile string) error {
 	return nil
 }

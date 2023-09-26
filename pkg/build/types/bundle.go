@@ -80,7 +80,7 @@ type Options struct {
 	// Which Platform to use when retrieving images for the build
 	Platform ggcrv1.Platform
 	// Authentication file for registry credentials
-	OciAuthFile string
+	ReqAuthFile string
 }
 
 // NewEncryptedBundle creates an Encrypted Bundle environment.

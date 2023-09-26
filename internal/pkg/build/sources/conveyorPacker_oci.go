@@ -20,6 +20,7 @@ import (
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/shell"
 	sytypes "github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/image"
@@ -128,7 +129,7 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 		OCIInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
 		DockerAuthConfig:         cp.b.Opts.DockerAuthConfig,
 		DockerDaemonHost:         cp.b.Opts.DockerDaemonHost,
-		AuthFilePath:             cp.b.Opts.OciAuthFile,
+		AuthFilePath:             ociauth.ChooseAuthFile(cp.b.Opts.ReqAuthFile),
 		DockerRegistryUserAgent:  useragent.Value(),
 		BigFilesTemporaryDir:     b.TmpDir,
 		OSChoice:                 cp.b.Opts.Platform.OS,

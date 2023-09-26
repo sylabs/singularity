@@ -304,7 +304,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			NoCleanUp:   buildArgs.noCleanUp,
 			OciSif:      isOCI,
 			Platform:    getOCIPlatform(),
-			OciAuthFile: ociAuthFile,
+			ReqAuthFile: reqAuthFile,
 		}
 
 		_, err = oci.PullToFile(ctx, imgCache, pullTo, pullFrom, pullOpts)

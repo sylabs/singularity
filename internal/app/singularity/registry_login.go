@@ -15,7 +15,7 @@ import (
 )
 
 // RegistryLogin logs in to an OCI/Docker registry.
-func RegistryLogin(usrConfigFile string, args *LoginArgs, ociAuthFile string) (err error) {
+func RegistryLogin(usrConfigFile string, args *LoginArgs, reqAuthFile string) (err error) {
 	// opening config file
 	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, 0o600)
 	if err != nil {
@@ -33,7 +33,7 @@ func RegistryLogin(usrConfigFile string, args *LoginArgs, ociAuthFile string) (e
 		return err
 	}
 
-	if err := c.Login(args.Name, args.Username, args.Password, args.Insecure, ociAuthFile); err != nil {
+	if err := c.Login(args.Name, args.Username, args.Password, args.Insecure, reqAuthFile); err != nil {
 		return fmt.Errorf("while login to %s: %s", args.Name, err)
 	}
 

@@ -345,23 +345,22 @@ func (c ctx) registryIssue2226(t *testing.T) {
 		t.Fatalf("failed to create new policy context: %v", err)
 	}
 
+	u := e2e.CurrentUser(t)
+	configPath := filepath.Join(u.Dir, ".singularity", syfs.DockerConfFile)
 	sourceCtx := &types.SystemContext{
 		OCIInsecureSkipTLSVerify:    false,
 		DockerInsecureSkipTLSVerify: types.NewOptionalBool(false),
 		DockerRegistryUserAgent:     useragent.Value(),
+		AuthFilePath:                configPath,
 	}
 	destCtx := &types.SystemContext{
 		OCIInsecureSkipTLSVerify:    true,
 		DockerInsecureSkipTLSVerify: types.NewOptionalBool(true),
 		DockerRegistryUserAgent:     useragent.Value(),
+		AuthFilePath:                configPath,
 	}
 
-	u := e2e.CurrentUser(t)
-	configPath := filepath.Join(u.Dir, ".singularity", syfs.DockerConfFile)
-	sourceCtx.AuthFilePath = configPath
-	destCtx.AuthFilePath = configPath
-
-	source := "docker://alpine:latest"
+	source := "docker://docker.io/alpine:latest"
 	dest := fmt.Sprintf("%s/my-alpine:latest", privRepoURI)
 	sourceRef, err := docker.ParseReference(strings.TrimPrefix(source, "docker:"))
 	if err != nil {

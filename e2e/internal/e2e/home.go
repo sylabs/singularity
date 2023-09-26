@@ -16,6 +16,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 )
 
@@ -65,18 +66,47 @@ func SetupHomeDirectories(t *testing.T) {
 		oldUmask := syscall.Umask(0)
 		defer syscall.Umask(oldUmask)
 
+		// Unprivileged home setup
 		if err := os.Mkdir(unprivSessionHome, 0o700); err != nil {
 			err = errors.Wrapf(err, "creating temporary home directory at %s", unprivSessionHome)
 			t.Fatalf("failed to create temporary home: %+v", err)
 		}
-		if err := os.Chown(unprivSessionHome, int(unprivUser.UID), int(unprivUser.GID)); err != nil {
+		if err := os.Mkdir(filepath.Join(unprivSessionHome, ".singularity"), 0o700); err != nil {
+			err = errors.Wrapf(err, "creating temporary .singularity suvdirectory at %s", unprivSessionHome)
+			t.Fatalf("failed to create singularity subdirectory: %+v", err)
+		}
+		// No need to check for errors on this - if the file is accessible in the original location, this will work; and if it isn't, it won't.
+		fs.CopyFile(
+			filepath.Join(unprivUser.Dir, ".singularity", "docker-config.json"),
+			filepath.Join(unprivSessionHome, ".singularity", "docker-config.json"),
+			0o600,
+		)
+		// Recursive chown
+		if err := filepath.Walk(unprivSessionHome, func(name string, info os.FileInfo, err error) error {
+			if err == nil {
+				err = os.Chown(name, int(unprivUser.UID), int(unprivUser.GID))
+			}
+			return err
+		}); err != nil {
 			err = errors.Wrapf(err, "changing temporary home directory ownership at %s", unprivSessionHome)
 			t.Fatalf("failed to set temporary home owner: %+v", err)
 		}
+
+		// Privileged home setup
 		if err := os.Mkdir(privSessionHome, 0o700); err != nil {
 			err = errors.Wrapf(err, "changing temporary home directory %s", privSessionHome)
 			t.Fatalf("failed to create temporary home: %+v", err)
 		}
+		if err := os.Mkdir(filepath.Join(privSessionHome, ".singularity"), 0o700); err != nil {
+			err = errors.Wrapf(err, "creating temporary .singularity suvdirectory at %s", privSessionHome)
+			t.Fatalf("failed to create singularity subdirectory: %+v", err)
+		}
+		// No need to check for errors on this - if the file is accessible in the original location, this will work; and if it isn't, it won't.
+		fs.CopyFile(
+			filepath.Join(privUser.Dir, ".singularity", "docker-config.json"),
+			filepath.Join(privSessionHome, ".singularity", "docker-config.json"),
+			0o600,
+		)
 
 		sourceDir := buildcfg.SOURCEDIR
 

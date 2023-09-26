@@ -95,7 +95,7 @@ var (
 	platform string
 
 	// Authentication file for writing/reading OCI registry credentials
-	ociAuthFile string
+	reqAuthFile string
 )
 
 //
@@ -325,7 +325,7 @@ var commonPlatformFlag = cmdline.Flag{
 // --authfile
 var commonAuthFileFlag = cmdline.Flag{
 	ID:           "commonAuthFileFlag",
-	Value:        &ociAuthFile,
+	Value:        &reqAuthFile,
 	DefaultValue: "",
 	Name:         "authfile",
 	Usage:        "Docker-style authentication file to use for writing/reading OCI registry credentials",
