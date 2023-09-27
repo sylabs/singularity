@@ -7,17 +7,12 @@
 package credential
 
 import (
-	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/url"
 	"time"
 
-	"github.com/docker/cli/cli/config/types"
-	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/ociauth"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -79,61 +74,14 @@ func (h *ociHandler) login(u *url.URL, username, password string, insecure bool,
 		return nil, err
 	}
 
-	if err := checkOCILogin(registry, username, password, insecure); err != nil {
+	if err := ociauth.LoginAndStore(registry, username, pass, insecure, reqAuthFile); err != nil {
 		return nil, err
 	}
-
-	cf, err := ociauth.ConfigFileFromPath(ociauth.ChooseAuthFile(reqAuthFile))
-	if err != nil {
-		return nil, fmt.Errorf("while loading existing OCI registry credentials from %q: %w", ociauth.ChooseAuthFile(reqAuthFile), err)
-	}
-
-	creds := cf.GetCredentialsStore(registry)
-
-	// DockerHub requires special logic for historical reasons.
-	serverAddress := registry
-	if serverAddress == name.DefaultRegistry {
-		serverAddress = authn.DefaultAuthKey
-	}
-
-	if err := creds.Store(types.AuthConfig{
-		Username:      username,
-		Password:      pass,
-		ServerAddress: serverAddress,
-	}); err != nil {
-		return nil, fmt.Errorf("while trying to store new credentials: %w", err)
-	}
-
-	sylog.Infof("Token stored in %s", cf.Filename)
 
 	return &Config{
 		URI:      u.String(),
 		Insecure: insecure,
 	}, nil
-}
-
-func checkOCILogin(regName string, username, password string, insecure bool) error {
-	regOpts := []name.Option{}
-	if insecure {
-		regOpts = []name.Option{name.Insecure}
-	}
-	reg, err := name.NewRegistry(regName, regOpts...)
-	if err != nil {
-		return err
-	}
-
-	auth := authn.FromConfig(authn.AuthConfig{
-		Username: username,
-		Password: password,
-	})
-
-	// Creating a new transport pings the registry and works through auth flow.
-	_, err = transport.NewWithContext(context.TODO(), reg, auth, http.DefaultTransport, nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (h *ociHandler) logout(u *url.URL, reqAuthFile string) error {
