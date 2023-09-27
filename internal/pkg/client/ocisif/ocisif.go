@@ -15,7 +15,6 @@ import (
 	"time"
 
 	ocitypes "github.com/containers/image/v5/types"
-	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
@@ -30,15 +29,15 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/v4/internal/pkg/util/ociauth"
 	obocisif "github.com/sylabs/singularity/v4/pkg/ocibundle/ocisif"
-	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
 // TODO - Replace when exported from SIF / oci-tools
 const SquashfsLayerMediaType types.MediaType = "application/vnd.sylabs.image.layer.v1.squashfs"
+
+const dockerRegistryAlias = "docker.io"
 
 type PullOptions struct {
 	TmpDir      string
@@ -62,7 +61,7 @@ func sysCtx(opts PullOptions) (*ocitypes.SystemContext, error) {
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify: opts.NoHTTPS,
 		DockerAuthConfig:         opts.OciAuth,
-		AuthFilePath:             ociauth.ChooseAuthFile(opts.ReqAuthFile),
+		AuthFilePath:             ChooseAuthFile(opts.ReqAuthFile),
 		DockerRegistryUserAgent:  useragent.Value(),
 		BigFilesTemporaryDir:     opts.TmpDir,
 		DockerDaemonHost:         opts.DockerHost,
@@ -255,7 +254,7 @@ func convertLayoutToOciSif(layoutDir string, digest v1.Hash, imageDest, workDir 
 func PushOCISIF(_ context.Context, sourceFile, destRef string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) error {
 	destRef = strings.TrimPrefix(destRef, "docker://")
 	destRef = strings.TrimPrefix(destRef, "//")
-	ref, err := name.ParseReference(destRef)
+	ir, err := name.ParseReference(destRef)
 	if err != nil {
 		return fmt.Errorf("invalid reference %q: %w", destRef, err)
 	}
@@ -284,27 +283,5 @@ func PushOCISIF(_ context.Context, sourceFile, destRef string, ociAuth *ocitypes
 		return fmt.Errorf("while obtaining image: %w", err)
 	}
 
-	authFileToUse := syfs.DockerConf()
-	if reqAuthFile != "" {
-		authFileToUse = reqAuthFile
-	}
-
-	cf, err := ociauth.ConfigFileFromPath(authFileToUse)
-	if err != nil {
-		return fmt.Errorf("while trying to read OCI credentials from file %q: %w", reqAuthFile, err)
-	}
-
-	ac, err := cf.GetAuthConfig(ref.Name())
-	if err != nil {
-		return fmt.Errorf("while trying to read OCI credentials for registry %q: %w", ref.Name(), err)
-	}
-
-	var authOpt remote.Option
-	if ociAuth == nil {
-		authOpt = remote.WithAuth(authn.FromConfig(authn.AuthConfig{Auth: ac.Auth}))
-	} else {
-		authOpt = AuthOptn(ociAuth)
-	}
-
-	return remote.Write(ref, image, authOpt, remote.WithUserAgent(useragent.Value()))
+	return remote.Write(ir, image, AuthOptn(ociAuth, reqAuthFile, ir), remote.WithUserAgent(useragent.Value()))
 }

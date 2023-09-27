@@ -7,7 +7,6 @@
 package registry
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -276,11 +275,19 @@ func (c ctx) registryLoginRepeated(t *testing.T) {
 	}
 }
 
-// JSON files created by our `remote login` flow should be usable in execution
-// flows that use containers/image APIs.
-// See https://github.com/sylabs/singularity/issues/2226
-func (c ctx) registryIssue2226(t *testing.T) {
-	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, "", "issue2226", "")
+// Tests authentication with registries, incl.
+// https://github.com/sylabs/singularity/issues/2226, among many other flows.
+func (c ctx) registryAuth(t *testing.T) {
+	t.Run("default", func(t *testing.T) {
+		c.registryAuthTester(t, false)
+	})
+	t.Run("custom", func(t *testing.T) {
+		c.registryAuthTester(t, true)
+	})
+}
+
+func (c ctx) registryAuthTester(t *testing.T, withCustomAuthFile bool) {
+	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, c.env.TestDir, "registry-auth", "")
 	t.Cleanup(func() {
 		if !t.Failed() {
 			tmpdirCleanup(t)
@@ -296,32 +303,135 @@ func (c ctx) registryIssue2226(t *testing.T) {
 		t.Fatalf("could not change cwd to %q: %s", tmpdir, err)
 	}
 
-	t.Cleanup(func() {
-		err := e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile)
-		if (err != nil) && !errors.Is(err, e2e.ErrAlreadyLoggedOut) {
-			t.Fatalf("While trying to clean up: %v", err)
-		}
-	})
+	localAuthFileName := ""
+	if withCustomAuthFile {
+		localAuthFileName = "./my_local_authfile"
+	}
 
-	e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile)
+	authFileArgs := []string{}
+	if withCustomAuthFile {
+		authFileArgs = []string{"--authfile", localAuthFileName}
+	}
 
 	c.env.RunSingularity(
 		t,
-		e2e.AsSubtest("noauth"),
+		e2e.AsSubtest("docker pull before auth"),
 		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("pull --disable-cache --no-https"),
-		e2e.WithArgs(c.env.TestRegistryPrivImage),
+		e2e.WithCommand("pull"),
+		e2e.WithArgs(append(authFileArgs, "-F", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage)...),
 		e2e.ExpectExit(255),
 	)
 
-	e2e.PrivateRepoLogin(t, c.env, e2e.UserProfile)
+	t.Cleanup(func() {
+		// No need to set up any cleanup when using the custom auth file,
+		// because it's stored in a tmpdir for which we already set up cleanup.
+		// And trying to do cleanup with a custom auth file if we're not already
+		// logged in would cause a test fail.
+		if !withCustomAuthFile {
+			e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
+		}
+	})
+
+	e2e.PrivateRepoLogin(t, c.env, e2e.UserProfile, localAuthFileName)
 
 	c.env.RunSingularity(
 		t,
-		e2e.AsSubtest("auth"),
+		e2e.AsSubtest("docker pull"),
 		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("pull --disable-cache --no-https"),
-		e2e.WithArgs(c.env.TestRegistryPrivImage),
+		e2e.WithCommand("pull"),
+		e2e.WithArgs(append(authFileArgs, "-F", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage)...),
+		e2e.ExpectExit(0),
+	)
+
+	e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("noauth docker pull"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("pull"),
+		e2e.WithArgs(append(authFileArgs, "-F", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage)...),
+		e2e.ExpectExit(255),
+	)
+
+	e2e.PrivateRepoLogin(t, c.env, e2e.UserProfile, localAuthFileName)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("docker pull ocisif"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("pull"),
+		e2e.WithArgs(append(authFileArgs, "-F", "--oci", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage)...),
+		e2e.ExpectExit(0),
+	)
+
+	e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
+
+	orasCustomPushTarget := fmt.Sprintf("oras://%s/authfile-pushtest-oras-alpine:latest", c.env.TestRegistryPrivPath)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("noauth oras push"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("push"),
+		e2e.WithArgs(append(authFileArgs, "my-alpine_latest.sif", orasCustomPushTarget)...),
+		e2e.ExpectExit(255),
+	)
+
+	e2e.PrivateRepoLogin(t, c.env, e2e.UserProfile, localAuthFileName)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("oras push"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("push"),
+		e2e.WithArgs(append(authFileArgs, "my-alpine_latest.sif", orasCustomPushTarget)...),
+		e2e.ExpectExit(0),
+	)
+
+	e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
+
+	dockerCustomPushTarget := fmt.Sprintf("docker://%s/authfile-pushtest-ocisif-alpine:latest", c.env.TestRegistryPrivPath)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("noauth docker push"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("push"),
+		e2e.WithArgs(append(authFileArgs, "my-alpine_latest.oci.sif", dockerCustomPushTarget)...),
+		e2e.ExpectExit(255),
+	)
+
+	e2e.PrivateRepoLogin(t, c.env, e2e.UserProfile, localAuthFileName)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("docker push"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("push"),
+		e2e.WithArgs(append(authFileArgs, "my-alpine_latest.oci.sif", dockerCustomPushTarget)...),
+		e2e.ExpectExit(0),
+	)
+
+	e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("noauth oras pull"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("pull"),
+		e2e.WithArgs(append(authFileArgs, "-F", "--disable-cache", "--no-https", orasCustomPushTarget)...),
+		e2e.ExpectExit(255),
+	)
+
+	e2e.PrivateRepoLogin(t, c.env, e2e.UserProfile, localAuthFileName)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("oras pull"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("pull"),
+		e2e.WithArgs(append(authFileArgs, "-F", "--disable-cache", "--no-https", orasCustomPushTarget)...),
 		e2e.ExpectExit(0),
 	)
 }
@@ -340,6 +450,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"registry login push private": np(c.registryLoginPushPrivate),
 		"registry login repeated":     np(c.registryLoginRepeated),
 		"registry list":               np(c.registryList),
-		"registry issue 2226":         np(c.registryIssue2226),
+		"registry auth":               np(c.registryAuth),
 	}
 }

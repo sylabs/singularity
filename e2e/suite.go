@@ -216,9 +216,9 @@ func Run(t *testing.T) {
 	e2e.CopyOCIImage(t, "docker://alpine:latest", testenv.TestRegistryImage, insecureSource, true)
 
 	// Copy same test image into private location in test registry
-	e2e.PrivateRepoLogin(t, testenv, e2e.UserProfile)
+	e2e.PrivateRepoLogin(t, testenv, e2e.UserProfile, "")
 	e2e.CopyOCIImage(t, "docker://alpine:latest", testenv.TestRegistryPrivImage, insecureSource, true)
-	e2e.PrivateRepoLogout(t, testenv, e2e.UserProfile)
+	e2e.PrivateRepoLogout(t, testenv, e2e.UserProfile, "")
 
 	// SIF base test path, built on demand by e2e.EnsureImage
 	imagePath := path.Join(name, "test.sif")

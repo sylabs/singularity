@@ -21,42 +21,66 @@ var (
 	ErrAlreadyLoggedOut = errors.New("attempted to logout from private e2e test repo when already logged out")
 )
 
-func PrivateRepoLogin(t *testing.T, env TestEnv, profile Profile) error {
-	result, _ := privateRepoLoginLocks.LoadOrStore(profile.String(), &sync.Mutex{})
-	//nolint:forcetypeassert
-	loginLock := result.(*sync.Mutex)
-	loginLock.Lock()
-	defer loginLock.Unlock()
-	if privateRepoLoginStatuses[profile.String()] {
-		return ErrAlreadyLoggedIn
+func PrivateRepoLogin(t *testing.T, env TestEnv, profile Profile, reqAuthFile string) error {
+	if reqAuthFile == "" {
+		result, _ := privateRepoLoginLocks.LoadOrStore(profile.String(), &sync.Mutex{})
+		//nolint:forcetypeassert
+		loginLock := result.(*sync.Mutex)
+		loginLock.Lock()
+		defer loginLock.Unlock()
+		if privateRepoLoginStatuses[profile.String()] {
+			return ErrAlreadyLoggedIn
+		}
 	}
+
+	args := []string{}
+	if reqAuthFile != "" {
+		args = append(args, "--authfile", reqAuthFile)
+	}
+	args = append(args, "-u", DefaultUsername, "-p", DefaultPassword, env.TestRegistryPrivURI)
 	env.RunSingularity(
 		t,
 		WithProfile(profile),
 		WithCommand("registry login"),
-		WithArgs("-u", DefaultUsername, "-p", DefaultPassword, env.TestRegistryPrivURI),
+		WithArgs(args...),
 		ExpectExit(0),
 	)
-	privateRepoLoginStatuses[profile.String()] = true
+
+	if reqAuthFile == "" {
+		privateRepoLoginStatuses[profile.String()] = true
+	}
+
 	return nil
 }
 
-func PrivateRepoLogout(t *testing.T, env TestEnv, profile Profile) error {
-	result, _ := privateRepoLoginLocks.LoadOrStore(profile.String(), &sync.Mutex{})
-	//nolint:forcetypeassert
-	loginLock := result.(*sync.Mutex)
-	loginLock.Lock()
-	defer loginLock.Unlock()
-	if !privateRepoLoginStatuses[profile.String()] {
-		return ErrAlreadyLoggedOut
+func PrivateRepoLogout(t *testing.T, env TestEnv, profile Profile, reqAuthFile string) error {
+	if reqAuthFile == "" {
+		result, _ := privateRepoLoginLocks.LoadOrStore(profile.String(), &sync.Mutex{})
+		//nolint:forcetypeassert
+		loginLock := result.(*sync.Mutex)
+		loginLock.Lock()
+		defer loginLock.Unlock()
+		if !privateRepoLoginStatuses[profile.String()] {
+			return ErrAlreadyLoggedOut
+		}
 	}
+
+	args := []string{}
+	if reqAuthFile != "" {
+		args = append(args, "--authfile", reqAuthFile)
+	}
+	args = append(args, env.TestRegistryPrivURI)
 	env.RunSingularity(
 		t,
 		WithProfile(profile),
 		WithCommand("registry logout"),
-		WithArgs(env.TestRegistryPrivURI),
+		WithArgs(args...),
 		ExpectExit(0),
 	)
-	privateRepoLoginStatuses[profile.String()] = false
+
+	if reqAuthFile == "" {
+		privateRepoLoginStatuses[profile.String()] = false
+	}
+
 	return nil
 }

@@ -274,7 +274,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 		}
 
-		_, err = oras.PullToFile(ctx, imgCache, pullTo, pullFrom, ociAuth)
+		_, err = oras.PullToFile(ctx, imgCache, pullTo, pullFrom, ociAuth, reqAuthFile)
 		if err != nil {
 			sylog.Fatalf("While pulling image from oci registry: %v", err)
 		}

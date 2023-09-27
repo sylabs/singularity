@@ -20,15 +20,15 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/client/library"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/net"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oci"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/shub"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/native"
 	ocilauncher "github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/oci"
-	"github.com/sylabs/singularity/v4/internal/pkg/util/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/v4/pkg/image"
-	"github.com/sylabs/singularity/v4/pkg/ocibundle/ocisif"
+	bndocisif "github.com/sylabs/singularity/v4/pkg/ocibundle/ocisif"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
@@ -114,7 +114,7 @@ func handleOras(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command,
 	if err != nil {
 		return "", fmt.Errorf("while creating docker credentials: %v", err)
 	}
-	return oras.Pull(ctx, imgCache, pullFrom, tmpDir, ociAuth)
+	return oras.Pull(ctx, imgCache, pullFrom, tmpDir, ociAuth, reqAuthFile)
 }
 
 func handleLibrary(ctx context.Context, imgCache *cache.Handle, pullFrom string) (string, error) {
@@ -192,7 +192,7 @@ func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string)
 		sylog.Fatalf("Unsupported transport type: %s", t)
 	}
 
-	var mountErr *ocisif.UnavailableError
+	var mountErr *bndocisif.UnavailableError
 	if errors.As(err, &mountErr) {
 		if !canUseTmpSandbox {
 			sylog.Fatalf("OCI-SIF functionality could not be used, and fallback to unpacking OCI bundle in temporary sandbox dir disallowed (original error msg: %s)", err)
@@ -393,7 +393,7 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 			DockerAuthConfig:         &dockerAuthConfig,
 			DockerDaemonHost:         dockerHost,
 			OSChoice:                 "linux",
-			AuthFilePath:             ociauth.ChooseAuthFile(reqAuthFile),
+			AuthFilePath:             ocisif.ChooseAuthFile(reqAuthFile),
 			DockerRegistryUserAgent:  useragent.Value(),
 		}
 		if noHTTPS {
@@ -414,7 +414,7 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 	}
 
 	execErr := l.Exec(cmd.Context(), ep)
-	var mountErr *ocisif.UnavailableError
+	var mountErr *bndocisif.UnavailableError
 	isOCISIF, ocisifCheckErr := image.IsOCISIF(ep.Image)
 	if ocisifCheckErr != nil {
 		return ocisifCheckErr

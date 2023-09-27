@@ -16,7 +16,6 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/v4/internal/pkg/util/ociauth"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
@@ -44,7 +43,7 @@ func sysCtx(opts PullOptions) (*ocitypes.SystemContext, error) {
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify: opts.NoHTTPS,
 		DockerAuthConfig:         opts.OciAuth,
-		AuthFilePath:             ociauth.ChooseAuthFile(opts.ReqAuthFile),
+		AuthFilePath:             ocisif.ChooseAuthFile(opts.ReqAuthFile),
 		DockerRegistryUserAgent:  useragent.Value(),
 		BigFilesTemporaryDir:     opts.TmpDir,
 		DockerDaemonHost:         opts.DockerHost,
@@ -71,12 +70,13 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, opts Pul
 	}
 	if opts.OciSif {
 		ocisifOpts := ocisif.PullOptions{
-			TmpDir:     opts.TmpDir,
-			OciAuth:    opts.OciAuth,
-			DockerHost: opts.DockerHost,
-			NoHTTPS:    opts.NoHTTPS,
-			NoCleanUp:  opts.NoCleanUp,
-			Platform:   opts.Platform,
+			TmpDir:      opts.TmpDir,
+			OciAuth:     opts.OciAuth,
+			DockerHost:  opts.DockerHost,
+			NoHTTPS:     opts.NoHTTPS,
+			NoCleanUp:   opts.NoCleanUp,
+			Platform:    opts.Platform,
+			ReqAuthFile: opts.ReqAuthFile,
 		}
 		return ocisif.PullOCISIF(ctx, imgCache, directTo, pullFrom, ocisifOpts)
 	}

@@ -13,8 +13,8 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/interactive"
-	"github.com/sylabs/singularity/v4/internal/pkg/util/ociauth"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
@@ -74,7 +74,7 @@ func (h *ociHandler) login(u *url.URL, username, password string, insecure bool,
 		return nil, err
 	}
 
-	if err := ociauth.LoginAndStore(registry, username, pass, insecure, reqAuthFile); err != nil {
+	if err := ocisif.LoginAndStore(registry, username, pass, insecure, reqAuthFile); err != nil {
 		return nil, err
 	}
 
@@ -90,9 +90,9 @@ func (h *ociHandler) logout(u *url.URL, reqAuthFile string) error {
 	}
 	registry := u.Host + u.Path
 
-	cf, err := ociauth.ConfigFileFromPath(ociauth.ChooseAuthFile(reqAuthFile))
+	cf, err := ocisif.ConfigFileFromPath(ocisif.ChooseAuthFile(reqAuthFile))
 	if err != nil {
-		return fmt.Errorf("while loading existing OCI registry credentials from %q: %w", ociauth.ChooseAuthFile(reqAuthFile), err)
+		return fmt.Errorf("while loading existing OCI registry credentials from %q: %w", ocisif.ChooseAuthFile(reqAuthFile), err)
 	}
 
 	if _, ok := cf.GetAuthConfigs()[registry]; !ok {
@@ -101,7 +101,7 @@ func (h *ociHandler) logout(u *url.URL, reqAuthFile string) error {
 
 	creds := cf.GetCredentialsStore(registry)
 	if _, err := creds.Get(registry); err != nil {
-		return fmt.Errorf("there is no existing login to registry %q", registry)
+		return fmt.Errorf("there is no existing login to registry %q in this credential store", registry)
 	}
 
 	if err := creds.Erase(registry); err != nil {

@@ -2656,6 +2656,134 @@ func (c actionTests) actionNoSetgroups(t *testing.T) {
 	)
 }
 
+// actionAuth tests run/exec/shell flows that involve authenticated pulls from
+// OCI registries.
+func (c actionTests) actionAuth(t *testing.T) {
+	profiles := []e2e.Profile{
+		e2e.UserProfile,
+		e2e.RootProfile,
+		e2e.OCIUserProfile,
+		e2e.OCIRootProfile,
+	}
+
+	for _, p := range profiles {
+		t.Run(p.String(), func(t *testing.T) {
+			t.Run("default", func(t *testing.T) {
+				c.actionAuthTester(t, false, p)
+			})
+			t.Run("custom", func(t *testing.T) {
+				c.actionAuthTester(t, true, p)
+			})
+		})
+	}
+}
+
+func (c actionTests) actionAuthTester(t *testing.T, withCustomAuthFile bool, profile e2e.Profile) {
+	e2e.EnsureImage(t, c.env)
+
+	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, c.env.TestDir, "action-auth", "")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			tmpdirCleanup(t)
+		}
+	})
+
+	prevCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("could not get current working directory: %s", err)
+	}
+	defer os.Chdir(prevCwd)
+	if err = os.Chdir(tmpdir); err != nil {
+		t.Fatalf("could not change cwd to %q: %s", tmpdir, err)
+	}
+
+	localAuthFileName := ""
+	if withCustomAuthFile {
+		localAuthFileName = "./my_local_authfile"
+	}
+
+	authFileArgs := []string{}
+	if withCustomAuthFile {
+		authFileArgs = []string{"--authfile", localAuthFileName}
+	}
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("docker before auth"),
+		e2e.WithProfile(profile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(append(authFileArgs, "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true")...),
+		e2e.ExpectExit(255),
+	)
+
+	t.Cleanup(func() {
+		// No need to set up any cleanup when using the custom auth file,
+		// because it's stored in a tmpdir for which we already set up cleanup.
+		// And trying to do cleanup with a custom auth file if we're not already
+		// logged in would cause a test fail.
+		if !withCustomAuthFile {
+			e2e.PrivateRepoLogout(t, c.env, profile, localAuthFileName)
+		}
+	})
+
+	e2e.PrivateRepoLogin(t, c.env, profile, localAuthFileName)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("docker"),
+		e2e.WithProfile(profile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(append(authFileArgs, "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true")...),
+		e2e.ExpectExit(0),
+	)
+
+	e2e.PrivateRepoLogout(t, c.env, profile, localAuthFileName)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("noauth docker"),
+		e2e.WithProfile(profile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(append(authFileArgs, "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true")...),
+		e2e.ExpectExit(255),
+	)
+
+	orasCustomPushTarget := fmt.Sprintf("oras://%s/authfile-pushtest-oras-alpine:latest", c.env.TestRegistryPrivPath)
+
+	e2e.PrivateRepoLogin(t, c.env, profile, localAuthFileName)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("oras push"),
+		e2e.WithProfile(profile),
+		e2e.WithCommand("push"),
+		e2e.WithArgs(append(authFileArgs, c.env.ImagePath, orasCustomPushTarget)...),
+		e2e.ExpectExit(0),
+	)
+
+	e2e.PrivateRepoLogout(t, c.env, profile, localAuthFileName)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("noauth oras"),
+		e2e.WithProfile(profile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(append(authFileArgs, "--disable-cache", "--no-https", orasCustomPushTarget, "true")...),
+		e2e.ExpectExit(255),
+	)
+
+	e2e.PrivateRepoLogin(t, c.env, profile, localAuthFileName)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("oras"),
+		e2e.WithProfile(profile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(append(authFileArgs, "--disable-cache", "--no-https", orasCustomPushTarget, "true")...),
+		e2e.ExpectExit(0),
+	)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := actionTests{
@@ -2707,6 +2835,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"TmpSandboxFlag":               c.actionTmpSandboxFlag,           // test --no-tmp-sandbox flag
 		"relWorkdirScratch":            np(c.relWorkdirScratch),          // test relative --workdir with --scratch
 		"ociRelWorkdirScratch":         np(c.actionOciRelWorkdirScratch), // test relative --workdir with --scratch in OCI mode
+		"auth":                         np(c.actionAuth),                 // tests action cmds w/authenticated pulls from OCI registries
 		//
 		// OCI Runtime Mode
 		//

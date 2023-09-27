@@ -30,8 +30,8 @@ import (
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
 //
 // FIXME: use context for cancellation.
-func DownloadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
-	im, err := remoteImage(ref, ociAuth)
+func DownloadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) error {
+	im, err := remoteImage(ref, ociAuth, reqAuthFile)
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func DownloadImage(_ context.Context, path, ref string, ociAuth *ocitypes.Docker
 // it will use credentials if supplied
 //
 // FIXME: use context for cancellation.
-func UploadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
+func UploadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) error {
 	// ensure that are uploading a SIF
 	if err := ensureSIF(path); err != nil {
 		return err
@@ -125,8 +125,7 @@ func UploadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAu
 		return err
 	}
 
-	authOptn := ocisif.AuthOptn(ociAuth)
-	return remote.Write(ir, im, authOptn, remote.WithUserAgent(useragent.Value()))
+	return remote.Write(ir, im, ocisif.AuthOptn(ociAuth, reqAuthFile, ir), remote.WithUserAgent(useragent.Value()))
 }
 
 // ensureSIF checks for a SIF image at filepath and returns an error if it is not, or an error is encountered
@@ -147,8 +146,8 @@ func ensureSIF(filepath string) error {
 // RefHash returns the digest of the SIF layer of the OCI manifest for supplied ref
 //
 // FIXME: use context for cancellation.
-func RefHash(_ context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig) (v1.Hash, error) {
-	im, err := remoteImage(ref, ociAuth)
+func RefHash(_ context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) (v1.Hash, error) {
+	im, err := remoteImage(ref, ociAuth, reqAuthFile)
 	if err != nil {
 		return v1.Hash{}, err
 	}
@@ -206,7 +205,7 @@ func sha256sum(r io.Reader) (result string, nBytes int64, err error) {
 }
 
 // remoteImage returns a v1.Image for the provided remote ref.
-func remoteImage(ref string, ociAuth *ocitypes.DockerAuthConfig) (v1.Image, error) {
+func remoteImage(ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) (v1.Image, error) {
 	ref = strings.TrimPrefix(ref, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
@@ -218,10 +217,11 @@ func remoteImage(ref string, ociAuth *ocitypes.DockerAuthConfig) (v1.Image, erro
 	if err != nil {
 		return nil, fmt.Errorf("invalid reference %q: %w", ref, err)
 	}
-	authOptn := ocisif.AuthOptn(ociAuth)
-	im, err := remote.Image(ir, authOptn)
+
+	im, err := remote.Image(ir, ocisif.AuthOptn(ociAuth, reqAuthFile, ir))
 	if err != nil {
 		return nil, err
 	}
+
 	return im, nil
 }
