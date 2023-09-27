@@ -445,11 +445,11 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	np := testhelper.NoParallel
 
 	return testhelper.Tests{
-		"test registry help":          c.registryTestHelp,
-		"registry login basic":        np(c.registryLogin),
-		"registry login push private": np(c.registryLoginPushPrivate),
-		"registry login repeated":     np(c.registryLoginRepeated),
-		"registry list":               np(c.registryList),
-		"registry auth":               np(c.registryAuth),
+		"help":               c.registryTestHelp,
+		"login basic":        np(c.registryLogin),
+		"login push private": np(c.registryLoginPushPrivate),
+		"login repeated":     np(c.registryLoginRepeated),
+		"list":               np(c.registryList),
+		"auth":               np(c.registryAuth),
 	}
 }
