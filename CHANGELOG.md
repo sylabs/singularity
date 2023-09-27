@@ -6,6 +6,9 @@
 
 - Don't bind `/var/tmp` on top of `/tmp` in the container, where `/var/tmp`
   resolves to same location as `/tmp`.
+- Fix problem where credentials locally stored with `registry login` command
+  were not usable in some execution flows. Run `registry login` again with
+  latest version to ensure credentials are stored correctly.
 
 ## 4.0.0 \[2023-09-19\]
 

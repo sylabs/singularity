@@ -227,7 +227,7 @@ func Run(t *testing.T) {
 	t.Log("Path to test OCI-SIF image:", ociArchivePath)
 	testenv.OCISIFPath = ociSifPath
 
-	// Docker Archive test image path, built on demand by e2e.EnsureDockerArhive
+	// Docker Archive test image path, built on demand by e2e.EnsureDockerArchive
 	dockerArchivePath := path.Join(name, "docker.tar")
 	t.Log("Path to test Docker archive:", dockerArchivePath)
 	testenv.DockerArchivePath = dockerArchivePath
