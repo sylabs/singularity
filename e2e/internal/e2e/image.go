@@ -128,17 +128,6 @@ func CopyOCIImage(t *testing.T, source, dest string, insecureSource, insecureDes
 		DockerRegistryUserAgent:     useragent.Value(),
 	}
 
-	// Use the auth config written out in dockerhub_auth.go - only if source/dest are not insecure.
-	// We don't want to inadvertently send out credentials over http (!)
-	u := CurrentUser(t)
-	configPath := filepath.Join(u.Dir, ".singularity", syfs.DockerConfFile)
-	if !insecureSource {
-		srcCtx.AuthFilePath = configPath
-	}
-	if !insecureDest {
-		dstCtx.AuthFilePath = configPath
-	}
-
 	srcRef, err := parseRef(source)
 	if err != nil {
 		t.Fatalf("failed to parse %s reference: %s", source, err)
@@ -146,6 +135,17 @@ func CopyOCIImage(t *testing.T, source, dest string, insecureSource, insecureDes
 	dstRef, err := parseRef(dest)
 	if err != nil {
 		t.Fatalf("failed to parse %s reference: %s", dest, err)
+	}
+
+	// Use the auth config written out in dockerhub_auth.go - only if source/dest are not insecure.
+	// We don't want to inadvertently send out credentials over http (!)
+	u := CurrentUser(t)
+	configPath := filepath.Join(u.Dir, ".singularity", syfs.DockerConfFile)
+	if !insecureSource || isLocalHost(srcRef.DockerReference().Name()) {
+		srcCtx.AuthFilePath = configPath
+	}
+	if !insecureDest || isLocalHost(dstRef.DockerReference().Name()) {
+		dstCtx.AuthFilePath = configPath
 	}
 
 	_, err = copy.Image(context.Background(), policyCtx, dstRef, srcRef, &copy.Options{
@@ -156,6 +156,18 @@ func CopyOCIImage(t *testing.T, source, dest string, insecureSource, insecureDes
 	if err != nil {
 		t.Fatalf("failed to copy %s to %s: %s", source, dest, err)
 	}
+}
+
+func isLocalHost(uriPath string) bool {
+	s1 := strings.SplitN(uriPath, "/", 2)[0]
+	s2 := strings.SplitN(s1, ":", 2)[0]
+
+	switch s2 {
+	case "localhost", "127.0.0.1":
+		return true
+	}
+
+	return false
 }
 
 var orasImageOnce sync.Once

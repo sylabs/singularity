@@ -7,23 +7,15 @@
 package registry
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
-	"github.com/containers/image/v5/copy"
-	"github.com/containers/image/v5/docker"
-	"github.com/containers/image/v5/signature"
-	"github.com/containers/image/v5/types"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
-	"github.com/sylabs/singularity/v4/pkg/syfs"
-	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
 type ctx struct {
@@ -288,11 +280,6 @@ func (c ctx) registryLoginRepeated(t *testing.T) {
 // flows that use containers/image APIs.
 // See https://github.com/sylabs/singularity/issues/2226
 func (c ctx) registryIssue2226(t *testing.T) {
-	testRegistry := c.env.TestRegistry
-	testRegistryURI := fmt.Sprintf("docker://%s", testRegistry)
-	privRepo := fmt.Sprintf("%s/private/e2eprivrepo", testRegistry)
-	privRepoURI := fmt.Sprintf("docker://%s", privRepo)
-
 	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, "", "issue2226", "")
 	t.Cleanup(func() {
 		if !t.Failed() {
@@ -309,100 +296,32 @@ func (c ctx) registryIssue2226(t *testing.T) {
 		t.Fatalf("could not change cwd to %q: %s", tmpdir, err)
 	}
 
-	areWeLoggedIn := false
-
-	privRepoLogin := func() {
-		c.env.RunSingularity(
-			t,
-			e2e.WithProfile(e2e.UserProfile),
-			e2e.WithCommand("registry login"),
-			e2e.WithArgs("-u", e2e.DefaultUsername, "-p", e2e.DefaultPassword, testRegistryURI),
-			e2e.ExpectExit(0),
-		)
-		areWeLoggedIn = true
-	}
-	privRepoLogout := func() {
-		c.env.RunSingularity(
-			t,
-			e2e.WithProfile(e2e.UserProfile),
-			e2e.WithCommand("registry logout"),
-			e2e.WithArgs(testRegistryURI),
-			e2e.ExpectExit(0),
-		)
-		areWeLoggedIn = false
-	}
-
-	privRepoLogin()
 	t.Cleanup(func() {
-		if areWeLoggedIn {
-			privRepoLogout()
+		err := e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile)
+		if (err != nil) && !errors.Is(err, e2e.ErrAlreadyLoggedOut) {
+			t.Fatalf("While trying to clean up: %v", err)
 		}
 	})
 
-	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
-	policyCtx, err := signature.NewPolicyContext(policy)
-	if err != nil {
-		t.Fatalf("failed to create new policy context: %v", err)
-	}
-
-	u := e2e.CurrentUser(t)
-	configPath := filepath.Join(u.Dir, ".singularity", syfs.DockerConfFile)
-	sourceCtx := &types.SystemContext{
-		OCIInsecureSkipTLSVerify:    false,
-		DockerInsecureSkipTLSVerify: types.NewOptionalBool(false),
-		DockerRegistryUserAgent:     useragent.Value(),
-		AuthFilePath:                configPath,
-	}
-	destCtx := &types.SystemContext{
-		OCIInsecureSkipTLSVerify:    true,
-		DockerInsecureSkipTLSVerify: types.NewOptionalBool(true),
-		DockerRegistryUserAgent:     useragent.Value(),
-		AuthFilePath:                configPath,
-	}
-
-	source := "docker://docker.io/alpine:latest"
-	dest := fmt.Sprintf("%s/my-alpine:latest", privRepoURI)
-	sourceRef, err := docker.ParseReference(strings.TrimPrefix(source, "docker:"))
-	if err != nil {
-		t.Fatalf("failed to parse %s reference: %s", source, err)
-	}
-	destRef, err := docker.ParseReference(strings.TrimPrefix(dest, "docker:"))
-	if err != nil {
-		t.Fatalf("failed to parse %s reference: %s", dest, err)
-	}
-
-	_, err = copy.Image(context.Background(), policyCtx, destRef, sourceRef, &copy.Options{
-		ReportWriter:   io.Discard,
-		SourceCtx:      sourceCtx,
-		DestinationCtx: destCtx,
-	})
-	if err != nil {
-		var e docker.ErrUnauthorizedForCredentials
-		if errors.As(err, &e) {
-			t.Fatalf("Authentication info written by 'registry login' did not work when trying to copy OCI image to private repo (%v)", e)
-		}
-		t.Fatalf("Failed to copy %s to %s: %s", source, dest, err)
-	}
-
-	privRepoLogout()
+	e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile)
 
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("noauth"),
 		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("pull --no-https"),
-		e2e.WithArgs(dest),
+		e2e.WithCommand("pull --disable-cache --no-https"),
+		e2e.WithArgs(c.env.TestRegistryPrivImage),
 		e2e.ExpectExit(255),
 	)
 
-	privRepoLogin()
+	e2e.PrivateRepoLogin(t, c.env, e2e.UserProfile)
 
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("auth"),
 		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("pull --no-https"),
-		e2e.WithArgs(dest),
+		e2e.WithCommand("pull --disable-cache --no-https"),
+		e2e.WithArgs(c.env.TestRegistryPrivImage),
 		e2e.ExpectExit(0),
 	)
 }
