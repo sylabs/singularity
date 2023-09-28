@@ -28,6 +28,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	obocisif "github.com/sylabs/singularity/v4/pkg/ocibundle/ocisif"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -36,8 +37,6 @@ import (
 
 // TODO - Replace when exported from SIF / oci-tools
 const SquashfsLayerMediaType types.MediaType = "application/vnd.sylabs.image.layer.v1.squashfs"
-
-const dockerRegistryAlias = "docker.io"
 
 type PullOptions struct {
 	TmpDir      string
@@ -61,7 +60,7 @@ func sysCtx(opts PullOptions) (*ocitypes.SystemContext, error) {
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify: opts.NoHTTPS,
 		DockerAuthConfig:         opts.OciAuth,
-		AuthFilePath:             ChooseAuthFile(opts.ReqAuthFile),
+		AuthFilePath:             ociauth.ChooseAuthFile(opts.ReqAuthFile),
 		DockerRegistryUserAgent:  useragent.Value(),
 		BigFilesTemporaryDir:     opts.TmpDir,
 		DockerDaemonHost:         opts.DockerHost,
@@ -283,5 +282,5 @@ func PushOCISIF(_ context.Context, sourceFile, destRef string, ociAuth *ocitypes
 		return fmt.Errorf("while obtaining image: %w", err)
 	}
 
-	return remote.Write(ir, image, AuthOptn(ociAuth, reqAuthFile, ir), remote.WithUserAgent(useragent.Value()))
+	return remote.Write(ir, image, ociauth.AuthOptn(ociAuth, reqAuthFile), remote.WithUserAgent(useragent.Value()))
 }

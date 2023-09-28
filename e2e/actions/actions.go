@@ -2707,81 +2707,78 @@ func (c actionTests) actionAuthTester(t *testing.T, withCustomAuthFile bool, pro
 		authFileArgs = []string{"--authfile", localAuthFileName}
 	}
 
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("docker before auth"),
-		e2e.WithProfile(profile),
-		e2e.WithCommand("exec"),
-		e2e.WithArgs(append(authFileArgs, "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true")...),
-		e2e.ExpectExit(255),
-	)
-
 	t.Cleanup(func() {
-		// No need to set up any cleanup when using the custom auth file,
-		// because it's stored in a tmpdir for which we already set up cleanup.
-		// And trying to do cleanup with a custom auth file if we're not already
-		// logged in would cause a test fail.
-		if !withCustomAuthFile {
-			e2e.PrivateRepoLogout(t, c.env, profile, localAuthFileName)
-		}
+		e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
 	})
-
-	e2e.PrivateRepoLogin(t, c.env, profile, localAuthFileName)
-
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("docker"),
-		e2e.WithProfile(profile),
-		e2e.WithCommand("exec"),
-		e2e.WithArgs(append(authFileArgs, "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true")...),
-		e2e.ExpectExit(0),
-	)
-
-	e2e.PrivateRepoLogout(t, c.env, profile, localAuthFileName)
-
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("noauth docker"),
-		e2e.WithProfile(profile),
-		e2e.WithCommand("exec"),
-		e2e.WithArgs(append(authFileArgs, "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true")...),
-		e2e.ExpectExit(255),
-	)
 
 	orasCustomPushTarget := fmt.Sprintf("oras://%s/authfile-pushtest-oras-alpine:latest", c.env.TestRegistryPrivPath)
 
-	e2e.PrivateRepoLogin(t, c.env, profile, localAuthFileName)
+	tests := []struct {
+		name          string
+		cmd           string
+		args          []string
+		whileLoggedIn bool
+		expectExit    int
+	}{
+		{
+			name:          "docker before auth",
+			cmd:           "exec",
+			args:          append(authFileArgs, "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true"),
+			whileLoggedIn: false,
+			expectExit:    255,
+		},
+		{
+			name:          "docker",
+			cmd:           "exec",
+			args:          append(authFileArgs, "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true"),
+			whileLoggedIn: true,
+			expectExit:    0,
+		},
+		{
+			name:          "noauth docker",
+			cmd:           "exec",
+			args:          append(authFileArgs, "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true"),
+			whileLoggedIn: false,
+			expectExit:    255,
+		},
+		{
+			name:          "oras push",
+			cmd:           "push",
+			args:          append(authFileArgs, c.env.ImagePath, orasCustomPushTarget),
+			whileLoggedIn: true,
+			expectExit:    0,
+		},
+		{
+			name:          "noauth oras",
+			cmd:           "exec",
+			args:          append(authFileArgs, "--disable-cache", "--no-https", orasCustomPushTarget, "true"),
+			whileLoggedIn: false,
+			expectExit:    255,
+		},
+		{
+			name:          "oras",
+			cmd:           "exec",
+			args:          append(authFileArgs, "--disable-cache", "--no-https", orasCustomPushTarget, "true"),
+			whileLoggedIn: true,
+			expectExit:    0,
+		},
+	}
 
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("oras push"),
-		e2e.WithProfile(profile),
-		e2e.WithCommand("push"),
-		e2e.WithArgs(append(authFileArgs, c.env.ImagePath, orasCustomPushTarget)...),
-		e2e.ExpectExit(0),
-	)
-
-	e2e.PrivateRepoLogout(t, c.env, profile, localAuthFileName)
-
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("noauth oras"),
-		e2e.WithProfile(profile),
-		e2e.WithCommand("exec"),
-		e2e.WithArgs(append(authFileArgs, "--disable-cache", "--no-https", orasCustomPushTarget, "true")...),
-		e2e.ExpectExit(255),
-	)
-
-	e2e.PrivateRepoLogin(t, c.env, profile, localAuthFileName)
-
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("oras"),
-		e2e.WithProfile(profile),
-		e2e.WithCommand("exec"),
-		e2e.WithArgs(append(authFileArgs, "--disable-cache", "--no-https", orasCustomPushTarget, "true")...),
-		e2e.ExpectExit(0),
-	)
+	for _, tt := range tests {
+		if tt.whileLoggedIn {
+			e2e.PrivateRepoLogin(t, c.env, profile, localAuthFileName)
+		} else {
+			e2e.PrivateRepoLogout(t, c.env, profile, localAuthFileName)
+		}
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(profile),
+			e2e.WithCommand(tt.cmd),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(tt.expectExit),
+		)
+	}
 }
 
 // E2ETests is the main func to trigger the test suite

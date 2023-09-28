@@ -20,9 +20,9 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/client/library"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/net"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oci"
-	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/shub"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/native"
 	ocilauncher "github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/oci"
@@ -393,7 +393,7 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 			DockerAuthConfig:         &dockerAuthConfig,
 			DockerDaemonHost:         dockerHost,
 			OSChoice:                 "linux",
-			AuthFilePath:             ocisif.ChooseAuthFile(reqAuthFile),
+			AuthFilePath:             ociauth.ChooseAuthFile(reqAuthFile),
 			DockerRegistryUserAgent:  useragent.Value(),
 		}
 		if noHTTPS {

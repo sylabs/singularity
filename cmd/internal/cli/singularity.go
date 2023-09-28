@@ -94,7 +94,7 @@ var (
 	arch     string
 	platform string
 
-	// Authentication file for writing/reading OCI registry credentials
+	// Optional user requested authentication file for writing/reading OCI registry credentials
 	reqAuthFile string
 )
 

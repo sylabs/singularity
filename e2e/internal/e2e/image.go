@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -137,14 +138,15 @@ func CopyOCIImage(t *testing.T, source, dest string, insecureSource, insecureDes
 		t.Fatalf("failed to parse %s reference: %s", dest, err)
 	}
 
-	// Use the auth config written out in dockerhub_auth.go - only if source/dest are not insecure.
-	// We don't want to inadvertently send out credentials over http (!)
+	// Use the auth config written out in dockerhub_auth.go - only if
+	// source/dest are not insecure, or are the localhost. We don't want to
+	// inadvertently send out credentials over http (!)
 	u := CurrentUser(t)
 	configPath := filepath.Join(u.Dir, ".singularity", syfs.DockerConfFile)
-	if !insecureSource || isLocalHost(srcRef.DockerReference().Name()) {
+	if !insecureSource || isLocalHost(source) {
 		srcCtx.AuthFilePath = configPath
 	}
-	if !insecureDest || isLocalHost(dstRef.DockerReference().Name()) {
+	if !insecureDest || isLocalHost(dest) {
 		dstCtx.AuthFilePath = configPath
 	}
 
@@ -158,11 +160,16 @@ func CopyOCIImage(t *testing.T, source, dest string, insecureSource, insecureDes
 	}
 }
 
-func isLocalHost(uriPath string) bool {
-	s1 := strings.SplitN(uriPath, "/", 2)[0]
-	s2 := strings.SplitN(s1, ":", 2)[0]
+// isLocalHost checks if the host component of a given URI points to the
+// localhost. Note that this function returns a boolean: a malformed URI is
+// considered a URI whose host does not point to localhost.
+func isLocalHost(uri string) bool {
+	u, err := url.Parse(uri)
+	if err != nil {
+		return false
+	}
 
-	switch s2 {
+	switch u.Hostname() {
 	case "localhost", "127.0.0.1":
 		return true
 	}

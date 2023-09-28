@@ -144,10 +144,12 @@ func (c ctx) registryLogin(t *testing.T) {
 			expectExit: 0,
 		},
 		{
-			name:       "logout KO",
+			// We've defined asking for logout when the user is already logged
+			// out as a NOOP - so this should succeed.
+			name:       "already logged-out",
 			command:    "registry logout",
 			args:       []string{badRegistry},
-			expectExit: 255,
+			expectExit: 0,
 		},
 		{
 			name:       "logout OK",
@@ -313,127 +315,107 @@ func (c ctx) registryAuthTester(t *testing.T, withCustomAuthFile bool) {
 		authFileArgs = []string{"--authfile", localAuthFileName}
 	}
 
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("docker pull before auth"),
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("pull"),
-		e2e.WithArgs(append(authFileArgs, "-F", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage)...),
-		e2e.ExpectExit(255),
-	)
-
 	t.Cleanup(func() {
-		// No need to set up any cleanup when using the custom auth file,
-		// because it's stored in a tmpdir for which we already set up cleanup.
-		// And trying to do cleanup with a custom auth file if we're not already
-		// logged in would cause a test fail.
-		if !withCustomAuthFile {
-			e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
-		}
+		e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
 	})
 
-	e2e.PrivateRepoLogin(t, c.env, e2e.UserProfile, localAuthFileName)
-
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("docker pull"),
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("pull"),
-		e2e.WithArgs(append(authFileArgs, "-F", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage)...),
-		e2e.ExpectExit(0),
-	)
-
-	e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
-
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("noauth docker pull"),
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("pull"),
-		e2e.WithArgs(append(authFileArgs, "-F", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage)...),
-		e2e.ExpectExit(255),
-	)
-
-	e2e.PrivateRepoLogin(t, c.env, e2e.UserProfile, localAuthFileName)
-
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("docker pull ocisif"),
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("pull"),
-		e2e.WithArgs(append(authFileArgs, "-F", "--oci", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage)...),
-		e2e.ExpectExit(0),
-	)
-
-	e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
-
 	orasCustomPushTarget := fmt.Sprintf("oras://%s/authfile-pushtest-oras-alpine:latest", c.env.TestRegistryPrivPath)
-
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("noauth oras push"),
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("push"),
-		e2e.WithArgs(append(authFileArgs, "my-alpine_latest.sif", orasCustomPushTarget)...),
-		e2e.ExpectExit(255),
-	)
-
-	e2e.PrivateRepoLogin(t, c.env, e2e.UserProfile, localAuthFileName)
-
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("oras push"),
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("push"),
-		e2e.WithArgs(append(authFileArgs, "my-alpine_latest.sif", orasCustomPushTarget)...),
-		e2e.ExpectExit(0),
-	)
-
-	e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
-
 	dockerCustomPushTarget := fmt.Sprintf("docker://%s/authfile-pushtest-ocisif-alpine:latest", c.env.TestRegistryPrivPath)
 
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("noauth docker push"),
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("push"),
-		e2e.WithArgs(append(authFileArgs, "my-alpine_latest.oci.sif", dockerCustomPushTarget)...),
-		e2e.ExpectExit(255),
-	)
+	tests := []struct {
+		name          string
+		cmd           string
+		args          []string
+		whileLoggedIn bool
+		expectExit    int
+	}{
+		{
+			name:          "docker pull before auth",
+			cmd:           "pull",
+			args:          append(authFileArgs, "-F", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage),
+			whileLoggedIn: false,
+			expectExit:    255,
+		},
+		{
+			name:          "docker pull",
+			cmd:           "pull",
+			args:          append(authFileArgs, "-F", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage),
+			whileLoggedIn: true,
+			expectExit:    0,
+		},
+		{
+			name:          "noauth docker pull",
+			cmd:           "pull",
+			args:          append(authFileArgs, "-F", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage),
+			whileLoggedIn: false,
+			expectExit:    255,
+		},
+		{
+			name:          "docker pull ocisif",
+			cmd:           "pull",
+			args:          append(authFileArgs, "-F", "--oci", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage),
+			whileLoggedIn: true,
+			expectExit:    0,
+		},
+		{
+			name:          "noauth oras push",
+			cmd:           "push",
+			args:          append(authFileArgs, "my-alpine_latest.sif", orasCustomPushTarget),
+			whileLoggedIn: false,
+			expectExit:    255,
+		},
+		{
+			name:          "oras push",
+			cmd:           "push",
+			args:          append(authFileArgs, "my-alpine_latest.sif", orasCustomPushTarget),
+			whileLoggedIn: true,
+			expectExit:    0,
+		},
+		{
+			name:          "noauth docker push",
+			cmd:           "push",
+			args:          append(authFileArgs, "my-alpine_latest.oci.sif", dockerCustomPushTarget),
+			whileLoggedIn: false,
+			expectExit:    255,
+		},
+		{
+			name:          "docker push",
+			cmd:           "push",
+			args:          append(authFileArgs, "my-alpine_latest.oci.sif", dockerCustomPushTarget),
+			whileLoggedIn: true,
+			expectExit:    0,
+		},
+		{
+			name:          "noauth oras pull",
+			cmd:           "pull",
+			args:          append(authFileArgs, "-F", "--disable-cache", "--no-https", orasCustomPushTarget),
+			whileLoggedIn: false,
+			expectExit:    255,
+		},
+		{
+			name:          "oras pull",
+			cmd:           "pull",
+			args:          append(authFileArgs, "-F", "--disable-cache", "--no-https", orasCustomPushTarget),
+			whileLoggedIn: true,
+			expectExit:    0,
+		},
+	}
 
-	e2e.PrivateRepoLogin(t, c.env, e2e.UserProfile, localAuthFileName)
-
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("docker push"),
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("push"),
-		e2e.WithArgs(append(authFileArgs, "my-alpine_latest.oci.sif", dockerCustomPushTarget)...),
-		e2e.ExpectExit(0),
-	)
-
-	e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
-
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("noauth oras pull"),
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("pull"),
-		e2e.WithArgs(append(authFileArgs, "-F", "--disable-cache", "--no-https", orasCustomPushTarget)...),
-		e2e.ExpectExit(255),
-	)
-
-	e2e.PrivateRepoLogin(t, c.env, e2e.UserProfile, localAuthFileName)
-
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("oras pull"),
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("pull"),
-		e2e.WithArgs(append(authFileArgs, "-F", "--disable-cache", "--no-https", orasCustomPushTarget)...),
-		e2e.ExpectExit(0),
-	)
+	for _, tt := range tests {
+		if tt.whileLoggedIn {
+			e2e.PrivateRepoLogin(t, c.env, e2e.UserProfile, localAuthFileName)
+		} else {
+			e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
+		}
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand(tt.cmd),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(tt.expectExit),
+		)
+	}
 }
 
 // E2ETests is the main func to trigger the test suite

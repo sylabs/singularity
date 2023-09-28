@@ -15,6 +15,7 @@ import (
 	gccrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
@@ -43,7 +44,7 @@ func sysCtx(opts PullOptions) (*ocitypes.SystemContext, error) {
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify: opts.NoHTTPS,
 		DockerAuthConfig:         opts.OciAuth,
-		AuthFilePath:             ocisif.ChooseAuthFile(opts.ReqAuthFile),
+		AuthFilePath:             ociauth.ChooseAuthFile(opts.ReqAuthFile),
 		DockerRegistryUserAgent:  useragent.Value(),
 		BigFilesTemporaryDir:     opts.TmpDir,
 		DockerDaemonHost:         opts.DockerHost,

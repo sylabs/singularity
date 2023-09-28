@@ -21,13 +21,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ocisif
+package ociauth
 
 import (
 	"context"
 	"fmt"
 	"net/http"
 	"os"
+	"sync"
 
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/docker/cli/cli/config"
@@ -42,65 +43,89 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
-func getCredentialsFromFile(reqAuthFile string, ref name.Reference) (*types.AuthConfig, error) {
+type singularityKeychain struct {
+	mu          sync.Mutex
+	reqAuthFile string
+}
+
+// Resolve implements Keychain.
+func (sk *singularityKeychain) Resolve(target authn.Resource) (authn.Authenticator, error) {
+	sk.mu.Lock()
+	defer sk.mu.Unlock()
+
+	cf, err := getCredsFile(ChooseAuthFile(sk.reqAuthFile))
+	if err != nil {
+		if sk.reqAuthFile != "" {
+			// User specifically requested use of an auth file but relevant
+			// credentials could not be read from that file; issue warning, but
+			// proceed with anonymous authentication.
+			sylog.Warningf("Unable to find matching credentials in specified file (%v); proceeding with anonymous authentication.", err)
+		}
+
+		// No credentials found; proceed anonymously.
+		return authn.Anonymous, nil
+	}
+
+	// See:
+	// https://github.com/google/ko/issues/90
+	// https://github.com/moby/moby/blob/fc01c2b481097a6057bec3cd1ab2d7b4488c50c4/registry/config.go#L397-L404
+	var cfg, empty types.AuthConfig
+	for _, key := range []string{
+		target.String(),
+		target.RegistryStr(),
+	} {
+		if key == name.DefaultRegistry {
+			key = authn.DefaultAuthKey
+		}
+
+		cfg, err = cf.GetAuthConfig(key)
+		if err != nil {
+			return nil, err
+		}
+		// cf.GetAuthConfig automatically sets the ServerAddress attribute. Since
+		// we don't make use of it, clear the value for a proper "is-empty" test.
+		// See: https://github.com/google/go-containerregistry/issues/1510
+		cfg.ServerAddress = ""
+		if cfg != empty {
+			break
+		}
+	}
+
+	if cfg == empty {
+		return authn.Anonymous, nil
+	}
+
+	return authn.FromConfig(authn.AuthConfig{
+		Username:      cfg.Username,
+		Password:      cfg.Password,
+		Auth:          cfg.Auth,
+		IdentityToken: cfg.IdentityToken,
+		RegistryToken: cfg.RegistryToken,
+	}), nil
+}
+
+func AuthOptn(ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) remote.Option {
+	// If explicit credentials in ociAuth were passed in, use those.
+	if ociAuth != nil {
+		auth := authn.FromConfig(authn.AuthConfig{
+			Username:      ociAuth.Username,
+			Password:      ociAuth.Password,
+			IdentityToken: ociAuth.IdentityToken,
+		})
+		return remote.WithAuth(auth)
+	}
+
+	return remote.WithAuthFromKeychain(&singularityKeychain{reqAuthFile: reqAuthFile})
+}
+
+func getCredsFile(reqAuthFile string) (*configfile.ConfigFile, error) {
 	authFileToUse := ChooseAuthFile(reqAuthFile)
 	cf, err := ConfigFileFromPath(authFileToUse)
 	if err != nil {
 		return nil, fmt.Errorf("while trying to read OCI credentials from file %q: %w", reqAuthFile, err)
 	}
 
-	refCtx := ref.Context()
-	registry := refCtx.Registry.Name()
-	// DockerHub requires special logic for historical reasons.
-	serverAddress := registry
-	if serverAddress == name.DefaultRegistry {
-		serverAddress = dockerRegistryAlias
-	}
-
-	creds := cf.GetCredentialsStore(serverAddress)
-	ac, err := creds.Get(serverAddress)
-	if err != nil {
-		return nil, fmt.Errorf("while trying to read OCI credentials for %q: %w", serverAddress, err)
-	}
-
-	return &ac, nil
-}
-
-func AuthOptn(ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string, ref name.Reference) remote.Option {
-	if ociAuth != nil {
-		// Explicit credentials given on command-line; use those.
-		optn := remote.WithAuth(authn.FromConfig(authn.AuthConfig{
-			Username:      ociAuth.Username,
-			Password:      ociAuth.Password,
-			IdentityToken: ociAuth.IdentityToken,
-		}))
-
-		return optn
-	}
-
-	ac, err := getCredentialsFromFile(ChooseAuthFile(reqAuthFile), ref)
-	if err == nil {
-		// Matching credentials found in auth file; use those.
-		optn := remote.WithAuth(authn.FromConfig(authn.AuthConfig{
-			Username: ac.Username,
-			Password: ac.Password,
-			Auth:     ac.Auth,
-		}))
-
-		return optn
-	}
-
-	if reqAuthFile != "" {
-		// User specifically requested use of an auth file but relevant
-		// credentials could not be read from that file; issue warning, but
-		// proceed with anonymous authentication.
-		sylog.Warningf("Unable to find matching credentials in specified file (%v); proceeding with anonymous authentication.", err)
-	}
-
-	// No credentials found; proceed anonymously.
-	optn := remote.WithAuth(authn.Anonymous)
-
-	return optn
+	return cf, nil
 }
 
 // ConfigFileFromPath creates a configfile.Configfile object (part of docker/cli

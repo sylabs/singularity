@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 )
@@ -40,7 +40,7 @@ func SetupDockerHubCredentials(t *testing.T) {
 func writeDockerHubCredentials(t *testing.T, dir, username, pass string) {
 	configPath := filepath.Join(dir, ".singularity", syfs.DockerConfFile)
 
-	if err := ocisif.LoginAndStore(dockerHub, username, pass, false, configPath); err != nil {
+	if err := ociauth.LoginAndStore(dockerHub, username, pass, false, configPath); err != nil {
 		t.Error(err)
 	}
 }

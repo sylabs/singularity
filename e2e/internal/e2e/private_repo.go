@@ -6,33 +6,10 @@
 package e2e
 
 import (
-	"errors"
-	"sync"
 	"testing"
 )
 
-var (
-	privateRepoLoginStatuses = make(map[string]bool)
-	privateRepoLoginLocks    sync.Map
-)
-
-var (
-	ErrAlreadyLoggedIn  = errors.New("attempted to login to private e2e test repo when already logged in")
-	ErrAlreadyLoggedOut = errors.New("attempted to logout from private e2e test repo when already logged out")
-)
-
-func PrivateRepoLogin(t *testing.T, env TestEnv, profile Profile, reqAuthFile string) error {
-	if reqAuthFile == "" {
-		result, _ := privateRepoLoginLocks.LoadOrStore(profile.String(), &sync.Mutex{})
-		//nolint:forcetypeassert
-		loginLock := result.(*sync.Mutex)
-		loginLock.Lock()
-		defer loginLock.Unlock()
-		if privateRepoLoginStatuses[profile.String()] {
-			return ErrAlreadyLoggedIn
-		}
-	}
-
+func PrivateRepoLogin(t *testing.T, env TestEnv, profile Profile, reqAuthFile string) {
 	args := []string{}
 	if reqAuthFile != "" {
 		args = append(args, "--authfile", reqAuthFile)
@@ -45,26 +22,9 @@ func PrivateRepoLogin(t *testing.T, env TestEnv, profile Profile, reqAuthFile st
 		WithArgs(args...),
 		ExpectExit(0),
 	)
-
-	if reqAuthFile == "" {
-		privateRepoLoginStatuses[profile.String()] = true
-	}
-
-	return nil
 }
 
-func PrivateRepoLogout(t *testing.T, env TestEnv, profile Profile, reqAuthFile string) error {
-	if reqAuthFile == "" {
-		result, _ := privateRepoLoginLocks.LoadOrStore(profile.String(), &sync.Mutex{})
-		//nolint:forcetypeassert
-		loginLock := result.(*sync.Mutex)
-		loginLock.Lock()
-		defer loginLock.Unlock()
-		if !privateRepoLoginStatuses[profile.String()] {
-			return ErrAlreadyLoggedOut
-		}
-	}
-
+func PrivateRepoLogout(t *testing.T, env TestEnv, profile Profile, reqAuthFile string) {
 	args := []string{}
 	if reqAuthFile != "" {
 		args = append(args, "--authfile", reqAuthFile)
@@ -77,10 +37,4 @@ func PrivateRepoLogout(t *testing.T, env TestEnv, profile Profile, reqAuthFile s
 		WithArgs(args...),
 		ExpectExit(0),
 	)
-
-	if reqAuthFile == "" {
-		privateRepoLoginStatuses[profile.String()] = false
-	}
-
-	return nil
 }

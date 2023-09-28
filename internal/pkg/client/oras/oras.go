@@ -21,7 +21,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
@@ -125,7 +125,7 @@ func UploadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAu
 		return err
 	}
 
-	return remote.Write(ir, im, ocisif.AuthOptn(ociAuth, reqAuthFile, ir), remote.WithUserAgent(useragent.Value()))
+	return remote.Write(ir, im, ociauth.AuthOptn(ociAuth, reqAuthFile), remote.WithUserAgent(useragent.Value()))
 }
 
 // ensureSIF checks for a SIF image at filepath and returns an error if it is not, or an error is encountered
@@ -218,7 +218,7 @@ func remoteImage(ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile str
 		return nil, fmt.Errorf("invalid reference %q: %w", ref, err)
 	}
 
-	im, err := remote.Image(ir, ocisif.AuthOptn(ociAuth, reqAuthFile, ir))
+	im, err := remote.Image(ir, ociauth.AuthOptn(ociAuth, reqAuthFile))
 	if err != nil {
 		return nil, err
 	}
