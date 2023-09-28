@@ -8,8 +8,8 @@
   <path>` flag, which causes the OCI credentials to be written to / removed from
   a custom file located at `<path>` instead of the default location
   (`$HOME/.singularity/docker-config.json`). The commands `pull`, `push`, `run`,
-  `exec`, and `shell` can now also be passed a `--authfile <path>` option, to
-  read OCI registry credentials from this custom file.
+  `exec`, `shell`, and `instance start` can now also be passed a `--authfile
+  <path>` option, to read OCI registry credentials from this custom file.
 
 ### Bug Fixes
 
