@@ -16,7 +16,7 @@ runtime engines (`internal/pkg/runtime/engine/*`).
 
 There are two flows that are implemented here.
 
-* Basic OCI runtime operations agains an existing bundle, which will be executed
+* Basic OCI runtime operations against an existing bundle, which will be executed
   via the `singularity oci` command group. These are not widely used by
   end-users of singularity.
 * A `Launcher`, that implements an `Exec` function that will be called by
