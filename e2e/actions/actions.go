@@ -2711,7 +2711,10 @@ func (c actionTests) actionAuthTester(t *testing.T, withCustomAuthFile bool, pro
 		e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
 	})
 
-	orasCustomPushTarget := fmt.Sprintf("oras://%s/authfile-pushtest-oras-alpine:latest", c.env.TestRegistryPrivPath)
+	orasCustomPushTarget := fmt.Sprintf(
+		"oras://%s/authfile-%s-oras-alpine:latest",
+		c.env.TestRegistryPrivPath, strings.ToLower(profile.String()),
+	)
 
 	tests := []struct {
 		name          string
@@ -2723,42 +2726,42 @@ func (c actionTests) actionAuthTester(t *testing.T, withCustomAuthFile bool, pro
 		{
 			name:          "docker before auth",
 			cmd:           "exec",
-			args:          append(authFileArgs, "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true"),
+			args:          []string{"--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true"},
 			whileLoggedIn: false,
 			expectExit:    255,
 		},
 		{
 			name:          "docker",
 			cmd:           "exec",
-			args:          append(authFileArgs, "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true"),
+			args:          []string{"--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true"},
 			whileLoggedIn: true,
 			expectExit:    0,
 		},
 		{
 			name:          "noauth docker",
 			cmd:           "exec",
-			args:          append(authFileArgs, "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true"),
+			args:          []string{"--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true"},
 			whileLoggedIn: false,
 			expectExit:    255,
 		},
 		{
 			name:          "oras push",
 			cmd:           "push",
-			args:          append(authFileArgs, c.env.ImagePath, orasCustomPushTarget),
+			args:          []string{c.env.ImagePath, orasCustomPushTarget},
 			whileLoggedIn: true,
 			expectExit:    0,
 		},
 		{
 			name:          "noauth oras",
 			cmd:           "exec",
-			args:          append(authFileArgs, "--disable-cache", "--no-https", orasCustomPushTarget, "true"),
+			args:          []string{"--disable-cache", "--no-https", orasCustomPushTarget, "true"},
 			whileLoggedIn: false,
 			expectExit:    255,
 		},
 		{
 			name:          "oras",
 			cmd:           "exec",
-			args:          append(authFileArgs, "--disable-cache", "--no-https", orasCustomPushTarget, "true"),
+			args:          []string{"--disable-cache", "--no-https", orasCustomPushTarget, "true"},
 			whileLoggedIn: true,
 			expectExit:    0,
 		},
@@ -2775,7 +2778,7 @@ func (c actionTests) actionAuthTester(t *testing.T, withCustomAuthFile bool, pro
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(profile),
 			e2e.WithCommand(tt.cmd),
-			e2e.WithArgs(tt.args...),
+			e2e.WithArgs(append(authFileArgs, tt.args...)...),
 			e2e.ExpectExit(tt.expectExit),
 		)
 	}
