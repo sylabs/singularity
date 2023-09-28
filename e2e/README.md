@@ -154,7 +154,7 @@ make -C builddir e2e-test
 ```
 
 To run all tests in a specific group, or groups, specify the group names (comma
-seperated) in an `E2E_GROUPS=` argument to the make target:
+separated) in an `E2E_GROUPS=` argument to the make target:
 
 ```sh
 # Only run tests in the VERSION and HELP groups
