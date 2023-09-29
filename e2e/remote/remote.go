@@ -567,33 +567,28 @@ func (c ctx) remoteUseExclusive(t *testing.T) {
 	)
 
 	// Move the user's and root's remote.yaml files aside for the purposes of this test
-	asideFiles := make(map[uint32]string)
+	origRelPath := filepath.Join(".singularity", "remote.yaml")
+	asideRelPath := fmt.Sprintf("%s.aside-remoteUseExclusive", origRelPath)
 	moveAsideRemoteYAML := func(t *testing.T) {
-		path := filepath.Join(e2e.CurrentUser(t).Dir, ".singularity")
-		origRemoteYAML := filepath.Join(path, "remote.yaml")
+		homeDir := e2e.CurrentUser(t).Dir
+		origRemoteYAML := filepath.Join(homeDir, origRelPath)
+		asideRemoteYAML := filepath.Join(homeDir, asideRelPath)
 		if !fs.IsReadable(origRemoteYAML) {
 			return
 		}
-		asideFile, err := os.CreateTemp(path, "remote.yaml-aside-")
-		if err != nil {
-			t.Fatalf("While trying to create temporary 'aside' file for remote.yaml: %v", err)
+		if err := os.Rename(origRemoteYAML, asideRemoteYAML); err != nil {
+			t.Fatalf("While trying to mv %q to %q: %v", origRemoteYAML, asideRemoteYAML, err)
 		}
-		asidePath := asideFile.Name()
-		asideFile.Close()
-		if err := os.Rename(origRemoteYAML, asidePath); err != nil {
-			t.Fatalf("While trying to mv %q to %q: %v", origRemoteYAML, asidePath, err)
-		}
-		asideFiles[e2e.CurrentUser(t).UID] = asidePath
 	}
 	restoreRemoteYAML := func(t *testing.T) {
-		asidePath, ok := asideFiles[e2e.CurrentUser(t).UID]
-		if !ok {
+		homeDir := e2e.CurrentUser(t).Dir
+		origRemoteYAML := filepath.Join(homeDir, origRelPath)
+		asideRemoteYAML := filepath.Join(homeDir, asideRelPath)
+		if !fs.IsReadable(asideRemoteYAML) {
 			return
 		}
-		path := filepath.Join(e2e.CurrentUser(t).Dir, ".singularity")
-		origRemoteYAML := filepath.Join(path, "remote.yaml")
-		if err := os.Rename(asidePath, origRemoteYAML); err != nil {
-			t.Fatalf("While trying to mv %q to %q: %v", asidePath, origRemoteYAML, err)
+		if err := os.Rename(asideRemoteYAML, origRemoteYAML); err != nil {
+			t.Fatalf("While trying to mv %q to %q: %v", asideRemoteYAML, origRemoteYAML, err)
 		}
 	}
 
