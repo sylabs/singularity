@@ -460,7 +460,7 @@ func persistentPreRun(cmd *cobra.Command, _ []string) error {
 	if isOCI && noOCI {
 		return fmt.Errorf("--oci and --no-oci cannot be used together")
 	}
-	isOCI = isOCI || config.OCIMode
+	isOCI = isOCI || (config != nil && config.OCIMode)
 	if noOCI {
 		isOCI = false
 	}
@@ -472,7 +472,7 @@ func persistentPreRun(cmd *cobra.Command, _ []string) error {
 
 	// Honor 'tmp sandbox' in singularity.conf, and allow negation with
 	// `--no-tmp-sandbox`.
-	canUseTmpSandbox = config.TmpSandboxAllowed
+	canUseTmpSandbox = (config != nil && config.TmpSandboxAllowed)
 	if noTmpSandbox {
 		canUseTmpSandbox = false
 	}
