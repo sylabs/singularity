@@ -10,10 +10,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 type ctx struct {
@@ -563,6 +565,45 @@ func (c ctx) remoteUseExclusive(t *testing.T) {
 		sylabsRemote = "SylabsCloud"
 		testRemote   = "e2e"
 	)
+
+	// Move the user's and root's remote.yaml files aside for the purposes of this test
+	asideFiles := make(map[uint32]string)
+	moveAsideRemoteYAML := func(t *testing.T) {
+		path := filepath.Join(e2e.CurrentUser(t).Dir, ".singularity")
+		origRemoteYAML := filepath.Join(path, "remote.yaml")
+		if !fs.IsReadable(origRemoteYAML) {
+			return
+		}
+		asideFile, err := os.CreateTemp(path, "remote.yaml-aside-")
+		if err != nil {
+			t.Fatalf("While trying to create temporary 'aside' file for remote.yaml: %v", err)
+		}
+		asidePath := asideFile.Name()
+		asideFile.Close()
+		if err := os.Rename(origRemoteYAML, asidePath); err != nil {
+			t.Fatalf("While trying to mv %q to %q: %v", origRemoteYAML, asidePath, err)
+		}
+		asideFiles[e2e.CurrentUser(t).UID] = asidePath
+	}
+	restoreRemoteYAML := func(t *testing.T) {
+		asidePath, ok := asideFiles[e2e.CurrentUser(t).UID]
+		if !ok {
+			return
+		}
+		path := filepath.Join(e2e.CurrentUser(t).Dir, ".singularity")
+		origRemoteYAML := filepath.Join(path, "remote.yaml")
+		if err := os.Rename(asidePath, origRemoteYAML); err != nil {
+			t.Fatalf("While trying to mv %q to %q: %v", asidePath, origRemoteYAML, err)
+		}
+	}
+
+	moveAsideRemoteYAML(t)
+	e2e.Privileged(moveAsideRemoteYAML)(t)
+
+	t.Cleanup(func() {
+		restoreRemoteYAML(t)
+		e2e.Privileged(restoreRemoteYAML)(t)
+	})
 
 	tests := []struct {
 		name       string
