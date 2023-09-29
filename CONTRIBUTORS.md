@@ -31,6 +31,7 @@ The following have contributed code and/or documentation to this repository.
 - Chris Burr <christopher.burr@cern.ch>
 - Chris Hollowell <hollowec@bnl.gov>
 - Christian Neyers <foss@neyers.org>
+- Daniel Dadap <ddadap@nvidia.com>
 - Daniele Tamino <daniele.tamino@gmail.com>
 - Dave Dykstra <dwd@fnal.gov>
 - Dave Godlove <d@sylabs.io>, <davidgodlove@gmail.com>
