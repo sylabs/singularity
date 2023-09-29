@@ -66,3 +66,47 @@ func RemoteLogout(usrConfigFile, name string) (err error) {
 
 	return nil
 }
+
+// RemoteLogout logs out from a keyserver or OCI/Docker registry.
+func OtherLogout(usrConfigFile, name string, reqAuthFile string) (err error) {
+	// opening config file
+	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, 0o600)
+	if err != nil {
+		return fmt.Errorf("while opening configuration file: %s", err)
+	}
+	defer file.Close()
+
+	// read file contents to config struct
+	c, err := remote.ReadFrom(file)
+	if err != nil {
+		return fmt.Errorf("while parsing configuration data: %s", err)
+	}
+
+	if err := syncSysConfig(c); err != nil {
+		return err
+	}
+
+	// services
+	if err := c.Logout(name, reqAuthFile); err != nil {
+		return fmt.Errorf("while verifying token: %v", err)
+	}
+
+	// truncating file before writing new contents and syncing to commit file
+	if err := file.Truncate(0); err != nil {
+		return fmt.Errorf("while truncating configuration file: %s", err)
+	}
+
+	if n, err := file.Seek(0, io.SeekStart); err != nil || n != 0 {
+		return fmt.Errorf("failed to reset %s cursor: %s", file.Name(), err)
+	}
+
+	if _, err := c.WriteTo(file); err != nil {
+		return fmt.Errorf("while writing configuration to file: %s", err)
+	}
+
+	if err := file.Sync(); err != nil {
+		return fmt.Errorf("failed to flush configuration file %s: %s", file.Name(), err)
+	}
+
+	return nil
+}

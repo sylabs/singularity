@@ -127,5 +127,5 @@ func pushOCI(ctx context.Context, sourceFile string, destRef *scslibrary.Ref, op
 	}
 
 	sylog.Debugf("Pushing to OCI registry at: %s", pushRef)
-	return ocisif.PushOCISIF(ctx, sourceFile, pushRef, lr.authConfig())
+	return ocisif.PushOCISIF(ctx, sourceFile, pushRef, lr.authConfig(), "")
 }

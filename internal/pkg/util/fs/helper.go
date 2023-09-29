@@ -345,7 +345,7 @@ func CopyFile(from, to string, mode os.FileMode) (err error) {
 
 	dstFile, err := os.OpenFile(to, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, mode)
 	if err != nil {
-		return fmt.Errorf("could not open %s: %v", to, err)
+		return fmt.Errorf("could not open %s: %w", to, err)
 	}
 	defer func() {
 		dstFile.Close()
@@ -356,13 +356,13 @@ func CopyFile(from, to string, mode os.FileMode) (err error) {
 
 	srcFile, err := os.Open(from)
 	if err != nil {
-		return fmt.Errorf("could not open file to copy: %v", err)
+		return fmt.Errorf("could not open file to copy: %w", err)
 	}
 	defer srcFile.Close()
 
 	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
-		return fmt.Errorf("could not copy file: %v", err)
+		return fmt.Errorf("could not copy file: %w", err)
 	}
 
 	return nil

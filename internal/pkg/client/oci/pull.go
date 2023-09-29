@@ -15,20 +15,21 @@ import (
 	gccrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
 type PullOptions struct {
-	TmpDir     string
-	OciAuth    *ocitypes.DockerAuthConfig
-	DockerHost string
-	NoHTTPS    bool
-	NoCleanUp  bool
-	OciSif     bool
-	Platform   gccrv1.Platform
+	TmpDir      string
+	OciAuth     *ocitypes.DockerAuthConfig
+	DockerHost  string
+	NoHTTPS     bool
+	NoCleanUp   bool
+	OciSif      bool
+	Platform    gccrv1.Platform
+	ReqAuthFile string
 }
 
 // sysCtx provides authentication and tempDir config for containers/image OCI operations
@@ -43,7 +44,7 @@ func sysCtx(opts PullOptions) (*ocitypes.SystemContext, error) {
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify: opts.NoHTTPS,
 		DockerAuthConfig:         opts.OciAuth,
-		AuthFilePath:             syfs.DockerConf(),
+		AuthFilePath:             ociauth.ChooseAuthFile(opts.ReqAuthFile),
 		DockerRegistryUserAgent:  useragent.Value(),
 		BigFilesTemporaryDir:     opts.TmpDir,
 		DockerDaemonHost:         opts.DockerHost,
@@ -70,12 +71,13 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, opts Pul
 	}
 	if opts.OciSif {
 		ocisifOpts := ocisif.PullOptions{
-			TmpDir:     opts.TmpDir,
-			OciAuth:    opts.OciAuth,
-			DockerHost: opts.DockerHost,
-			NoHTTPS:    opts.NoHTTPS,
-			NoCleanUp:  opts.NoCleanUp,
-			Platform:   opts.Platform,
+			TmpDir:      opts.TmpDir,
+			OciAuth:     opts.OciAuth,
+			DockerHost:  opts.DockerHost,
+			NoHTTPS:     opts.NoHTTPS,
+			NoCleanUp:   opts.NoCleanUp,
+			Platform:    opts.Platform,
+			ReqAuthFile: opts.ReqAuthFile,
 		}
 		return ocisif.PullOCISIF(ctx, imgCache, directTo, pullFrom, ocisifOpts)
 	}
@@ -93,12 +95,13 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom st
 	src := ""
 	if opts.OciSif {
 		ocisifOpts := ocisif.PullOptions{
-			TmpDir:     opts.TmpDir,
-			OciAuth:    opts.OciAuth,
-			DockerHost: opts.DockerHost,
-			NoHTTPS:    opts.NoHTTPS,
-			NoCleanUp:  opts.NoCleanUp,
-			Platform:   opts.Platform,
+			TmpDir:      opts.TmpDir,
+			OciAuth:     opts.OciAuth,
+			DockerHost:  opts.DockerHost,
+			NoHTTPS:     opts.NoHTTPS,
+			NoCleanUp:   opts.NoCleanUp,
+			Platform:    opts.Platform,
+			ReqAuthFile: opts.ReqAuthFile,
 		}
 		src, err = ocisif.PullOCISIF(ctx, imgCache, directTo, pullFrom, ocisifOpts)
 	} else {

@@ -93,6 +93,9 @@ var (
 	// Platform for retrieving images
 	arch     string
 	platform string
+
+	// Optional user requested authentication file for writing/reading OCI registry credentials
+	reqAuthFile string
 )
 
 //
@@ -317,6 +320,15 @@ var commonPlatformFlag = cmdline.Flag{
 	Name:         "platform",
 	Usage:        "platform (OS/Architecture/Variant) to use when pulling images",
 	EnvKeys:      []string{"PLATFORM"},
+}
+
+// --authfile
+var commonAuthFileFlag = cmdline.Flag{
+	ID:           "commonAuthFileFlag",
+	Value:        &reqAuthFile,
+	DefaultValue: "",
+	Name:         "authfile",
+	Usage:        "Docker-style authentication file to use for writing/reading OCI registry credentials",
 }
 
 func getCurrentUser() *user.User {

@@ -18,6 +18,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
+	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
@@ -82,6 +83,14 @@ func dockerDigest(ctx context.Context, sysCtx *types.SystemContext, imgCache *ca
 
 	d, err := docker.GetDigest(ctx, sysCtx, ref)
 	if err != nil {
+		// If a custom auth file has been requested (via sysCtx) and is outright
+		// missing, docker.GetDigest still returns a generic "access to the
+		// resource is denied" error. Therefore, check if a non-default auth
+		// file was requested and, if so, generate a more useful error.
+		if sysCtx.AuthFilePath != syfs.DockerConf() {
+			return d, fmt.Errorf("could not read necessary credentials from file %q", sysCtx.AuthFilePath)
+		}
+
 		// Not all registries send digest in HEAD. Fall back to digest from retrieved manifest.
 		sylog.Debugf("Couldn't get digest from HEAD against registry: %v", err)
 		return directDigest(ctx, sysCtx, imgCache, ref)

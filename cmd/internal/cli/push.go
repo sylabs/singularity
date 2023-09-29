@@ -76,6 +76,8 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&dockerHostFlag, PushCmd)
 		cmdManager.RegisterFlagForCmd(&dockerUsernameFlag, PushCmd)
 		cmdManager.RegisterFlagForCmd(&dockerPasswordFlag, PushCmd)
+
+		cmdManager.RegisterFlagForCmd(&commonAuthFileFlag, PushCmd)
 	})
 }
 
@@ -169,7 +171,7 @@ var PushCmd = &cobra.Command{
 				sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 			}
 
-			if err := oras.UploadImage(cmd.Context(), file, ref, ociAuth); err != nil {
+			if err := oras.UploadImage(cmd.Context(), file, ref, ociAuth, reqAuthFile); err != nil {
 				sylog.Fatalf("Unable to push image to oci registry: %v", err)
 			}
 			sylog.Infof("Upload complete")
@@ -182,7 +184,7 @@ var PushCmd = &cobra.Command{
 			if err != nil {
 				sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 			}
-			if err := oci.Push(cmd.Context(), file, ref, ociAuth); err != nil {
+			if err := oci.Push(cmd.Context(), file, ref, ociAuth, reqAuthFile); err != nil {
 				sylog.Fatalf("Unable to push image to oci registry: %v", err)
 			}
 			sylog.Infof("Upload complete")

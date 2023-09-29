@@ -28,9 +28,9 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	obocisif "github.com/sylabs/singularity/v4/pkg/ocibundle/ocisif"
-	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
@@ -39,12 +39,13 @@ import (
 const SquashfsLayerMediaType types.MediaType = "application/vnd.sylabs.image.layer.v1.squashfs"
 
 type PullOptions struct {
-	TmpDir     string
-	OciAuth    *ocitypes.DockerAuthConfig
-	DockerHost string
-	NoHTTPS    bool
-	NoCleanUp  bool
-	Platform   v1.Platform
+	TmpDir      string
+	OciAuth     *ocitypes.DockerAuthConfig
+	DockerHost  string
+	NoHTTPS     bool
+	NoCleanUp   bool
+	Platform    v1.Platform
+	ReqAuthFile string
 }
 
 // sysCtx provides authentication and tempDir config for containers/image OCI operations
@@ -59,7 +60,7 @@ func sysCtx(opts PullOptions) (*ocitypes.SystemContext, error) {
 	sysCtx := &ocitypes.SystemContext{
 		OCIInsecureSkipTLSVerify: opts.NoHTTPS,
 		DockerAuthConfig:         opts.OciAuth,
-		AuthFilePath:             syfs.DockerConf(),
+		AuthFilePath:             ociauth.ChooseAuthFile(opts.ReqAuthFile),
 		DockerRegistryUserAgent:  useragent.Value(),
 		BigFilesTemporaryDir:     opts.TmpDir,
 		DockerDaemonHost:         opts.DockerHost,
@@ -249,10 +250,10 @@ func convertLayoutToOciSif(layoutDir string, digest v1.Hash, imageDest, workDir 
 // PushOCISIF pushes a single image from sourceFile to the OCI registry destRef.
 //
 // FIXME: Use context for cancellation.
-func PushOCISIF(_ context.Context, sourceFile, destRef string, ociAuth *ocitypes.DockerAuthConfig) error {
+func PushOCISIF(_ context.Context, sourceFile, destRef string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) error {
 	destRef = strings.TrimPrefix(destRef, "docker://")
 	destRef = strings.TrimPrefix(destRef, "//")
-	ref, err := name.ParseReference(destRef)
+	ir, err := name.ParseReference(destRef)
 	if err != nil {
 		return fmt.Errorf("invalid reference %q: %w", destRef, err)
 	}
@@ -281,5 +282,5 @@ func PushOCISIF(_ context.Context, sourceFile, destRef string, ociAuth *ocitypes
 		return fmt.Errorf("while obtaining image: %w", err)
 	}
 
-	return remote.Write(ref, image, AuthOptn(ociAuth), remote.WithUserAgent(useragent.Value()))
+	return remote.Write(ir, image, ociauth.AuthOptn(ociAuth, reqAuthFile), remote.WithUserAgent(useragent.Value()))
 }

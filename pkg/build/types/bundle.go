@@ -79,6 +79,8 @@ type Options struct {
 	SandboxTarget bool
 	// Which Platform to use when retrieving images for the build
 	Platform ggcrv1.Platform
+	// Authentication file for registry credentials
+	ReqAuthFile string
 }
 
 // NewEncryptedBundle creates an Encrypted Bundle environment.

@@ -16,7 +16,7 @@ import (
 
 // Push pushes an image into an OCI registry, as an OCI image (not an ORAS artifact).
 // At present, only OCI-SIF images can be pushed in this manner.
-func Push(ctx context.Context, sourceFile string, destRef string, ociAuth *ocitypes.DockerAuthConfig) error {
+func Push(ctx context.Context, sourceFile string, destRef string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) error {
 	img, err := image.Init(sourceFile, false)
 	if err != nil {
 		return err
@@ -25,7 +25,7 @@ func Push(ctx context.Context, sourceFile string, destRef string, ociAuth *ocity
 
 	switch img.Type {
 	case image.OCISIF:
-		return ocisif.PushOCISIF(ctx, sourceFile, destRef, ociAuth)
+		return ocisif.PushOCISIF(ctx, sourceFile, destRef, ociAuth, reqAuthFile)
 	case image.SIF:
 		return fmt.Errorf("non OCI SIF images can only be pushed to OCI registries via oras://")
 	}

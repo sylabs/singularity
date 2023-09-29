@@ -7,13 +7,11 @@
 package e2e
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"github.com/docker/cli/cli/config/configfile"
-	"github.com/docker/cli/cli/config/types"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 )
@@ -42,19 +40,7 @@ func SetupDockerHubCredentials(t *testing.T) {
 func writeDockerHubCredentials(t *testing.T, dir, username, pass string) {
 	configPath := filepath.Join(dir, ".singularity", syfs.DockerConfFile)
 
-	cf := configfile.ConfigFile{
-		AuthConfigs: map[string]types.AuthConfig{
-			dockerHub: {
-				Username: username,
-				Password: pass,
-			},
-		},
-	}
-
-	configData, err := json.Marshal(cf)
-	if err != nil {
+	if err := ociauth.LoginAndStore(dockerHub, username, pass, false, configPath); err != nil {
 		t.Error(err)
 	}
-
-	os.WriteFile(configPath, configData, 0o600)
 }

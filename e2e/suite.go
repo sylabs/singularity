@@ -200,6 +200,9 @@ func Run(t *testing.T) {
 	// Provision local registry
 	testenv.TestRegistry = e2e.StartRegistry(t, testenv)
 	testenv.TestRegistryImage = fmt.Sprintf("docker://%s/my-alpine:latest", testenv.TestRegistry)
+	testenv.TestRegistryPrivURI = fmt.Sprintf("docker://%s", testenv.TestRegistry)
+	testenv.TestRegistryPrivPath = fmt.Sprintf("%s/private/e2eprivrepo", testenv.TestRegistry)
+	testenv.TestRegistryPrivImage = fmt.Sprintf("docker://%s/my-alpine:latest", testenv.TestRegistryPrivPath)
 
 	// Copy small test image (alpine:latest) into local registry from DockerHub
 	insecureSource := false
@@ -211,6 +214,11 @@ func Run(t *testing.T) {
 		}
 	}
 	e2e.CopyOCIImage(t, "docker://alpine:latest", testenv.TestRegistryImage, insecureSource, true)
+
+	// Copy same test image into private location in test registry
+	e2e.PrivateRepoLogin(t, testenv, e2e.UserProfile, "")
+	e2e.CopyOCIImage(t, "docker://alpine:latest", testenv.TestRegistryPrivImage, insecureSource, true)
+	e2e.PrivateRepoLogout(t, testenv, e2e.UserProfile, "")
 
 	// SIF base test path, built on demand by e2e.EnsureImage
 	imagePath := path.Join(name, "test.sif")
@@ -234,6 +242,9 @@ func Run(t *testing.T) {
 
 	// Local registry ORAS SIF image, built on demand by e2e.EnsureORASImage
 	testenv.OrasTestImage = fmt.Sprintf("oras://%s/oras_test_sif:latest", testenv.TestRegistry)
+
+	// Local private registry ORAS SIF image, built on demand by e2e.EnsureORASPrivImage
+	testenv.OrasTestPrivImage = fmt.Sprintf("oras://%s/oras-alpine:latest", testenv.TestRegistryPrivPath)
 
 	// Local registry ORAS OCI-SIF image, built on demand by e2e.EnsureORASOCISIF
 	testenv.OrasTestOCISIF = fmt.Sprintf("oras://%s/oras_test_oci-sif:latest", testenv.TestRegistry)

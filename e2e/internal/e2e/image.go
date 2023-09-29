@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -128,17 +129,6 @@ func CopyOCIImage(t *testing.T, source, dest string, insecureSource, insecureDes
 		DockerRegistryUserAgent:     useragent.Value(),
 	}
 
-	// Use the auth config written out in dockerhub_auth.go - only if source/dest are not insecure.
-	// We don't want to inadvertently send out credentials over http (!)
-	u := CurrentUser(t)
-	configPath := filepath.Join(u.Dir, ".singularity", syfs.DockerConfFile)
-	if !insecureSource {
-		srcCtx.AuthFilePath = configPath
-	}
-	if !insecureDest {
-		dstCtx.AuthFilePath = configPath
-	}
-
 	srcRef, err := parseRef(source)
 	if err != nil {
 		t.Fatalf("failed to parse %s reference: %s", source, err)
@@ -146,6 +136,18 @@ func CopyOCIImage(t *testing.T, source, dest string, insecureSource, insecureDes
 	dstRef, err := parseRef(dest)
 	if err != nil {
 		t.Fatalf("failed to parse %s reference: %s", dest, err)
+	}
+
+	// Use the auth config written out in dockerhub_auth.go - only if
+	// source/dest are not insecure, or are the localhost. We don't want to
+	// inadvertently send out credentials over http (!)
+	u := CurrentUser(t)
+	configPath := filepath.Join(u.Dir, ".singularity", syfs.DockerConfFile)
+	if !insecureSource || isLocalHost(source) {
+		srcCtx.AuthFilePath = configPath
+	}
+	if !insecureDest || isLocalHost(dest) {
+		dstCtx.AuthFilePath = configPath
 	}
 
 	_, err = copy.Image(context.Background(), policyCtx, dstRef, srcRef, &copy.Options{
@@ -156,6 +158,23 @@ func CopyOCIImage(t *testing.T, source, dest string, insecureSource, insecureDes
 	if err != nil {
 		t.Fatalf("failed to copy %s to %s: %s", source, dest, err)
 	}
+}
+
+// isLocalHost checks if the host component of a given URI points to the
+// localhost. Note that this function returns a boolean: a malformed URI is
+// considered a URI whose host does not point to localhost.
+func isLocalHost(uri string) bool {
+	u, err := url.Parse(uri)
+	if err != nil {
+		return false
+	}
+
+	switch u.Hostname() {
+	case "localhost", "127.0.0.1":
+		return true
+	}
+
+	return false
 }
 
 var orasImageOnce sync.Once
@@ -177,6 +196,29 @@ func EnsureORASImage(t *testing.T, env TestEnv) {
 		)
 		if t.Failed() {
 			t.Fatalf("failed to push ORAS image to local registry")
+		}
+	})
+}
+
+var orasPrivImageOnce sync.Once
+
+func EnsureORASPrivImage(t *testing.T, env TestEnv) {
+	EnsureImage(t, env)
+
+	ensureMutex.Lock()
+	defer ensureMutex.Unlock()
+
+	orasPrivImageOnce.Do(func() {
+		t.Logf("Pushing %s to %s", env.ImagePath, env.OrasTestPrivImage)
+		env.RunSingularity(
+			t,
+			WithProfile(UserProfile),
+			WithCommand("push"),
+			WithArgs(env.ImagePath, env.OrasTestPrivImage),
+			ExpectExit(0),
+		)
+		if t.Failed() {
+			t.Fatalf("failed to push ORAS image to local private registry")
 		}
 	})
 }
