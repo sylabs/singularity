@@ -10,10 +10,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 type ctx struct {
@@ -563,6 +565,40 @@ func (c ctx) remoteUseExclusive(t *testing.T) {
 		sylabsRemote = "SylabsCloud"
 		testRemote   = "e2e"
 	)
+
+	// Move the user's and root's remote.yaml files aside for the purposes of this test
+	origRelPath := filepath.Join(".singularity", "remote.yaml")
+	asideRelPath := fmt.Sprintf("%s.aside-remoteUseExclusive", origRelPath)
+	moveAsideRemoteYAML := func(t *testing.T) {
+		homeDir := e2e.CurrentUser(t).Dir
+		origRemoteYAML := filepath.Join(homeDir, origRelPath)
+		asideRemoteYAML := filepath.Join(homeDir, asideRelPath)
+		if !fs.IsReadable(origRemoteYAML) {
+			return
+		}
+		if err := os.Rename(origRemoteYAML, asideRemoteYAML); err != nil {
+			t.Fatalf("While trying to mv %q to %q: %v", origRemoteYAML, asideRemoteYAML, err)
+		}
+	}
+	restoreRemoteYAML := func(t *testing.T) {
+		homeDir := e2e.CurrentUser(t).Dir
+		origRemoteYAML := filepath.Join(homeDir, origRelPath)
+		asideRemoteYAML := filepath.Join(homeDir, asideRelPath)
+		if !fs.IsReadable(asideRemoteYAML) {
+			return
+		}
+		if err := os.Rename(asideRemoteYAML, origRemoteYAML); err != nil {
+			t.Fatalf("While trying to mv %q to %q: %v", asideRemoteYAML, origRemoteYAML, err)
+		}
+	}
+
+	moveAsideRemoteYAML(t)
+	e2e.Privileged(moveAsideRemoteYAML)(t)
+
+	t.Cleanup(func() {
+		restoreRemoteYAML(t)
+		e2e.Privileged(restoreRemoteYAML)(t)
+	})
 
 	tests := []struct {
 		name       string
