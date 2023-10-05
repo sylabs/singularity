@@ -278,11 +278,17 @@ func (c ctx) testDockerCredsPriority(t *testing.T) {
 
 	for _, p := range profiles {
 		t.Run(p.String(), func(t *testing.T) {
-			t.Run("default", func(t *testing.T) {
+			t.Run("def pull", func(t *testing.T) {
 				c.dockerCredsPriorityTester(t, false, p, "pull", "--disable-cache", "--no-https", "-F", c.env.TestRegistryPrivImage)
 			})
-			t.Run("custom", func(t *testing.T) {
+			t.Run("def exec", func(t *testing.T) {
+				c.dockerCredsPriorityTester(t, false, p, "exec", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true")
+			})
+			t.Run("cstm pull", func(t *testing.T) {
 				c.dockerCredsPriorityTester(t, true, p, "pull", "--disable-cache", "--no-https", "-F", c.env.TestRegistryPrivImage)
+			})
+			t.Run("cstm exec", func(t *testing.T) {
+				c.dockerCredsPriorityTester(t, true, p, "exec", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true")
 			})
 		})
 	}
