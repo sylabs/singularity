@@ -350,7 +350,7 @@ func (c ctx) dockerCredsPriorityTester(t *testing.T, withCustomAuthFile bool, pr
 	}
 
 	t.Cleanup(func() {
-		e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
+		e2e.PrivateRepoLogout(t, c.env, profile, localAuthFileName)
 		restoreVars()
 	})
 

@@ -2708,7 +2708,7 @@ func (c actionTests) actionAuthTester(t *testing.T, withCustomAuthFile bool, pro
 	}
 
 	t.Cleanup(func() {
-		e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
+		e2e.PrivateRepoLogout(t, c.env, profile, localAuthFileName)
 	})
 
 	orasCustomPushTarget := fmt.Sprintf(
