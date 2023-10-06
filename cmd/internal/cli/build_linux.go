@@ -147,6 +147,10 @@ func runBuild(cmd *cobra.Command, args []string) {
 		os.Setenv("SINGULARITY_WRITABLE_TMPFS", "1")
 	}
 
+	if cmd.Flags().Lookup("authfile").Changed && buildArgs.remote {
+		sylog.Fatalf("Custom authfile is not supported for remote build")
+	}
+
 	if buildArgs.arch != runtime.GOARCH && !buildArgs.remote {
 		sylog.Fatalf("Requested architecture (%s) does not match host (%s). Cannot build locally.", buildArgs.arch, runtime.GOARCH)
 	}
@@ -425,7 +429,8 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 				SandboxTarget:     sandboxTarget,
 				// Only perform a build with the host DefaultPlatform at present.
 				// TODO: rework --arch handling for remote builds so that local builds can specify --arch and --platform.
-				Platform: *dp,
+				Platform:    *dp,
+				ReqAuthFile: reqAuthFile,
 			},
 		})
 	if err != nil {
