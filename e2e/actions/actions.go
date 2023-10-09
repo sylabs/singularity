@@ -2659,6 +2659,8 @@ func (c actionTests) actionNoSetgroups(t *testing.T) {
 // actionAuth tests run/exec/shell flows that involve authenticated pulls from
 // OCI registries.
 func (c actionTests) actionAuth(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	profiles := []e2e.Profile{
 		e2e.UserProfile,
 		e2e.RootProfile,
@@ -2679,8 +2681,6 @@ func (c actionTests) actionAuth(t *testing.T) {
 }
 
 func (c actionTests) actionAuthTester(t *testing.T, withCustomAuthFile bool, profile e2e.Profile) {
-	e2e.EnsureImage(t, c.env)
-
 	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, c.env.TestDir, "action-auth", "")
 	t.Cleanup(func() {
 		if !t.Failed() {
@@ -2708,7 +2708,7 @@ func (c actionTests) actionAuthTester(t *testing.T, withCustomAuthFile bool, pro
 	}
 
 	t.Cleanup(func() {
-		e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
+		e2e.PrivateRepoLogout(t, c.env, profile, localAuthFileName)
 	})
 
 	orasCustomPushTarget := fmt.Sprintf(
