@@ -424,13 +424,13 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 				KeyServerOpts:     ko,
 				DockerAuthConfig:  authConf,
 				DockerDaemonHost:  dockerHost,
+				DockerAuthFile:    reqAuthFile,
 				EncryptionKeyInfo: keyInfo,
 				FixPerms:          buildArgs.fixPerms,
 				SandboxTarget:     sandboxTarget,
 				// Only perform a build with the host DefaultPlatform at present.
 				// TODO: rework --arch handling for remote builds so that local builds can specify --arch and --platform.
-				Platform:    *dp,
-				ReqAuthFile: reqAuthFile,
+				Platform: *dp,
 			},
 		})
 	if err != nil {
