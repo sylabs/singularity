@@ -798,6 +798,7 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 	}
 }
 
+//nolint:maintidx
 func (c actionTests) actionOciCdi(t *testing.T) {
 	// Grab the reference OCI archive we're going to use
 	e2e.EnsureOCISIF(t, c.env)
@@ -862,6 +863,7 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 		DeviceNodes []cdispecs.DeviceNode
 		Mounts      []cdispecs.Mount
 		Env         []string
+		reqCGroups2 bool
 	}{
 		{
 			name: "ValidMounts",
@@ -920,6 +922,7 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 					GID:         &wantGID,
 				},
 			},
+			reqCGroups2: true,
 		},
 	}
 
@@ -927,6 +930,10 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 		t.Run(profile.String(), func(t *testing.T) {
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
+					if tt.reqCGroups2 {
+						require.CgroupsV2Unified(t)
+					}
+
 					stws := setupIndivSubtestWorkspace(t, len(tt.Mounts))
 
 					// Populate the HostPath values we're going to feed into the CDI JSON template, based on the subtestWorkspace we just created
