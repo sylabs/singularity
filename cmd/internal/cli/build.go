@@ -352,6 +352,8 @@ func init() {
 
 		cmdManager.RegisterFlagForCmd(&commonOCIFlag, buildCmd)
 		cmdManager.RegisterFlagForCmd(&commonNoOCIFlag, buildCmd)
+
+		cmdManager.RegisterFlagForCmd(&commonAuthFileFlag, buildCmd)
 	})
 }
 

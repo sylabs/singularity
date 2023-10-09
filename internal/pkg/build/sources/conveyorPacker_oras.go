@@ -29,7 +29,7 @@ func (cp *OrasConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 	// full uri for name determination and output
 	fullRef := "oras:" + ref
 
-	imagePath, err := oras.Pull(ctx, b.Opts.ImgCache, fullRef, b.Opts.TmpDir, b.Opts.DockerAuthConfig, b.Opts.ReqAuthFile)
+	imagePath, err := oras.Pull(ctx, b.Opts.ImgCache, fullRef, b.Opts.TmpDir, b.Opts.DockerAuthConfig, b.Opts.DockerAuthFile)
 	if err != nil {
 		return fmt.Errorf("while fetching library image: %v", err)
 	}

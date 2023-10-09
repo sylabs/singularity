@@ -1941,6 +1941,118 @@ DEMO=demo=with===equals==signs
 	})
 }
 
+func (c imgBuildTests) buildWithAuth(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	profiles := []e2e.Profile{
+		e2e.FakerootProfile,
+		e2e.RootProfile,
+	}
+
+	for _, p := range profiles {
+		t.Run(p.String(), func(t *testing.T) {
+			t.Run("default", func(t *testing.T) {
+				c.buildWithAuthTester(t, false, p)
+			})
+			t.Run("custom", func(t *testing.T) {
+				c.buildWithAuthTester(t, true, p)
+			})
+		})
+	}
+}
+
+func (c imgBuildTests) buildWithAuthTester(t *testing.T, withCustomAuthFile bool, profile e2e.Profile) {
+	e2e.EnsureImage(t, c.env)
+
+	simpleDef := e2e.PrepareDefFile(e2e.DefFileDetails{
+		Bootstrap: "docker",
+		From:      strings.TrimPrefix(c.env.TestRegistryPrivImage, "docker://"),
+	})
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(simpleDef)
+		}
+	})
+
+	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, c.env.TestDir, "build-auth", "")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			tmpdirCleanup(t)
+		}
+	})
+
+	prevCwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("could not get current working directory: %s", err)
+	}
+	defer os.Chdir(prevCwd)
+	if err = os.Chdir(tmpdir); err != nil {
+		t.Fatalf("could not change cwd to %q: %s", tmpdir, err)
+	}
+
+	localAuthFileName := ""
+	if withCustomAuthFile {
+		localAuthFileName = "./my_local_authfile"
+	}
+
+	authFileArgs := []string{}
+	if withCustomAuthFile {
+		authFileArgs = []string{"--authfile", localAuthFileName}
+	}
+
+	t.Cleanup(func() {
+		e2e.PrivateRepoLogout(t, c.env, profile, localAuthFileName)
+	})
+
+	tests := []struct {
+		name          string
+		args          []string
+		whileLoggedIn bool
+		expectExit    int
+	}{
+		{
+			name:          "remote logged out",
+			args:          []string{"--remote", "-F", "--no-https", "--disable-cache", "./my_image_file.sif", simpleDef},
+			whileLoggedIn: false,
+			expectExit:    255,
+		},
+		{
+			name:          "remote logged in",
+			args:          []string{"--remote", "-F", "--no-https", "--disable-cache", "./my_image_file.sif", simpleDef},
+			whileLoggedIn: true,
+			expectExit:    255,
+		},
+		{
+			name:          "privimg logged out",
+			args:          []string{"-F", "--no-https", "--disable-cache", "./my_image_file.sif", simpleDef},
+			whileLoggedIn: false,
+			expectExit:    255,
+		},
+		{
+			name:          "privimg logged in",
+			args:          []string{"-F", "--no-https", "--disable-cache", "./my_image_file.sif", simpleDef},
+			whileLoggedIn: true,
+			expectExit:    0,
+		},
+	}
+
+	for _, tt := range tests {
+		if tt.whileLoggedIn {
+			e2e.PrivateRepoLogin(t, c.env, profile, localAuthFileName)
+		} else {
+			e2e.PrivateRepoLogout(t, c.env, profile, localAuthFileName)
+		}
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(profile),
+			e2e.WithCommand("build"),
+			e2e.WithArgs(append(authFileArgs, tt.args...)...),
+			e2e.ExpectExit(tt.expectExit),
+		)
+	}
+}
+
 // actionNoSetgoups checks that supplementary groups are visible, mapped to
 // nobody, in the container with --fakeroot --no-setgroups.
 func (c imgBuildTests) buildNoSetgroups(t *testing.T) {
@@ -1986,6 +2098,8 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		env: env,
 	}
 
+	np := testhelper.NoParallel
+
 	return testhelper.Tests{
 		"bad path":                        c.badPath,                      // try to build from a non existent path
 		"build encrypt with PEM file":     c.buildEncryptPemFile,          // build encrypted images with certificate
@@ -2004,6 +2118,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"customShebang":                   c.buildCustomShebang,           // build image with custom #! in %test and %runscript
 		"no-setgroups":                    c.buildNoSetgroups,             // build with --fakeroot --no-setgroups
 		"buildArgs":                       c.buildDefinitionWithBuildArgs, // builds from definition with build args (build arg file) support
+		"auth":                            np(c.buildWithAuth),            // build with custom auth file
 		"issue 3848":                      c.issue3848,                    // https://github.com/hpcng/singularity/issues/3848
 		"issue 4203":                      c.issue4203,                    // https://github.com/sylabs/singularity/issues/4203
 		"issue 4407":                      c.issue4407,                    // https://github.com/sylabs/singularity/issues/4407
