@@ -12,8 +12,10 @@ import (
 
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"golang.org/x/term"
 )
 
 // pull will pull an oras image into the cache if directTo="", or a specific file if directTo is set.
@@ -23,9 +25,14 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 		return "", fmt.Errorf("failed to get checksum for %s: %s", pullFrom, err)
 	}
 
+	var progressBar *progress.DownloadProgressBar
+	if term.IsTerminal(2) {
+		progressBar = &progress.DownloadProgressBar{}
+	}
+
 	if directTo != "" {
 		sylog.Infof("Downloading oras image")
-		if err := DownloadImage(ctx, directTo, pullFrom, ociAuth, reqAuthFile); err != nil {
+		if err := DownloadImage(ctx, directTo, pullFrom, ociAuth, reqAuthFile, progressBar); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 		imagePath = directTo
@@ -38,7 +45,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 		if !cacheEntry.Exists {
 			sylog.Infof("Downloading oras image")
 
-			if err := DownloadImage(ctx, cacheEntry.TmpPath, pullFrom, ociAuth, reqAuthFile); err != nil {
+			if err := DownloadImage(ctx, cacheEntry.TmpPath, pullFrom, ociAuth, reqAuthFile, progressBar); err != nil {
 				return "", fmt.Errorf("unable to Download Image: %v", err)
 			}
 			if cacheFileHash, err := ImageHash(cacheEntry.TmpPath); err != nil {

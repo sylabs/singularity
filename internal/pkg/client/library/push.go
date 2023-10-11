@@ -15,8 +15,8 @@ import (
 
 	scslibrary "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/sif/v2/pkg/sif"
-	"github.com/sylabs/singularity/v4/internal/pkg/client"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/term"
@@ -87,7 +87,7 @@ func pushNative(ctx context.Context, sourceFile string, destRef *scslibrary.Ref,
 
 	var progressBar scslibrary.UploadCallback
 	if term.IsTerminal(2) {
-		progressBar = &client.UploadProgressBar{}
+		progressBar = &progress.UploadProgressBar{}
 	}
 
 	defer func(t time.Time) {

@@ -18,8 +18,8 @@ import (
 	keyclient "github.com/sylabs/scs-key-client/client"
 	scslibrary "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
-	"github.com/sylabs/singularity/v4/internal/pkg/client"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/v4/internal/pkg/signature"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
@@ -57,7 +57,7 @@ type PullOptions struct {
 func pull(ctx context.Context, imgCache *cache.Handle, directTo string, imageRef *scslibrary.Ref, opts PullOptions) (string, error) {
 	c, err := scslibrary.NewClient(opts.LibraryConfig)
 	if err != nil {
-		return "", fmt.Errorf("unable to initialize client library: %v", err)
+		return "", fmt.Errorf("unable to initialize client library: %w", err)
 	}
 
 	ref := fmt.Sprintf("%s:%s", imageRef.Path, imageRef.Tags[0])
@@ -78,7 +78,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo string, imageRef
 
 	var progressBar scslibrary.ProgressBar
 	if term.IsTerminal(2) {
-		progressBar = &client.DownloadProgressBar{}
+		progressBar = &progress.DownloadProgressBar{}
 	}
 
 	if directTo != "" {

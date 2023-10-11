@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package client
+package progress
 
 import (
 	"context"
@@ -44,11 +44,11 @@ type readerFunc func(p []byte) (n int, err error)
 
 func (rf readerFunc) Read(p []byte) (n int, err error) { return rf(p) }
 
-// ProgressCallback is a function that provides progress information copying from a Reader to a Writer
-type ProgressCallback func(int64, io.Reader, io.Writer) error
+// Callback is a function that provides progress information copying from a Reader to a Writer
+type Callback func(int64, io.Reader, io.Writer) error
 
-// ProgressBarCallback returns a progress bar callback unless e.g. --quiet or lower loglevel is set
-func ProgressBarCallback(ctx context.Context) ProgressCallback {
+// BarCallback returns a progress bar callback unless e.g. --quiet or lower loglevel is set
+func BarCallback(ctx context.Context) Callback {
 	if sylog.GetLevel() <= -1 {
 		// If we don't need a bar visible, we just copy data through the callback func
 		return func(totalSize int64, r io.Reader, w io.Writer) error {

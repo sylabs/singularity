@@ -21,6 +21,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -30,8 +31,8 @@ import (
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
 //
 // FIXME: use context for cancellation.
-func DownloadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) error {
-	im, err := remoteImage(ref, ociAuth, reqAuthFile)
+func DownloadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string, dpb *progress.DownloadProgressBar) error {
+	im, err := remoteImage(ref, ociAuth, reqAuthFile, dpb)
 	if err != nil {
 		return err
 	}
@@ -84,6 +85,7 @@ func DownloadImage(_ context.Context, path, ref string, ociAuth *ocitypes.Docker
 		return err
 	}
 	defer outFile.Close()
+
 	_, err = io.Copy(outFile, blob)
 	if err != nil {
 		return err
@@ -147,7 +149,7 @@ func ensureSIF(filepath string) error {
 //
 // FIXME: use context for cancellation.
 func RefHash(_ context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) (v1.Hash, error) {
-	im, err := remoteImage(ref, ociAuth, reqAuthFile)
+	im, err := remoteImage(ref, ociAuth, reqAuthFile, nil)
 	if err != nil {
 		return v1.Hash{}, err
 	}
@@ -205,7 +207,7 @@ func sha256sum(r io.Reader) (result string, nBytes int64, err error) {
 }
 
 // remoteImage returns a v1.Image for the provided remote ref.
-func remoteImage(ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) (v1.Image, error) {
+func remoteImage(ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string, dpb *progress.DownloadProgressBar) (v1.Image, error) {
 	ref = strings.TrimPrefix(ref, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
@@ -218,7 +220,13 @@ func remoteImage(ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile str
 		return nil, fmt.Errorf("invalid reference %q: %w", ref, err)
 	}
 
-	im, err := remote.Image(ir, ociauth.AuthOptn(ociAuth, reqAuthFile))
+	remoteOpts := []remote.Option{ociauth.AuthOptn(ociAuth, reqAuthFile)}
+	if dpb != nil {
+		rt := progress.NewRoundTripper(nil, *dpb)
+		remoteOpts = append(remoteOpts, remote.WithTransport(rt))
+	}
+
+	im, err := remote.Image(ir, remoteOpts...)
 	if err != nil {
 		return nil, err
 	}
