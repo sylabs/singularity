@@ -145,6 +145,9 @@ func UploadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAu
 				}
 				pb.IncrBy(int(update.Complete - soFar))
 				soFar = update.Complete
+				if soFar >= total {
+					return
+				}
 			}
 		}()
 		remoteOpts = append(remoteOpts, remote.WithProgress(progChan))

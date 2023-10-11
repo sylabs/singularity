@@ -301,6 +301,9 @@ func PushOCISIF(_ context.Context, sourceFile, destRef string, ociAuth *ocitypes
 				}
 				pb.IncrBy(int(update.Complete - soFar))
 				soFar = update.Complete
+				if soFar >= total {
+					return
+				}
 			}
 		}()
 		remoteOpts = append(remoteOpts, remote.WithProgress(progChan))
