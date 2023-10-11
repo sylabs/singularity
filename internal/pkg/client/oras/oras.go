@@ -14,7 +14,6 @@ import (
 	"io"
 	"os"
 	"strings"
-	"sync"
 
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -131,19 +130,20 @@ func UploadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAu
 
 	remoteOpts := []remote.Option{ociauth.AuthOptn(ociAuth, reqAuthFile), remote.WithUserAgent(useragent.Value())}
 	if term.IsTerminal(2) {
-		upb := &progress.DownloadBar{}
+		pb := &progress.DownloadBar{}
 		progChan := make(chan ggcr.Update, 1)
-		var initPb sync.Once
 		go func() {
+			var total int64
 			soFar := int64(0)
 			for {
-				update := <-progChan
-				initPb.Do(func() {
-					upb.Init(update.Total)
-				})
 				// The following is concurrency-safe because this is the only
 				// goroutine that's going to be reading progChan updates.
-				upb.IncrBy(int(update.Complete - soFar))
+				update := <-progChan
+				if update.Total != total {
+					pb.Init(update.Total)
+					total = update.Total
+				}
+				pb.IncrBy(int(update.Complete - soFar))
 				soFar = update.Complete
 			}
 		}()
