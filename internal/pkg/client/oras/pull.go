@@ -25,14 +25,14 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 		return "", fmt.Errorf("failed to get checksum for %s: %s", pullFrom, err)
 	}
 
-	var progressBar *progress.DownloadProgressBar
+	var pb *progress.DownloadBar
 	if term.IsTerminal(2) {
-		progressBar = &progress.DownloadProgressBar{}
+		pb = &progress.DownloadBar{}
 	}
 
 	if directTo != "" {
 		sylog.Infof("Downloading oras image")
-		if err := DownloadImage(ctx, directTo, pullFrom, ociAuth, reqAuthFile, progressBar); err != nil {
+		if err := DownloadImage(ctx, directTo, pullFrom, ociAuth, reqAuthFile, pb); err != nil {
 			return "", fmt.Errorf("unable to Download Image: %v", err)
 		}
 		imagePath = directTo
@@ -45,7 +45,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 		if !cacheEntry.Exists {
 			sylog.Infof("Downloading oras image")
 
-			if err := DownloadImage(ctx, cacheEntry.TmpPath, pullFrom, ociAuth, reqAuthFile, progressBar); err != nil {
+			if err := DownloadImage(ctx, cacheEntry.TmpPath, pullFrom, ociAuth, reqAuthFile, pb); err != nil {
 				return "", fmt.Errorf("unable to Download Image: %v", err)
 			}
 			if cacheFileHash, err := ImageHash(cacheEntry.TmpPath); err != nil {

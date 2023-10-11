@@ -87,7 +87,7 @@ func pushNative(ctx context.Context, sourceFile string, destRef *scslibrary.Ref,
 
 	var progressBar scslibrary.UploadCallback
 	if term.IsTerminal(2) {
-		progressBar = &progress.UploadProgressBar{}
+		progressBar = &progress.UploadBar{}
 	}
 
 	defer func(t time.Time) {

@@ -78,7 +78,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo string, imageRef
 
 	var progressBar scslibrary.ProgressBar
 	if term.IsTerminal(2) {
-		progressBar = &progress.DownloadProgressBar{}
+		progressBar = &progress.DownloadBar{}
 	}
 
 	if directTo != "" {
