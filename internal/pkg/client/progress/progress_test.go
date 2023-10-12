@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package client
+package progress
 
 import (
 	"bytes"
@@ -34,7 +34,7 @@ func TestProgressCallback(t *testing.T) {
 		t.Run(fmt.Sprintf("level%d", l), func(t *testing.T) {
 			sylog.SetLevel(l, true)
 
-			cb := ProgressBarCallback(ctx)
+			cb := BarCallback(ctx)
 			src := bytes.NewBufferString(input)
 			dst := bytes.Buffer{}
 

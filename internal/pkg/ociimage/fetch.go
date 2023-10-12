@@ -23,6 +23,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"golang.org/x/term"
 )
 
 // FetchLayout will fetch the OCI image specified by imageRef to a containers/image OCI layout in layoutDir.
@@ -81,10 +82,14 @@ func FetchLayout(ctx context.Context, sysCtx *types.SystemContext, imgCache *cac
 		return nil, "", err
 	}
 
-	_, err = copy.Image(ctx, policyCtx, lr, srcRef, &copy.Options{
-		ReportWriter: io.Discard,
+	copyOpts := copy.Options{
+		ReportWriter: os.Stdout,
 		SourceCtx:    sysCtx,
-	})
+	}
+	if (sylog.GetLevel() <= -1) || !term.IsTerminal(2) {
+		copyOpts.ReportWriter = io.Discard
+	}
+	_, err = copy.Image(ctx, policyCtx, lr, srcRef, &copyOpts)
 	if err != nil {
 		return nil, "", err
 	}

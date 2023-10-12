@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
-	"github.com/sylabs/singularity/v4/internal/pkg/client"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
@@ -87,7 +87,7 @@ func DownloadImage(ctx context.Context, filePath string, netURL string) error {
 	}
 	defer out.Close()
 
-	pb := client.ProgressBarCallback(ctx)
+	pb := progress.BarCallback(ctx)
 
 	err = pb(res.ContentLength, res.Body, out)
 
