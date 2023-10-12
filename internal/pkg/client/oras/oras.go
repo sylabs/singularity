@@ -139,6 +139,10 @@ func UploadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAu
 				// The following is concurrency-safe because this is the only
 				// goroutine that's going to be reading progChan updates.
 				update := <-progChan
+				if update.Error != nil {
+					pb.Abort(false)
+					return
+				}
 				if update.Total != total {
 					pb.Init(update.Total)
 					total = update.Total
@@ -146,10 +150,10 @@ func UploadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAu
 				pb.IncrBy(int(update.Complete - soFar))
 				soFar = update.Complete
 				if soFar >= total {
-					break
+					pb.Wait()
+					return
 				}
 			}
-			pb.Wait()
 		}()
 		remoteOpts = append(remoteOpts, remote.WithProgress(progChan))
 	}

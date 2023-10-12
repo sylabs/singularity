@@ -295,6 +295,10 @@ func PushOCISIF(_ context.Context, sourceFile, destRef string, ociAuth *ocitypes
 				// The following is concurrency-safe because this is the only
 				// goroutine that's going to be reading progChan updates.
 				update := <-progChan
+				if update.Error != nil {
+					pb.Abort(false)
+					return
+				}
 				if update.Total != total {
 					pb.Init(update.Total)
 					total = update.Total
@@ -302,10 +306,10 @@ func PushOCISIF(_ context.Context, sourceFile, destRef string, ociAuth *ocitypes
 				pb.IncrBy(int(update.Complete - soFar))
 				soFar = update.Complete
 				if soFar >= total {
-					break
+					pb.Wait()
+					return
 				}
 			}
-			pb.Wait()
 		}()
 		remoteOpts = append(remoteOpts, remote.WithProgress(progChan))
 	}
