@@ -17,7 +17,7 @@ import (
 
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/google/go-containerregistry/pkg/name"
-	ggcr "github.com/google/go-containerregistry/pkg/v1"
+	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
@@ -131,7 +131,7 @@ func UploadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAu
 	remoteOpts := []remote.Option{ociauth.AuthOptn(ociAuth, reqAuthFile), remote.WithUserAgent(useragent.Value())}
 	if term.IsTerminal(2) {
 		pb := &progress.DownloadBar{}
-		progChan := make(chan ggcr.Update, 1)
+		progChan := make(chan ggcrv1.Update, 1)
 		go func() {
 			var total int64
 			soFar := int64(0)
@@ -146,9 +146,10 @@ func UploadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAu
 				pb.IncrBy(int(update.Complete - soFar))
 				soFar = update.Complete
 				if soFar >= total {
-					return
+					break
 				}
 			}
+			pb.Wait()
 		}()
 		remoteOpts = append(remoteOpts, remote.WithProgress(progChan))
 	}
@@ -174,24 +175,24 @@ func ensureSIF(filepath string) error {
 // RefHash returns the digest of the SIF layer of the OCI manifest for supplied ref
 //
 // FIXME: use context for cancellation.
-func RefHash(_ context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) (ggcr.Hash, error) {
+func RefHash(_ context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) (ggcrv1.Hash, error) {
 	im, err := remoteImage(ref, ociAuth, reqAuthFile, nil)
 	if err != nil {
-		return ggcr.Hash{}, err
+		return ggcrv1.Hash{}, err
 	}
 
 	// Check manifest to ensure we have a SIF as single layer
 	manifest, err := im.Manifest()
 	if err != nil {
-		return ggcr.Hash{}, err
+		return ggcrv1.Hash{}, err
 	}
 	if len(manifest.Layers) != 1 {
-		return ggcr.Hash{}, fmt.Errorf("ORAS SIF image should have a single layer, found %d", len(manifest.Layers))
+		return ggcrv1.Hash{}, fmt.Errorf("ORAS SIF image should have a single layer, found %d", len(manifest.Layers))
 	}
 	layer := manifest.Layers[0]
 	if layer.MediaType != SifLayerMediaTypeV1 &&
 		layer.MediaType != SifLayerMediaTypeProto {
-		return ggcr.Hash{}, fmt.Errorf("invalid layer mediatype: %s", layer.MediaType)
+		return ggcrv1.Hash{}, fmt.Errorf("invalid layer mediatype: %s", layer.MediaType)
 	}
 
 	hash := layer.Digest
@@ -199,21 +200,21 @@ func RefHash(_ context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig, 
 }
 
 // ImageDigest returns the digest for a file
-func ImageHash(filePath string) (ggcr.Hash, error) {
+func ImageHash(filePath string) (ggcrv1.Hash, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return ggcr.Hash{}, err
+		return ggcrv1.Hash{}, err
 	}
 	defer file.Close()
 
 	sha, _, err := sha256sum(file)
 	if err != nil {
-		return ggcr.Hash{}, err
+		return ggcrv1.Hash{}, err
 	}
 
-	hash, err := ggcr.NewHash(sha)
+	hash, err := ggcrv1.NewHash(sha)
 	if err != nil {
-		return ggcr.Hash{}, err
+		return ggcrv1.Hash{}, err
 	}
 
 	return hash, nil
@@ -233,7 +234,7 @@ func sha256sum(r io.Reader) (result string, nBytes int64, err error) {
 }
 
 // remoteImage returns a v1.Image for the provided remote ref.
-func remoteImage(ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string, pb *progress.DownloadBar) (ggcr.Image, error) {
+func remoteImage(ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string, pb *progress.DownloadBar) (ggcrv1.Image, error) {
 	ref = strings.TrimPrefix(ref, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 

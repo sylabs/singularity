@@ -83,11 +83,11 @@ func FetchLayout(ctx context.Context, sysCtx *types.SystemContext, imgCache *cac
 	}
 
 	copyOpts := copy.Options{
-		ReportWriter: io.Discard,
+		ReportWriter: os.Stdout,
 		SourceCtx:    sysCtx,
 	}
-	if term.IsTerminal(2) {
-		copyOpts.ReportWriter = os.Stdout
+	if (sylog.GetLevel() <= -1) || !term.IsTerminal(2) {
+		copyOpts.ReportWriter = io.Discard
 	}
 	_, err = copy.Image(ctx, policyCtx, lr, srcRef, &copyOpts)
 	if err != nil {

@@ -16,7 +16,7 @@ import (
 
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/google/go-containerregistry/pkg/name"
-	ggcr "github.com/google/go-containerregistry/pkg/v1"
+	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	ggcrmutate "github.com/google/go-containerregistry/pkg/v1/mutate"
@@ -46,7 +46,7 @@ type PullOptions struct {
 	DockerHost  string
 	NoHTTPS     bool
 	NoCleanUp   bool
-	Platform    ggcr.Platform
+	Platform    ggcrv1.Platform
 	ReqAuthFile string
 }
 
@@ -164,11 +164,11 @@ func createOciSif(ctx context.Context, sysCtx *ocitypes.SystemContext, imgCache 
 	if err != nil {
 		return err
 	}
-	digest, _, err := ggcr.SHA256(bytes.NewBuffer(rawManifest))
+	digest, _, err := ggcrv1.SHA256(bytes.NewBuffer(rawManifest))
 	if err != nil {
 		return err
 	}
-	mf, err := ggcr.ParseManifest(bytes.NewBuffer(rawManifest))
+	mf, err := ggcrv1.ParseManifest(bytes.NewBuffer(rawManifest))
 	if err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func createOciSif(ctx context.Context, sysCtx *ocitypes.SystemContext, imgCache 
 }
 
 // writeLayoutToOciSif will write an image from an OCI layout to an oci-sif without applying any mutations.
-func writeLayoutToOciSif(layoutDir string, digest ggcr.Hash, imageDest string) error {
+func writeLayoutToOciSif(layoutDir string, digest ggcrv1.Hash, imageDest string) error {
 	lp, err := layout.FromPath(layoutDir)
 	if err != nil {
 		return fmt.Errorf("while opening layout: %w", err)
@@ -202,7 +202,7 @@ func writeLayoutToOciSif(layoutDir string, digest ggcr.Hash, imageDest string) e
 
 // convertLayoutToOciSif will convert an image in an OCI layout to a squashed oci-sif with squashfs layer format.
 // The OCI layout can contain only a single image.
-func convertLayoutToOciSif(layoutDir string, digest ggcr.Hash, imageDest, workDir string) error {
+func convertLayoutToOciSif(layoutDir string, digest ggcrv1.Hash, imageDest, workDir string) error {
 	lp, err := layout.FromPath(layoutDir)
 	if err != nil {
 		return fmt.Errorf("while opening layout: %w", err)
@@ -231,8 +231,8 @@ func convertLayoutToOciSif(layoutDir string, digest ggcr.Hash, imageDest, workDi
 	}
 	img, err = mutate.Apply(img,
 		mutate.ReplaceLayers(squashfsLayer),
-		mutate.SetHistory(ggcr.History{
-			Created:    ggcr.Time{Time: time.Now()},
+		mutate.SetHistory(ggcrv1.History{
+			Created:    ggcrv1.Time{Time: time.Now()},
 			CreatedBy:  useragent.Value(),
 			Comment:    "oci-sif created from " + digest.Hex,
 			EmptyLayer: false,
@@ -287,7 +287,7 @@ func PushOCISIF(_ context.Context, sourceFile, destRef string, ociAuth *ocitypes
 	remoteOpts := []remote.Option{ociauth.AuthOptn(ociAuth, reqAuthFile), remote.WithUserAgent(useragent.Value())}
 	if term.IsTerminal(2) {
 		pb := &progress.DownloadBar{}
-		progChan := make(chan ggcr.Update, 1)
+		progChan := make(chan ggcrv1.Update, 1)
 		go func() {
 			var total int64
 			soFar := int64(0)
@@ -302,9 +302,10 @@ func PushOCISIF(_ context.Context, sourceFile, destRef string, ociAuth *ocitypes
 				pb.IncrBy(int(update.Complete - soFar))
 				soFar = update.Complete
 				if soFar >= total {
-					return
+					break
 				}
 			}
+			pb.Wait()
 		}()
 		remoteOpts = append(remoteOpts, remote.WithProgress(progChan))
 	}

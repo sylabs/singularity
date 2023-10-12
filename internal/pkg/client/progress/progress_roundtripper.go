@@ -6,6 +6,7 @@
 package progress
 
 import (
+	"io"
 	"net/http"
 )
 
@@ -29,15 +30,41 @@ func NewRoundTripper(inner http.RoundTripper, pb *DownloadBar) *RoundTripper {
 	return &rt
 }
 
+type rtReadCloser struct {
+	inner io.ReadCloser
+	pb    *DownloadBar
+}
+
+func (r *rtReadCloser) Read(p []byte) (int, error) {
+	return r.inner.Read(p)
+}
+
+func (r *rtReadCloser) Close() error {
+	err := r.inner.Close()
+	if err == nil {
+		r.pb.Wait()
+	} else {
+		r.pb.Abort(false)
+	}
+
+	return err
+}
+
 func (t *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	if t.pb != nil && req.Body != nil && req.ContentLength >= contentSizeThreshold {
 		t.pb.Init(req.ContentLength)
-		req.Body = t.pb.bar.ProxyReader(req.Body)
+		req.Body = &rtReadCloser{
+			inner: t.pb.bar.ProxyReader(req.Body),
+			pb:    t.pb,
+		}
 	}
 	resp, err := t.inner.RoundTrip(req)
 	if t.pb != nil && resp != nil && resp.Body != nil && resp.ContentLength >= contentSizeThreshold {
 		t.pb.Init(resp.ContentLength)
-		resp.Body = t.pb.bar.ProxyReader(resp.Body)
+		resp.Body = &rtReadCloser{
+			inner: t.pb.bar.ProxyReader(resp.Body),
+			pb:    t.pb,
+		}
 	}
 	return resp, err
 }
