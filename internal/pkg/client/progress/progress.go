@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package client
+package progress
 
 import (
 	"context"
@@ -44,11 +44,11 @@ type readerFunc func(p []byte) (n int, err error)
 
 func (rf readerFunc) Read(p []byte) (n int, err error) { return rf(p) }
 
-// ProgressCallback is a function that provides progress information copying from a Reader to a Writer
-type ProgressCallback func(int64, io.Reader, io.Writer) error
+// Callback is a function that provides progress information copying from a Reader to a Writer
+type Callback func(int64, io.Reader, io.Writer) error
 
-// ProgressBarCallback returns a progress bar callback unless e.g. --quiet or lower loglevel is set
-func ProgressBarCallback(ctx context.Context) ProgressCallback {
+// BarCallback returns a progress bar callback unless e.g. --quiet or lower loglevel is set
+func BarCallback(ctx context.Context) Callback {
 	if sylog.GetLevel() <= -1 {
 		// If we don't need a bar visible, we just copy data through the callback func
 		return func(totalSize int64, r io.Reader, w io.Writer) error {
@@ -100,13 +100,13 @@ func CopyWithContext(ctx context.Context, dst io.Writer, src io.Reader) (written
 	return written, err
 }
 
-// DownloadProgressBar is a progress bar that implements the scs-library-client ProgressBar interface.
-type DownloadProgressBar struct {
+// DownloadBar is a progress bar that implements the scs-library-client ProgressBar interface.
+type DownloadBar struct {
 	bar *mpb.Bar
 	p   *mpb.Progress
 }
 
-func (dpb *DownloadProgressBar) Init(contentLength int64) {
+func (dpb *DownloadBar) Init(contentLength int64) {
 	if sylog.GetLevel() <= -1 {
 		// we don't need a bar visible
 		return
@@ -114,39 +114,39 @@ func (dpb *DownloadProgressBar) Init(contentLength int64) {
 	dpb.p, dpb.bar = initProgressBar(contentLength)
 }
 
-func (dpb *DownloadProgressBar) ProxyReader(r io.Reader) io.ReadCloser {
+func (dpb *DownloadBar) ProxyReader(r io.Reader) io.ReadCloser {
 	return dpb.bar.ProxyReader(r)
 }
 
-func (dpb *DownloadProgressBar) IncrBy(n int) {
+func (dpb *DownloadBar) IncrBy(n int) {
 	if dpb.bar == nil {
 		return
 	}
 	dpb.bar.IncrBy(n)
 }
 
-func (dpb *DownloadProgressBar) Abort(drop bool) {
+func (dpb *DownloadBar) Abort(drop bool) {
 	if dpb.bar == nil {
 		return
 	}
 	dpb.bar.Abort(drop)
 }
 
-func (dpb *DownloadProgressBar) Wait() {
+func (dpb *DownloadBar) Wait() {
 	if dpb.bar == nil {
 		return
 	}
 	dpb.p.Wait()
 }
 
-// UploadProgressBar is a progress bar that implements the scs-library-client UploadCallback interface.
-type UploadProgressBar struct {
+// UploadBar is a progress bar that implements the scs-library-client UploadCallback interface.
+type UploadBar struct {
 	progress *mpb.Progress
 	bar      *mpb.Bar
 	r        io.Reader
 }
 
-func (upb *UploadProgressBar) InitUpload(totalSize int64, r io.Reader) {
+func (upb *UploadBar) InitUpload(totalSize int64, r io.Reader) {
 	if sylog.GetLevel() <= -1 {
 		// we don't need a bar visible
 		upb.r = r
@@ -156,18 +156,33 @@ func (upb *UploadProgressBar) InitUpload(totalSize int64, r io.Reader) {
 	upb.r = upb.bar.ProxyReader(r)
 }
 
-func (upb *UploadProgressBar) GetReader() io.Reader {
+func (upb *UploadBar) GetReader() io.Reader {
 	return upb.r
 }
 
-func (upb *UploadProgressBar) Terminate() {
+func (upb *UploadBar) Init(totalSize int64) {
+	if sylog.GetLevel() <= -1 {
+		// we don't need a bar visible
+		return
+	}
+	upb.progress, upb.bar = initProgressBar(totalSize)
+}
+
+func (upb *UploadBar) IncrBy(n int) {
+	if upb.bar == nil {
+		return
+	}
+	upb.bar.IncrBy(n)
+}
+
+func (upb *UploadBar) Terminate() {
 	if upb.bar == nil {
 		return
 	}
 	upb.bar.Abort(true)
 }
 
-func (upb *UploadProgressBar) Finish() {
+func (upb *UploadBar) Finish() {
 	if upb.progress == nil {
 		return
 	}

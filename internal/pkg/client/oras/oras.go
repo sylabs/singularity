@@ -17,21 +17,23 @@ import (
 
 	ocitypes "github.com/containers/image/v5/types"
 	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
+	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
+	"golang.org/x/term"
 )
 
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
 //
 // FIXME: use context for cancellation.
-func DownloadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig) error {
-	im, err := remoteImage(ref, ociAuth)
+func DownloadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig, pb *progress.DownloadBar) error {
+	im, err := remoteImage(ref, ociAuth, pb)
 	if err != nil {
 		return err
 	}
@@ -84,6 +86,7 @@ func DownloadImage(_ context.Context, path, ref string, ociAuth *ocitypes.Docker
 		return err
 	}
 	defer outFile.Close()
+
 	_, err = io.Copy(outFile, blob)
 	if err != nil {
 		return err
@@ -125,8 +128,37 @@ func UploadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAu
 		return err
 	}
 
-	authOptn := ocisif.AuthOptn(ociAuth)
-	return remote.Write(ir, im, authOptn, remote.WithUserAgent(useragent.Value()))
+	remoteOpts := []remote.Option{ocisif.AuthOptn(ociAuth), remote.WithUserAgent(useragent.Value())}
+	if term.IsTerminal(2) {
+		pb := &progress.DownloadBar{}
+		progChan := make(chan ggcrv1.Update, 1)
+		go func() {
+			var total int64
+			soFar := int64(0)
+			for {
+				// The following is concurrency-safe because this is the only
+				// goroutine that's going to be reading progChan updates.
+				update := <-progChan
+				if update.Error != nil {
+					pb.Abort(false)
+					return
+				}
+				if update.Total != total {
+					pb.Init(update.Total)
+					total = update.Total
+				}
+				pb.IncrBy(int(update.Complete - soFar))
+				soFar = update.Complete
+				if soFar >= total {
+					pb.Wait()
+					return
+				}
+			}
+		}()
+		remoteOpts = append(remoteOpts, remote.WithProgress(progChan))
+	}
+
+	return remote.Write(ir, im, remoteOpts...)
 }
 
 // ensureSIF checks for a SIF image at filepath and returns an error if it is not, or an error is encountered
@@ -147,24 +179,24 @@ func ensureSIF(filepath string) error {
 // RefHash returns the digest of the SIF layer of the OCI manifest for supplied ref
 //
 // FIXME: use context for cancellation.
-func RefHash(_ context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig) (v1.Hash, error) {
-	im, err := remoteImage(ref, ociAuth)
+func RefHash(_ context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig) (ggcrv1.Hash, error) {
+	im, err := remoteImage(ref, ociAuth, nil)
 	if err != nil {
-		return v1.Hash{}, err
+		return ggcrv1.Hash{}, err
 	}
 
 	// Check manifest to ensure we have a SIF as single layer
 	manifest, err := im.Manifest()
 	if err != nil {
-		return v1.Hash{}, err
+		return ggcrv1.Hash{}, err
 	}
 	if len(manifest.Layers) != 1 {
-		return v1.Hash{}, fmt.Errorf("ORAS SIF image should have a single layer, found %d", len(manifest.Layers))
+		return ggcrv1.Hash{}, fmt.Errorf("ORAS SIF image should have a single layer, found %d", len(manifest.Layers))
 	}
 	layer := manifest.Layers[0]
 	if layer.MediaType != SifLayerMediaTypeV1 &&
 		layer.MediaType != SifLayerMediaTypeProto {
-		return v1.Hash{}, fmt.Errorf("invalid layer mediatype: %s", layer.MediaType)
+		return ggcrv1.Hash{}, fmt.Errorf("invalid layer mediatype: %s", layer.MediaType)
 	}
 
 	hash := layer.Digest
@@ -172,21 +204,21 @@ func RefHash(_ context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig) 
 }
 
 // ImageDigest returns the digest for a file
-func ImageHash(filePath string) (v1.Hash, error) {
+func ImageHash(filePath string) (ggcrv1.Hash, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return v1.Hash{}, err
+		return ggcrv1.Hash{}, err
 	}
 	defer file.Close()
 
 	sha, _, err := sha256sum(file)
 	if err != nil {
-		return v1.Hash{}, err
+		return ggcrv1.Hash{}, err
 	}
 
-	hash, err := v1.NewHash(sha)
+	hash, err := ggcrv1.NewHash(sha)
 	if err != nil {
-		return v1.Hash{}, err
+		return ggcrv1.Hash{}, err
 	}
 
 	return hash, nil
@@ -206,7 +238,7 @@ func sha256sum(r io.Reader) (result string, nBytes int64, err error) {
 }
 
 // remoteImage returns a v1.Image for the provided remote ref.
-func remoteImage(ref string, ociAuth *ocitypes.DockerAuthConfig) (v1.Image, error) {
+func remoteImage(ref string, ociAuth *ocitypes.DockerAuthConfig, pb *progress.DownloadBar) (ggcrv1.Image, error) {
 	ref = strings.TrimPrefix(ref, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
@@ -218,8 +250,14 @@ func remoteImage(ref string, ociAuth *ocitypes.DockerAuthConfig) (v1.Image, erro
 	if err != nil {
 		return nil, fmt.Errorf("invalid reference %q: %w", ref, err)
 	}
-	authOptn := ocisif.AuthOptn(ociAuth)
-	im, err := remote.Image(ir, authOptn)
+
+	remoteOpts := []remote.Option{ocisif.AuthOptn(ociAuth)}
+	if pb != nil {
+		rt := progress.NewRoundTripper(nil, pb)
+		remoteOpts = append(remoteOpts, remote.WithTransport(rt))
+	}
+
+	im, err := remote.Image(ir, remoteOpts...)
 	if err != nil {
 		return nil, err
 	}
