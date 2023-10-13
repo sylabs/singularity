@@ -20,7 +20,9 @@ import (
 
 	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runtime-spec/specs-go"
-	sifuser "github.com/sylabs/sif/v2/pkg/user"
+
+	// TODO - backport (partial) our own fuse mount handling
+	sifuser "github.com/sylabs/sif/v2/pkg/user" //nolint:staticcheck
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/image/unpacker"

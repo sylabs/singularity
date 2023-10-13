@@ -10,7 +10,8 @@ import (
 	"fmt"
 	"os"
 
-	sifuser "github.com/sylabs/sif/v2/pkg/user"
+	// TODO - backport (partial) our own fuse mount handling
+	sifuser "github.com/sylabs/sif/v2/pkg/user" //nolint:staticcheck
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
