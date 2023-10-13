@@ -2,6 +2,11 @@
 
 ## Changes Since Last Release
 
+### New Features & Functionality
+
+- Added the upcoming NVIDIA driver library `libnvidia-gpucomp.so` to the
+  list of libraries to add to NVIDIA GPU-enabled containers.
+
 ### Bug Fixes
 
 - Don't bind `/var/tmp` on top of `/tmp` in the container, where `/var/tmp`
