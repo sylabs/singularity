@@ -7,6 +7,7 @@ package sources
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -125,11 +126,12 @@ func (c *YumConveyor) getRPMPath() (err error) {
 		return fmt.Errorf("rpm is not in path: %v", err)
 	}
 
+	// The _db_backednd macro is not defined on EL < 8.
 	rpmDBBackend, err := rpm.GetMacro("_db_backend")
-	if err != nil {
+	if err != nil && !errors.Is(err, rpm.ErrMacroUndefined) {
 		return err
 	}
-	if rpmDBBackend != "bdb" {
+	if rpmDBBackend != "" && rpmDBBackend != "bdb" {
 		sylog.Warningf("Your host system is using the %s RPM database backend.", rpmDBBackend)
 		sylog.Warningf("Bootstrapping of older distributions that use the bdb backend will fail.")
 	}
