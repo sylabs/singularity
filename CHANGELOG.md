@@ -10,6 +10,11 @@
   (`$HOME/.singularity/docker-config.json`). The commands `pull`, `push`, `run`,
   `exec`, `shell`, and `instance start` can now also be passed a `--authfile
   <path>` option, to read OCI registry credentials from this custom file.
+
+## 4.0.1 \[2023-10-13\]
+
+### New Features & Functionality
+
 - Added the upcoming NVIDIA driver library `libnvidia-gpucomp.so` to the
   list of libraries to add to NVIDIA GPU-enabled containers.
 
