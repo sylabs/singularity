@@ -9,6 +9,8 @@
 - Fix problem where credentials locally stored with `registry login` command
   were not usable in some execution flows. Run `registry login` again with
   latest version to ensure credentials are stored correctly.
+- Don't fail in a yum bootstrap on systems where the _db_backend rpm macros is
+  not defined (EL <8).
 
 ## 4.0.0 \[2023-09-19\]
 
