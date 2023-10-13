@@ -20,7 +20,7 @@ import (
 
 	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runtime-spec/specs-go"
-	sifuser "github.com/sylabs/sif/v2/pkg/user"
+	sifuser "github.com/sylabs/sif/v2/pkg/user" //nolint:staticcheck
 	"github.com/sylabs/singularity/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/internal/pkg/image/unpacker"
