@@ -488,8 +488,43 @@ func (c ctx) dockerCredsPriorityTester(t *testing.T, withCustomAuthFile bool, pr
 	}
 }
 
-// AUFS sanity tests
+// AUFS whiteout tests
 func (c ctx) testDockerAUFS(t *testing.T) {
+	tests := []struct {
+		name       string
+		profile    e2e.Profile
+		keepLayers bool
+	}{
+		// Native SIF - whiteouts applied to squashed image via umoci rootfs
+		// extraction at creation.
+		{
+			name:       "NativeSIF",
+			profile:    e2e.UserProfile,
+			keepLayers: false,
+		},
+		// Single layer OCI-SIF - whiteouts applied to squashed image via
+		// oci-tools.Squash at creation.
+		{
+			name:       "OCISIF",
+			profile:    e2e.OCIUserProfile,
+			keepLayers: false,
+		},
+		// Multi layer OCI-SIF - whiteouts translated AUFS -> OverlayFS by
+		// oci-tools at creation and applied at runtime.
+		{
+			name:       "OCISIFKeepLayers",
+			profile:    e2e.OCIUserProfile,
+			keepLayers: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c.aufsTest(t, tt.profile, tt.keepLayers)
+		})
+	}
+}
+
+func (c ctx) aufsTest(t *testing.T, profile e2e.Profile, keepLayers bool) {
 	imageDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "aufs-", "")
 	t.Cleanup(func() {
 		if !t.Failed() {
@@ -498,11 +533,17 @@ func (c ctx) testDockerAUFS(t *testing.T) {
 	})
 	imagePath := filepath.Join(imageDir, "container")
 
+	args := []string{}
+	if keepLayers {
+		args = []string{"--keep-layers"}
+	}
+	args = append(args, imagePath, "docker://sylabsio/aufs-sanity")
+
 	c.env.RunSingularity(
 		t,
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("build"),
-		e2e.WithArgs([]string{imagePath, "docker://sylabsio/aufs-sanity"}...),
+		e2e.WithProfile(profile),
+		e2e.WithCommand("pull"),
+		e2e.WithArgs(args...),
 		e2e.ExpectExit(0),
 	)
 
@@ -515,14 +556,22 @@ func (c ctx) testDockerAUFS(t *testing.T) {
 		argv []string
 		exit int
 	}{
+		// 'file2' should be present in three locations
 		{
 			name: "File 2",
 			argv: []string{imagePath, "ls", "/test/whiteout-dir/file2", "/test/whiteout-file/file2", "/test/normal-dir/file2"},
 			exit: 0,
 		},
+		// '/test/whiteout-file/file1' should be absent (via whiteout of the file)
 		{
-			name: "File1",
-			argv: []string{imagePath, "ls", "/test/whiteout-dir/file1", "/test/whiteout-file/file1"},
+			name: "WhiteoutFileFile1",
+			argv: []string{imagePath, "ls", "/test/whiteout-file/file1"},
+			exit: 1,
+		},
+		// '/test/whiteout-dir/file1' should be absent (via whiteout of the dir)
+		{
+			name: "WhiteoutDirFile1",
+			argv: []string{imagePath, "ls", "/test/whiteout-dir/file1"},
 			exit: 1,
 		},
 	}
@@ -531,7 +580,7 @@ func (c ctx) testDockerAUFS(t *testing.T) {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithProfile(profile),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit),

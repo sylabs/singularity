@@ -19,26 +19,42 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/passwdfile"
 )
 
-// RootFs is the default root path for OCI bundle
+// RootFs provides functions for accessing the rootfs directory
+// of a bundle. It is initialized with the path of the bundle.
 type RootFs string
 
-// Path returns the root path inside bundle
+// Path returns the rootfs path inside the bundle.
 func (r RootFs) Path() string {
 	return filepath.Join(string(r), "rootfs")
 }
 
-// Volumes is the parent volumes path
+// Volumes provides functions for accessing the volumes directory
+// of a bundle, which will hold any volume directories that are created. It is
+// initialized with the path of the bundle.
 type Volumes string
 
-// Path returns the volumes path inside bundle
+// Path returns the path of the volumes directory in the bundle, in which any
+// volumes should be created.
 func (v Volumes) Path() string {
 	return filepath.Join(string(v), "volumes")
 }
 
-// Config is the OCI configuration path
+// Layers provides functions for accessing the layers directory
+// of a bundle, which will hold any image layer directories that are created. It
+// is initialized with the path of the bundle.
+type Layers string
+
+// Path returns the path of the layers directory in the bundle, in which any
+// image layer directories should be created.
+func (l Layers) Path() string {
+	return filepath.Join(string(l), "layers")
+}
+
+// Config provides functions for accessing the runtime configuration (JSON) of a
+// bundle. It is initialized with the path of the bundle.
 type Config string
 
-// Path returns the OCI configuration path
+// Path returns the path to the runtime configuration (JSON) of a bundle.
 func (c Config) Path() string {
 	return filepath.Join(string(c), "config.json")
 }
@@ -63,6 +79,10 @@ func GenerateBundleConfig(bundlePath string, config *specs.Spec) (*generate.Gene
 	volumesDir := Volumes(bundlePath).Path()
 	if err := os.MkdirAll(volumesDir, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create %s: %s", volumesDir, err)
+	}
+	layersDir := Layers(bundlePath).Path()
+	if err := os.MkdirAll(layersDir, 0o755); err != nil {
+		return nil, fmt.Errorf("failed to create %s: %s", layersDir, err)
 	}
 	defer func() {
 		if err != nil {
@@ -92,6 +112,9 @@ func SaveBundleConfig(bundlePath string, g *generate.Generator) error {
 
 // DeleteBundle deletes bundle directory
 func DeleteBundle(bundlePath string) error {
+	if err := os.RemoveAll(Layers(bundlePath).Path()); err != nil {
+		return fmt.Errorf("failed to delete layers directory: %s", err)
+	}
 	if err := os.RemoveAll(Volumes(bundlePath).Path()); err != nil {
 		return fmt.Errorf("failed to delete volumes directory: %s", err)
 	}

@@ -47,6 +47,8 @@ type PullOptions struct {
 	// RequireOciSif should be set true to require that the image pulled is an OCI-SIF.
 	// If false a native SIF pull will be attempted, followed by an OCI(-SIF) pull on failure.
 	RequireOciSif bool
+	// When pulling an OCI-SIF, keep multiple layers if true, squash to single layer otherwise.
+	KeepLayers bool
 	// Platform specifies the platform of the image to retrieve.
 	Platform gccrv1.Platform
 }
@@ -146,9 +148,10 @@ func pullOCI(ctx context.Context, imgCache *cache.Handle, directTo string, pullF
 
 	authConf := lr.authConfig()
 	ocisifOpts := ocisif.PullOptions{
-		TmpDir:   opts.TmpDir,
-		OciAuth:  authConf,
-		Platform: opts.Platform,
+		TmpDir:     opts.TmpDir,
+		OciAuth:    authConf,
+		Platform:   opts.Platform,
+		KeepLayers: opts.KeepLayers,
 	}
 	return ocisif.PullOCISIF(ctx, imgCache, directTo, pullRef, ocisifOpts)
 }

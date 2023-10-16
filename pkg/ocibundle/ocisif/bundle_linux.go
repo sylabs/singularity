@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -18,7 +19,9 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	ocisif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
+	ociclient "github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/overlay"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/squashfs"
 	"github.com/sylabs/singularity/v4/pkg/ocibundle"
 	"github.com/sylabs/singularity/v4/pkg/ocibundle/tools"
@@ -47,8 +50,12 @@ type Bundle struct {
 	imageSpec *imgspecv1.Image
 	// bundlePath is the location where the OCI bundle will be created.
 	bundlePath string
+	// paths to squashfs layers that have been mounted
+	mountedLayers []string
+	// assembled rootfs, from overlay mount of mountedLayers
+	rootfsOverlaySet overlay.Set
 	// Has the image been mounted onto the bundle rootfs?
-	imageMounted bool
+	rootfsMounted bool
 	// Generic bundle properties
 	ocibundle.Bundle
 }
@@ -94,9 +101,17 @@ func New(opts ...Option) (ocibundle.Bundle, error) {
 func (b *Bundle) Delete(ctx context.Context) error {
 	sylog.Debugf("Deleting oci-sif bundle at %s", b.bundlePath)
 
-	if b.imageMounted {
-		sylog.Debugf("Unmounting squashfs rootfs image from %q", tools.RootFs(b.bundlePath).Path())
-		if err := squashfs.FUSEUnmount(ctx, tools.RootFs(b.bundlePath).Path()); err != nil {
+	if b.rootfsMounted {
+		rootfsPath := tools.RootFs(b.bundlePath).Path()
+		sylog.Debugf("Unmounting rootfs overlay from %q", rootfsPath)
+		if err := b.rootfsOverlaySet.Unmount(ctx, rootfsPath); err != nil {
+			return err
+		}
+	}
+
+	for _, layerPath := range b.mountedLayers {
+		sylog.Debugf("Unmounting layer fs from %q", layerPath)
+		if err := squashfs.FUSEUnmount(ctx, layerPath); err != nil {
 			return err
 		}
 	}
@@ -131,26 +146,9 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	}
 	imageDigest := idxManifest.Manifests[0].Digest
 
-	// Fetch the image manifest for the single image in the oci-sif.
 	img, err := ix.Image(imageDigest)
 	if err != nil {
 		return fmt.Errorf("while initializing image: %w", err)
-	}
-	imageManifest, err := img.Manifest()
-	if err != nil {
-		return fmt.Errorf("while obtaining manifest: %s", err)
-	}
-
-	// Verify that the image has a single squashfs layer.
-	numLayers := len(imageManifest.Layers)
-	if numLayers > 1 {
-		return fmt.Errorf("only single-layer oci-sif images are supported - this image has %d layers", numLayers)
-	}
-	rootfsLayer := imageManifest.Layers[0]
-	// TODO - reference the mediatype as a const imported from somewhere?
-	if rootfsLayer.MediaType != "application/vnd.sylabs.image.layer.v1.squashfs" {
-		tools.DeleteBundle(b.bundlePath)
-		return fmt.Errorf("unsupported layer mediaType %q", rootfsLayer.MediaType)
 	}
 
 	// The rest of Singularity's OCI handling uses the opencontainers packages, not go-containerregistry.
@@ -176,13 +174,53 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 
 	// Initial image mount onto rootfs dir
 	sylog.Debugf("Mounting squashfs rootfs from %q to %q", imgFile, tools.RootFs(b.bundlePath).Path())
-	if err := mount(ctx, imgFile, tools.RootFs(b.bundlePath).Path(), rootfsLayer.Digest); err != nil {
-		b.Delete(ctx)
+	if err := b.mountRootfs(ctx, img, imgFile); err != nil {
+		if errCleanup := b.Delete(ctx); errCleanup != nil {
+			sylog.Errorf("While removing temporary bundle: %v", errCleanup)
+		}
 		return UnavailableError{Underlying: fmt.Errorf("while mounting squashfs layer: %w", err)}
 	}
-	b.imageMounted = true
 
 	return b.writeConfig(g)
+}
+
+func (b *Bundle) mountRootfs(ctx context.Context, img v1.Image, imgFile string) error {
+	imageManifest, err := img.Manifest()
+	if err != nil {
+		return fmt.Errorf("while obtaining manifest: %s", err)
+	}
+
+	for i, l := range imageManifest.Layers {
+		if l.MediaType != ociclient.SquashfsLayerMediaType {
+			return fmt.Errorf("unsupported layer mediaType %q", l.MediaType)
+		}
+		layerPath := filepath.Join(tools.Layers(b.bundlePath).Path(), strconv.Itoa(i))
+		sylog.Debugf("Mounting layer %d fs from %q to %q", i, imgFile, layerPath)
+		if err := os.Mkdir(layerPath, 0o755); err != nil {
+			return fmt.Errorf("while creating layer directory: %w", err)
+		}
+		if err := mount(ctx, imgFile, layerPath, l.Digest); err != nil {
+			return UnavailableError{Underlying: fmt.Errorf("while mounting squashfs layer: %w", err)}
+		}
+		b.mountedLayers = append(b.mountedLayers, layerPath)
+	}
+
+	for i := len(b.mountedLayers) - 1; i >= 0; i-- {
+		item, err := overlay.NewItemFromString(b.mountedLayers[i])
+		if err != nil {
+			return err
+		}
+		item.Readonly = true
+		item.SetParentDir(b.bundlePath)
+		b.rootfsOverlaySet.ReadonlyOverlays = append(b.rootfsOverlaySet.ReadonlyOverlays, item)
+	}
+
+	rootFsDir := tools.RootFs(b.bundlePath).Path()
+	if err := b.rootfsOverlaySet.Mount(ctx, rootFsDir); err != nil {
+		return fmt.Errorf("while mounting rootfs overlay: %w", err)
+	}
+	b.rootfsMounted = true
+	return nil
 }
 
 // Update will update the OCI config for the OCI bundle, so that it is ready for execution.
