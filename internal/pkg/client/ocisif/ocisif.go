@@ -48,6 +48,7 @@ type PullOptions struct {
 	NoCleanUp   bool
 	Platform    ggcrv1.Platform
 	ReqAuthFile string
+	KeepLayers  bool
 }
 
 // sysCtx provides authentication and tempDir config for containers/image OCI operations
@@ -173,15 +174,32 @@ func createOciSif(ctx context.Context, sysCtx *ocitypes.SystemContext, imgCache 
 		return err
 	}
 
-	// If the image has a single squashfs layer, then we can write it directly to oci-sif.
+	// If the image has a single squashfs layer, then we can always write it
+	// directly to OCI-SIF.
 	if (len(mf.Layers)) == 1 && (mf.Layers[0].MediaType == SquashfsLayerMediaType) {
 		sylog.Infof("Writing OCI-SIF image")
 		return writeLayoutToOciSif(layoutDir, digest, imageDest)
 	}
 
-	// Otherwise, squashing and converting layers to squashfs is required.
+	// If the image multiple layers, all are squashfs, and KeepLayers is in effect,
+	// then we can write it directly to OCI-SIF.
+	if opts.KeepLayers {
+		allSquash := true
+		for _, l := range mf.Layers {
+			if l.MediaType != SquashfsLayerMediaType {
+				allSquash = false
+				break
+			}
+		}
+		if allSquash {
+			sylog.Infof("Writing OCI-SIF image")
+			return writeLayoutToOciSif(layoutDir, digest, imageDest)
+		}
+	}
+
+	// Otherwise, conversion and optional squashing are required.
 	sylog.Infof("Converting OCI image to OCI-SIF format")
-	return convertLayoutToOciSif(layoutDir, digest, imageDest, workDir)
+	return convertLayoutToOciSif(layoutDir, digest, imageDest, workDir, opts.KeepLayers)
 }
 
 // writeLayoutToOciSif will write an image from an OCI layout to an oci-sif without applying any mutations.
@@ -200,9 +218,9 @@ func writeLayoutToOciSif(layoutDir string, digest ggcrv1.Hash, imageDest string)
 	return ocisif.Write(imageDest, ii)
 }
 
-// convertLayoutToOciSif will convert an image in an OCI layout to a squashed oci-sif with squashfs layer format.
+// convertLayoutToOciSif will convert an image in an OCI layout to an oci-sif with squashfs layer format.
 // The OCI layout can contain only a single image.
-func convertLayoutToOciSif(layoutDir string, digest ggcrv1.Hash, imageDest, workDir string) error {
+func convertLayoutToOciSif(layoutDir string, digest ggcrv1.Hash, imageDest, workDir string, keepLayers bool) error {
 	lp, err := layout.FromPath(layoutDir)
 	if err != nil {
 		return fmt.Errorf("while opening layout: %w", err)
@@ -212,41 +230,56 @@ func convertLayoutToOciSif(layoutDir string, digest ggcrv1.Hash, imageDest, work
 		return fmt.Errorf("while retrieving image: %w", err)
 	}
 
-	sylog.Infof("Squashing image to single layer")
-	img, err = mutate.Squash(img)
-	if err != nil {
-		return fmt.Errorf("while squashing image: %w", err)
+	if !keepLayers {
+		sylog.Infof("Squashing image to single layer")
+		img, err = mutate.Squash(img)
+		if err != nil {
+			return fmt.Errorf("while squashing image: %w", err)
+		}
 	}
 
-	layers, err := img.Layers()
-	if err != nil {
-		return fmt.Errorf("while retrieving layers: %w", err)
-	}
-	if len(layers) != 1 {
-		return fmt.Errorf("%d > 1 layers remaining after squash operation", len(layers))
-	}
-	squashfsLayer, err := mutate.SquashfsLayer(layers[0], workDir)
+	sqfsImage, err := imgToSquashfs(img, digest, workDir)
 	if err != nil {
 		return &obocisif.UnavailableError{Underlying: fmt.Errorf("while converting to squashfs format: %w", err)}
 	}
-	img, err = mutate.Apply(img,
-		mutate.ReplaceLayers(squashfsLayer),
+
+	sylog.Infof("Writing OCI-SIF image")
+	ii := ggcrmutate.AppendManifests(empty.Index, ggcrmutate.IndexAddendum{
+		Add: sqfsImage,
+	})
+	return ocisif.Write(imageDest, ii)
+}
+
+func imgToSquashfs(img ggcrv1.Image, digest ggcrv1.Hash, workDir string) (sqfsImage ggcrv1.Image, err error) {
+	ms := []mutate.Mutation{}
+
+	layers, err := img.Layers()
+	if err != nil {
+		return nil, fmt.Errorf("while retrieving layers: %w", err)
+	}
+
+	for i, l := range layers {
+		squashfsLayer, err := mutate.SquashfsLayer(l, workDir)
+		if err != nil {
+			return nil, &obocisif.UnavailableError{Underlying: fmt.Errorf("while converting to squashfs format: %w", err)}
+		}
+		ms = append(ms, mutate.SetLayer(i, squashfsLayer))
+	}
+
+	ms = append(ms,
 		mutate.SetHistory(ggcrv1.History{
 			Created:    ggcrv1.Time{Time: time.Now()},
 			CreatedBy:  useragent.Value(),
 			Comment:    "oci-sif created from " + digest.Hex,
 			EmptyLayer: false,
-		}),
-	)
+		}))
+
+	sqfsImage, err = mutate.Apply(img, ms...)
 	if err != nil {
-		return fmt.Errorf("while replacing layers: %w", err)
+		return nil, fmt.Errorf("while replacing layers: %w", err)
 	}
 
-	sylog.Infof("Writing OCI-SIF image")
-	ii := ggcrmutate.AppendManifests(empty.Index, ggcrmutate.IndexAddendum{
-		Add: img,
-	})
-	return ocisif.Write(imageDest, ii)
+	return sqfsImage, nil
 }
 
 // PushOCISIF pushes a single image from sourceFile to the OCI registry destRef.

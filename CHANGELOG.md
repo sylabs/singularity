@@ -10,6 +10,9 @@
   (`$HOME/.singularity/docker-config.json`). The commands `pull`, `push`, `run`,
   `exec`, `shell`, and `instance start` can now also be passed a `--authfile
   <path>` option, to read OCI registry credentials from this custom file.
+- A new `--keep-layers` flag, for the `pull` and `run/shell/exec/instance start`
+  commands, allows individual layers to be preserved when an OCI-SIF image is
+  created from an OCI source.
 
 ## 4.0.1 \[2023-10-13\]
 

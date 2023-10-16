@@ -890,6 +890,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionProotFlag, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&commonOCIFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&commonNoOCIFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&commonKeepLayersFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoTmpSandbox, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&commonAuthFileFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionDevice, actionsCmd...)

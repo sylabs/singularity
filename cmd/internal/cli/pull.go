@@ -140,6 +140,7 @@ func init() {
 
 		cmdManager.RegisterFlagForCmd(&commonOCIFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&commonNoOCIFlag, PullCmd)
+		cmdManager.RegisterFlagForCmd(&commonKeepLayersFlag, PullCmd)
 
 		cmdManager.RegisterFlagForCmd(&commonArchFlag, PullCmd)
 		cmdManager.RegisterFlagForCmd(&commonPlatformFlag, PullCmd)
@@ -239,6 +240,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			KeyClientOpts: co,
 			LibraryConfig: lc,
 			RequireOciSif: isOCI,
+			KeepLayers:    keepLayers,
 			TmpDir:        tmpDir,
 			Platform:      getOCIPlatform(),
 		}
@@ -303,6 +305,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			NoHTTPS:     noHTTPS,
 			NoCleanUp:   buildArgs.noCleanUp,
 			OciSif:      isOCI,
+			KeepLayers:  keepLayers,
 			Platform:    getOCIPlatform(),
 			ReqAuthFile: reqAuthFile,
 		}

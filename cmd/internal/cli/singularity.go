@@ -90,6 +90,9 @@ var (
 	isOCI bool
 	noOCI bool
 
+	// Keep individual layers when creating / pulling an OCI-SIF?
+	keepLayers bool
+
 	// Platform for retrieving images
 	arch     string
 	platform string
@@ -290,6 +293,16 @@ var commonNoOCIFlag = cmdline.Flag{
 	Name:         "no-oci",
 	Usage:        "Launch container with native runtime",
 	EnvKeys:      []string{"NO_OCI"},
+}
+
+// --keep-layers
+var commonKeepLayersFlag = cmdline.Flag{
+	ID:           "keepLayers",
+	Value:        &keepLayers,
+	DefaultValue: false,
+	Name:         "keep-layers",
+	Usage:        "Keep layers when creating an OCI-SIF. Do not squash to a single layer.",
+	EnvKeys:      []string{"KEEP_LAYERS"},
 }
 
 // --no-tmp-sandbox
