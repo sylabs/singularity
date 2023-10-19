@@ -225,7 +225,11 @@ func convertLayoutToOciSif(layoutDir string, digest ggcrv1.Hash, imageDest, work
 	if len(layers) != 1 {
 		return fmt.Errorf("%d > 1 layers remaining after squash operation", len(layers))
 	}
-	squashfsLayer, err := mutate.SquashfsLayer(layers[0], workDir)
+	// Skip AUFS -> OverlayFS whiteout conversion as there should be no whiteout
+	// markers after squashing to single layer.
+	squashfsLayer, err := mutate.SquashfsLayer(layers[0],
+		workDir,
+		mutate.OptSquashfsSkipWhiteoutConversion(true))
 	if err != nil {
 		return &obocisif.UnavailableError{Underlying: fmt.Errorf("while converting to squashfs format: %w", err)}
 	}
