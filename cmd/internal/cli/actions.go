@@ -20,6 +20,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/client/library"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/net"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oci"
+	ocisifclient "github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/shub"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
@@ -192,13 +193,18 @@ func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string)
 		sylog.Fatalf("Unsupported transport type: %s", t)
 	}
 
-	var mountErr *bndocisif.UnavailableError
-	if errors.As(err, &mountErr) {
+	// If we are in OCI mode, then we can still attempt to run from a directory
+	// bundle if tar->squashfs conversion in OCI-SIF creation fails. This
+	// fallback is important while sqfstar/tar2sqfs are not bundled, and not
+	// available in common distros.
+	if errors.Is(err, ocisifclient.ErrFailedSquashfsConversion) {
 		if !canUseTmpSandbox {
-			sylog.Fatalf("OCI-SIF functionality could not be used, and fallback to unpacking OCI bundle in temporary sandbox dir disallowed (original error msg: %s)", err)
+			sylog.Errorf("%v", err)
+			sylog.Fatalf("OCI-SIF could not be created, and fallback to temporary sandbox dir disallowed")
 		}
 
-		sylog.Warningf("OCI-SIF functionality could not be used, falling back to unpacking OCI bundle in temporary sandbox dir (original error msg: %s)", err)
+		sylog.Warningf("%v", err)
+		sylog.Warningf("OCI-SIF could not be created, falling back to unpacking OCI bundle in temporary sandbox dir")
 		return origImageURI
 	}
 
@@ -414,20 +420,28 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 	}
 
 	execErr := l.Exec(cmd.Context(), ep)
-	var mountErr *bndocisif.UnavailableError
+
+	// Check if we are using an OCI-SIF *and* the exec error indicates that a
+	// direct mount bundle is unavailable (squashfs mount failure etc). If both
+	// are true, we will try a fallback path extracting to a sandbox dir
+	// bundle.
 	isOCISIF, ocisifCheckErr := image.IsOCISIF(ep.Image)
 	if ocisifCheckErr != nil {
 		return ocisifCheckErr
 	}
+	var mountErr bndocisif.UnavailableError
 	if !(errors.As(execErr, &mountErr) && isOCISIF) {
+		// Any other situation is a failure
 		return execErr
 	}
 
 	if !canUseTmpSandbox {
-		return fmt.Errorf("OCI-SIF functionality could not be used, and fallback to unpacking OCI bundle in temporary sandbox dir disallowed (original error msg: %w)", execErr)
+		sylog.Errorf("%v", execErr)
+		return fmt.Errorf("OCI-SIF could not be used, and fallback to temporary sandbox dir disallowed")
 	}
+	sylog.Warningf("%v", execErr)
+	sylog.Warningf("OCI-SIF could not be used, falling back to unpacking OCI bundle in temporary sandbox dir")
 
-	sylog.Warningf("OCI-SIF functionality could not be used, falling back to unpacking OCI bundle in temporary sandbox dir (original error msg: %s)", execErr)
 	// Create a cache handle only when we know we are using a URI
 	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
 	if imgCache == nil {
@@ -435,12 +449,12 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 	}
 	origImageURIPtr := cmd.Context().Value(keyOrigImageURI)
 	if origImageURIPtr == nil {
-		return fmt.Errorf("unable to recover original image URI from context while attempting temp-dir OCI fallback (original OCI-SIF error: %w)", mountErr)
+		return fmt.Errorf("unable to recover original image URI from context")
 	}
 
 	origImageURI, ok := origImageURIPtr.(*string)
 	if !ok {
-		return fmt.Errorf("unable to recover original image URI (expected string, found: %T) from context while attempting temp-dir OCI fallback (original OCI-SIF error: %w)", origImageURIPtr, mountErr)
+		return fmt.Errorf("unable to recover original image URI (expected string, found: %T) from context", origImageURIPtr)
 	}
 	ep.Image = *origImageURI
 
