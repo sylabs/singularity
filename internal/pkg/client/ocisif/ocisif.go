@@ -8,6 +8,7 @@ package ocisif
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -31,7 +32,6 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
-	obocisif "github.com/sylabs/singularity/v4/pkg/ocibundle/ocisif"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 	"golang.org/x/term"
@@ -39,6 +39,8 @@ import (
 
 // TODO - Replace when exported from SIF / oci-tools
 const SquashfsLayerMediaType types.MediaType = "application/vnd.sylabs.image.layer.v1.squashfs"
+
+var ErrFailedSquashfsConversion = errors.New("could not convert layer to squashfs")
 
 type PullOptions struct {
 	TmpDir      string
@@ -231,7 +233,7 @@ func convertLayoutToOciSif(layoutDir string, digest ggcrv1.Hash, imageDest, work
 		workDir,
 		mutate.OptSquashfsSkipWhiteoutConversion(true))
 	if err != nil {
-		return &obocisif.UnavailableError{Underlying: fmt.Errorf("while converting to squashfs format: %w", err)}
+		return fmt.Errorf("%w: %v", ErrFailedSquashfsConversion, err)
 	}
 	img, err = mutate.Apply(img,
 		mutate.ReplaceLayers(squashfsLayer),

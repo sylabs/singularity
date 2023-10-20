@@ -25,6 +25,12 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
+// UnavailableError is used to wrap an Underlying error, while indicating that
+// it is not currently possible to setup an OCI bundle using direct mount(s)
+// from an OCI-SIF. This is intended to permit fall-back paths in the caller
+// when squashfuse is unavailable / failing.
+//
+// TODO - replace with native Go error wrapping at major version increment.
 type UnavailableError struct {
 	Underlying error
 }
@@ -172,7 +178,7 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	sylog.Debugf("Mounting squashfs rootfs from %q to %q", imgFile, tools.RootFs(b.bundlePath).Path())
 	if err := mount(ctx, imgFile, tools.RootFs(b.bundlePath).Path(), rootfsLayer.Digest); err != nil {
 		b.Delete(ctx)
-		return &UnavailableError{Underlying: fmt.Errorf("while mounting squashfs layer: %w", err)}
+		return UnavailableError{Underlying: fmt.Errorf("while mounting squashfs layer: %w", err)}
 	}
 	b.imageMounted = true
 
