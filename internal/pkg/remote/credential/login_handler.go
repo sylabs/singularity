@@ -118,7 +118,7 @@ func (h *ociHandler) logout(u *url.URL, reqAuthFile string) error {
 // keyserverHandler handle login/logout for keyserver service.
 type keyserverHandler struct{}
 
-//nolint:revive,nolintlint
+//nolint:revive
 func (h *keyserverHandler) login(u *url.URL, username, password string, insecure bool, reqAuthFile string) (*Config, error) {
 	pass, err := ensurePassword(password)
 	if err != nil {
@@ -169,7 +169,7 @@ func (h *keyserverHandler) login(u *url.URL, username, password string, insecure
 	}, nil
 }
 
-//nolint:revive,nolintlint
+//nolint:revive
 func (h *keyserverHandler) logout(_ *url.URL, reqAuthFile string) error {
 	return nil
 }

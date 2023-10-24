@@ -283,7 +283,7 @@ func DetachAndDelete(overlayDir string) error {
 
 // DetachMount performs an unmount system call on the specified directory.
 //
-//nolint:revive,nolintlint
+//nolint:revive
 func DetachMount(ctx context.Context, dir string) error {
 	sylog.Debugf("Calling syscall.Unmount() to detach %q", dir)
 	if err := syscall.Unmount(dir, syscall.MNT_DETACH); err != nil {
