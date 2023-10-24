@@ -111,11 +111,17 @@ func runBuild(cmd *cobra.Command, args []string) {
 		if buildArgs.remote {
 			sylog.Fatalf("--nv option is not supported for remote build")
 		}
+		if isOCI {
+			sylog.Fatalf("--nv option is not supported for OCI builds from Dockerfiles")
+		}
 		os.Setenv("SINGULARITY_NV", "1")
 	}
 	if buildArgs.nvccli {
 		if buildArgs.remote {
 			sylog.Fatalf("--nvccli option is not supported for remote build")
+		}
+		if isOCI {
+			sylog.Fatalf("--nvccli option is not supported for OCI builds from Dockerfiles")
 		}
 		os.Setenv("SINGULARITY_NVCCLI", "1")
 	}
@@ -123,17 +129,26 @@ func runBuild(cmd *cobra.Command, args []string) {
 		if buildArgs.remote {
 			sylog.Fatalf("--rocm option is not supported for remote build")
 		}
+		if isOCI {
+			sylog.Fatalf("--rocm option is not supported for OCI builds from Dockerfiles")
+		}
 		os.Setenv("SINGULARITY_ROCM", "1")
 	}
 	if len(buildArgs.bindPaths) > 0 {
 		if buildArgs.remote {
 			sylog.Fatalf("-B/--bind option is not supported for remote build")
 		}
+		if isOCI {
+			sylog.Fatalf("-B/--bind option is not supported for OCI builds from Dockerfiles")
+		}
 		os.Setenv("SINGULARITY_BINDPATH", strings.Join(buildArgs.bindPaths, ","))
 	}
 	if len(buildArgs.mounts) > 0 {
 		if buildArgs.remote {
 			sylog.Fatalf("--mount option is not supported for remote build")
+		}
+		if isOCI {
+			sylog.Fatalf("--mount option is not supported for OCI builds from Dockerfiles")
 		}
 		os.Setenv("SINGULARITY_MOUNT", strings.Join(buildArgs.mounts, "\n"))
 	}
@@ -144,11 +159,18 @@ func runBuild(cmd *cobra.Command, args []string) {
 		if buildArgs.fakeroot {
 			sylog.Fatalf("--writable-tmpfs option is not supported for fakeroot build")
 		}
+		if isOCI {
+			sylog.Fatalf("--writable-tmpfs option is not supported for OCI builds from Dockerfiles")
+		}
 		os.Setenv("SINGULARITY_WRITABLE_TMPFS", "1")
 	}
 
 	if cmd.Flags().Lookup("authfile").Changed && buildArgs.remote {
 		sylog.Fatalf("Custom authfile is not supported for remote build")
+	}
+
+	if cmd.Flags().Lookup("arch").Changed && isOCI {
+		sylog.Fatalf("Custom architecture is not supported for OCI builds from Dockerfiles")
 	}
 
 	if buildArgs.arch != runtime.GOARCH && !buildArgs.remote {
@@ -159,7 +181,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 	spec := args[1]
 
 	// Non-remote build with def file as source
-	rootNeeded := !buildArgs.remote && fs.IsFile(spec) && !isImage(spec)
+	rootNeeded := !buildArgs.remote && fs.IsFile(spec) && !isImage(spec) && !isOCI
 
 	if rootNeeded && syscall.Getuid() != 0 && !buildArgs.fakeroot {
 		prootPath, err := bin.FindBin("proot")
@@ -175,11 +197,15 @@ func runBuild(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("While checking build target: %s", err)
 	}
 
-	if buildArgs.remote {
+	switch {
+	case buildArgs.remote:
 		runBuildRemote(cmd.Context(), cmd, dest, spec)
-	} else {
+	case isOCI:
+		runBuildOCI(cmd.Context(), cmd, dest, spec)
+	default:
 		runBuildLocal(cmd.Context(), cmd, dest, spec)
 	}
+
 	sylog.Infof("Build complete: %s", dest)
 }
 

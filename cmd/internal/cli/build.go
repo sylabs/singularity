@@ -373,7 +373,11 @@ var buildCmd = &cobra.Command{
 
 func preRun(cmd *cobra.Command, _ []string) {
 	if isOCI {
-		sylog.Fatalf("Builds are not yet supported in OCI-mode. Omit --oci, or use --no-oci, to build a non-OCI Singularity container.")
+		if buildArgs.remote {
+			sylog.Fatalf("Remote OCI builds from Dockerfiles are not supported.")
+		}
+
+		return
 	}
 
 	if buildArgs.noSetgroups && !buildArgs.fakeroot {
