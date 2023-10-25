@@ -114,4 +114,6 @@ The following have contributed code and/or documentation to this repository.
 - Pranathi Locula <locula@deshaw.com>
 - Filip Gorczyca <filip.gorczyca141@gmail.com>
 - Carmelo Piccione <carmelo.piccione@gmail.com>
+- Nicholas Yue <yue.nicholas@gmail.com>
+- Benedikt Riedel <benedikt.riedel@gmail.com>
 ```
