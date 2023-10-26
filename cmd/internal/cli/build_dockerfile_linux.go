@@ -17,7 +17,7 @@
 // rights to use or distribute this software.
 //
 // This file contains modified code originally taken from:
-// github.com/moby/buildkit/blob/v0.12.3/examples/build-using-dockerfile/main.go
+// github.com/moby/buildkit/tree/v0.12.3/cmd/buildkitd
 
 package cli
 
@@ -27,6 +27,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/containerd/console"
 	"github.com/moby/buildkit/client"
@@ -40,8 +41,9 @@ import (
 )
 
 const (
-	buildTag       = "tag"
-	buildkitSocket = "unix:///run/buildkit/buildkitd.sock"
+	buildTag              = "tag"
+	buildkitSocket        = "unix:///run/buildkit/buildkitd.sock"
+	buildkitLaunchTimeout = 30 * time.Second
 )
 
 func buildImage(ctx context.Context, tarFile *os.File, spec string, clientsideFrontend bool) error {
@@ -163,6 +165,18 @@ func writeDockerTar(r io.Reader, outputFile *os.File) error {
 }
 
 func runBuildOCI(ctx context.Context, _ *cobra.Command, dest, spec string) {
+	bgCtx, bgCtxCancel := context.WithCancel(ctx)
+	defer bgCtxCancel()
+
+	readyChan := make(chan bool)
+
+	spawnBuildkitd(bgCtx, readyChan)
+
+	success := <-readyChan
+	if !success {
+		sylog.Fatalf("Failed to launch buildkitd daemon within specified timeout (%v).", buildkitLaunchTimeout)
+	}
+
 	tarFile, err := os.CreateTemp("", "singularity-buildkit-tar-")
 	if err != nil {
 		sylog.Fatalf("While trying to build tar image from dockerfile: %v", err)
@@ -179,4 +193,26 @@ func runBuildOCI(ctx context.Context, _ *cobra.Command, dest, spec string) {
 	if _, err := ocisif.PullOCISIF(ctx, nil, dest, "oci-archive:"+tarFile.Name(), ocisif.PullOptions{}); err != nil {
 		sylog.Fatalf("While converting OCI tar image to OCI-SIF: %v", err)
 	}
+}
+
+func spawnBuildkitd(ctx context.Context, readyChan chan bool) {
+	// TODO: replace this with an actual check to see if buildkitd is already
+	// there
+	buildkitdAlreadyRunning := false
+
+	if buildkitdAlreadyRunning {
+		readyChan <- true
+		return
+	}
+
+	go func() {
+		if err := runBuildkitd(ctx, readyChan); err != nil {
+			sylog.Fatalf("Failed to launch buildkitd: %v", err)
+		}
+	}()
+
+	go func() {
+		time.Sleep(buildkitLaunchTimeout)
+		readyChan <- false
+	}()
 }
