@@ -30,8 +30,11 @@ import (
 	"time"
 
 	"github.com/containerd/console"
+	"github.com/gofrs/flock"
 	"github.com/moby/buildkit/client"
+	"github.com/moby/buildkit/cmd/buildkitd/config"
 	dockerfile "github.com/moby/buildkit/frontend/dockerfile/builder"
+	"github.com/moby/buildkit/util/appdefaults"
 	"github.com/moby/buildkit/util/progress/progressui"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -168,7 +171,7 @@ func runBuildOCI(ctx context.Context, _ *cobra.Command, dest, spec string) {
 	bgCtx, bgCtxCancel := context.WithCancel(ctx)
 	defer bgCtxCancel()
 
-	readyChan := make(chan bool)
+	readyChan := make(chan bool, 2)
 
 	spawnBuildkitd(bgCtx, readyChan)
 
@@ -195,16 +198,19 @@ func runBuildOCI(ctx context.Context, _ *cobra.Command, dest, spec string) {
 	}
 }
 
-func spawnBuildkitd(ctx context.Context, readyChan chan bool) {
-	// TODO: replace this with an actual check to see if buildkitd is already
-	// there
-	buildkitdAlreadyRunning := false
-
-	if buildkitdAlreadyRunning {
-		readyChan <- true
-		return
+func spawnBuildkitd(ctx context.Context, readyChan chan bool) error {
+	buildKitRunning, err := isBuildkitdRunning()
+	if err != nil {
+		return err
 	}
 
+	if buildKitRunning {
+		sylog.Infof("Found buildkitd already running at %q; will use that daemon.", buildkitSocket)
+		readyChan <- true
+		return nil
+	}
+
+	sylog.Infof("Did not find running buildkitd deamon; spawning our own.")
 	go func() {
 		if err := runBuildkitd(ctx, readyChan); err != nil {
 			sylog.Fatalf("Failed to launch buildkitd: %v", err)
@@ -215,4 +221,43 @@ func spawnBuildkitd(ctx context.Context, readyChan chan bool) {
 		time.Sleep(buildkitLaunchTimeout)
 		readyChan <- false
 	}()
+
+	return nil
+}
+
+// isBuildkitdRunning tries to determine whether there's already an instance of buildkitd running.
+func isBuildkitdRunning() (bool, error) {
+	// Currently, this function works by trying to lock the designated unix
+	// socket file, which shouldn't be possible if there's already a buildkitd
+	// running at that socket location.
+	cfg, err := config.LoadFile(defaultConfigPath())
+	if err != nil {
+		return false, err
+	}
+
+	if cfg.Root == "" {
+		cfg.Root = appdefaults.Root
+	}
+
+	root, err := filepath.Abs(cfg.Root)
+	if err != nil {
+		return false, err
+	}
+	cfg.Root = root
+
+	if err := os.MkdirAll(root, 0o700); err != nil {
+		return false, errors.Wrapf(err, "failed to create %s", root)
+	}
+
+	lockPath := filepath.Join(root, "buildkitd.lock")
+	defer os.RemoveAll(lockPath)
+
+	lock := flock.New(lockPath)
+	defer lock.Unlock()
+
+	locked, err := lock.TryLock()
+
+	noBuildkitd := (err == nil) && locked
+
+	return !noBuildkitd, nil
 }
