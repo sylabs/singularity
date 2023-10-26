@@ -17,6 +17,11 @@
   `exec`, `shell`, and `instance start` can now also be passed a `--authfile
   <path>` option, to read OCI registry credentials from this custom file.
 
+### Bug Fixes
+
+- Support parentheses in `test` / `[` commands in container startup scripts,
+  via dependency update of mvdan.cc/sh.
+
 ## 4.0.1 \[2023-10-13\]
 
 ### New Features & Functionality
