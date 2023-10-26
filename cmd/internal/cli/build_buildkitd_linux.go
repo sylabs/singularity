@@ -25,7 +25,6 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"net"
 	"os"
 	"os/exec"
@@ -39,20 +38,13 @@ import (
 	"github.com/containerd/containerd/pkg/dialer"
 	"github.com/containerd/containerd/pkg/userns"
 	"github.com/containerd/containerd/platforms"
-	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/remotes/docker"
 	ctdsnapshot "github.com/containerd/containerd/snapshots"
-	"github.com/containerd/containerd/snapshots/native"
 	"github.com/containerd/containerd/snapshots/overlay"
 	"github.com/containerd/containerd/snapshots/overlay/overlayutils"
 	snproxy "github.com/containerd/containerd/snapshots/proxy"
 	"github.com/containerd/containerd/sys"
 	fuseoverlayfs "github.com/containerd/fuse-overlayfs-snapshotter"
-	sgzfs "github.com/containerd/stargz-snapshotter/fs"
-	sgzconf "github.com/containerd/stargz-snapshotter/fs/config"
-	sgzlayer "github.com/containerd/stargz-snapshotter/fs/layer"
-	sgzsource "github.com/containerd/stargz-snapshotter/fs/source"
-	remotesn "github.com/containerd/stargz-snapshotter/snapshot"
 	"github.com/coreos/go-systemd/v22/activation"
 	sddaemon "github.com/coreos/go-systemd/v22/daemon"
 	"github.com/docker/docker/pkg/idtools"
@@ -83,22 +75,16 @@ import (
 	"github.com/moby/buildkit/util/network/cniprovider"
 	"github.com/moby/buildkit/util/network/netproviders"
 	"github.com/moby/buildkit/util/resolver"
-	"github.com/moby/buildkit/util/stack"
 	"github.com/moby/buildkit/util/tracing/detect"
-	"github.com/moby/buildkit/util/tracing/transform"
 	"github.com/moby/buildkit/version"
 	"github.com/moby/buildkit/worker"
 	"github.com/moby/buildkit/worker/base"
 	"github.com/moby/buildkit/worker/runc"
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pelletier/go-toml"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"go.etcd.io/bbolt"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
-	tracev1 "go.opentelemetry.io/proto/otlp/collector/trace/v1"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
@@ -146,13 +132,6 @@ func runBuildkitd(ctx context.Context, readyChan chan<- bool) error {
 	}
 
 	setDefaultConfig(&cfg)
-	logrus.SetFormatter(&logrus.TextFormatter{FullTimestamp: true})
-	if cfg.Debug {
-		logrus.SetLevel(logrus.DebugLevel)
-	}
-	if cfg.Trace {
-		logrus.SetLevel(logrus.TraceLevel)
-	}
 
 	tp, err := detect.TracerProvider()
 	if err != nil {
@@ -234,7 +213,7 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 	}
 
 	hosts := resolverFunc(common.config)
-	snFactory, err := snapshotterFactory(ctx, common.config.Root, cfg, common.sessionManager, hosts)
+	snFactory, err := snapshotterFactory(ctx, common.config.Root, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +273,7 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 	return []worker.Worker{w}, nil
 }
 
-func snapshotterFactory(_ context.Context, commonRoot string, cfg config.OCIConfig, sm *session.Manager, hosts docker.RegistryHosts) (runc.SnapshotterFactory, error) {
+func snapshotterFactory(_ context.Context, commonRoot string, cfg config.OCIConfig) (runc.SnapshotterFactory, error) {
 	var (
 		name    = cfg.Snapshotter
 		address = cfg.ProxySnapshotterPath
@@ -347,55 +326,9 @@ func snapshotterFactory(_ context.Context, commonRoot string, cfg config.OCIConf
 		Name: name,
 	}
 	switch name {
-	case "native":
-		snFactory.New = native.NewSnapshotter
 	case "overlayfs": // not "overlay", for consistency with containerd snapshotter plugin ID.
 		snFactory.New = func(root string) (ctdsnapshot.Snapshotter, error) {
 			return overlay.NewSnapshotter(root, overlay.AsynchronousRemove)
-		}
-	case "fuse-overlayfs":
-		snFactory.New = func(root string) (ctdsnapshot.Snapshotter, error) {
-			// no Opt (AsynchronousRemove is untested for fuse-overlayfs)
-			return fuseoverlayfs.NewSnapshotter(root)
-		}
-	case "stargz":
-		sgzCfg := sgzconf.Config{}
-		if cfg.StargzSnapshotterConfig != nil {
-			// In order to keep the stargz Config type (and dependency) out of
-			// the main BuildKit config, the main config Unmarshalls it into a
-			// generic map[string]interface{}. Here we convert it back into TOML
-			// tree, and unmarshal it to the actual type.
-			t, err := toml.TreeFromMap(cfg.StargzSnapshotterConfig)
-			if err != nil {
-				return snFactory, errors.Wrapf(err, "failed to parse stargz config")
-			}
-			err = t.Unmarshal(&sgzCfg)
-			if err != nil {
-				return snFactory, errors.Wrapf(err, "failed to parse stargz config")
-			}
-		}
-		snFactory.New = func(root string) (ctdsnapshot.Snapshotter, error) {
-			userxattr, err := overlayutils.NeedsUserXAttr(root)
-			if err != nil {
-				bklog.L.WithError(err).Warnf("cannot detect whether \"userxattr\" option needs to be used, assuming to be %v", userxattr)
-			}
-			opq := sgzlayer.OverlayOpaqueTrusted
-			if userxattr {
-				opq = sgzlayer.OverlayOpaqueUser
-			}
-			fs, err := sgzfs.NewFilesystem(filepath.Join(root, "stargz"),
-				sgzCfg,
-				// Source info based on the buildkit's registry config and session
-				sgzfs.WithGetSources(sourceWithSession(hosts, sm)),
-				sgzfs.WithMetricsLogLevel(logrus.DebugLevel),
-				sgzfs.WithOverlayOpaqueType(opq),
-			)
-			if err != nil {
-				return nil, err
-			}
-			return remotesn.NewSnapshotter(context.Background(),
-				filepath.Join(root, "snapshotter"),
-				fs, remotesn.AsynchronousRemove, remotesn.NoRestore)
 		}
 	default:
 		return snFactory, errors.Errorf("unknown snapshotter name: %q", name)
@@ -411,77 +344,6 @@ func validOCIBinary() bool {
 		return false
 	}
 	return true
-}
-
-const (
-	// targetRefLabel is a label which contains image reference.
-	targetRefLabel = "containerd.io/snapshot/remote/stargz.reference"
-
-	// targetDigestLabel is a label which contains layer digest.
-	targetDigestLabel = "containerd.io/snapshot/remote/stargz.digest"
-
-	// targetImageLayersLabel is a label which contains layer digests contained in
-	// the target image.
-	targetImageLayersLabel = "containerd.io/snapshot/remote/stargz.layers"
-
-	// targetSessionLabel is a labeld which contains session IDs usable for
-	// authenticating the target snapshot.
-	targetSessionLabel = "containerd.io/snapshot/remote/stargz.session"
-)
-
-// sourceWithSession returns a callback which implements a converter from labels to the
-// typed snapshot source info. This callback is called everytime the snapshotter resolves a
-// snapshot. This callback returns configuration that is based on buildkitd's registry config
-// and utilizes the session-based authorizer.
-func sourceWithSession(hosts docker.RegistryHosts, sm *session.Manager) sgzsource.GetSources {
-	return func(labels map[string]string) (src []sgzsource.Source, err error) {
-		// labels contains multiple source candidates with unique IDs appended on each call
-		// to the snapshotter API. So, first, get all these IDs
-		var ids []string
-		for k := range labels {
-			if strings.HasPrefix(k, targetRefLabel+".") {
-				ids = append(ids, strings.TrimPrefix(k, targetRefLabel+"."))
-			}
-		}
-
-		// Parse all labels
-		for _, id := range ids {
-			// Parse session labels
-			ref, ok := labels[targetRefLabel+"."+id]
-			if !ok {
-				continue
-			}
-			named, err := reference.Parse(ref)
-			if err != nil {
-				continue
-			}
-			var sids []string
-			for i := 0; ; i++ {
-				sidKey := targetSessionLabel + "." + fmt.Sprintf("%d", i) + "." + id
-				sid, ok := labels[sidKey]
-				if !ok {
-					break
-				}
-				sids = append(sids, sid)
-			}
-
-			// Get source information based on labels and RegistryHosts containing
-			// session-based authorizer.
-			parse := sgzsource.FromDefaultLabels(func(ref reference.Spec) ([]docker.RegistryHost, error) {
-				return resolver.DefaultPool.GetResolver(hosts, named.String(), "pull", sm, session.NewGroup(sids...)).
-					HostsFunc(ref.Hostname())
-			})
-			if s, err := parse(map[string]string{
-				targetRefLabel:         ref,
-				targetDigestLabel:      labels[targetDigestLabel+"."+id],
-				targetImageLayersLabel: labels[targetImageLayersLabel+"."+id],
-			}); err == nil {
-				src = append(src, s...)
-			}
-		}
-
-		return src, nil
-	}
 }
 
 func parseIdentityMapping(str string) (*idtools.IdentityMapping, error) {
@@ -672,9 +534,6 @@ func unaryInterceptor(globalCtx context.Context, tp trace.TracerProvider) grpc.U
 		resp, err = withTrace(ctx, req, info, handler)
 		if err != nil {
 			bklog.G(ctx).Errorf("%s returned error: %v", info.FullMethod, err)
-			if logrus.GetLevel() >= logrus.DebugLevel {
-				fmt.Fprintf(os.Stderr, "%+v", stack.Formatter(grpcerrors.FromGRPC(err)))
-			}
 		}
 		return
 	}
@@ -730,14 +589,6 @@ func newController(ctx context.Context, cfg *config.Config) (*control.Controller
 	}
 
 	var traceSocket string
-	if tc != nil {
-		traceSocket = traceSocketPath(cfg.Root)
-		if err := runTraceController(traceSocket, tc); err != nil {
-			logrus.Warnf("failed set up otel-grpc controller: %v", err)
-			traceSocket = ""
-		}
-	}
-
 	wc, err := newWorkerController(ctx, workerInitializerOpt{
 		config:         cfg,
 		sessionManager: sessionManager,
@@ -892,30 +743,6 @@ func getDNSConfig(cfg *config.DNSConfig) *oci.DNSConfig {
 	return dns
 }
 
-func runTraceController(p string, exp sdktrace.SpanExporter) error {
-	server := grpc.NewServer()
-	tracev1.RegisterTraceServiceServer(server, &traceCollector{exporter: exp})
-	l, err := getLocalListener(p)
-	if err != nil {
-		return errors.Wrap(err, "creating trace controller listener")
-	}
-	go server.Serve(l)
-	return nil
-}
-
-type traceCollector struct {
-	*tracev1.UnimplementedTraceServiceServer
-	exporter sdktrace.SpanExporter
-}
-
-func (t *traceCollector) Export(ctx context.Context, req *tracev1.ExportTraceServiceRequest) (*tracev1.ExportTraceServiceResponse, error) {
-	err := t.exporter.ExportSpans(ctx, transform.Spans(req.GetResourceSpans()))
-	if err != nil {
-		return nil, err
-	}
-	return &tracev1.ExportTraceServiceResponse{}, nil
-}
-
 func listenFD(addr string, tlsConfig *tls.Config) (net.Listener, error) {
 	var (
 		err       error
@@ -942,21 +769,4 @@ func listenFD(addr string, tlsConfig *tls.Config) (net.Listener, error) {
 
 	// TODO: systemd fd selection (default is 3)
 	return nil, errors.New("not supported yet")
-}
-
-func traceSocketPath(root string) string {
-	return filepath.Join(root, "otel-grpc.sock")
-}
-
-func getLocalListener(listenerPath string) (net.Listener, error) {
-	uid := os.Getuid()
-	l, err := sys.GetLocalListener(listenerPath, uid, uid)
-	if err != nil {
-		return nil, err
-	}
-	if err := os.Chmod(listenerPath, 0o666); err != nil {
-		l.Close()
-		return nil, err
-	}
-	return l, nil
 }
