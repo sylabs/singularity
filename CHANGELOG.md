@@ -1,5 +1,13 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Changed defaults / behaviours
+
+- Added `libnvidia-nvvm` to `nvliblist.conf`. Newer NVIDIA Drivers (known with
+  >= 525.85.05) require this lib to compile OpenCL programs against NVIDIA GPUs,
+  i.e. `libnvidia-opencl` depends on `libnvidia-nvvm`.
+
 ## 4.0.1 \[2023-10-13\]
 
 ### New Features & Functionality
