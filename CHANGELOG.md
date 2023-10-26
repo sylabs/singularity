@@ -8,6 +8,11 @@
   >= 525.85.05) require this lib to compile OpenCL programs against NVIDIA GPUs,
   i.e. `libnvidia-opencl` depends on `libnvidia-nvvm`.
 
+### Bug Fixes
+
+- Support parentheses in `test` / `[` commands in container startup scripts,
+  via dependency update of mvdan.cc/sh.
+
 ## 4.0.1 \[2023-10-13\]
 
 ### New Features & Functionality
