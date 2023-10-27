@@ -30,7 +30,6 @@ require (
 	github.com/google/go-containerregistry v0.16.1
 	github.com/google/uuid v1.4.0
 	github.com/gosimple/slug v1.13.1
-	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/moby/buildkit v0.12.3
 	github.com/moby/term v0.5.0
 	github.com/opencontainers/go-digest v1.0.0
@@ -57,8 +56,6 @@ require (
 	github.com/sylabs/sif/v2 v2.15.0
 	github.com/vbauerster/mpb/v8 v8.6.2
 	go.etcd.io/bbolt v1.3.7
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.45.0
-	go.opentelemetry.io/otel/trace v1.19.0
 	golang.org/x/crypto v0.14.0
 	golang.org/x/sync v0.4.0
 	golang.org/x/sys v0.14.0
@@ -169,6 +166,7 @@ require (
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
@@ -242,6 +240,7 @@ require (
 	go.mongodb.org/mongo-driver v1.11.3 // indirect
 	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect
 	go.opencensus.io v0.24.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.45.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.45.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.45.0 // indirect
 	go.opentelemetry.io/otel v1.19.0 // indirect
@@ -250,6 +249,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.19.0 // indirect
 	go.opentelemetry.io/otel/metric v1.19.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.19.0 // indirect
+	go.opentelemetry.io/otel/trace v1.19.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
 	golang.org/x/exp v0.0.0-20230817173708-d852ddb80c63 // indirect
 	golang.org/x/mod v0.13.0 // indirect

@@ -49,7 +49,6 @@ import (
 	sddaemon "github.com/coreos/go-systemd/v22/daemon"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/gofrs/flock"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/moby/buildkit/cache/remotecache"
 	"github.com/moby/buildkit/cache/remotecache/azblob"
 	"github.com/moby/buildkit/cache/remotecache/gha"
@@ -71,11 +70,9 @@ import (
 	"github.com/moby/buildkit/util/appdefaults"
 	"github.com/moby/buildkit/util/archutil"
 	"github.com/moby/buildkit/util/bklog"
-	"github.com/moby/buildkit/util/grpcerrors"
 	"github.com/moby/buildkit/util/network/cniprovider"
 	"github.com/moby/buildkit/util/network/netproviders"
 	"github.com/moby/buildkit/util/resolver"
-	"github.com/moby/buildkit/util/tracing/detect"
 	"github.com/moby/buildkit/version"
 	"github.com/moby/buildkit/worker"
 	"github.com/moby/buildkit/worker/base"
@@ -83,8 +80,6 @@ import (
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"go.etcd.io/bbolt"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
-	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
@@ -96,7 +91,6 @@ import (
 type workerInitializerOpt struct {
 	config         *config.Config
 	sessionManager *session.Manager
-	traceSocket    string
 }
 
 type workerInitializer struct {
@@ -133,13 +127,7 @@ func runBuildkitd(ctx context.Context, readyChan chan<- bool) error {
 
 	setDefaultConfig(&cfg)
 
-	tp, err := detect.TracerProvider()
-	if err != nil {
-		return err
-	}
-
-	unary := grpc_middleware.ChainUnaryServer(unaryInterceptor(ctx, tp), grpcerrors.UnaryServerInterceptor)
-	server := grpc.NewServer(grpc.UnaryInterceptor(unary))
+	server := grpc.NewServer()
 
 	// relative path does not work with nightlyone/lockfile
 	root, err := filepath.Abs(cfg.Root)
@@ -251,7 +239,7 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 		parallelismSem = semaphore.NewWeighted(int64(cfg.MaxParallelism))
 	}
 
-	opt, err := runc.NewWorkerOpt(common.config.Root, snFactory, cfg.Rootless, processMode, cfg.Labels, idmapping, nc, dns, cfg.Binary, cfg.ApparmorProfile, cfg.SELinux, parallelismSem, common.traceSocket, cfg.DefaultCgroupParent)
+	opt, err := runc.NewWorkerOpt(common.config.Root, snFactory, cfg.Rootless, processMode, cfg.Labels, idmapping, nc, dns, cfg.Binary, cfg.ApparmorProfile, cfg.SELinux, parallelismSem, "", cfg.DefaultCgroupParent)
 	if err != nil {
 		return nil, err
 	}
@@ -512,33 +500,6 @@ func getListener(addr string, uid, gid int, tlsConfig *tls.Config) (net.Listener
 	}
 }
 
-func unaryInterceptor(globalCtx context.Context, tp trace.TracerProvider) grpc.UnaryServerInterceptor {
-	withTrace := otelgrpc.UnaryServerInterceptor(otelgrpc.WithTracerProvider(tp))
-
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
-
-		go func() {
-			select {
-			case <-ctx.Done():
-			case <-globalCtx.Done():
-				cancel()
-			}
-		}()
-
-		if strings.HasSuffix(info.FullMethod, "opentelemetry.proto.collector.trace.v1.TraceService/Export") {
-			return handler(ctx, req)
-		}
-
-		resp, err = withTrace(ctx, req, info, handler)
-		if err != nil {
-			bklog.G(ctx).Errorf("%s returned error: %v", info.FullMethod, err)
-		}
-		return
-	}
-}
-
 func serverCredentials(cfg config.TLSConfig) (*tls.Config, error) {
 	certFile := cfg.Cert
 	keyFile := cfg.Key
@@ -583,16 +544,9 @@ func newController(ctx context.Context, cfg *config.Config) (*control.Controller
 		return nil, err
 	}
 
-	tc, err := detect.Exporter()
-	if err != nil {
-		return nil, err
-	}
-
-	var traceSocket string
 	wc, err := newWorkerController(ctx, workerInitializerOpt{
 		config:         cfg,
 		sessionManager: sessionManager,
-		traceSocket:    traceSocket,
 	})
 	if err != nil {
 		return nil, err
@@ -641,7 +595,6 @@ func newController(ctx context.Context, cfg *config.Config) (*control.Controller
 		ResolveCacheImporterFuncs: remoteCacheImporterFuncs,
 		CacheManager:              solver.NewCacheManager(ctx, "local", cacheStorage, worker.NewCacheResultStorage(wc)),
 		Entitlements:              cfg.Entitlements,
-		TraceCollector:            tc,
 		HistoryDB:                 historyDB,
 		CacheStore:                cacheStorage,
 		LeaseManager:              w.LeaseManager(),
