@@ -1306,7 +1306,12 @@ func (c configTests) trustedBindPaths(t *testing.T) {
 		t,
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("config global"),
-		e2e.WithArgs("--reset", "bind path"),
+		// "bind path" doesn't behave like other config values. The default
+		// defined in code is empty, but the installed default config file has
+		//     bind path = /etc/localtime
+		//     bind path = /etc/hosts
+		// We must set it back, rather than reset it (which clears it)
+		e2e.WithArgs("--set", "bind path", "/etc/localtime,/etc/hosts"),
 		e2e.ExpectExit(0),
 	)
 	c.env.RunSingularity(
