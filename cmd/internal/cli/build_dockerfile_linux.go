@@ -173,7 +173,7 @@ func runBuildOCI(ctx context.Context, _ *cobra.Command, dest, spec string) {
 
 	readyChan := make(chan bool, 2)
 
-	spawnBuildkitd(bgCtx, readyChan)
+	ensureBuildkitd(bgCtx, readyChan)
 
 	success := <-readyChan
 	if !success {
@@ -198,7 +198,11 @@ func runBuildOCI(ctx context.Context, _ *cobra.Command, dest, spec string) {
 	}
 }
 
-func spawnBuildkitd(ctx context.Context, readyChan chan bool) error {
+// ensureBuildkitd checks if a buildkitd daemon is already running, and if not,
+// launches one. Once the server is ready, the value true will be sent over the
+// provided readyChan. Make sure this is a buffered channel with sufficient room
+// to avoid deadlocks.
+func ensureBuildkitd(ctx context.Context, readyChan chan bool) error {
 	buildKitRunning, err := isBuildkitdRunning()
 	if err != nil {
 		return err

@@ -24,7 +24,6 @@ package cli
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"net"
 	"os"
 	"os/exec"
@@ -45,7 +44,6 @@ import (
 	snproxy "github.com/containerd/containerd/snapshots/proxy"
 	"github.com/containerd/containerd/sys"
 	fuseoverlayfs "github.com/containerd/fuse-overlayfs-snapshotter"
-	"github.com/coreos/go-systemd/v22/activation"
 	sddaemon "github.com/coreos/go-systemd/v22/daemon"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/gofrs/flock"
@@ -80,6 +78,7 @@ import (
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"go.etcd.io/bbolt"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -119,6 +118,9 @@ func init() {
 	)
 }
 
+// runBuildkitd runs a new buildkitd daemon. Once the server is ready, the value
+// true will be sent over the provided readyChan. Make sure this is a buffered
+// channel with sufficient room to avoid deadlocks.
 func runBuildkitd(ctx context.Context, readyChan chan<- bool) error {
 	cfg, err := config.LoadFile(defaultConfigPath())
 	if err != nil {
@@ -168,6 +170,7 @@ func runBuildkitd(ctx context.Context, readyChan chan<- bool) error {
 		return err
 	}
 
+	// Notify the readyChan that the server is ready for action
 	readyChan <- true
 
 	select {
@@ -207,7 +210,7 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 	}
 
 	if cfg.Rootless {
-		bklog.L.Debugf("running in rootless mode")
+		sylog.Debugf("running in rootless mode")
 		if common.config.Workers.OCI.NetworkConfig.Mode == "auto" {
 			common.config.Workers.OCI.NetworkConfig.Mode = "host"
 		}
@@ -215,7 +218,7 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 
 	processMode := oci.ProcessSandbox
 	if cfg.NoProcessSandbox {
-		bklog.L.Warn("NoProcessSandbox is enabled. Note that NoProcessSandbox allows build containers to kill (and potentially ptrace) an arbitrary process in the BuildKit host namespace. NoProcessSandbox should be enabled only when the BuildKit is running in a container as an unprivileged user.")
+		sylog.Warningf("NoProcessSandbox is enabled. Note that NoProcessSandbox allows build containers to kill (and potentially ptrace) an arbitrary process in the BuildKit host namespace. NoProcessSandbox should be enabled only when the BuildKit is running in a container as an unprivileged user.")
 		if !cfg.Rootless {
 			return nil, errors.New("can't enable NoProcessSandbox without Rootless")
 		}
@@ -299,15 +302,15 @@ func snapshotterFactory(_ context.Context, commonRoot string, cfg config.OCIConf
 		if err := overlayutils.Supported(commonRoot); err == nil {
 			name = "overlayfs"
 		} else {
-			bklog.L.Debugf("auto snapshotter: overlayfs is not available for %s, trying fuse-overlayfs: %v", commonRoot, err)
+			sylog.Debugf("auto snapshotter: overlayfs is not available for %s, trying fuse-overlayfs: %v", commonRoot, err)
 			if err2 := fuseoverlayfs.Supported(commonRoot); err2 == nil {
 				name = "fuse-overlayfs"
 			} else {
-				bklog.L.Debugf("auto snapshotter: fuse-overlayfs is not available for %s, falling back to native: %v", commonRoot, err2)
+				sylog.Debugf("auto snapshotter: fuse-overlayfs is not available for %s, falling back to native: %v", commonRoot, err2)
 				name = "native"
 			}
 		}
-		bklog.L.Infof("auto snapshotter: using %s", name)
+		sylog.Infof("auto snapshotter: using %s", name)
 	}
 
 	snFactory := runc.SnapshotterFactory{
@@ -328,7 +331,7 @@ func validOCIBinary() bool {
 	_, err := exec.LookPath("runc")
 	_, err1 := exec.LookPath("buildkit-runc")
 	if err != nil && err1 != nil {
-		bklog.L.Warnf("skipping oci worker, as runc does not exist")
+		sylog.Warningf("skipping oci worker, as runc does not exist")
 		return false
 	}
 	return true
@@ -346,7 +349,7 @@ func parseIdentityMapping(str string) (*idtools.IdentityMapping, error) {
 
 	username := idparts[0]
 
-	bklog.L.Debugf("user namespaces: ID ranges will be mapped to subuid ranges of: %s", username)
+	sylog.Debugf("user namespaces: ID ranges will be mapped to subuid ranges of: %s", username)
 
 	mappings, err := idtools.LoadIdentityMapping(username)
 	if err != nil {
@@ -360,14 +363,10 @@ func serveGRPC(cfg config.GRPCConfig, server *grpc.Server, errCh chan error) err
 	if len(addrs) == 0 {
 		return errors.New("--addr cannot be empty")
 	}
-	tlsConfig, err := serverCredentials(cfg.TLS)
-	if err != nil {
-		return err
-	}
 	eg, _ := errgroup.WithContext(context.Background())
 	listeners := make([]net.Listener, 0, len(addrs))
 	for _, addr := range addrs {
-		l, err := getListener(addr, *cfg.UID, *cfg.GID, tlsConfig)
+		l, err := getListener(addr, *cfg.UID, *cfg.GID, nil)
 		if err != nil {
 			for _, l := range listeners {
 				l.Close()
@@ -379,13 +378,13 @@ func serveGRPC(cfg config.GRPCConfig, server *grpc.Server, errCh chan error) err
 
 	if os.Getenv("NOTIFY_SOCKET") != "" {
 		notified, notifyErr := sddaemon.SdNotify(false, sddaemon.SdNotifyReady)
-		bklog.L.Debugf("SdNotifyReady notified=%v, err=%v", notified, notifyErr)
+		sylog.Debugf("SdNotifyReady notified=%v, err=%v", notified, notifyErr)
 	}
 	for _, l := range listeners {
 		func(l net.Listener) {
 			eg.Go(func() error {
 				defer l.Close()
-				bklog.L.Infof("running server on %s", l.Addr())
+				sylog.Infof("running server on %s", l.Addr())
 				return server.Serve(l)
 			})
 		}(l)
@@ -474,65 +473,14 @@ func getListener(addr string, uid, gid int, tlsConfig *tls.Config) (net.Listener
 	proto := addrSlice[0]
 	listenAddr := addrSlice[1]
 	switch proto {
-	case "unix", "npipe":
+	case "unix":
 		if tlsConfig != nil {
-			bklog.L.Warnf("TLS is disabled for %s", addr)
+			sylog.Warningf("TLS is disabled for %s", addr)
 		}
 		return sys.GetLocalListener(listenAddr, uid, gid)
-	case "fd":
-		return listenFD(listenAddr, tlsConfig)
-	case "tcp":
-		l, err := net.Listen("tcp", listenAddr)
-		if err != nil {
-			return nil, err
-		}
-
-		if tlsConfig == nil {
-			bklog.L.Warnf("TLS is not enabled for %s. enabling mutual TLS authentication is highly recommended", addr)
-			return l, nil
-		}
-		return tls.NewListener(l, tlsConfig), nil
 	default:
-		return nil, errors.Errorf("addr %s not supported", addr)
+		return nil, errors.Errorf("we do not support protocol %q addresses (%q)", proto, addr)
 	}
-}
-
-func serverCredentials(cfg config.TLSConfig) (*tls.Config, error) {
-	certFile := cfg.Cert
-	keyFile := cfg.Key
-	caFile := cfg.CA
-	if certFile == "" && keyFile == "" {
-		return nil, nil
-	}
-	err := errors.New("you must specify key and cert file if one is specified")
-	if certFile == "" {
-		return nil, err
-	}
-	if keyFile == "" {
-		return nil, err
-	}
-	certificate, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not load server key pair")
-	}
-	tlsConf := &tls.Config{
-		MinVersion:   tls.VersionTLS12,
-		Certificates: []tls.Certificate{certificate},
-	}
-	if caFile != "" {
-		certPool := x509.NewCertPool()
-		ca, err := os.ReadFile(caFile)
-		if err != nil {
-			return nil, errors.Wrap(err, "could not read ca certificate")
-		}
-		// Append the client certificates from the CA
-		if ok := certPool.AppendCertsFromPEM(ca); !ok {
-			return nil, errors.New("failed to append ca cert")
-		}
-		tlsConf.ClientAuth = tls.RequireAndVerifyClientCert
-		tlsConf.ClientCAs = certPool
-	}
-	return tlsConf, nil
 }
 
 func newController(ctx context.Context, cfg *config.Config) (*control.Controller, error) {
@@ -614,7 +562,7 @@ func newWorkerController(ctx context.Context, wiOpt workerInitializerOpt) (*work
 		}
 		for _, w := range ws {
 			p := w.Platforms(false)
-			bklog.L.Infof("found worker %q, labels=%v, platforms=%v", w.ID(), w.Labels(), formatPlatforms(p))
+			sylog.Infof("found worker %q, labels=%v, platforms=%v", w.ID(), w.Labels(), formatPlatforms(p))
 			archutil.WarnIfUnsupported(p)
 			if err = wc.Add(w); err != nil {
 				return nil, err
@@ -629,8 +577,8 @@ func newWorkerController(ctx context.Context, wiOpt workerInitializerOpt) (*work
 	if err != nil {
 		return nil, err
 	}
-	bklog.L.Infof("found %d workers, default=%q", nWorkers, defaultWorker.ID())
-	bklog.L.Warn("currently, only the default worker can be used.")
+	sylog.Infof("found %d workers, default=%q", nWorkers, defaultWorker.ID())
+	sylog.Warningf("currently, only the default worker can be used.")
 	return wc, nil
 }
 
@@ -691,32 +639,4 @@ func getDNSConfig(cfg *config.DNSConfig) *oci.DNSConfig {
 		}
 	}
 	return dns
-}
-
-func listenFD(addr string, tlsConfig *tls.Config) (net.Listener, error) {
-	var (
-		err       error
-		listeners []net.Listener
-	)
-	// socket activation
-	if tlsConfig != nil {
-		listeners, err = activation.TLSListeners(tlsConfig)
-	} else {
-		listeners, err = activation.Listeners()
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	if len(listeners) == 0 {
-		return nil, errors.New("no sockets found via socket activation: make sure the service was started by systemd")
-	}
-
-	// default to first fd
-	if addr == "" {
-		return listeners[0], nil
-	}
-
-	// TODO: systemd fd selection (default is 3)
-	return nil, errors.New("not supported yet")
 }
