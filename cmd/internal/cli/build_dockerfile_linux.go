@@ -30,11 +30,9 @@ import (
 	"time"
 
 	"github.com/containerd/console"
-	"github.com/gofrs/flock"
+	moby_buildkit_v1 "github.com/moby/buildkit/api/services/control"
 	"github.com/moby/buildkit/client"
-	"github.com/moby/buildkit/cmd/buildkitd/config"
 	dockerfile "github.com/moby/buildkit/frontend/dockerfile/builder"
-	"github.com/moby/buildkit/util/appdefaults"
 	"github.com/moby/buildkit/util/progress/progressui"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -202,16 +200,11 @@ func runBuildOCI(ctx context.Context, _ *cobra.Command, dest, spec string) {
 // launches one. Once the server is ready, the value true will be sent over the
 // provided readyChan. Make sure this is a buffered channel with sufficient room
 // to avoid deadlocks.
-func ensureBuildkitd(ctx context.Context, readyChan chan bool) error {
-	buildKitRunning, err := isBuildkitdRunning()
-	if err != nil {
-		return err
-	}
-
-	if buildKitRunning {
+func ensureBuildkitd(ctx context.Context, readyChan chan bool) {
+	if isBuildkitdRunning(ctx) {
 		sylog.Infof("Found buildkitd already running at %q; will use that daemon.", buildkitSocket)
 		readyChan <- true
-		return nil
+		return
 	}
 
 	sylog.Infof("Did not find running buildkitd deamon; spawning our own.")
@@ -225,43 +218,19 @@ func ensureBuildkitd(ctx context.Context, readyChan chan bool) error {
 		time.Sleep(buildkitLaunchTimeout)
 		readyChan <- false
 	}()
-
-	return nil
 }
 
 // isBuildkitdRunning tries to determine whether there's already an instance of buildkitd running.
-func isBuildkitdRunning() (bool, error) {
-	// Currently, this function works by trying to lock the designated unix
-	// socket file, which shouldn't be possible if there's already a buildkitd
-	// running at that socket location.
-	cfg, err := config.LoadFile(defaultConfigPath())
+func isBuildkitdRunning(ctx context.Context) bool {
+	c, err := client.New(ctx, buildkitSocket, client.WithFailFast())
 	if err != nil {
-		return false, err
+		return false
 	}
+	defer c.Close()
 
-	if cfg.Root == "" {
-		cfg.Root = appdefaults.Root
-	}
+	cc := c.ControlClient()
+	ir := moby_buildkit_v1.InfoRequest{}
+	_, err = cc.Info(ctx, &ir)
 
-	root, err := filepath.Abs(cfg.Root)
-	if err != nil {
-		return false, err
-	}
-	cfg.Root = root
-
-	if err := os.MkdirAll(root, 0o700); err != nil {
-		return false, errors.Wrapf(err, "failed to create %s", root)
-	}
-
-	lockPath := filepath.Join(root, "buildkitd.lock")
-	defer os.RemoveAll(lockPath)
-
-	lock := flock.New(lockPath)
-	defer lock.Unlock()
-
-	locked, err := lock.TryLock()
-
-	noBuildkitd := (err == nil) && locked
-
-	return !noBuildkitd, nil
+	return (err == nil)
 }
