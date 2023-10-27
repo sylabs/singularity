@@ -79,6 +79,7 @@ import (
 	"github.com/moby/buildkit/worker/runc"
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"go.etcd.io/bbolt"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -116,7 +117,6 @@ func init() {
 			priority: 0,
 		},
 	)
-	// TODO: allow multiple oci runtimes
 }
 
 func runBuildkitd(ctx context.Context, readyChan chan<- bool) error {
@@ -397,10 +397,7 @@ func serveGRPC(cfg config.GRPCConfig, server *grpc.Server, errCh chan error) err
 }
 
 func defaultConfigPath() string {
-	if userns.RunningInUserNS() {
-		return filepath.Join(appdefaults.UserConfigDir(), "buildkitd.toml")
-	}
-	return filepath.Join(appdefaults.ConfigDir, "buildkitd.toml")
+	return filepath.Join(syfs.ConfigDir(), "buildkitd.toml")
 }
 
 func setDefaultNetworkConfig(nc config.NetworkConfig) config.NetworkConfig {
