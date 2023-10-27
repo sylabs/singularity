@@ -42,13 +42,13 @@ import (
 )
 
 const (
-	buildTag              = "tag"
-	buildkitSocket        = "unix:///run/buildkit/buildkitd.sock"
-	buildkitLaunchTimeout = 30 * time.Second
+	buildTag        = "tag"
+	bkDefaultSocket = "unix:///run/buildkit/buildkitd.sock"
+	bkLaunchTimeout = 30 * time.Second
 )
 
-func buildImage(ctx context.Context, tarFile *os.File, spec string, clientsideFrontend bool) error {
-	c, err := client.New(ctx, buildkitSocket, client.WithFailFast())
+func buildImage(ctx context.Context, tarFile *os.File, listenSocket, spec string, clientsideFrontend bool) error {
+	c, err := client.New(ctx, listenSocket, client.WithFailFast())
 	if err != nil {
 		return err
 	}
@@ -169,13 +169,9 @@ func runBuildOCI(ctx context.Context, _ *cobra.Command, dest, spec string) {
 	bgCtx, bgCtxCancel := context.WithCancel(ctx)
 	defer bgCtxCancel()
 
-	readyChan := make(chan bool, 2)
-
-	ensureBuildkitd(bgCtx, readyChan)
-
-	success := <-readyChan
-	if !success {
-		sylog.Fatalf("Failed to launch buildkitd daemon within specified timeout (%v).", buildkitLaunchTimeout)
+	listenSocket := ensureBuildkitd(bgCtx)
+	if listenSocket == "" {
+		sylog.Fatalf("Failed to launch buildkitd daemon within specified timeout (%v).", bkLaunchTimeout)
 	}
 
 	tarFile, err := os.CreateTemp("", "singularity-buildkit-tar-")
@@ -185,7 +181,7 @@ func runBuildOCI(ctx context.Context, _ *cobra.Command, dest, spec string) {
 	defer tarFile.Close()
 	defer os.Remove(tarFile.Name())
 
-	if err := buildImage(ctx, tarFile, spec, false); err != nil {
+	if err := buildImage(ctx, tarFile, listenSocket, spec, false); err != nil {
 		sylog.Fatalf("While building from dockerfile: %v", err)
 	}
 	sylog.Debugf("Saved OCI image as tar: %s", tarFile.Name())
@@ -200,29 +196,30 @@ func runBuildOCI(ctx context.Context, _ *cobra.Command, dest, spec string) {
 // launches one. Once the server is ready, the value true will be sent over the
 // provided readyChan. Make sure this is a buffered channel with sufficient room
 // to avoid deadlocks.
-func ensureBuildkitd(ctx context.Context, readyChan chan bool) {
+func ensureBuildkitd(ctx context.Context) string {
 	if isBuildkitdRunning(ctx) {
-		sylog.Infof("Found buildkitd already running at %q; will use that daemon.", buildkitSocket)
-		readyChan <- true
-		return
+		sylog.Infof("Found buildkitd already running at %q; will use that daemon.", bkDefaultSocket)
+		return bkDefaultSocket
 	}
 
-	sylog.Infof("Did not find running buildkitd deamon; spawning our own.")
+	sylog.Infof("Did not find usable running buildkitd daemon; spawning our own.")
+	socketChan := make(chan string, 1)
 	go func() {
-		if err := runBuildkitd(ctx, readyChan); err != nil {
+		if err := runBuildkitd(ctx, socketChan); err != nil {
 			sylog.Fatalf("Failed to launch buildkitd: %v", err)
 		}
 	}()
-
 	go func() {
-		time.Sleep(buildkitLaunchTimeout)
-		readyChan <- false
+		time.Sleep(bkLaunchTimeout)
+		socketChan <- ""
 	}()
+
+	return <-socketChan
 }
 
 // isBuildkitdRunning tries to determine whether there's already an instance of buildkitd running.
 func isBuildkitdRunning(ctx context.Context) bool {
-	c, err := client.New(ctx, buildkitSocket, client.WithFailFast())
+	c, err := client.New(ctx, bkDefaultSocket, client.WithFailFast())
 	if err != nil {
 		return false
 	}

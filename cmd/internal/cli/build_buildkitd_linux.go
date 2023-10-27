@@ -118,10 +118,10 @@ func init() {
 	)
 }
 
-// runBuildkitd runs a new buildkitd daemon. Once the server is ready, the value
-// true will be sent over the provided readyChan. Make sure this is a buffered
+// runBuildkitd runs a new buildkitd daemon. Once the server is ready, the path of the unix socket
+// will be sent over the provided channel. Make sure this is a buffered
 // channel with sufficient room to avoid deadlocks.
-func runBuildkitd(ctx context.Context, readyChan chan<- bool) error {
+func runBuildkitd(ctx context.Context, socketChan chan<- string) error {
 	cfg, err := config.LoadFile(defaultConfigPath())
 	if err != nil {
 		return err
@@ -170,8 +170,8 @@ func runBuildkitd(ctx context.Context, readyChan chan<- bool) error {
 		return err
 	}
 
-	// Notify the readyChan that the server is ready for action
-	readyChan <- true
+	// Send the address we're listening on back to our caller over socketChan
+	socketChan <- cfg.GRPC.Address[0]
 
 	select {
 	case serverErr := <-errCh:
