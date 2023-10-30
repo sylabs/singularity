@@ -17,7 +17,7 @@
 // rights to use or distribute this software.
 //
 // This file contains modified code originally taken from:
-// github.com/moby/buildkit/tree/v0.12.3/cmd/buildkitd
+// github.com/moby/buildkit/blob/v0.12.3/examples/build-using-dockerfile/main.go
 
 package cli
 

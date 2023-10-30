@@ -230,7 +230,7 @@ func (l *Launcher) addDevMounts(mounts *[]specs.Mount) error {
 	minimalDev := contained || (l.singularityConf.MountDev == "minimal")
 	// Binding all of /dev like native mode only works with crun
 	if l.cfg.NoCompat && !minimalDev {
-		rt, err := runtime()
+		rt, err := Runtime()
 		if err != nil {
 			return err
 		}

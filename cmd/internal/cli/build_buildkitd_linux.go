@@ -17,7 +17,7 @@
 // rights to use or distribute this software.
 //
 // This file contains modified code originally taken from:
-// github.com/moby/buildkit/blob/v0.12.3/examples/build-using-dockerfile/main.go
+// github.com/moby/buildkit/tree/v0.12.3/cmd/buildkitd
 
 package cli
 
@@ -57,7 +57,7 @@ import (
 	"github.com/moby/buildkit/client"
 	"github.com/moby/buildkit/cmd/buildkitd/config"
 	"github.com/moby/buildkit/control"
-	"github.com/moby/buildkit/executor/oci"
+	bkoci "github.com/moby/buildkit/executor/oci"
 	"github.com/moby/buildkit/frontend"
 	dockerfile "github.com/moby/buildkit/frontend/dockerfile/builder"
 	"github.com/moby/buildkit/frontend/gateway"
@@ -67,16 +67,16 @@ import (
 	"github.com/moby/buildkit/solver/bboltcachestorage"
 	"github.com/moby/buildkit/util/appdefaults"
 	"github.com/moby/buildkit/util/archutil"
-	"github.com/moby/buildkit/util/bklog"
 	"github.com/moby/buildkit/util/network/cniprovider"
 	"github.com/moby/buildkit/util/network/netproviders"
 	"github.com/moby/buildkit/util/resolver"
 	"github.com/moby/buildkit/version"
 	"github.com/moby/buildkit/worker"
 	"github.com/moby/buildkit/worker/base"
-	"github.com/moby/buildkit/worker/runc"
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/oci"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"go.etcd.io/bbolt"
@@ -118,9 +118,9 @@ func init() {
 	)
 }
 
-// runBuildkitd runs a new buildkitd daemon. Once the server is ready, the path of the unix socket
-// will be sent over the provided channel. Make sure this is a buffered
-// channel with sufficient room to avoid deadlocks.
+// runBuildkitd runs a new buildkitd daemon. Once the server is ready, the path
+// of the unix socket will be sent over the provided channel. Make sure this is
+// a buffered channel with sufficient room to avoid deadlocks.
 func runBuildkitd(ctx context.Context, socketChan chan<- string) error {
 	cfg, err := config.LoadFile(defaultConfigPath())
 	if err != nil {
@@ -180,10 +180,10 @@ func runBuildkitd(ctx context.Context, socketChan chan<- string) error {
 		err = ctx.Err()
 	}
 
-	bklog.G(ctx).Infof("stopping server")
+	sylog.Infof("stopping buildkitd server")
 	if os.Getenv("NOTIFY_SOCKET") != "" {
 		notified, notifyErr := sddaemon.SdNotify(false, sddaemon.SdNotifyStopping)
-		bklog.G(ctx).Debugf("SdNotifyStopping notified=%v, err=%v", notified, notifyErr)
+		sylog.Debugf("SdNotifyStopping notified=%v, err=%v", notified, notifyErr)
 	}
 	server.GracefulStop()
 
@@ -216,13 +216,15 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 		}
 	}
 
-	processMode := oci.ProcessSandbox
+	processMode := bkoci.ProcessSandbox
 	if cfg.NoProcessSandbox {
-		sylog.Warningf("NoProcessSandbox is enabled. Note that NoProcessSandbox allows build containers to kill (and potentially ptrace) an arbitrary process in the BuildKit host namespace. NoProcessSandbox should be enabled only when the BuildKit is running in a container as an unprivileged user.")
+		if !rootless.InNS() {
+			sylog.Fatalf("Trying to run with NoProcessSandbox enabled without being in a user namespace; this is insecure, and therefore blocked.")
+		}
 		if !cfg.Rootless {
 			return nil, errors.New("can't enable NoProcessSandbox without Rootless")
 		}
-		processMode = oci.NoProcessSandbox
+		processMode = bkoci.NoProcessSandbox
 	}
 
 	dns := getDNSConfig(common.config.DNS)
@@ -242,7 +244,19 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 		parallelismSem = semaphore.NewWeighted(int64(cfg.MaxParallelism))
 	}
 
-	opt, err := runc.NewWorkerOpt(common.config.Root, snFactory, cfg.Rootless, processMode, cfg.Labels, idmapping, nc, dns, cfg.Binary, cfg.ApparmorProfile, cfg.SELinux, parallelismSem, "", cfg.DefaultCgroupParent)
+	// Select correct runtime binary
+	r, err := oci.Runtime()
+	if err != nil {
+		return nil, err
+	}
+	if filepath.Base(r) == "crun" {
+		cfg.Binary = r
+		sylog.Infof("Using crun runtime for buildkitd daemon.")
+	} else {
+		sylog.Infof("Using runc runtime for buildkitd daemon.")
+	}
+
+	opt, err := NewBkWorkerOpt(ctx, common.config.Root, snFactory, cfg.Rootless, processMode, cfg.Labels, idmapping, nc, dns, cfg.Binary, cfg.ApparmorProfile, cfg.SELinux, parallelismSem, "", cfg.DefaultCgroupParent)
 	if err != nil {
 		return nil, err
 	}
@@ -261,16 +275,17 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 	if err != nil {
 		return nil, err
 	}
+
 	return []worker.Worker{w}, nil
 }
 
-func snapshotterFactory(_ context.Context, commonRoot string, cfg config.OCIConfig) (runc.SnapshotterFactory, error) {
+func snapshotterFactory(_ context.Context, commonRoot string, cfg config.OCIConfig) (BkSnapshotterFactory, error) {
 	var (
 		name    = cfg.Snapshotter
 		address = cfg.ProxySnapshotterPath
 	)
 	if address != "" {
-		snFactory := runc.SnapshotterFactory{
+		snFactory := BkSnapshotterFactory{
 			Name: name,
 		}
 		if _, err := os.Stat(address); os.IsNotExist(err) {
@@ -313,7 +328,7 @@ func snapshotterFactory(_ context.Context, commonRoot string, cfg config.OCIConf
 		sylog.Infof("auto snapshotter: using %s", name)
 	}
 
-	snFactory := runc.SnapshotterFactory{
+	snFactory := BkSnapshotterFactory{
 		Name: name,
 	}
 	switch name {
@@ -384,7 +399,7 @@ func serveGRPC(cfg config.GRPCConfig, server *grpc.Server, errCh chan error) err
 		func(l net.Listener) {
 			eg.Go(func() error {
 				defer l.Close()
-				sylog.Infof("running server on %s", l.Addr())
+				sylog.Infof("running buildkitd server on %s", l.Addr())
 				return server.Serve(l)
 			})
 		}(l)
@@ -414,6 +429,25 @@ func setDefaultNetworkConfig(nc config.NetworkConfig) config.NetworkConfig {
 
 func setDefaultConfig(cfg *config.Config) {
 	orig := *cfg
+
+	// If we need to, enter a new cgroup now, to workaround an issue with crun container cgroup creation (#1538).
+	if err := oci.CrunNestCgroup(); err != nil {
+		sylog.Fatalf("while applying crun cgroup workaround: %v", err)
+	}
+
+	rlUID, err := rootless.Getuid()
+	if err != nil {
+		sylog.Fatalf("While trying to determine uid: %v", err)
+	}
+	// rlGID, err := rootless.Getgid()
+	// if err != nil {
+	// 	sylog.Fatalf("While trying to determine gid: %v", err)
+	// }
+
+	if rlUID != 0 {
+		cfg.Workers.OCI.Rootless = true
+		cfg.Workers.OCI.NoProcessSandbox = true
+	}
 
 	if cfg.GRPC.UID == nil {
 		uid := os.Getuid()
@@ -578,7 +612,6 @@ func newWorkerController(ctx context.Context, wiOpt workerInitializerOpt) (*work
 		return nil, err
 	}
 	sylog.Infof("found %d workers, default=%q", nWorkers, defaultWorker.ID())
-	sylog.Warningf("currently, only the default worker can be used.")
 	return wc, nil
 }
 
@@ -629,10 +662,10 @@ func getBuildkitVersion() client.BuildkitVersion {
 	}
 }
 
-func getDNSConfig(cfg *config.DNSConfig) *oci.DNSConfig {
-	var dns *oci.DNSConfig
+func getDNSConfig(cfg *config.DNSConfig) *bkoci.DNSConfig {
+	var dns *bkoci.DNSConfig
 	if cfg != nil {
-		dns = &oci.DNSConfig{
+		dns = &bkoci.DNSConfig{
 			Nameservers:   cfg.Nameservers,
 			Options:       cfg.Options,
 			SearchDomains: cfg.SearchDomains,

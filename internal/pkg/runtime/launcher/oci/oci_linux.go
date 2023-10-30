@@ -40,8 +40,8 @@ const (
 	createTimeout = 30 * time.Second
 )
 
-// runtime returns path to the OCI runtime - crun (preferred), or runc.
-func runtime() (path string, err error) {
+// Runtime returns path to the OCI Runtime - crun (preferred), or runc.
+func Runtime() (path string, err error) {
 	path, err = bin.FindBin("crun")
 	if err == nil {
 		return
