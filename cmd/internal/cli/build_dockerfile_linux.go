@@ -30,14 +30,17 @@ import (
 	"time"
 
 	"github.com/containerd/console"
+	ocitypes "github.com/containers/image/v5/types"
 	moby_buildkit_v1 "github.com/moby/buildkit/api/services/control"
 	"github.com/moby/buildkit/client"
 	dockerfile "github.com/moby/buildkit/frontend/dockerfile/builder"
+	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/util/progress/progressui"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/v4/internal/pkg/build/args"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/sync/errgroup"
 )
@@ -48,7 +51,7 @@ const (
 	bkLaunchTimeout = 30 * time.Second
 )
 
-func buildImage(ctx context.Context, tarFile *os.File, listenSocket, spec string, clientsideFrontend bool) error {
+func buildImage(ctx context.Context, authConf *ocitypes.DockerAuthConfig, tarFile *os.File, listenSocket, spec string, clientsideFrontend bool) error {
 	c, err := client.New(ctx, listenSocket, client.WithFailFast())
 	if err != nil {
 		return err
@@ -61,7 +64,7 @@ func buildImage(ctx context.Context, tarFile *os.File, listenSocket, spec string
 	defer os.RemoveAll(buildDir)
 
 	pipeR, pipeW := io.Pipe()
-	solveOpt, err := newSolveOpt(ctx, pipeW, buildDir, spec, clientsideFrontend)
+	solveOpt, err := newSolveOpt(ctx, authConf, pipeW, buildDir, spec, clientsideFrontend)
 	if err != nil {
 		return err
 	}
@@ -103,7 +106,7 @@ func buildImage(ctx context.Context, tarFile *os.File, listenSocket, spec string
 	return eg.Wait()
 }
 
-func newSolveOpt(_ context.Context, w io.WriteCloser, buildDir, spec string, clientsideFrontend bool) (*client.SolveOpt, error) {
+func newSolveOpt(_ context.Context, authConf *ocitypes.DockerAuthConfig, w io.WriteCloser, buildDir, spec string, clientsideFrontend bool) (*client.SolveOpt, error) {
 	if buildDir == "" {
 		return nil, errors.New("please specify build context (e.g. \".\" for the current directory)")
 	} else if buildDir == "-" {
@@ -128,7 +131,7 @@ func newSolveOpt(_ context.Context, w io.WriteCloser, buildDir, spec string, cli
 
 	frontendAttrs["no-cache"] = ""
 
-	// TODO: Propagate our registry auth info & use it here
+	attachable := []session.Attachable{NewDockerAuthProvider(authConf, ociauth.ChooseAuthFile(reqAuthFile))}
 
 	buildArgsMap, err := args.ReadBuildArgs(buildArgs.buildVarArgs, buildArgs.buildVarArgFile)
 	if err != nil {
@@ -153,6 +156,7 @@ func newSolveOpt(_ context.Context, w io.WriteCloser, buildDir, spec string, cli
 		LocalDirs:     localDirs,
 		Frontend:      frontend,
 		FrontendAttrs: frontendAttrs,
+		Session:       attachable,
 	}, nil
 }
 
@@ -167,7 +171,11 @@ func writeDockerTar(r io.Reader, outputFile *os.File) error {
 	return nil
 }
 
-func runBuildOCI(ctx context.Context, _ *cobra.Command, dest, spec string) {
+func runBuildOCI(ctx context.Context, cmd *cobra.Command, dest, spec string) {
+	authConf, err := makeDockerCredentials(cmd)
+	if err != nil {
+		sylog.Fatalf("While trying to process docker login credentials: %v", err)
+	}
 	listenSocket := ensureBuildkitd(ctx)
 	if listenSocket == "" {
 		sylog.Fatalf("Failed to launch buildkitd daemon within specified timeout (%v).", bkLaunchTimeout)
@@ -180,7 +188,7 @@ func runBuildOCI(ctx context.Context, _ *cobra.Command, dest, spec string) {
 	defer tarFile.Close()
 	defer os.Remove(tarFile.Name())
 
-	if err := buildImage(ctx, tarFile, listenSocket, spec, false); err != nil {
+	if err := buildImage(ctx, authConf, tarFile, listenSocket, spec, false); err != nil {
 		sylog.Fatalf("While building from dockerfile: %v", err)
 	}
 	sylog.Debugf("Saved OCI image as tar: %s", tarFile.Name())

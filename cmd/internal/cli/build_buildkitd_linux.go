@@ -439,11 +439,6 @@ func setDefaultConfig(cfg *config.Config) {
 	if err != nil {
 		sylog.Fatalf("While trying to determine uid: %v", err)
 	}
-	// rlGID, err := rootless.Getgid()
-	// if err != nil {
-	// 	sylog.Fatalf("While trying to determine gid: %v", err)
-	// }
-
 	if rlUID != 0 {
 		cfg.Workers.OCI.Rootless = true
 		cfg.Workers.OCI.NoProcessSandbox = true
@@ -596,7 +591,6 @@ func newWorkerController(ctx context.Context, wiOpt workerInitializerOpt) (*work
 		}
 		for _, w := range ws {
 			p := w.Platforms(false)
-			sylog.Infof("found worker %q, labels=%v, platforms=%v", w.ID(), w.Labels(), formatPlatforms(p))
 			archutil.WarnIfUnsupported(p)
 			if err = wc.Add(w); err != nil {
 				return nil, err
@@ -607,11 +601,10 @@ func newWorkerController(ctx context.Context, wiOpt workerInitializerOpt) (*work
 	if nWorkers == 0 {
 		return nil, errors.New("no worker found, rebuild the buildkit daemon?")
 	}
-	defaultWorker, err := wc.GetDefault()
+	_, err := wc.GetDefault()
 	if err != nil {
 		return nil, err
 	}
-	sylog.Infof("found %d workers, default=%q", nWorkers, defaultWorker.ID())
 	return wc, nil
 }
 
