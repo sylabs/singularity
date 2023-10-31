@@ -36,6 +36,7 @@ import (
 	"github.com/moby/buildkit/util/progress/progressui"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/sylabs/singularity/v4/internal/pkg/build/args"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/sync/errgroup"
@@ -126,15 +127,13 @@ func newSolveOpt(_ context.Context, w io.WriteCloser, buildDir, spec string, cli
 
 	// TODO: Propagate our registry auth info & use it here
 
-	// TODO: Propagate our own build-args values into this code here
-
-	// for _, buildArg := range clicontext.StringSlice("build-arg") {
-	// 	kv := strings.SplitN(buildArg, "=", 2)
-	// 	if len(kv) != 2 {
-	// 		return nil, errors.Errorf("invalid build-arg value %s", buildArg)
-	// 	}
-	// 	frontendAttrs["build-arg:"+kv[0]] = kv[1]
-	// }
+	buildArgsMap, err := args.ReadBuildArgs(buildArgs.buildVarArgs, buildArgs.buildVarArgFile)
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range buildArgsMap {
+		frontendAttrs["build-arg:"+k] = v
+	}
 
 	return &client.SolveOpt{
 		Exports: []client.ExportEntry{
