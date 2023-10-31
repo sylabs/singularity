@@ -75,6 +75,9 @@ func buildImage(ctx context.Context, tarFile *os.File, listenSocket, spec string
 		} else {
 			_, err = c.Solve(ctx, nil, *solveOpt, ch)
 		}
+		if err != nil {
+			pipeR.Close()
+		}
 		return err
 	})
 	eg.Go(func() error {
@@ -83,7 +86,10 @@ func buildImage(ctx context.Context, tarFile *os.File, listenSocket, spec string
 			c = cn
 		}
 		// not using shared context to not disrupt display but let is finish reporting errors
-		_, err = progressui.DisplaySolveStatus(context.TODO(), c, os.Stdout, ch)
+		_, err := progressui.DisplaySolveStatus(context.TODO(), c, os.Stdout, ch)
+		if err != nil {
+			pipeR.Close()
+		}
 		return err
 	})
 	eg.Go(func() error {
@@ -93,11 +99,8 @@ func buildImage(ctx context.Context, tarFile *os.File, listenSocket, spec string
 		err := pipeR.Close()
 		return err
 	})
-	if err := eg.Wait(); err != nil {
-		return err
-	}
 
-	return nil
+	return eg.Wait()
 }
 
 func newSolveOpt(_ context.Context, w io.WriteCloser, buildDir, spec string, clientsideFrontend bool) (*client.SolveOpt, error) {
@@ -165,10 +168,7 @@ func writeDockerTar(r io.Reader, outputFile *os.File) error {
 }
 
 func runBuildOCI(ctx context.Context, _ *cobra.Command, dest, spec string) {
-	bgCtx, bgCtxCancel := context.WithCancel(ctx)
-	defer bgCtxCancel()
-
-	listenSocket := ensureBuildkitd(bgCtx)
+	listenSocket := ensureBuildkitd(ctx)
 	if listenSocket == "" {
 		sylog.Fatalf("Failed to launch buildkitd daemon within specified timeout (%v).", bkLaunchTimeout)
 	}
@@ -205,7 +205,7 @@ func ensureBuildkitd(ctx context.Context) string {
 	socketChan := make(chan string, 1)
 	go func() {
 		if err := runBuildkitd(ctx, socketChan); err != nil {
-			sylog.Fatalf("Failed to launch buildkitd: %v", err)
+			sylog.Fatalf("buildkitd returned error: %v", err)
 		}
 	}()
 	go func() {
