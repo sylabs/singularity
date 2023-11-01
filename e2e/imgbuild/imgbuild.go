@@ -2032,9 +2032,10 @@ func (c imgBuildTests) buildWithAuth(t *testing.T) {
 func (c imgBuildTests) buildWithAuthTester(t *testing.T, withCustomAuthFile bool, profile e2e.Profile) {
 	e2e.EnsureImage(t, c.env)
 
+	privImgNoPrefix := strings.TrimPrefix(c.env.TestRegistryPrivImage, "docker://")
 	simpleDef := e2e.PrepareDefFile(e2e.DefFileDetails{
 		Bootstrap: "docker",
-		From:      strings.TrimPrefix(c.env.TestRegistryPrivImage, "docker://"),
+		From:      privImgNoPrefix,
 	})
 	t.Cleanup(func() {
 		if !t.Failed() {
@@ -2049,13 +2050,24 @@ func (c imgBuildTests) buildWithAuthTester(t *testing.T, withCustomAuthFile bool
 		}
 	})
 
+	dockerfile, err := e2e.WriteTempFile(tmpdir, "Dockerfile", fmt.Sprintf(
+		`
+FROM %s
+CMD /bin/true
+`,
+		privImgNoPrefix,
+	))
+	if err != nil {
+		t.Fatalf("while trying to generate test dockerfile: %v", err)
+	}
+
 	prevCwd, err := os.Getwd()
 	if err != nil {
-		t.Fatalf("could not get current working directory: %s", err)
+		t.Fatalf("could not get current working directory: %v", err)
 	}
 	defer os.Chdir(prevCwd)
 	if err = os.Chdir(tmpdir); err != nil {
-		t.Fatalf("could not change cwd to %q: %s", tmpdir, err)
+		t.Fatalf("could not change cwd to %q: %v", tmpdir, err)
 	}
 
 	localAuthFileName := ""
@@ -2099,6 +2111,18 @@ func (c imgBuildTests) buildWithAuthTester(t *testing.T, withCustomAuthFile bool
 		{
 			name:          "privimg logged in",
 			args:          []string{"-F", "--no-https", "--disable-cache", "./my_image_file.sif", simpleDef},
+			whileLoggedIn: true,
+			expectExit:    0,
+		},
+		{
+			name:          "privimg df logged out",
+			args:          []string{"-F", "--oci", "--no-https", "--disable-cache", "./my_image_file.oci.sif", dockerfile},
+			whileLoggedIn: false,
+			expectExit:    255,
+		},
+		{
+			name:          "privimg df logged in",
+			args:          []string{"-F", "--oci", "--no-https", "--disable-cache", "./my_image_file.oci.sif", dockerfile},
 			whileLoggedIn: true,
 			expectExit:    0,
 		},
