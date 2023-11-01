@@ -23,7 +23,10 @@ package cli
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/tls"
+	"fmt"
+	"math/big"
 	"net"
 	"os"
 	"os/exec"
@@ -75,6 +78,7 @@ import (
 	"github.com/moby/buildkit/worker/base"
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	"github.com/samber/lo"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/oci"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
@@ -128,6 +132,8 @@ func runBuildkitd(ctx context.Context, socketChan chan<- string) error {
 	}
 
 	setDefaultConfig(&cfg)
+
+	sylog.Infof("cfg.Root for buildkitd: %s", cfg.Root)
 
 	server := grpc.NewServer()
 
@@ -463,10 +469,6 @@ func setDefaultConfig(cfg *config.Config) {
 
 	cfg.Workers.OCI.Snapshotter = "overlayfs"
 
-	if len(cfg.GRPC.Address) == 0 {
-		cfg.GRPC.Address = []string{appdefaults.Address}
-	}
-
 	if cfg.Workers.OCI.Platforms == nil {
 		cfg.Workers.OCI.Platforms = formatPlatforms(archutil.SupportedPlatforms(false))
 	}
@@ -486,16 +488,36 @@ func setDefaultConfig(cfg *config.Config) {
 			sylog.Fatalf("While trying to ascertain rootless uid: %v", err)
 		}
 		u := os.Getenv("USER")
-		if (u != "" && u != "root") || (uid != 0) {
-			if orig.Root == "" {
-				cfg.Root = appdefaults.UserRoot()
-			}
-			if len(orig.GRPC.Address) == 0 {
-				cfg.GRPC.Address = []string{appdefaults.UserAddress()}
-			}
-			appdefaults.EnsureUserAddressDir()
+		if ((u != "" && u != "root") || (uid != 0)) && (orig.Root) == "" {
+			cfg.Root = appdefaults.UserRoot()
 		}
 	}
+
+	cfg.GRPC.Address = []string{generateSocketAddress()}
+	appdefaults.EnsureUserAddressDir()
+}
+
+func generateSocketAddress() string {
+	maxVal := big.NewInt(10)
+	randStr := strings.Join(lo.Map(lo.Range(16), func(_, _ int) string {
+		val, err := rand.Int(rand.Reader, maxVal)
+		if err != nil {
+			sylog.Fatalf("While trying to generate random string for socket name: %v", err)
+		}
+
+		return val.String()
+	}), "")
+
+	socketFilename := fmt.Sprintf("buildkitd-%s.sock", randStr)
+
+	//  pam_systemd sets XDG_RUNTIME_DIR but not other dirs.
+	xdgRuntimeDir := os.Getenv("XDG_RUNTIME_DIR")
+	if xdgRuntimeDir != "" {
+		dirs := strings.Split(xdgRuntimeDir, ":")
+		return "unix://" + filepath.Join(dirs[0], "buildkit", socketFilename)
+	}
+
+	return "unix://" + filepath.Join("/run/buildkit", socketFilename)
 }
 
 func getListener(addr string, uid, gid int, tlsConfig *tls.Config) (net.Listener, error) {
