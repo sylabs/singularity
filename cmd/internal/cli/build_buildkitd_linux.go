@@ -481,7 +481,12 @@ func setDefaultConfig(cfg *config.Config) {
 		// if buildkitd is being executed as the mapped-root (not only EUID==0 but also $USER==root)
 		// in a user namespace, we need to enable the rootless mode but
 		// we don't want to honor $HOME for setting up default paths.
-		if u := os.Getenv("USER"); u != "" && u != "root" {
+		uid, err := rootless.Getuid()
+		if err != nil {
+			sylog.Fatalf("While trying to ascertain rootless uid: %v", err)
+		}
+		u := os.Getenv("USER")
+		if (u != "" && u != "root") || (uid != 0) {
 			if orig.Root == "" {
 				cfg.Root = appdefaults.UserRoot()
 			}

@@ -1742,7 +1742,7 @@ cat /proc/$$/cmdline`
 	)
 }
 
-func (c imgBuildTests) buildDefinitionWithBuildArgs(t *testing.T) {
+func (c imgBuildTests) buildWithBuildArgs(t *testing.T) {
 	busyboxSIF := e2e.BusyboxSIF(t)
 	fileContent := `HOME=/root
 DEMO=demo=with===equals==signs
@@ -1941,6 +1941,74 @@ DEMO=demo=with===equals==signs
 	})
 }
 
+func (c imgBuildTests) buildDockerfile(t *testing.T) {
+	profiles := []e2e.Profile{e2e.UserProfile, e2e.RootProfile}
+	for _, profile := range profiles {
+		t.Run(profile.String(), func(t *testing.T) {
+			tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, "", "build_dockerfile_e2e_", "dir")
+			t.Cleanup(func() {
+				if !t.Failed() {
+					tmpdirCleanup(t)
+				}
+			})
+
+			outputImgPath := filepath.Join(tmpdir, "image.oci.sif")
+
+			tests := []struct {
+				name            string
+				buildArgs       []string
+				actCmd          string
+				actArgs         []string
+				buildExpectExit int
+				buildExpects    []e2e.SingularityCmdResultOp
+				actExpectExit   int
+				actExpects      []e2e.SingularityCmdResultOp
+			}{
+				{
+					name:            "simple",
+					buildArgs:       []string{outputImgPath, filepath.Join("..", "test", "defs", "Dockerfile.simple")},
+					actCmd:          "exec",
+					actArgs:         []string{outputImgPath, "/bin/true"},
+					buildExpectExit: 0,
+					actExpectExit:   0,
+				},
+				{
+					name:            "broken",
+					buildArgs:       []string{outputImgPath, filepath.Join("..", "test", "defs", "Dockerfile.broken")},
+					buildExpectExit: 255,
+				},
+			}
+
+			for _, tt := range tests {
+				t.Run(tt.name, func(t *testing.T) {
+					if len(tt.buildArgs) > 0 {
+						buildArgs := append([]string{"-F", "--oci"}, tt.buildArgs...)
+						c.env.RunSingularity(
+							t,
+							e2e.AsSubtest("build"),
+							e2e.WithProfile(profile),
+							e2e.WithCommand("build"),
+							e2e.WithArgs(buildArgs...),
+							e2e.ExpectExit(tt.buildExpectExit, tt.buildExpects...),
+						)
+					}
+					if len(tt.actArgs) > 0 {
+						actArgs := append([]string{"--oci"}, tt.actArgs...)
+						c.env.RunSingularity(
+							t,
+							e2e.AsSubtest("act"),
+							e2e.WithProfile(profile),
+							e2e.WithCommand(tt.actCmd),
+							e2e.WithArgs(actArgs...),
+							e2e.ExpectExit(tt.actExpectExit, tt.actExpects...),
+						)
+					}
+				})
+			}
+		})
+	}
+}
+
 func (c imgBuildTests) buildWithAuth(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
@@ -2101,39 +2169,40 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	np := testhelper.NoParallel
 
 	return testhelper.Tests{
-		"bad path":                        c.badPath,                      // try to build from a non existent path
-		"build encrypt with PEM file":     c.buildEncryptPemFile,          // build encrypted images with certificate
-		"build encrypted with passphrase": c.buildEncryptPassphrase,       // build encrypted images with passphrase
-		"definition":                      c.buildDefinition,              // builds from definition template
-		"from local image":                c.buildLocalImage,              // build and image from an existing image
-		"from":                            c.buildFrom,                    // builds from definition file and URI
-		"multistage":                      c.buildMultiStageDefinition,    // multistage build from definition templates
-		"non-root build":                  c.nonRootBuild,                 // build sifs from non-root
-		"build and update sandbox":        c.buildUpdateSandbox,           // build/update sandbox
-		"fingerprint check":               c.buildWithFingerprint,         // definition file includes fingerprint check
-		"build with bind mount":           c.buildBindMount,               // build image with bind mount
-		"test with writable tmpfs":        c.testWritableTmpfs,            // build image, using writable tmpfs in the test step
-		"library host":                    c.buildLibraryHost,             // build image with hostname in library URI
-		"proot":                           c.buildProot,                   // build image as an unpriv user with proot
-		"customShebang":                   c.buildCustomShebang,           // build image with custom #! in %test and %runscript
-		"no-setgroups":                    c.buildNoSetgroups,             // build with --fakeroot --no-setgroups
-		"buildArgs":                       c.buildDefinitionWithBuildArgs, // builds from definition with build args (build arg file) support
-		"auth":                            np(c.buildWithAuth),            // build with custom auth file
-		"issue 3848":                      c.issue3848,                    // https://github.com/hpcng/singularity/issues/3848
-		"issue 4203":                      c.issue4203,                    // https://github.com/sylabs/singularity/issues/4203
-		"issue 4407":                      c.issue4407,                    // https://github.com/sylabs/singularity/issues/4407
-		"issue 4583":                      c.issue4583,                    // https://github.com/sylabs/singularity/issues/4583
-		"issue 4820":                      c.issue4820,                    // https://github.com/sylabs/singularity/issues/4820
-		"issue 4837":                      c.issue4837,                    // https://github.com/sylabs/singularity/issues/4837
-		"issue 4967":                      c.issue4967,                    // https://github.com/sylabs/singularity/issues/4967
-		"issue 4969":                      c.issue4969,                    // https://github.com/sylabs/singularity/issues/4969
-		"issue 5166":                      c.issue5166,                    // https://github.com/sylabs/singularity/issues/5166
-		"issue 5250":                      c.issue5250,                    // https://github.com/sylabs/singularity/issues/5250
-		"issue 5315":                      c.issue5315,                    // https://github.com/sylabs/singularity/issues/5315
-		"issue 5435":                      c.issue5435,                    // https://github.com/hpcng/singularity/issues/5435
-		"issue 5668":                      c.issue5668,                    // https://github.com/hpcng/singularity/issues/5435
-		"issue 5690":                      c.issue5690,                    // https://github.com/hpcng/singularity/issues/5690
-		"issue 1273":                      c.issue1273,                    // https://github.com/sylabs/singularity/issues/1273
-		"issue 1812":                      c.issue1812,                    // https://github.com/sylabs/singularity/issues/1812
+		"bad path":                        c.badPath,                   // try to build from a non existent path
+		"build encrypt with PEM file":     c.buildEncryptPemFile,       // build encrypted images with certificate
+		"build encrypted with passphrase": c.buildEncryptPassphrase,    // build encrypted images with passphrase
+		"definition":                      c.buildDefinition,           // builds from definition template
+		"from local image":                c.buildLocalImage,           // build and image from an existing image
+		"from":                            c.buildFrom,                 // builds from definition file and URI
+		"multistage":                      c.buildMultiStageDefinition, // multistage build from definition templates
+		"non-root build":                  c.nonRootBuild,              // build sifs from non-root
+		"build and update sandbox":        c.buildUpdateSandbox,        // build/update sandbox
+		"fingerprint check":               c.buildWithFingerprint,      // definition file includes fingerprint check
+		"build with bind mount":           c.buildBindMount,            // build image with bind mount
+		"test with writable tmpfs":        c.testWritableTmpfs,         // build image, using writable tmpfs in the test step
+		"library host":                    c.buildLibraryHost,          // build image with hostname in library URI
+		"proot":                           c.buildProot,                // build image as an unpriv user with proot
+		"customShebang":                   c.buildCustomShebang,        // build image with custom #! in %test and %runscript
+		"no-setgroups":                    c.buildNoSetgroups,          // build with --fakeroot --no-setgroups
+		"buildArgs":                       c.buildWithBuildArgs,        // builds from definition with build args (build arg file) support
+		"dockerfile":                      c.buildDockerfile,           // build OCI-SIF image from Dockerfile
+		"auth":                            np(c.buildWithAuth),         // build with custom auth file
+		"issue 3848":                      c.issue3848,                 // https://github.com/hpcng/singularity/issues/3848
+		"issue 4203":                      c.issue4203,                 // https://github.com/sylabs/singularity/issues/4203
+		"issue 4407":                      c.issue4407,                 // https://github.com/sylabs/singularity/issues/4407
+		"issue 4583":                      c.issue4583,                 // https://github.com/sylabs/singularity/issues/4583
+		"issue 4820":                      c.issue4820,                 // https://github.com/sylabs/singularity/issues/4820
+		"issue 4837":                      c.issue4837,                 // https://github.com/sylabs/singularity/issues/4837
+		"issue 4967":                      c.issue4967,                 // https://github.com/sylabs/singularity/issues/4967
+		"issue 4969":                      c.issue4969,                 // https://github.com/sylabs/singularity/issues/4969
+		"issue 5166":                      c.issue5166,                 // https://github.com/sylabs/singularity/issues/5166
+		"issue 5250":                      c.issue5250,                 // https://github.com/sylabs/singularity/issues/5250
+		"issue 5315":                      c.issue5315,                 // https://github.com/sylabs/singularity/issues/5315
+		"issue 5435":                      c.issue5435,                 // https://github.com/hpcng/singularity/issues/5435
+		"issue 5668":                      c.issue5668,                 // https://github.com/hpcng/singularity/issues/5435
+		"issue 5690":                      c.issue5690,                 // https://github.com/hpcng/singularity/issues/5690
+		"issue 1273":                      c.issue1273,                 // https://github.com/sylabs/singularity/issues/1273
+		"issue 1812":                      c.issue1812,                 // https://github.com/sylabs/singularity/issues/1812
 	}
 }
