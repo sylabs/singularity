@@ -20,6 +20,13 @@
   commands, allows individual layers to be preserved when an OCI-SIF image is
   created from an OCI source. Multi layer OCI-SIF images can be run with
   SingularityCE 4.1 and later.
+- Singularity will now build OCI-SIF images from Dockerfiles, if the `--oci`
+  flag is used with the `build` command. Provide a Dockerfile as the final
+  argument to `build`, instead of a Singularity definition (.def) file. Supports
+  `--build-arg` / `--build-arg-file` options, as well as `--authfile` and other
+  authentication options. See the [user
+  guide](https://docs.sylabs.io/guides/latest/user-guide/build_a_container.html#dockerfile)
+  for more information.
 
 ### Bug Fixes
 
