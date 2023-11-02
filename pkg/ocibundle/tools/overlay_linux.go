@@ -58,8 +58,9 @@ func DeleteOverlay(ctx context.Context, bundlePath string) error {
 	return overlay.DetachAndDelete(olDir)
 }
 
-// CreateOverlay creates a writable overlay using tmpfs.
-func CreateOverlayTmpfs(ctx context.Context, bundlePath string, sizeMiB int, allowSetuid bool) (string, error) {
+// PrepareOverlayTmpfs creates a tmpfs, mounted to the overlay/ directory in the
+// bundle, but does not perform an overlay mount using it.
+func PrepareOverlayTmpfs(bundlePath string, sizeMiB int, allowSetuid bool) (string, error) {
 	var err error
 
 	oldumask := syscall.Umask(0)
@@ -89,13 +90,15 @@ func CreateOverlayTmpfs(ctx context.Context, bundlePath string, sizeMiB int, all
 	if err != nil {
 		return "", fmt.Errorf("failed to bind %s: %s", olDir, err)
 	}
-	// best effort to cleanup mount
-	defer func() {
-		if err != nil {
-			sylog.Debugf("Encountered error in CreateOverlayTmpfs; attempting to detach overlay dir %q", olDir)
-			syscall.Unmount(olDir, syscall.MNT_DETACH)
-		}
-	}()
+	return olDir, nil
+}
+
+// CreateOverlay creates a writable overlay using tmpfs, mounting it over the bundle rootfs.
+func CreateOverlayTmpfs(ctx context.Context, bundlePath string, sizeMiB int, allowSetuid bool) (string, error) {
+	olDir, err := PrepareOverlayTmpfs(bundlePath, sizeMiB, allowSetuid)
+	if err != nil {
+		return "", err
+	}
 
 	oi := overlay.Item{
 		SourcePath: olDir,
@@ -107,13 +110,16 @@ func CreateOverlayTmpfs(ctx context.Context, bundlePath string, sizeMiB int, all
 
 	err = olSet.Mount(ctx, RootFs(bundlePath).Path())
 	if err != nil {
+		// best effort to cleanup tmpfs mount
+		sylog.Debugf("Encountered error in CreateOverlayTmpfs; attempting to detach overlay dir %q", olDir)
+		syscall.Unmount(olDir, syscall.MNT_DETACH)
 		return "", err
 	}
 
 	return olDir, nil
 }
 
-// DeleteOverlayTmpfs deletes an overlay previously created using tmpfs.
+// DeleteOverlayTmpfs unmounts and deletes a tmpfs backed overlay created with CreateOverlayTmpfs.
 func DeleteOverlayTmpfs(ctx context.Context, bundlePath, olDir string) error {
 	rootFsDir := RootFs(bundlePath).Path()
 
