@@ -19,7 +19,7 @@
 // This file contains modified code originally taken from:
 // github.com/moby/buildkit/tree/v0.12.3/cmd/buildkitd
 
-package cli
+package daemon
 
 import (
 	"context"
@@ -122,10 +122,10 @@ func init() {
 	)
 }
 
-// runBuildkitd runs a new buildkitd daemon. Once the server is ready, the path
+// Run runs a new buildkitd daemon. Once the server is ready, the path
 // of the unix socket will be sent over the provided channel. Make sure this is
 // a buffered channel with sufficient room to avoid deadlocks.
-func runBuildkitd(ctx context.Context, socketChan chan<- string) error {
+func Run(ctx context.Context, socketChan chan<- string) error {
 	cfg, err := config.LoadFile(defaultConfigPath())
 	if err != nil {
 		return err
@@ -262,7 +262,7 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 		sylog.Infof("Using runc runtime for buildkitd daemon.")
 	}
 
-	opt, err := NewBkWorkerOpt(ctx, common.config.Root, snFactory, cfg.Rootless, processMode, cfg.Labels, idmapping, nc, dns, cfg.Binary, cfg.ApparmorProfile, cfg.SELinux, parallelismSem, "", cfg.DefaultCgroupParent)
+	opt, err := NewWorkerOpt(ctx, common.config.Root, snFactory, cfg.Rootless, processMode, cfg.Labels, idmapping, nc, dns, cfg.Binary, cfg.ApparmorProfile, cfg.SELinux, parallelismSem, "", cfg.DefaultCgroupParent)
 	if err != nil {
 		return nil, err
 	}

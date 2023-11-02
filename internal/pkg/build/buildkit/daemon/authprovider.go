@@ -19,7 +19,7 @@
 // This file contains modified code originally taken from:
 // github.com/moby/buildkit/tree/v0.12.3/session/auth/authprovider
 
-package cli
+package daemon
 
 import (
 	"context"
@@ -65,7 +65,7 @@ const (
 	dockerHubRegistryHost        = "registry-1.docker.io"
 )
 
-func NewDockerAuthProvider(authConf *ocitypes.DockerAuthConfig, reqAuthFile string) session.Attachable {
+func NewAuthProvider(authConf *ocitypes.DockerAuthConfig, reqAuthFile string) session.Attachable {
 	if authConf != nil {
 		return &authProvider{
 			authConfigCache: map[string]*types.AuthConfig{},

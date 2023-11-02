@@ -18,10 +18,12 @@ import (
 	"strings"
 	"syscall"
 
+	ocitypes "github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
 	keyclient "github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/v4/internal/pkg/build"
 	"github.com/sylabs/singularity/v4/internal/pkg/build/args"
+	bkclient "github.com/sylabs/singularity/v4/internal/pkg/build/buildkit/client"
 	"github.com/sylabs/singularity/v4/internal/pkg/build/remotebuilder"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
@@ -197,13 +199,26 @@ func runBuild(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("While checking build target: %s", err)
 	}
 
-	switch {
-	case buildArgs.remote:
+	if buildArgs.remote {
 		runBuildRemote(cmd.Context(), cmd, dest, spec)
-	case isOCI:
-		runBuildOCI(cmd.Context(), cmd, dest, spec)
-	default:
-		runBuildLocal(cmd.Context(), cmd, dest, spec)
+		return
+	}
+
+	authConf, err := makeDockerCredentials(cmd)
+	if err != nil {
+		sylog.Fatalf("While creating Docker credentials: %v", err)
+	}
+
+	if isOCI {
+		bkOpts := &bkclient.Opts{
+			AuthConf:        authConf,
+			ReqAuthFile:     reqAuthFile,
+			BuildVarArgs:    buildArgs.buildVarArgs,
+			BuildVarArgFile: buildArgs.buildVarArgFile,
+		}
+		bkclient.Run(cmd.Context(), bkOpts, dest, spec)
+	} else {
+		runBuildLocal(cmd.Context(), authConf, cmd, dest, spec)
 	}
 
 	sylog.Infof("Build complete: %s", dest)
@@ -333,7 +348,7 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 	}
 }
 
-func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
+func runBuildLocal(ctx context.Context, authConf *ocitypes.DockerAuthConfig, cmd *cobra.Command, dst, spec string) {
 	var keyInfo *cryptkey.KeyInfo
 	if buildArgs.encrypt || promptForPassphrase || cmd.Flags().Lookup("pem-path").Changed {
 		if os.Getuid() != 0 {
@@ -361,11 +376,6 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 	err := checkSections()
 	if err != nil {
 		sylog.Fatalf("Could not check build sections: %v", err)
-	}
-
-	authConf, err := makeDockerCredentials(cmd)
-	if err != nil {
-		sylog.Fatalf("While creating Docker credentials: %v", err)
 	}
 
 	// parse definition to determine build source

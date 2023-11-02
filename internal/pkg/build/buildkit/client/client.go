@@ -19,7 +19,7 @@
 // This file contains modified code originally taken from:
 // github.com/moby/buildkit/blob/v0.12.3/examples/build-using-dockerfile/main.go
 
-package cli
+package client
 
 import (
 	"bufio"
@@ -37,8 +37,8 @@ import (
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/util/progress/progressui"
 	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/v4/internal/pkg/build/args"
+	bkdaemon "github.com/sylabs/singularity/v4/internal/pkg/build/buildkit/daemon"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -51,7 +51,84 @@ const (
 	bkLaunchTimeout = 30 * time.Second
 )
 
-func buildImage(ctx context.Context, authConf *ocitypes.DockerAuthConfig, tarFile *os.File, listenSocket, spec string, clientsideFrontend bool) error {
+type Opts struct {
+	// Optional Docker authentication config derived from interactive login or
+	// environment variables
+	AuthConf *ocitypes.DockerAuthConfig
+	// Optional user requested authentication file for writing/reading OCI
+	// registry credentials
+	ReqAuthFile string
+	// Variables passed to build procedure.
+	BuildVarArgs []string
+	// Variables file passed to build procedure.
+	BuildVarArgFile string
+}
+
+func Run(ctx context.Context, opts *Opts, dest, spec string) {
+	listenSocket := ensureBuildkitd(ctx)
+	if listenSocket == "" {
+		sylog.Fatalf("Failed to launch buildkitd daemon within specified timeout (%v).", bkLaunchTimeout)
+	}
+
+	tarFile, err := os.CreateTemp("", "singularity-buildkit-tar-")
+	if err != nil {
+		sylog.Fatalf("While trying to build tar image from dockerfile: %v", err)
+	}
+	defer tarFile.Close()
+	defer os.Remove(tarFile.Name())
+
+	if err := buildImage(ctx, opts, tarFile, listenSocket, spec, false); err != nil {
+		sylog.Fatalf("While building from dockerfile: %v", err)
+	}
+	sylog.Debugf("Saved OCI image as tar: %s", tarFile.Name())
+	tarFile.Close()
+
+	if _, err := ocisif.PullOCISIF(ctx, nil, dest, "oci-archive:"+tarFile.Name(), ocisif.PullOptions{}); err != nil {
+		sylog.Fatalf("While converting OCI tar image to OCI-SIF: %v", err)
+	}
+}
+
+// ensureBuildkitd checks if a buildkitd daemon is already running, and if not,
+// launches one. Once the server is ready, the value true will be sent over the
+// provided readyChan. Make sure this is a buffered channel with sufficient room
+// to avoid deadlocks.
+func ensureBuildkitd(ctx context.Context) string {
+	if isBuildkitdRunning(ctx) {
+		sylog.Infof("Found buildkitd already running at %q; will use that daemon.", bkDefaultSocket)
+		return bkDefaultSocket
+	}
+
+	sylog.Infof("Did not find usable running buildkitd daemon; spawning our own.")
+	socketChan := make(chan string, 1)
+	go func() {
+		if err := bkdaemon.Run(ctx, socketChan); err != nil {
+			sylog.Fatalf("buildkitd returned error: %v", err)
+		}
+	}()
+	go func() {
+		time.Sleep(bkLaunchTimeout)
+		socketChan <- ""
+	}()
+
+	return <-socketChan
+}
+
+// isBuildkitdRunning tries to determine whether there's already an instance of buildkitd running.
+func isBuildkitdRunning(ctx context.Context) bool {
+	c, err := client.New(ctx, bkDefaultSocket, client.WithFailFast())
+	if err != nil {
+		return false
+	}
+	defer c.Close()
+
+	cc := c.ControlClient()
+	ir := moby_buildkit_v1.InfoRequest{}
+	_, err = cc.Info(ctx, &ir)
+
+	return (err == nil)
+}
+
+func buildImage(ctx context.Context, opts *Opts, tarFile *os.File, listenSocket, spec string, clientsideFrontend bool) error {
 	c, err := client.New(ctx, listenSocket, client.WithFailFast())
 	if err != nil {
 		return err
@@ -64,7 +141,7 @@ func buildImage(ctx context.Context, authConf *ocitypes.DockerAuthConfig, tarFil
 	defer os.RemoveAll(buildDir)
 
 	pipeR, pipeW := io.Pipe()
-	solveOpt, err := newSolveOpt(ctx, authConf, pipeW, buildDir, spec, clientsideFrontend)
+	solveOpt, err := newSolveOpt(ctx, opts, pipeW, buildDir, spec, clientsideFrontend)
 	if err != nil {
 		return err
 	}
@@ -106,7 +183,7 @@ func buildImage(ctx context.Context, authConf *ocitypes.DockerAuthConfig, tarFil
 	return eg.Wait()
 }
 
-func newSolveOpt(_ context.Context, authConf *ocitypes.DockerAuthConfig, w io.WriteCloser, buildDir, spec string, clientsideFrontend bool) (*client.SolveOpt, error) {
+func newSolveOpt(_ context.Context, opts *Opts, w io.WriteCloser, buildDir, spec string, clientsideFrontend bool) (*client.SolveOpt, error) {
 	if buildDir == "" {
 		return nil, errors.New("please specify build context (e.g. \".\" for the current directory)")
 	} else if buildDir == "-" {
@@ -131,9 +208,9 @@ func newSolveOpt(_ context.Context, authConf *ocitypes.DockerAuthConfig, w io.Wr
 
 	frontendAttrs["no-cache"] = ""
 
-	attachable := []session.Attachable{NewDockerAuthProvider(authConf, ociauth.ChooseAuthFile(reqAuthFile))}
+	attachable := []session.Attachable{bkdaemon.NewAuthProvider(opts.AuthConf, ociauth.ChooseAuthFile(opts.ReqAuthFile))}
 
-	buildArgsMap, err := args.ReadBuildArgs(buildArgs.buildVarArgs, buildArgs.buildVarArgFile)
+	buildArgsMap, err := args.ReadBuildArgs(opts.BuildVarArgs, opts.BuildVarArgFile)
 	if err != nil {
 		return nil, err
 	}
@@ -169,72 +246,4 @@ func writeDockerTar(r io.Reader, outputFile *os.File) error {
 	}
 
 	return nil
-}
-
-func runBuildOCI(ctx context.Context, cmd *cobra.Command, dest, spec string) {
-	authConf, err := makeDockerCredentials(cmd)
-	if err != nil {
-		sylog.Fatalf("While trying to process docker login credentials: %v", err)
-	}
-	listenSocket := ensureBuildkitd(ctx)
-	if listenSocket == "" {
-		sylog.Fatalf("Failed to launch buildkitd daemon within specified timeout (%v).", bkLaunchTimeout)
-	}
-
-	tarFile, err := os.CreateTemp("", "singularity-buildkit-tar-")
-	if err != nil {
-		sylog.Fatalf("While trying to build tar image from dockerfile: %v", err)
-	}
-	defer tarFile.Close()
-	defer os.Remove(tarFile.Name())
-
-	if err := buildImage(ctx, authConf, tarFile, listenSocket, spec, false); err != nil {
-		sylog.Fatalf("While building from dockerfile: %v", err)
-	}
-	sylog.Debugf("Saved OCI image as tar: %s", tarFile.Name())
-	tarFile.Close()
-
-	if _, err := ocisif.PullOCISIF(ctx, nil, dest, "oci-archive:"+tarFile.Name(), ocisif.PullOptions{}); err != nil {
-		sylog.Fatalf("While converting OCI tar image to OCI-SIF: %v", err)
-	}
-}
-
-// ensureBuildkitd checks if a buildkitd daemon is already running, and if not,
-// launches one. Once the server is ready, the value true will be sent over the
-// provided readyChan. Make sure this is a buffered channel with sufficient room
-// to avoid deadlocks.
-func ensureBuildkitd(ctx context.Context) string {
-	if isBuildkitdRunning(ctx) {
-		sylog.Infof("Found buildkitd already running at %q; will use that daemon.", bkDefaultSocket)
-		return bkDefaultSocket
-	}
-
-	sylog.Infof("Did not find usable running buildkitd daemon; spawning our own.")
-	socketChan := make(chan string, 1)
-	go func() {
-		if err := runBuildkitd(ctx, socketChan); err != nil {
-			sylog.Fatalf("buildkitd returned error: %v", err)
-		}
-	}()
-	go func() {
-		time.Sleep(bkLaunchTimeout)
-		socketChan <- ""
-	}()
-
-	return <-socketChan
-}
-
-// isBuildkitdRunning tries to determine whether there's already an instance of buildkitd running.
-func isBuildkitdRunning(ctx context.Context) bool {
-	c, err := client.New(ctx, bkDefaultSocket, client.WithFailFast())
-	if err != nil {
-		return false
-	}
-	defer c.Close()
-
-	cc := c.ControlClient()
-	ir := moby_buildkit_v1.InfoRequest{}
-	_, err = cc.Info(ctx, &ir)
-
-	return (err == nil)
 }

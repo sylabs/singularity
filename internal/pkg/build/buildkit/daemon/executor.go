@@ -20,7 +20,7 @@
 // github.com/moby/buildkit/tree/v0.12.3/executor
 // github.com/moby/buildkit/tree/v0.12.3/worker/runc
 
-package cli
+package daemon
 
 import (
 	"context"
@@ -79,8 +79,8 @@ type BkSnapshotterFactory struct {
 	New  func(root string) (ctdsnapshot.Snapshotter, error)
 }
 
-// NewBkWorkerOpt creates a WorkerOpt.
-func NewBkWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFactory, rootless bool, processMode bkoci.ProcessMode, labels map[string]string, idmap *idtools.IdentityMapping, nopt netproviders.Opt, dns *bkoci.DNSConfig, binary, apparmorProfile string, selinux bool, parallelismSem *semaphore.Weighted, traceSocket, defaultCgroupParent string) (base.WorkerOpt, error) {
+// NewWorkerOpt creates a WorkerOpt.
+func NewWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFactory, rootless bool, processMode bkoci.ProcessMode, labels map[string]string, idmap *idtools.IdentityMapping, nopt netproviders.Opt, dns *bkoci.DNSConfig, binary, apparmorProfile string, selinux bool, parallelismSem *semaphore.Weighted, traceSocket, defaultCgroupParent string) (base.WorkerOpt, error) {
 	var opt base.WorkerOpt
 	name := "runc-" + snFactory.Name
 	root = filepath.Join(root, name)
@@ -106,7 +106,7 @@ func NewBkWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFac
 		return opt, err
 	}
 
-	exe, err := NewBkBuildExecutor(BkWorkerOpt{
+	exe, err := NewBuildExecutor(WorkerOpt{
 		// Root directory
 		Root: filepath.Join(root, "executor"),
 		// If user has specified OCI worker binary, it will be sent to the runc executor to find and use
@@ -214,7 +214,7 @@ func NewBkWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFac
 	return opt, nil
 }
 
-type BkWorkerOpt struct {
+type WorkerOpt struct {
 	// root directory
 	Root              string
 	CommandCandidates []string
@@ -259,7 +259,7 @@ type buildExecutor struct {
 	isRunc           bool
 }
 
-func NewBkBuildExecutor(opt BkWorkerOpt, networkProviders map[pb.NetMode]bknet.Provider) (executor.Executor, error) {
+func NewBuildExecutor(opt WorkerOpt, networkProviders map[pb.NetMode]bknet.Provider) (executor.Executor, error) {
 	cmds := opt.CommandCandidates
 	if cmds == nil {
 		cmds = defaultCommandCandidates
