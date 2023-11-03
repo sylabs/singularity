@@ -71,6 +71,7 @@ The following have contributed code and/or documentation to this repository.
 - Lars Quentin <lars@lquenti.de>
 - Maciej Sieczka <msieczka@sieczka.org>
 - Marcelo Magallon <marcelo@sylabs.io>
+- Marco Claudio De La Pierre <marco.delapierre@gmail.com>
 - Marco Rubin <marco.rubin@protonmail.com>
 - Mark Egan-Fuller <markeganfuller@googlemail.com>
 - Matt Wiens <mwiens91@gmail.com>
