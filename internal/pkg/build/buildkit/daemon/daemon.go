@@ -29,24 +29,16 @@ import (
 	"math/big"
 	"net"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
-	snapshotsapi "github.com/containerd/containerd/api/services/snapshots/v1"
-	"github.com/containerd/containerd/defaults"
-	"github.com/containerd/containerd/pkg/dialer"
 	"github.com/containerd/containerd/pkg/userns"
 	"github.com/containerd/containerd/platforms"
 	"github.com/containerd/containerd/remotes/docker"
 	ctdsnapshot "github.com/containerd/containerd/snapshots"
 	"github.com/containerd/containerd/snapshots/overlay"
-	"github.com/containerd/containerd/snapshots/overlay/overlayutils"
-	snproxy "github.com/containerd/containerd/snapshots/proxy"
 	"github.com/containerd/containerd/sys"
-	fuseoverlayfs "github.com/containerd/fuse-overlayfs-snapshotter"
 	sddaemon "github.com/coreos/go-systemd/v22/daemon"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/gofrs/flock"
@@ -87,8 +79,6 @@ import (
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/backoff"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -275,7 +265,7 @@ func setDefaultConfig(cfg *config.Config) {
 func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]worker.Worker, error) {
 	cfg := common.config.Workers.OCI
 
-	if (cfg.Enabled == nil && !validOCIBinary()) || (cfg.Enabled != nil && !*cfg.Enabled) {
+	if (cfg.Enabled == nil) || (cfg.Enabled != nil && !*cfg.Enabled) {
 		return nil, nil
 	}
 
@@ -286,7 +276,7 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 	}
 
 	hosts := resolverFunc(common.config)
-	snFactory, err := snapshotterFactory(ctx, common.config.Root, cfg)
+	snFactory, err := snapshotterFactory(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -331,12 +321,8 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 	if err != nil {
 		return nil, err
 	}
-	if filepath.Base(r) == "crun" {
-		cfg.Binary = r
-		sylog.Infof("Using crun runtime for buildkitd daemon.")
-	} else {
-		sylog.Infof("Using runc runtime for buildkitd daemon.")
-	}
+	cfg.Binary = r
+	sylog.Infof("Using %q runtime for buildkitd daemon.", filepath.Base(r))
 
 	opt, err := NewWorkerOpt(ctx, common.config.Root, snFactory, cfg.Rootless, processMode, cfg.Labels, idmapping, nc, dns, cfg.Binary, cfg.ApparmorProfile, cfg.SELinux, parallelismSem, "", cfg.DefaultCgroupParent)
 	if err != nil {
@@ -361,77 +347,20 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 	return []worker.Worker{w}, nil
 }
 
-func snapshotterFactory(_ context.Context, commonRoot string, cfg config.OCIConfig) (BkSnapshotterFactory, error) {
-	var (
-		name    = cfg.Snapshotter
-		address = cfg.ProxySnapshotterPath
-	)
-	if address != "" {
-		snFactory := BkSnapshotterFactory{
-			Name: name,
-		}
-		if _, err := os.Stat(address); os.IsNotExist(err) {
-			return snFactory, errors.Wrapf(err, "snapshotter doesn't exist on %q (Do not include 'unix://' prefix)", address)
-		}
-		snFactory.New = func(root string) (ctdsnapshot.Snapshotter, error) {
-			backoffConfig := backoff.DefaultConfig
-			backoffConfig.MaxDelay = 3 * time.Second
-			connParams := grpc.ConnectParams{
-				Backoff: backoffConfig,
-			}
-			gopts := []grpc.DialOption{
-				grpc.WithTransportCredentials(insecure.NewCredentials()),
-				grpc.WithConnectParams(connParams),
-				grpc.WithContextDialer(dialer.ContextDialer),
-				grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(defaults.DefaultMaxRecvMsgSize)),
-				grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(defaults.DefaultMaxSendMsgSize)),
-			}
-			conn, err := grpc.Dial(dialer.DialAddress(address), gopts...)
-			if err != nil {
-				return nil, errors.Wrapf(err, "failed to dial %q", address)
-			}
-			return snproxy.NewSnapshotter(snapshotsapi.NewSnapshotsClient(conn), name), nil
-		}
-		return snFactory, nil
-	}
-
-	if name == "auto" {
-		if err := overlayutils.Supported(commonRoot); err == nil {
-			name = "overlayfs"
-		} else {
-			sylog.Debugf("auto snapshotter: overlayfs is not available for %s, trying fuse-overlayfs: %v", commonRoot, err)
-			if err2 := fuseoverlayfs.Supported(commonRoot); err2 == nil {
-				name = "fuse-overlayfs"
-			} else {
-				sylog.Debugf("auto snapshotter: fuse-overlayfs is not available for %s, falling back to native: %v", commonRoot, err2)
-				name = "native"
-			}
-		}
-		sylog.Infof("auto snapshotter: using %s", name)
-	}
-
+func snapshotterFactory(_ context.Context, cfg config.OCIConfig) (BkSnapshotterFactory, error) {
+	name := cfg.Snapshotter
 	snFactory := BkSnapshotterFactory{
 		Name: name,
 	}
-	switch name {
-	case "overlayfs": // not "overlay", for consistency with containerd snapshotter plugin ID.
-		snFactory.New = func(root string) (ctdsnapshot.Snapshotter, error) {
-			return overlay.NewSnapshotter(root, overlay.AsynchronousRemove)
-		}
-	default:
-		return snFactory, errors.Errorf("unknown snapshotter name: %q", name)
+	if name != "overlayfs" {
+		return snFactory, errors.Errorf("unsupported snapshotter name: %q", name)
 	}
-	return snFactory, nil
-}
 
-func validOCIBinary() bool {
-	_, err := exec.LookPath("runc")
-	_, err1 := exec.LookPath("buildkit-runc")
-	if err != nil && err1 != nil {
-		sylog.Warningf("skipping oci worker, as runc does not exist")
-		return false
+	snFactory.New = func(root string) (ctdsnapshot.Snapshotter, error) {
+		return overlay.NewSnapshotter(root, overlay.AsynchronousRemove)
 	}
-	return true
+
+	return snFactory, nil
 }
 
 func parseIdentityMapping(str string) (*idtools.IdentityMapping, error) {
@@ -458,7 +387,7 @@ func parseIdentityMapping(str string) (*idtools.IdentityMapping, error) {
 func serveGRPC(cfg config.GRPCConfig, server *grpc.Server, errCh chan error) error {
 	addrs := cfg.Address
 	if len(addrs) == 0 {
-		return errors.New("--addr cannot be empty")
+		return errors.New("cfg.Address cannot be empty")
 	}
 	eg, _ := errgroup.WithContext(context.Background())
 	listeners := make([]net.Listener, 0, len(addrs))
@@ -498,13 +427,7 @@ func defaultConfigPath() string {
 
 func setDefaultNetworkConfig(nc config.NetworkConfig) config.NetworkConfig {
 	if nc.Mode == "" {
-		nc.Mode = "auto"
-	}
-	if nc.CNIConfigPath == "" {
-		nc.CNIConfigPath = appdefaults.DefaultCNIConfigPath
-	}
-	if nc.CNIBinaryPath == "" {
-		nc.CNIBinaryPath = appdefaults.DefaultCNIBinDir
+		nc.Mode = "host"
 	}
 	return nc
 }

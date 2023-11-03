@@ -14,7 +14,6 @@ require (
 	github.com/containerd/console v1.0.3
 	github.com/containerd/containerd v1.7.7
 	github.com/containerd/continuity v0.4.3
-	github.com/containerd/fuse-overlayfs-snapshotter v1.0.2
 	github.com/containerd/go-runc v1.1.0
 	github.com/containernetworking/cni v1.1.2
 	github.com/containernetworking/plugins v1.3.0
