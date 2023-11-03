@@ -17,6 +17,9 @@
   `exec`, `shell`, and `instance start` can now also be passed a `--authfile
   <path>` option, to read OCI registry credentials from this custom file.
 
+- The `singularity.conf` configuration file now features a toggle to control 
+OCI/Docker compatibility mode, `compat mode <no/yes>`.
+
 ### Bug Fixes
 
 - Support parentheses in `test` / `[` commands in container startup scripts,
