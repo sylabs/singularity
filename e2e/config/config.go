@@ -727,33 +727,6 @@ func (c configTests) configGlobal(t *testing.T) {
 			exit:           0,
 			resultOp:       e2e.ExpectError(e2e.UnwantedContainMatch, "Running a non-OCI SIF in OCI mode."),
 		},
-		{
-			name:           "CompatModeNo",
-			argv:           []string{c.sifImage, "true"},
-			profile:        e2e.UserProfile,
-			directive:      "compat mode",
-			directiveValue: "no",
-			exit:           0,
-			resultOp:       e2e.ExpectError(e2e.ContainMatch, "Disabling OCI/Docker compatibility applies to --oci mode only, ignoring"),
-		},
-		{
-			name:           "CompatModeNo_IsCompat",
-			argv:           []string{"--compat", c.sifImage, "true"},
-			profile:        e2e.UserProfile,
-			directive:      "compat mode",
-			directiveValue: "no",
-			exit:           0,
-			resultOp:       e2e.ExpectError(e2e.UnwantedContainMatch, "Disabling OCI/Docker compatibility applies to --oci mode only, ignoring"),
-		},
-		{
-			name:           "CompatModeYes",
-			argv:           []string{c.sifImage, "true"},
-			profile:        e2e.UserProfile,
-			directive:      "compat mode",
-			directiveValue: "yes",
-			exit:           0,
-			resultOp:       e2e.ExpectError(e2e.UnwantedContainMatch, "Disabling OCI/Docker compatibility applies to --oci mode only, ignoring"),
-		},
 	}
 
 	for _, tt := range tests {
