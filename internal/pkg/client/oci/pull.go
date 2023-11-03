@@ -28,6 +28,7 @@ type PullOptions struct {
 	NoHTTPS     bool
 	NoCleanUp   bool
 	OciSif      bool
+	KeepLayers  bool
 	Platform    gccrv1.Platform
 	ReqAuthFile string
 }
@@ -78,6 +79,7 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom string, opts Pul
 			NoCleanUp:   opts.NoCleanUp,
 			Platform:    opts.Platform,
 			ReqAuthFile: opts.ReqAuthFile,
+			KeepLayers:  opts.KeepLayers,
 		}
 		return ocisif.PullOCISIF(ctx, imgCache, directTo, pullFrom, ocisifOpts)
 	}
@@ -102,6 +104,7 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom st
 			NoCleanUp:   opts.NoCleanUp,
 			Platform:    opts.Platform,
 			ReqAuthFile: opts.ReqAuthFile,
+			KeepLayers:  opts.KeepLayers,
 		}
 		src, err = ocisif.PullOCISIF(ctx, imgCache, directTo, pullFrom, ocisifOpts)
 	} else {

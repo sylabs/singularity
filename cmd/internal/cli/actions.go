@@ -104,6 +104,7 @@ func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, 
 		DockerHost:  dockerHost,
 		NoHTTPS:     noHTTPS,
 		OciSif:      isOCI,
+		KeepLayers:  keepLayers,
 		ReqAuthFile: reqAuthFile,
 	}
 
@@ -144,6 +145,7 @@ func handleLibrary(ctx context.Context, imgCache *cache.Handle, pullFrom string)
 		LibraryConfig: c,
 		// false to allow OCI execution of native SIF from library
 		RequireOciSif: false,
+		KeepLayers:    keepLayers,
 		TmpDir:        tmpDir,
 		Platform:      getOCIPlatform(),
 	}
@@ -202,7 +204,6 @@ func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string)
 			sylog.Errorf("%v", err)
 			sylog.Fatalf("OCI-SIF could not be created, and fallback to temporary sandbox dir disallowed")
 		}
-
 		sylog.Warningf("%v", err)
 		sylog.Warningf("OCI-SIF could not be created, falling back to unpacking OCI bundle in temporary sandbox dir")
 		return origImageURI

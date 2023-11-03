@@ -200,6 +200,7 @@ func Run(t *testing.T) {
 	// Provision local registry
 	testenv.TestRegistry = e2e.StartRegistry(t, testenv)
 	testenv.TestRegistryImage = fmt.Sprintf("docker://%s/my-alpine:latest", testenv.TestRegistry)
+	testenv.TestRegistryLayeredImage = fmt.Sprintf("docker://%s/aufs-sanity:latest", testenv.TestRegistry)
 	testenv.TestRegistryPrivURI = fmt.Sprintf("docker://%s", testenv.TestRegistry)
 	testenv.TestRegistryPrivPath = fmt.Sprintf("%s/private/e2eprivrepo", testenv.TestRegistry)
 	testenv.TestRegistryPrivImage = fmt.Sprintf("docker://%s/my-alpine:latest", testenv.TestRegistryPrivPath)
@@ -214,6 +215,10 @@ func Run(t *testing.T) {
 		}
 	}
 	e2e.CopyOCIImage(t, "docker://alpine:latest", testenv.TestRegistryImage, insecureSource, true)
+
+	// This image has many (8) small layers, constructed to test overlay behavior.
+	// https://github.com/sylabs/singularity-test-containers/tree/master/docker-aufs-sanity
+	e2e.CopyOCIImage(t, "docker://sylabsio/aufs-sanity:latest", testenv.TestRegistryLayeredImage, insecureSource, true)
 
 	// Copy same test image into private location in test registry
 	e2e.PrivateRepoLogin(t, testenv, e2e.UserProfile, "")

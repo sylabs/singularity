@@ -20,6 +20,8 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/types"
+	ocisif "github.com/sylabs/oci-tools/pkg/sif"
+	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
@@ -35,26 +37,28 @@ type ctx struct {
 }
 
 type testStruct struct {
-	desc             string // case description
-	srcURI           string // source URI for image
-	library          string // use specific library server URI
-	arch             string // architecture to force, if any
-	platform         string // platform to force, if any
-	force            bool   // pass --force
-	createDst        bool   // create destination file before pull
-	unauthenticated  bool   // pass --allow-unauthenticated
-	setImagePath     bool   // pass destination path (singularity pull <image path> <source>)
-	setPullDir       bool   // pass --dir
-	oci              bool   // pass --oci
-	noHTTPS          bool   // pass --no-https
-	expectedExitCode int
-	workDir          string
-	pullDir          string
-	imagePath        string
-	expectedImage    string
-	expectedOCI      bool
-	envVars          []string
-	requirements     func(t *testing.T)
+	desc              string // case description
+	srcURI            string // source URI for image
+	library           string // use specific library server URI
+	arch              string // architecture to force, if any
+	platform          string // platform to force, if any
+	force             bool   // pass --force
+	createDst         bool   // create destination file before pull
+	unauthenticated   bool   // pass --allow-unauthenticated
+	setImagePath      bool   // pass destination path (singularity pull <image path> <source>)
+	setPullDir        bool   // pass --dir
+	oci               bool   // pass --oci
+	keepLayers        bool   // pass --keep-layers
+	noHTTPS           bool   // pass --no-https
+	expectedExitCode  int
+	workDir           string
+	pullDir           string
+	imagePath         string
+	expectedImage     string
+	expectedOCI       bool
+	expectedOCILayers int // number of squashfs layers if OCI-SIF
+	envVars           []string
+	requirements      func(t *testing.T)
 }
 
 func (c *ctx) imagePull(t *testing.T, tt testStruct) {
@@ -103,6 +107,10 @@ func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 
 	if tt.oci {
 		argv += "--oci "
+	}
+
+	if tt.keepLayers {
+		argv += "--keep-layers "
 	}
 
 	if tt.noHTTPS {
@@ -262,7 +270,7 @@ func (c ctx) testPullCmd(t *testing.T) {
 		},
 		// forced arch and platform equivalent
 		{
-			desc:             "library non-oci platform",
+			desc:             "library non-oci arch",
 			srcURI:           "library://alpine:3.11.5",
 			arch:             "ppc64le",
 			expectedExitCode: 0,
@@ -343,9 +351,10 @@ func (c ctx) testPullCmd(t *testing.T) {
 			desc:   "library oci-sif fallback",
 			srcURI: "library://sylabs/tests/alpine-oci-sif:latest",
 			// will try library protocol first, should then attempt oci pull
-			oci:              false,
-			expectedOCI:      true,
-			expectedExitCode: 0,
+			oci:               false,
+			expectedOCI:       true,
+			expectedOCILayers: 1,
+			expectedExitCode:  0,
 			requirements: func(t *testing.T) {
 				require.Arch(t, "amd64")
 			},
@@ -354,9 +363,10 @@ func (c ctx) testPullCmd(t *testing.T) {
 			desc:   "library oci-sif direct",
 			srcURI: "library://sylabs/tests/alpine-oci-sif:latest",
 			// direct oci pull
-			oci:              true,
-			expectedOCI:      true,
-			expectedExitCode: 0,
+			oci:               true,
+			expectedOCI:       true,
+			expectedOCILayers: 1,
+			expectedExitCode:  0,
 			requirements: func(t *testing.T) {
 				require.Arch(t, "amd64")
 			},
@@ -365,19 +375,21 @@ func (c ctx) testPullCmd(t *testing.T) {
 			desc:   "library oci-sif platform",
 			srcURI: "library://sylabs/tests/alpine-ppc64le-oci-sif:latest",
 			// direct oci pull
-			platform:         "linux/ppc64le",
-			oci:              true,
-			expectedOCI:      true,
-			expectedExitCode: 0,
+			platform:          "linux/ppc64le",
+			oci:               true,
+			expectedOCI:       true,
+			expectedOCILayers: 1,
+			expectedExitCode:  0,
 		},
-		// arch shouldn't be accepted for oci-sif pulls (--platform instead)
 		{
 			desc:   "library oci-sif arch",
 			srcURI: "library://sylabs/tests/alpine-ppc64le-oci-sif:latest",
 			// direct oci pull
-			arch:             "ppc64le",
-			oci:              true,
-			expectedExitCode: 0,
+			arch:              "ppc64le",
+			oci:               true,
+			expectedOCI:       true,
+			expectedOCILayers: 1,
+			expectedExitCode:  0,
 		},
 		//
 		// shub:// URIs
@@ -414,10 +426,12 @@ func (c ctx) testPullCmd(t *testing.T) {
 		},
 		// OCI-SIF
 		{
-			desc:             "oras pull of oci-sif",
-			srcURI:           "oras://" + c.env.TestRegistry + "/pull_test_oci-sif:latest",
-			force:            true,
-			expectedExitCode: 0,
+			desc:              "oras pull of oci-sif",
+			srcURI:            "oras://" + c.env.TestRegistry + "/pull_test_oci-sif:latest",
+			force:             true,
+			expectedOCI:       true,
+			expectedOCILayers: 1,
+			expectedExitCode:  0,
 		},
 		// Invalid (non-SIF) artifacts
 		{
@@ -439,33 +453,36 @@ func (c ctx) testPullCmd(t *testing.T) {
 		//
 		// pulling a standard OCI image from local registry to a native SIF
 		{
-			desc:             "docker oci to sif",
-			srcURI:           c.env.TestRegistryImage,
-			oci:              false,
-			expectedOCI:      false,
-			noHTTPS:          true,
-			force:            true,
-			expectedExitCode: 0,
+			desc:              "docker oci to sif",
+			srcURI:            c.env.TestRegistryImage,
+			oci:               false,
+			expectedOCI:       false,
+			expectedOCILayers: 1,
+			noHTTPS:           true,
+			force:             true,
+			expectedExitCode:  0,
 		},
 		// pulling a standard OCI image from local registry to an OCI-SIF
 		{
-			desc:             "docker oci to oci-sif",
-			srcURI:           c.env.TestRegistryImage,
-			oci:              true,
-			expectedOCI:      true,
-			noHTTPS:          true,
-			force:            true,
-			expectedExitCode: 0,
+			desc:              "docker oci to oci-sif",
+			srcURI:            c.env.TestRegistryImage,
+			oci:               true,
+			expectedOCI:       true,
+			expectedOCILayers: 1,
+			noHTTPS:           true,
+			force:             true,
+			expectedExitCode:  0,
 		},
 		// pulling an OCI-SIF image from local registry to an OCI-SIF
 		{
-			desc:             "docker oci-sif to oci-sif",
-			srcURI:           c.env.TestRegistryOCISIF,
-			oci:              true,
-			expectedOCI:      true,
-			noHTTPS:          true,
-			force:            true,
-			expectedExitCode: 0,
+			desc:              "docker oci-sif to oci-sif",
+			srcURI:            c.env.TestRegistryOCISIF,
+			oci:               true,
+			expectedOCI:       true,
+			expectedOCILayers: 1,
+			noHTTPS:           true,
+			force:             true,
+			expectedExitCode:  0,
 		},
 		// pulling an OCI-SIF image from local registry to a native SIF (not implemented)
 		{
@@ -476,6 +493,18 @@ func (c ctx) testPullCmd(t *testing.T) {
 			noHTTPS:          true,
 			force:            true,
 			expectedExitCode: 255,
+		},
+		// pulling an OCI-SIF image from local registry to a multi-layer OCI-SIF
+		{
+			desc:              "docker oci-sif to multi-layer oci-sif",
+			srcURI:            c.env.TestRegistryLayeredImage,
+			oci:               true,
+			keepLayers:        true,
+			expectedOCI:       true,
+			expectedOCILayers: 8,
+			noHTTPS:           true,
+			force:             true,
+			expectedExitCode:  0,
 		},
 	}
 	for _, tt := range tests {
@@ -529,39 +558,87 @@ func (c ctx) testPullCmd(t *testing.T) {
 }
 
 func checkPullResult(t *testing.T, tt testStruct) {
-	if tt.expectedExitCode == 0 {
-		_, err := os.Stat(tt.expectedImage)
-		switch err {
-		case nil:
-			// PASS
-			return
+	if tt.expectedExitCode != 0 {
+		return
+	}
+	_, err := os.Stat(tt.expectedImage)
+	switch err {
+	case nil:
+		// PASS
 
-		case os.ErrNotExist:
-			// FAIL
-			t.Errorf("expecting image at %q, not found: %+v\n", tt.expectedImage, err)
+	case os.ErrNotExist:
+		// FAIL
+		t.Errorf("expecting image at %q, not found: %+v\n", tt.expectedImage, err)
 
-		default:
-			// FAIL
-			t.Errorf("unable to stat image at %q: %+v\n", tt.expectedImage, err)
+	default:
+		// FAIL
+		t.Errorf("unable to stat image at %q: %+v\n", tt.expectedImage, err)
+	}
+
+	// image.Init does an architecture check... so we can't call it if we are
+	// pulling a foreign arch image on purpose.
+	if tt.arch != "" || tt.platform != "" {
+		return
+	}
+
+	img, err := image.Init(tt.expectedImage, false)
+	if err != nil {
+		t.Fatalf("while checking image: %v", err)
+	}
+	defer img.File.Close()
+
+	switch img.Type {
+	case image.SIF:
+		if tt.expectedOCI {
+			t.Errorf("Native SIF pulled, but --oci specified")
 		}
-
-		// Verify the image is a valid SIF or OCI-SIF
-		img, err := image.Init(tt.expectedImage, false)
-		if err != nil {
-			t.Fatalf("while checking image: %v", err)
+	case image.OCISIF:
+		if !tt.expectedOCI {
+			t.Errorf("OCI-SIF pulled, but --oci not specified")
 		}
-		defer img.File.Close()
-		switch img.Type {
-		case image.SIF:
-			if tt.expectedOCI {
-				t.Errorf("Native SIF pulled, but --oci specified")
-			}
-		case image.OCISIF:
-			if !tt.expectedOCI {
-				t.Errorf("OCI-SIF pulled, but --oci not specified")
-			}
-		default:
-			t.Errorf("Unexpected image type %d", img.Type)
+		checkOCISIF(t, tt.expectedImage, tt.expectedOCILayers)
+	default:
+		t.Errorf("Unexpected image type %d", img.Type)
+	}
+}
+
+func checkOCISIF(t *testing.T, imgFile string, expectLayers int) {
+	fi, err := sif.LoadContainerFromPath(imgFile, sif.OptLoadWithFlag(os.O_RDONLY))
+	if err != nil {
+		t.Fatalf("while loading SIF: %v", err)
+	}
+	defer fi.UnloadContainer()
+
+	ix, err := ocisif.ImageIndexFromFileImage(fi)
+	if err != nil {
+		t.Fatalf("while obtaining image index: %v", err)
+	}
+	idxManifest, err := ix.IndexManifest()
+	if err != nil {
+		t.Fatalf("while obtaining index manifest: %v", err)
+	}
+	if len(idxManifest.Manifests) != 1 {
+		t.Fatalf("single manifest expected, found %d manifests", len(idxManifest.Manifests))
+	}
+	imageDigest := idxManifest.Manifests[0].Digest
+
+	img, err := ix.Image(imageDigest)
+	if err != nil {
+		t.Fatalf("while initializing image: %v", err)
+	}
+
+	imgManifest, err := img.Manifest()
+	if err != nil {
+		t.Fatalf("while fetching image manifest: %v", err)
+	}
+
+	if len(imgManifest.Layers) != expectLayers {
+		t.Errorf("expected %d layers, found %d", expectLayers, len(imgManifest.Layers))
+	}
+
+	for i, l := range imgManifest.Layers {
+		if l.MediaType != "application/vnd.sylabs.image.layer.v1.squashfs" {
+			t.Errorf("layer %d: unsupported layer mediaType %q", i, l.MediaType)
 		}
 	}
 }
