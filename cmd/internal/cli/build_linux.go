@@ -171,11 +171,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("Custom authfile is not supported for remote build")
 	}
 
-	if cmd.Flags().Lookup("arch").Changed && isOCI {
-		sylog.Fatalf("Custom architecture is not supported for OCI builds from Dockerfiles")
-	}
-
-	if buildArgs.arch != runtime.GOARCH && !buildArgs.remote {
+	if buildArgs.arch != runtime.GOARCH && !(buildArgs.remote || isOCI) {
 		sylog.Fatalf("Requested architecture (%s) does not match host (%s). Cannot build locally.", buildArgs.arch, runtime.GOARCH)
 	}
 
@@ -210,11 +206,16 @@ func runBuild(cmd *cobra.Command, args []string) {
 	}
 
 	if isOCI {
+		reqArch := ""
+		if cmd.Flags().Lookup("arch").Changed {
+			reqArch = buildArgs.arch
+		}
 		bkOpts := &bkclient.Opts{
 			AuthConf:        authConf,
 			ReqAuthFile:     reqAuthFile,
 			BuildVarArgs:    buildArgs.buildVarArgs,
 			BuildVarArgFile: buildArgs.buildVarArgFile,
+			ReqArch:         reqArch,
 		}
 		bkclient.Run(cmd.Context(), bkOpts, dest, spec)
 	} else {

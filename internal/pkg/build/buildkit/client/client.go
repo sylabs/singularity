@@ -42,6 +42,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/build/args"
 	bkdaemon "github.com/sylabs/singularity/v4/internal/pkg/build/buildkit/daemon"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/sync/errgroup"
@@ -65,10 +66,13 @@ type Opts struct {
 	BuildVarArgs []string
 	// Variables file passed to build procedure.
 	BuildVarArgFile string
+	// Requested build architecture
+	ReqArch string
 }
 
 func Run(ctx context.Context, opts *Opts, dest, spec string) {
-	listenSocket := ensureBuildkitd(ctx)
+	sylog.Debugf("Requested build architecture is: %q", opts.ReqArch)
+	listenSocket := ensureBuildkitd(ctx, opts)
 	if listenSocket == "" {
 		sylog.Fatalf("Failed to launch buildkitd daemon within specified timeout (%v).", bkLaunchTimeout)
 	}
@@ -91,15 +95,23 @@ func Run(ctx context.Context, opts *Opts, dest, spec string) {
 	sylog.Debugf("Saved OCI image as tar: %s", tarFile.Name())
 	tarFile.Close()
 
-	if _, err := ocisif.PullOCISIF(ctx, nil, dest, "oci-archive:"+tarFile.Name(), ocisif.PullOptions{}); err != nil {
+	pullOpts := ocisif.PullOptions{}
+	if opts.ReqArch != "" {
+		platform, err := ociplatform.PlatformFromArch(opts.ReqArch)
+		if err != nil {
+			sylog.Fatalf("could not determine OCI platform from architecture %q: %v", opts.ReqArch, err)
+		}
+		pullOpts.Platform = *platform
+	}
+	if _, err := ocisif.PullOCISIF(ctx, nil, dest, "oci-archive:"+tarFile.Name(), pullOpts); err != nil {
 		sylog.Fatalf("While converting OCI tar image to OCI-SIF: %v", err)
 	}
 }
 
 // ensureBuildkitd checks if a buildkitd daemon is already running, and if not,
 // launches one.
-func ensureBuildkitd(ctx context.Context) string {
-	if isBuildkitdRunning(ctx) {
+func ensureBuildkitd(ctx context.Context, opts *Opts) string {
+	if isBuildkitdRunning(ctx, opts) {
 		sylog.Infof("Found buildkitd already running at %q; will use that daemon.", bkDefaultSocket)
 		return bkDefaultSocket
 	}
@@ -107,7 +119,10 @@ func ensureBuildkitd(ctx context.Context) string {
 	sylog.Infof("Did not find usable running buildkitd daemon; spawning our own.")
 	socketChan := make(chan string, 1)
 	go func() {
-		if err := bkdaemon.Run(ctx, socketChan); err != nil {
+		daemonOpts := &bkdaemon.Opts{
+			ReqArch: opts.ReqArch,
+		}
+		if err := bkdaemon.Run(ctx, daemonOpts, socketChan); err != nil {
 			sylog.Fatalf("buildkitd returned error: %v", err)
 		}
 	}()
@@ -120,7 +135,10 @@ func ensureBuildkitd(ctx context.Context) string {
 }
 
 // isBuildkitdRunning tries to determine whether there's already an instance of buildkitd running.
-func isBuildkitdRunning(ctx context.Context) bool {
+func isBuildkitdRunning(ctx context.Context, opts *Opts) bool {
+	if opts.ReqArch != "" {
+		return false
+	}
 	c, err := client.New(ctx, bkDefaultSocket, client.WithFailFast())
 	if err != nil {
 		return false

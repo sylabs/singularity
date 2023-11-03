@@ -92,6 +92,11 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
+type Opts struct {
+	// Requested build architecture
+	ReqArch string
+}
+
 type workerInitializerOpt struct {
 	config         *config.Config
 	sessionManager *session.Manager
@@ -125,12 +130,15 @@ func init() {
 // Run runs a new buildkitd daemon. Once the server is ready, the path of the
 // unix socket will be sent over the provided channel. Make sure this is a
 // buffered channel with sufficient room to avoid deadlocks.
-func Run(ctx context.Context, socketChan chan<- string) error {
+func Run(ctx context.Context, opts *Opts, socketChan chan<- string) error {
 	cfg, err := config.LoadFile(defaultConfigPath())
 	if err != nil {
 		return err
 	}
 
+	if opts.ReqArch != "" {
+		cfg.Workers.OCI.Platforms = []string{opts.ReqArch}
+	}
 	setDefaultConfig(&cfg)
 
 	sylog.Infof("cfg.Root for buildkitd: %s", cfg.Root)
@@ -196,6 +204,72 @@ func Run(ctx context.Context, socketChan chan<- string) error {
 	server.GracefulStop()
 
 	return err
+}
+
+func setDefaultConfig(cfg *config.Config) {
+	orig := *cfg
+
+	// If we need to, enter a new cgroup now, to workaround an issue with crun container cgroup creation (#1538).
+	if err := oci.CrunNestCgroup(); err != nil {
+		sylog.Fatalf("while applying crun cgroup workaround: %v", err)
+	}
+
+	rlUID, err := rootless.Getuid()
+	if err != nil {
+		sylog.Fatalf("While trying to determine uid: %v", err)
+	}
+	if rlUID != 0 {
+		cfg.Workers.OCI.Rootless = true
+		cfg.Workers.OCI.NoProcessSandbox = true
+	}
+
+	if cfg.GRPC.UID == nil {
+		uid := os.Getuid()
+		cfg.GRPC.UID = &uid
+	}
+
+	if cfg.GRPC.GID == nil {
+		gid := os.Getgid()
+		cfg.GRPC.GID = &gid
+	}
+
+	enabled := true
+	cfg.Workers.OCI.Enabled = &enabled
+
+	if cfg.Root == "" {
+		cfg.Root = appdefaults.Root + "-singularity-ephemeral"
+	}
+
+	cfg.Workers.OCI.Snapshotter = "overlayfs"
+
+	if cfg.Workers.OCI.Platforms == nil {
+		cfg.Workers.OCI.Platforms = formatPlatforms(archutil.SupportedPlatforms(false))
+	}
+	if cfg.Workers.Containerd.Platforms == nil {
+		cfg.Workers.Containerd.Platforms = formatPlatforms(archutil.SupportedPlatforms(false))
+	}
+
+	sylog.Debugf("cfg.Workers.OCI.Platforms: %#v", cfg.Workers.OCI.Platforms)
+
+	cfg.Workers.OCI.NetworkConfig = setDefaultNetworkConfig(cfg.Workers.OCI.NetworkConfig)
+	cfg.Workers.Containerd.NetworkConfig = setDefaultNetworkConfig(cfg.Workers.Containerd.NetworkConfig)
+
+	if userns.RunningInUserNS() {
+		// if buildkitd is being executed as the mapped-root (not only EUID==0 but also $USER==root)
+		// in a user namespace, we need to enable the rootless mode but
+		// we don't want to honor $HOME for setting up default paths.
+		uid, err := rootless.Getuid()
+		if err != nil {
+			sylog.Fatalf("While trying to ascertain rootless uid: %v", err)
+		}
+		u := os.Getenv("USER")
+		if ((u != "" && u != "root") || (uid != 0)) && (orig.Root) == "" {
+			cfg.Root = appdefaults.UserRoot()
+		}
+	}
+
+	cfg.GRPC.Address = []string{generateSocketAddress()}
+	appdefaults.EnsureUserAddressDir()
 }
 
 func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]worker.Worker, error) {
@@ -433,70 +507,6 @@ func setDefaultNetworkConfig(nc config.NetworkConfig) config.NetworkConfig {
 		nc.CNIBinaryPath = appdefaults.DefaultCNIBinDir
 	}
 	return nc
-}
-
-func setDefaultConfig(cfg *config.Config) {
-	orig := *cfg
-
-	// If we need to, enter a new cgroup now, to workaround an issue with crun container cgroup creation (#1538).
-	if err := oci.CrunNestCgroup(); err != nil {
-		sylog.Fatalf("while applying crun cgroup workaround: %v", err)
-	}
-
-	rlUID, err := rootless.Getuid()
-	if err != nil {
-		sylog.Fatalf("While trying to determine uid: %v", err)
-	}
-	if rlUID != 0 {
-		cfg.Workers.OCI.Rootless = true
-		cfg.Workers.OCI.NoProcessSandbox = true
-	}
-
-	if cfg.GRPC.UID == nil {
-		uid := os.Getuid()
-		cfg.GRPC.UID = &uid
-	}
-
-	if cfg.GRPC.GID == nil {
-		gid := os.Getgid()
-		cfg.GRPC.GID = &gid
-	}
-
-	enabled := true
-	cfg.Workers.OCI.Enabled = &enabled
-
-	if cfg.Root == "" {
-		cfg.Root = appdefaults.Root + "-singularity-ephemeral"
-	}
-
-	cfg.Workers.OCI.Snapshotter = "overlayfs"
-
-	if cfg.Workers.OCI.Platforms == nil {
-		cfg.Workers.OCI.Platforms = formatPlatforms(archutil.SupportedPlatforms(false))
-	}
-	if cfg.Workers.Containerd.Platforms == nil {
-		cfg.Workers.Containerd.Platforms = formatPlatforms(archutil.SupportedPlatforms(false))
-	}
-
-	cfg.Workers.OCI.NetworkConfig = setDefaultNetworkConfig(cfg.Workers.OCI.NetworkConfig)
-	cfg.Workers.Containerd.NetworkConfig = setDefaultNetworkConfig(cfg.Workers.Containerd.NetworkConfig)
-
-	if userns.RunningInUserNS() {
-		// if buildkitd is being executed as the mapped-root (not only EUID==0 but also $USER==root)
-		// in a user namespace, we need to enable the rootless mode but
-		// we don't want to honor $HOME for setting up default paths.
-		uid, err := rootless.Getuid()
-		if err != nil {
-			sylog.Fatalf("While trying to ascertain rootless uid: %v", err)
-		}
-		u := os.Getenv("USER")
-		if ((u != "" && u != "root") || (uid != 0)) && (orig.Root) == "" {
-			cfg.Root = appdefaults.UserRoot()
-		}
-	}
-
-	cfg.GRPC.Address = []string{generateSocketAddress()}
-	appdefaults.EnsureUserAddressDir()
 }
 
 func generateSocketAddress() string {
