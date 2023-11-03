@@ -137,10 +137,12 @@ func NewWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFacto
 		return opt, err
 	}
 
+	sylog.Debugf("About to open bolt db at: %s", filepath.Join(root, "containerdmeta.db"))
 	db, err := bolt.Open(filepath.Join(root, "containerdmeta.db"), 0o644, nil)
 	if err != nil {
 		return opt, err
 	}
+	sylog.Debugf("Opened bolt db at: %s", filepath.Join(root, "containerdmeta.db"))
 
 	mdb := ctdmetadata.NewDB(db, localstore, map[string]ctdsnapshot.Snapshotter{
 		snFactory.Name: s,

@@ -27,8 +27,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/blang/semver/v4"
 	"github.com/containerd/console"
 	ocitypes "github.com/containers/image/v5/types"
 	moby_buildkit_v1 "github.com/moby/buildkit/api/services/control"
@@ -48,7 +50,8 @@ import (
 const (
 	buildTag        = "tag"
 	bkDefaultSocket = "unix:///run/buildkit/buildkitd.sock"
-	bkLaunchTimeout = 30 * time.Second
+	bkLaunchTimeout = 120 * time.Second
+	bkMinVersion    = "v0.12.3"
 )
 
 type Opts struct {
@@ -75,7 +78,12 @@ func Run(ctx context.Context, opts *Opts, dest, spec string) {
 		sylog.Fatalf("While trying to build tar image from dockerfile: %v", err)
 	}
 	defer tarFile.Close()
-	defer os.Remove(tarFile.Name())
+	defer func() {
+		tarFileName := tarFile.Name()
+		if err := os.Remove(tarFileName); err != nil {
+			sylog.Errorf("While trying to remove temporary tar file (%s): %v", tarFileName, err)
+		}
+	}()
 
 	if err := buildImage(ctx, opts, tarFile, listenSocket, spec, false); err != nil {
 		sylog.Fatalf("While building from dockerfile: %v", err)
@@ -89,9 +97,7 @@ func Run(ctx context.Context, opts *Opts, dest, spec string) {
 }
 
 // ensureBuildkitd checks if a buildkitd daemon is already running, and if not,
-// launches one. Once the server is ready, the value true will be sent over the
-// provided readyChan. Make sure this is a buffered channel with sufficient room
-// to avoid deadlocks.
+// launches one.
 func ensureBuildkitd(ctx context.Context) string {
 	if isBuildkitdRunning(ctx) {
 		sylog.Infof("Found buildkitd already running at %q; will use that daemon.", bkDefaultSocket)
@@ -123,9 +129,25 @@ func isBuildkitdRunning(ctx context.Context) bool {
 
 	cc := c.ControlClient()
 	ir := moby_buildkit_v1.InfoRequest{}
-	_, err = cc.Info(ctx, &ir)
+	bkInfo, err := cc.Info(ctx, &ir)
+	found := (err == nil)
+	if found {
+		sylog.Infof("Found running buildkit, version: %s", bkInfo.BuildkitVersion.Version)
+		minVer, err := semver.Make(strings.TrimPrefix(bkMinVersion, "v"))
+		if err != nil {
+			sylog.Fatalf("While trying to parse minimal version cutoff for buildkit daemon (%q): %v", bkMinVersion, err)
+		}
+		foundVer, err := semver.Make(strings.TrimPrefix(bkInfo.BuildkitVersion.Version, "v"))
+		if err != nil {
+			sylog.Fatalf("While trying to parse version of running buildkit daemon (%q): %v", bkInfo.BuildkitVersion.Version, err)
+		}
+		if foundVer.Compare(minVer) < 0 {
+			sylog.Infof("Running buildkitd daemon version is older than minimal version required (%s)", bkMinVersion)
+			return false
+		}
+	}
 
-	return (err == nil)
+	return found
 }
 
 func buildImage(ctx context.Context, opts *Opts, tarFile *os.File, listenSocket, spec string, clientsideFrontend bool) error {

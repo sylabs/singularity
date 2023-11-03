@@ -122,9 +122,9 @@ func init() {
 	)
 }
 
-// Run runs a new buildkitd daemon. Once the server is ready, the path
-// of the unix socket will be sent over the provided channel. Make sure this is
-// a buffered channel with sufficient room to avoid deadlocks.
+// Run runs a new buildkitd daemon. Once the server is ready, the path of the
+// unix socket will be sent over the provided channel. Make sure this is a
+// buffered channel with sufficient room to avoid deadlocks.
 func Run(ctx context.Context, socketChan chan<- string) error {
 	cfg, err := config.LoadFile(defaultConfigPath())
 	if err != nil {
@@ -148,7 +148,9 @@ func Run(ctx context.Context, socketChan chan<- string) error {
 		return errors.Wrapf(err, "failed to create %s", root)
 	}
 
-	lockPath := filepath.Join(root, "buildkitd.lock")
+	lockFilename := strings.TrimSuffix(filepath.Base(cfg.GRPC.Address[0]), ".sock")
+	lockPath := filepath.Join(root, lockFilename+".lock")
+	sylog.Debugf("path for buildkitd lock file: %s", lockPath)
 	lock := flock.New(lockPath)
 	locked, err := lock.TryLock()
 	if err != nil {
@@ -464,7 +466,7 @@ func setDefaultConfig(cfg *config.Config) {
 	cfg.Workers.OCI.Enabled = &enabled
 
 	if cfg.Root == "" {
-		cfg.Root = appdefaults.Root
+		cfg.Root = appdefaults.Root + "-singularity-ephemeral"
 	}
 
 	cfg.Workers.OCI.Snapshotter = "overlayfs"
@@ -498,6 +500,19 @@ func setDefaultConfig(cfg *config.Config) {
 }
 
 func generateSocketAddress() string {
+	socketFilename := fmt.Sprintf("buildkitd-%s.sock", randomSixteen())
+
+	//  pam_systemd sets XDG_RUNTIME_DIR but not other dirs.
+	xdgRuntimeDir := os.Getenv("XDG_RUNTIME_DIR")
+	if xdgRuntimeDir != "" {
+		dirs := strings.Split(xdgRuntimeDir, ":")
+		return "unix://" + filepath.Join(dirs[0], "buildkit", socketFilename)
+	}
+
+	return "unix://" + filepath.Join("/run/buildkit", socketFilename)
+}
+
+func randomSixteen() string {
 	maxVal := big.NewInt(10)
 	randStr := strings.Join(lo.Map(lo.Range(16), func(_, _ int) string {
 		val, err := rand.Int(rand.Reader, maxVal)
@@ -508,16 +523,7 @@ func generateSocketAddress() string {
 		return val.String()
 	}), "")
 
-	socketFilename := fmt.Sprintf("buildkitd-%s.sock", randStr)
-
-	//  pam_systemd sets XDG_RUNTIME_DIR but not other dirs.
-	xdgRuntimeDir := os.Getenv("XDG_RUNTIME_DIR")
-	if xdgRuntimeDir != "" {
-		dirs := strings.Split(xdgRuntimeDir, ":")
-		return "unix://" + filepath.Join(dirs[0], "buildkit", socketFilename)
-	}
-
-	return "unix://" + filepath.Join("/run/buildkit", socketFilename)
+	return randStr
 }
 
 func getListener(addr string, uid, gid int, tlsConfig *tls.Config) (net.Listener, error) {
