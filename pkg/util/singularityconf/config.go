@@ -77,6 +77,7 @@ type File struct {
 	SystemdCgroups          bool     `default:"yes" authorized:"yes,no" directive:"systemd cgroups"`
 	SIFFUSE                 bool     `default:"no" authorized:"yes,no" directive:"sif fuse"`
 	OCIMode                 bool     `default:"no" authorized:"yes,no" directive:"oci mode"`
+	CompatMode              bool     `default:"no" authorized:"yes,no" directive:"compat mode"`
 	TmpSandboxAllowed       bool     `default:"yes" authorized:"yes,no" directive:"tmp sandbox"`
 }
 
@@ -105,6 +106,15 @@ allow setuid = {{ if eq .AllowSetuid true }}yes{{ else }}no{{ end }}
 # Note that OCI mode requires unprivileged user namespace creation and
 # subuid / subgid mappings.
 oci mode = {{ if eq .OCIMode true }}yes{{ else }}no{{ end }}
+
+# COMPAT MODE: [BOOL]
+# DEFAULT: no
+# Should we apply settings for increased OCI/Docker compatibility by default?
+# Mimics always specifying --compat on the command line.
+# Can be reversed by specifying --no-compat on the command line.
+# Note that default for OCI/Docker Compatibility should be set with 
+# keeping in mind the chosen default for OCI mode above. See documentation.
+compat mode = {{ if eq .CompatMode true }}yes{{ else }}no{{ end }}
 
 # MAX LOOP DEVICES: [INT]
 # DEFAULT: 256

@@ -79,7 +79,7 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 	}
 
 	if lo.NoCompat {
-		sylog.Warningf("--no-compat applies to --oci mode only, ignoring")
+		sylog.Warningf("Disabling OCI/Docker compatibility applies to --oci mode only, ignoring")
 	}
 
 	// Initialize empty default Singularity Engine and OCI configuration

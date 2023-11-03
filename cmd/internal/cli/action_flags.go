@@ -43,8 +43,6 @@ var (
 	isFakeroot      bool
 	noSetgroups     bool
 	isCleanEnv      bool
-	isCompat        bool
-	noCompat        bool
 	isContained     bool
 	isContainAll    bool
 	isWritable      bool
@@ -350,26 +348,6 @@ var actionCleanEnvFlag = cmdline.Flag{
 	ShortHand:    "e",
 	Usage:        "clean environment before running container",
 	EnvKeys:      []string{"CLEANENV"},
-}
-
-// --compat
-var actionCompatFlag = cmdline.Flag{
-	ID:           "actionCompatFlag",
-	Value:        &isCompat,
-	DefaultValue: false,
-	Name:         "compat",
-	Usage:        "apply settings for increased OCI/Docker compatibility. Infers --containall, --no-init, --no-umask, --no-eval, --writable-tmpfs.",
-	EnvKeys:      []string{"COMPAT"},
-}
-
-// --no-compat
-var actionNoCompatFlag = cmdline.Flag{
-	ID:           "actionNoCompatFlag",
-	Value:        &noCompat,
-	DefaultValue: false,
-	Name:         "no-compat",
-	Usage:        "(--oci mode) do not apply settings for increased OCI/Docker compatibility. Emulate native runtime defaults without --contain etc.",
-	EnvKeys:      []string{"NO_COMPAT"},
 }
 
 // -c|--contain
@@ -821,8 +799,6 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionApplyCgroupsFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionBindFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionCleanEnvFlag, actionsInstanceCmd...)
-		cmdManager.RegisterFlagForCmd(&actionCompatFlag, actionsInstanceCmd...)
-		cmdManager.RegisterFlagForCmd(&actionNoCompatFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionContainAllFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionContainFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionContainLibsFlag, actionsInstanceCmd...)
@@ -890,6 +866,8 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionProotFlag, actionsCmd...)
 		cmdManager.RegisterFlagForCmd(&commonOCIFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&commonNoOCIFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&commonCompatFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&commonNoCompatFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoTmpSandbox, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&commonAuthFileFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionDevice, actionsCmd...)

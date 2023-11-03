@@ -90,6 +90,10 @@ var (
 	isOCI bool
 	noOCI bool
 
+	// Improve OCI/Docker compatibility?
+	isCompat bool
+	noCompat bool
+
 	// Platform for retrieving images
 	arch     string
 	platform string
@@ -292,6 +296,26 @@ var commonNoOCIFlag = cmdline.Flag{
 	EnvKeys:      []string{"NO_OCI"},
 }
 
+// --compat
+var commonCompatFlag = cmdline.Flag{
+	ID:           "commonCompatFlag",
+	Value:        &isCompat,
+	DefaultValue: false,
+	Name:         "compat",
+	Usage:        "apply settings for increased OCI/Docker compatibility. Infers --containall, --no-init, --no-umask, --no-eval, --writable-tmpfs.",
+	EnvKeys:      []string{"COMPAT"},
+}
+
+// --no-compat
+var commonNoCompatFlag = cmdline.Flag{
+	ID:           "commonNoCompatFlag",
+	Value:        &noCompat,
+	DefaultValue: false,
+	Name:         "no-compat",
+	Usage:        "(--oci mode) do not apply settings for increased OCI/Docker compatibility. Emulate native runtime defaults without --contain etc.",
+	EnvKeys:      []string{"NO_COMPAT"},
+}
+
 // --no-tmp-sandbox
 var actionNoTmpSandbox = cmdline.Flag{
 	ID:           "actionNoTmpSandbox",
@@ -433,6 +457,15 @@ func persistentPreRun(*cobra.Command, []string) error {
 	isOCI = isOCI || config.OCIMode
 	if noOCI {
 		isOCI = false
+	}
+
+	// Honor 'compat mode' in singularity.conf, and allow negation with `--no-compat`.
+	if isCompat && noCompat {
+		return fmt.Errorf("--compat and --no-compat cannot be used together")
+	}
+	isCompat = isCompat || config.CompatMode
+	if noCompat {
+		isCompat = false
 	}
 
 	// Honor 'tmp sandbox' in singularity.conf, and allow negation with
