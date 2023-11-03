@@ -22,7 +22,6 @@
 package client
 
 import (
-	"bufio"
 	"context"
 	"io"
 	"os"
@@ -39,6 +38,7 @@ import (
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/util/progress/progressui"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/sylabs/singularity/v4/internal/pkg/build/args"
 	bkdaemon "github.com/sylabs/singularity/v4/internal/pkg/build/buildkit/daemon"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
@@ -160,7 +160,11 @@ func buildImage(ctx context.Context, opts *Opts, tarFile *os.File, listenSocket,
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(buildDir)
+	defer func() {
+		if err := os.RemoveAll(buildDir); err != nil {
+			sylog.Errorf("While trying to remove temporary build dir (%s): %v", buildDir, err)
+		}
+	}()
 
 	pipeR, pipeW := io.Pipe()
 	solveOpt, err := newSolveOpt(ctx, opts, pipeW, buildDir, spec, clientsideFrontend)
@@ -184,11 +188,17 @@ func buildImage(ctx context.Context, opts *Opts, tarFile *os.File, listenSocket,
 	})
 	eg.Go(func() error {
 		var c console.Console
-		if cn, err := console.ConsoleFromFile(os.Stderr); err == nil {
-			c = cn
+		progressWriter := io.Discard
+		if sylog.GetLevel() >= 0 {
+			progressWriter = os.Stdout
+			if cn, err := console.ConsoleFromFile(os.Stderr); err == nil {
+				c = cn
+			}
+		} else {
+			logrus.SetLevel(logrus.ErrorLevel)
 		}
 		// not using shared context to not disrupt display but let is finish reporting errors
-		_, err := progressui.DisplaySolveStatus(context.TODO(), c, os.Stdout, ch)
+		_, err := progressui.DisplaySolveStatus(context.Background(), c, progressWriter, ch)
 		if err != nil {
 			pipeR.Close()
 		}
@@ -260,12 +270,7 @@ func newSolveOpt(_ context.Context, opts *Opts, w io.WriteCloser, buildDir, spec
 }
 
 func writeDockerTar(r io.Reader, outputFile *os.File) error {
-	writer := bufio.NewWriter(outputFile)
-	defer writer.Flush()
-	_, err := writer.ReadFrom(r)
-	if (err != nil) && (err != io.EOF) {
-		return err
-	}
+	_, err := io.Copy(outputFile, r)
 
-	return nil
+	return err
 }

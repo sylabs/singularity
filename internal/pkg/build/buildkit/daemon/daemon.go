@@ -217,11 +217,11 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 		return nil, err
 	}
 
+	// Force "host" network mode always, to avoid buildkitd doing any CNI setup
+	common.config.Workers.OCI.NetworkConfig.Mode = "host"
+
 	if cfg.Rootless {
 		sylog.Debugf("running in rootless mode")
-		if common.config.Workers.OCI.NetworkConfig.Mode == "auto" {
-			common.config.Workers.OCI.NetworkConfig.Mode = "host"
-		}
 	}
 
 	processMode := bkoci.ProcessSandbox
