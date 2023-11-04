@@ -14,9 +14,9 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/container-orchestrated-devices/container-device-interface/pkg/cdi"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/pkg/util/slice"
+	"tags.cncf.io/container-device-interface/pkg/cdi"
 )
 
 var specDirs = []string{filepath.Join("..", "..", "..", "..", "..", "test", "cdi")}

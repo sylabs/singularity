@@ -19,7 +19,6 @@ import (
 	"testing"
 	"text/template"
 
-	cdispecs "github.com/container-orchestrated-devices/container-device-interface/specs-go"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/dirs"
 	testExec "github.com/sylabs/singularity/v4/internal/pkg/test/tool/exec"
@@ -27,6 +26,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"gotest.tools/v3/assert"
+	cdispecs "tags.cncf.io/container-device-interface/specs-go"
 )
 
 const (
