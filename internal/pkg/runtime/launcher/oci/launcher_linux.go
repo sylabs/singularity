@@ -21,7 +21,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/container-orchestrated-devices/container-device-interface/pkg/cdi"
 	"github.com/google/uuid"
 	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -47,6 +46,7 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
 	"github.com/sylabs/singularity/v4/pkg/util/slice"
 	"golang.org/x/sys/unix"
+	"tags.cncf.io/container-device-interface/pkg/cdi"
 )
 
 var (
