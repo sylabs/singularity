@@ -1,6 +1,6 @@
 run:
   concurrency: 4
-  timeout: 3m
+  timeout: 5m
   build-tags:
     - apparmor
     - containers_image_openpgp
