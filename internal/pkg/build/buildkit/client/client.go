@@ -68,6 +68,8 @@ type Opts struct {
 	BuildVarArgFile string
 	// Requested build architecture
 	ReqArch string
+	// Keep individual layers when creating OCI-SIF?
+	KeepLayers bool
 }
 
 func Run(ctx context.Context, opts *Opts, dest, spec string) {
@@ -95,7 +97,9 @@ func Run(ctx context.Context, opts *Opts, dest, spec string) {
 	sylog.Debugf("Saved OCI image as tar: %s", tarFile.Name())
 	tarFile.Close()
 
-	pullOpts := ocisif.PullOptions{}
+	pullOpts := ocisif.PullOptions{
+		KeepLayers: opts.KeepLayers,
+	}
 	if opts.ReqArch != "" {
 		platform, err := ociplatform.PlatformFromArch(opts.ReqArch)
 		if err != nil {

@@ -216,6 +216,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 			BuildVarArgs:    buildArgs.buildVarArgs,
 			BuildVarArgFile: buildArgs.buildVarArgFile,
 			ReqArch:         reqArch,
+			KeepLayers:      keepLayers,
 		}
 		bkclient.Run(cmd.Context(), bkOpts, dest, spec)
 	} else {
