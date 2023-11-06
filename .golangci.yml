@@ -1,5 +1,5 @@
 run:
-  concurrency: 4
+  concurrency: 2
   timeout: 5m
   build-tags:
     - apparmor
