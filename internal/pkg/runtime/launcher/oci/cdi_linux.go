@@ -12,9 +12,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/container-orchestrated-devices/container-device-interface/pkg/cdi"
-	"github.com/container-orchestrated-devices/container-device-interface/pkg/parser"
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"tags.cncf.io/container-device-interface/pkg/cdi"
+	"tags.cncf.io/container-device-interface/pkg/parser"
 )
 
 // A container to hold the CDI registry, plus a sync.Once object to ensure we only have to ask for it once
