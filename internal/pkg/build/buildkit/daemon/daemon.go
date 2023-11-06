@@ -230,14 +230,10 @@ func setDefaultConfig(cfg *config.Config) {
 	if cfg.Workers.OCI.Platforms == nil {
 		cfg.Workers.OCI.Platforms = formatPlatforms(archutil.SupportedPlatforms(false))
 	}
-	if cfg.Workers.Containerd.Platforms == nil {
-		cfg.Workers.Containerd.Platforms = formatPlatforms(archutil.SupportedPlatforms(false))
-	}
 
 	sylog.Debugf("cfg.Workers.OCI.Platforms: %#v", cfg.Workers.OCI.Platforms)
 
 	cfg.Workers.OCI.NetworkConfig = setDefaultNetworkConfig(cfg.Workers.OCI.NetworkConfig)
-	cfg.Workers.Containerd.NetworkConfig = setDefaultNetworkConfig(cfg.Workers.Containerd.NetworkConfig)
 
 	if userns.RunningInUserNS() {
 		// if buildkitd is being executed as the mapped-root (not only EUID==0 but also $USER==root)
