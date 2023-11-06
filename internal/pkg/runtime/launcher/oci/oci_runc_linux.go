@@ -25,7 +25,7 @@ import (
 //
 // FIXME: use context for cancellation, or remove.
 func Delete(_ context.Context, containerID string, systemdCgroups bool) error {
-	runtimeBin, err := runtime()
+	runtimeBin, err := Runtime()
 	if err != nil {
 		return err
 	}
@@ -74,7 +74,7 @@ func Delete(_ context.Context, containerID string, systemdCgroups bool) error {
 
 // Exec executes a command in a container
 func Exec(containerID string, cmdArgs []string, systemdCgroups bool) error {
-	runtimeBin, err := runtime()
+	runtimeBin, err := Runtime()
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func Exec(containerID string, cmdArgs []string, systemdCgroups bool) error {
 
 // Kill kills container process
 func Kill(containerID string, killSignal string) error {
-	runtimeBin, err := runtime()
+	runtimeBin, err := Runtime()
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func Kill(containerID string, killSignal string) error {
 
 // Pause pauses processes in a container
 func Pause(containerID string, systemdCgroups bool) error {
-	runtimeBin, err := runtime()
+	runtimeBin, err := Runtime()
 	if err != nil {
 		return err
 	}
@@ -152,7 +152,7 @@ func Pause(containerID string, systemdCgroups bool) error {
 
 // Resume un-pauses processes in a container
 func Resume(containerID string, systemdCgroups bool) error {
-	runtimeBin, err := runtime()
+	runtimeBin, err := Runtime()
 	if err != nil {
 		return err
 	}
@@ -180,7 +180,7 @@ func Resume(containerID string, systemdCgroups bool) error {
 //
 // FIXME: use context for cancellation, or remove.
 func Run(_ context.Context, containerID, bundlePath, pidFile string, systemdCgroups bool) error {
-	runtimeBin, err := runtime()
+	runtimeBin, err := Runtime()
 	if err != nil {
 		return err
 	}
@@ -248,7 +248,7 @@ func signalProxy(containerID string, signals chan os.Signal) {
 
 // Start starts a previously created container
 func Start(containerID string, systemdCgroups bool) error {
-	runtimeBin, err := runtime()
+	runtimeBin, err := Runtime()
 	if err != nil {
 		return err
 	}
@@ -274,7 +274,7 @@ func Start(containerID string, systemdCgroups bool) error {
 
 // State queries container state
 func State(containerID string, systemdCgroups bool) error {
-	runtimeBin, err := runtime()
+	runtimeBin, err := Runtime()
 	if err != nil {
 		return err
 	}
@@ -300,7 +300,7 @@ func State(containerID string, systemdCgroups bool) error {
 
 // Update updates container cgroups resources
 func Update(containerID, cgFile string, systemdCgroups bool) error {
-	runtimeBin, err := runtime()
+	runtimeBin, err := Runtime()
 	if err != nil {
 		return err
 	}

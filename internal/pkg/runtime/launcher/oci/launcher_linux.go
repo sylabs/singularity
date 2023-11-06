@@ -874,7 +874,7 @@ func CrunNestCgroup() error {
 		return fmt.Errorf("singularity configuration is not initialized")
 	}
 
-	r, err := runtime()
+	r, err := Runtime()
 	if err != nil {
 		return err
 	}

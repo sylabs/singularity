@@ -112,7 +112,7 @@ func addNamespaces(spec *specs.Spec, ns launcher.Namespaces) error {
 // noSetgroupsAnnotation will set the `run.oci.keep_original_groups=1` annotation
 // to disable the setgroups call when entering the container. Supported by crun, but not runc.
 func noSetgroupsAnnotation(spec *specs.Spec) error {
-	runtime, err := runtime()
+	runtime, err := Runtime()
 	if err != nil {
 		return err
 	}

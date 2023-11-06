@@ -18,10 +18,12 @@ import (
 	"strings"
 	"syscall"
 
+	ocitypes "github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
 	keyclient "github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/v4/internal/pkg/build"
 	"github.com/sylabs/singularity/v4/internal/pkg/build/args"
+	bkclient "github.com/sylabs/singularity/v4/internal/pkg/build/buildkit/client"
 	"github.com/sylabs/singularity/v4/internal/pkg/build/remotebuilder"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
@@ -111,11 +113,17 @@ func runBuild(cmd *cobra.Command, args []string) {
 		if buildArgs.remote {
 			sylog.Fatalf("--nv option is not supported for remote build")
 		}
+		if isOCI {
+			sylog.Fatalf("--nv option is not supported for OCI builds from Dockerfiles")
+		}
 		os.Setenv("SINGULARITY_NV", "1")
 	}
 	if buildArgs.nvccli {
 		if buildArgs.remote {
 			sylog.Fatalf("--nvccli option is not supported for remote build")
+		}
+		if isOCI {
+			sylog.Fatalf("--nvccli option is not supported for OCI builds from Dockerfiles")
 		}
 		os.Setenv("SINGULARITY_NVCCLI", "1")
 	}
@@ -123,17 +131,26 @@ func runBuild(cmd *cobra.Command, args []string) {
 		if buildArgs.remote {
 			sylog.Fatalf("--rocm option is not supported for remote build")
 		}
+		if isOCI {
+			sylog.Fatalf("--rocm option is not supported for OCI builds from Dockerfiles")
+		}
 		os.Setenv("SINGULARITY_ROCM", "1")
 	}
 	if len(buildArgs.bindPaths) > 0 {
 		if buildArgs.remote {
 			sylog.Fatalf("-B/--bind option is not supported for remote build")
 		}
+		if isOCI {
+			sylog.Fatalf("-B/--bind option is not supported for OCI builds from Dockerfiles")
+		}
 		os.Setenv("SINGULARITY_BINDPATH", strings.Join(buildArgs.bindPaths, ","))
 	}
 	if len(buildArgs.mounts) > 0 {
 		if buildArgs.remote {
 			sylog.Fatalf("--mount option is not supported for remote build")
+		}
+		if isOCI {
+			sylog.Fatalf("--mount option is not supported for OCI builds from Dockerfiles")
 		}
 		os.Setenv("SINGULARITY_MOUNT", strings.Join(buildArgs.mounts, "\n"))
 	}
@@ -144,6 +161,9 @@ func runBuild(cmd *cobra.Command, args []string) {
 		if buildArgs.fakeroot {
 			sylog.Fatalf("--writable-tmpfs option is not supported for fakeroot build")
 		}
+		if isOCI {
+			sylog.Fatalf("--writable-tmpfs option is not supported for OCI builds from Dockerfiles")
+		}
 		os.Setenv("SINGULARITY_WRITABLE_TMPFS", "1")
 	}
 
@@ -151,7 +171,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("Custom authfile is not supported for remote build")
 	}
 
-	if buildArgs.arch != runtime.GOARCH && !buildArgs.remote {
+	if buildArgs.arch != runtime.GOARCH && !(buildArgs.remote || isOCI) {
 		sylog.Fatalf("Requested architecture (%s) does not match host (%s). Cannot build locally.", buildArgs.arch, runtime.GOARCH)
 	}
 
@@ -159,7 +179,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 	spec := args[1]
 
 	// Non-remote build with def file as source
-	rootNeeded := !buildArgs.remote && fs.IsFile(spec) && !isImage(spec)
+	rootNeeded := !buildArgs.remote && fs.IsFile(spec) && !isImage(spec) && !isOCI
 
 	if rootNeeded && syscall.Getuid() != 0 && !buildArgs.fakeroot {
 		prootPath, err := bin.FindBin("proot")
@@ -177,9 +197,31 @@ func runBuild(cmd *cobra.Command, args []string) {
 
 	if buildArgs.remote {
 		runBuildRemote(cmd.Context(), cmd, dest, spec)
-	} else {
-		runBuildLocal(cmd.Context(), cmd, dest, spec)
+		return
 	}
+
+	authConf, err := makeDockerCredentials(cmd)
+	if err != nil {
+		sylog.Fatalf("While creating Docker credentials: %v", err)
+	}
+
+	if isOCI {
+		reqArch := ""
+		if cmd.Flags().Lookup("arch").Changed {
+			reqArch = buildArgs.arch
+		}
+		bkOpts := &bkclient.Opts{
+			AuthConf:        authConf,
+			ReqAuthFile:     reqAuthFile,
+			BuildVarArgs:    buildArgs.buildVarArgs,
+			BuildVarArgFile: buildArgs.buildVarArgFile,
+			ReqArch:         reqArch,
+		}
+		bkclient.Run(cmd.Context(), bkOpts, dest, spec)
+	} else {
+		runBuildLocal(cmd.Context(), authConf, cmd, dest, spec)
+	}
+
 	sylog.Infof("Build complete: %s", dest)
 }
 
@@ -307,7 +349,7 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 	}
 }
 
-func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
+func runBuildLocal(ctx context.Context, authConf *ocitypes.DockerAuthConfig, cmd *cobra.Command, dst, spec string) {
 	var keyInfo *cryptkey.KeyInfo
 	if buildArgs.encrypt || promptForPassphrase || cmd.Flags().Lookup("pem-path").Changed {
 		if os.Getuid() != 0 {
@@ -335,11 +377,6 @@ func runBuildLocal(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 	err := checkSections()
 	if err != nil {
 		sylog.Fatalf("Could not check build sections: %v", err)
-	}
-
-	authConf, err := makeDockerCredentials(cmd)
-	if err != nil {
-		sylog.Fatalf("While creating Docker credentials: %v", err)
 	}
 
 	// parse definition to determine build source

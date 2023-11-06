@@ -39,7 +39,7 @@ func Create(containerID, bundlePath string, systemdCgroups bool) error {
 	if err != nil {
 		return err
 	}
-	runtimeBin, err := runtime()
+	runtimeBin, err := Runtime()
 	if err != nil {
 		return err
 	}
