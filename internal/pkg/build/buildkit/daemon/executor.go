@@ -67,8 +67,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	bolt "go.etcd.io/bbolt"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 )
@@ -495,13 +493,8 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 		}
 	}
 
-	trace.SpanFromContext(ctx).AddEvent("Container created")
 	err = w.run(ctx, id, bundle, process, func() {
 		startedOnce.Do(func() {
-			trace.SpanFromContext(ctx).AddEvent("Container started")
-			if started != nil {
-				close(started)
-			}
 			if rec != nil {
 				rec.Start()
 			}
@@ -552,12 +545,6 @@ func exitError(ctx context.Context, err error) error {
 				ExitCode: uint32(runcExitError.Status),
 			}
 		}
-		trace.SpanFromContext(ctx).AddEvent(
-			"Container exited",
-			trace.WithAttributes(
-				attribute.Int("exit.code", int(exitErr.ExitCode)),
-			),
-		)
 		select {
 		case <-ctx.Done():
 			exitErr.Err = errors.Wrapf(ctx.Err(), exitErr.Error())
@@ -566,11 +553,6 @@ func exitError(ctx context.Context, err error) error {
 			return stack.Enable(exitErr)
 		}
 	}
-
-	trace.SpanFromContext(ctx).AddEvent(
-		"Container exited",
-		trace.WithAttributes(attribute.Int("exit.code", 0)),
-	)
 	return nil
 }
 
