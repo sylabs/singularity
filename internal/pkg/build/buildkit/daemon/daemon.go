@@ -179,6 +179,10 @@ func Run(ctx context.Context, opts *Opts, socketChan chan<- string) error {
 		err = serverErr
 	case <-ctx.Done():
 		err = ctx.Err()
+		// Exit gracefully if context canceled
+		if err == context.Canceled {
+			err = nil
+		}
 	}
 
 	sylog.Infof("stopping buildkitd server")
