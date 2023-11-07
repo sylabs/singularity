@@ -14,14 +14,18 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
+	ocisif "github.com/sylabs/oci-tools/pkg/sif"
+	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/e2e/ecl"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"gotest.tools/v3/assert"
 )
 
 var testFileContent = "Test file content\n"
@@ -1956,6 +1960,8 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 
 			tests := []struct {
 				name            string
+				imgPath         string
+				dockerfile      string
 				buildArgs       []string
 				actCmd          string
 				actArgs         []string
@@ -1963,26 +1969,41 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				buildExpects    []e2e.SingularityCmdResultOp
 				actExpectExit   int
 				actExpects      []e2e.SingularityCmdResultOp
+				arch            string
 			}{
 				{
 					name:            "simple",
-					buildArgs:       []string{outputImgPath, filepath.Join("..", "test", "defs", "Dockerfile.simple")},
+					imgPath:         outputImgPath,
+					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.simple"),
 					actCmd:          "exec",
-					actArgs:         []string{outputImgPath, "/bin/true"},
+					actArgs:         []string{"/bin/true"},
 					buildExpectExit: 0,
 					actExpectExit:   0,
 				},
 				{
 					name:            "broken",
-					buildArgs:       []string{outputImgPath, filepath.Join("..", "test", "defs", "Dockerfile.broken")},
+					imgPath:         outputImgPath,
+					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.broken"),
 					buildExpectExit: 255,
+				},
+				{
+					name:            "crossarch",
+					imgPath:         outputImgPath,
+					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.simple"),
+					buildExpectExit: 0,
+					arch:            getNonNativeArch(),
 				},
 			}
 
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
-					if len(tt.buildArgs) > 0 {
-						buildArgs := append([]string{"-F", "--oci"}, tt.buildArgs...)
+					if tt.dockerfile != "" {
+						buildArgs := []string{"-F", "--oci"}
+						if tt.arch != "" {
+							buildArgs = append(buildArgs, "--arch", tt.arch)
+						}
+						buildArgs = append(buildArgs, tt.buildArgs...)
+						buildArgs = append(buildArgs, tt.imgPath, tt.dockerfile)
 						c.env.RunSingularity(
 							t,
 							e2e.AsSubtest("build"),
@@ -1991,9 +2012,12 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 							e2e.WithArgs(buildArgs...),
 							e2e.ExpectExit(tt.buildExpectExit, tt.buildExpects...),
 						)
+						if tt.arch != "" {
+							verifyImgArch(t, tt.imgPath, tt.arch)
+						}
 					}
-					if len(tt.actArgs) > 0 {
-						actArgs := append([]string{"--oci"}, tt.actArgs...)
+					if tt.actCmd != "" {
+						actArgs := append([]string{"--oci", tt.imgPath}, tt.actArgs...)
 						c.env.RunSingularity(
 							t,
 							e2e.AsSubtest("act"),
@@ -2007,6 +2031,49 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 			}
 		})
 	}
+}
+
+func getNonNativeArch() string {
+	nativeArch := runtime.GOARCH
+	switch nativeArch {
+	case "amd64":
+		return "arm64"
+	default:
+		return "amd64"
+	}
+}
+
+func verifyImgArch(t *testing.T, imgPath, arch string) {
+	fi, err := sif.LoadContainerFromPath(imgPath, sif.OptLoadWithFlag(os.O_RDONLY))
+	if err != nil {
+		t.Fatalf("while loading SIF (%s): %v", imgPath, err)
+	}
+	defer fi.UnloadContainer()
+
+	ix, err := ocisif.ImageIndexFromFileImage(fi)
+	if err != nil {
+		t.Fatalf("while obtaining image index from %s: %v", imgPath, err)
+	}
+	idxManifest, err := ix.IndexManifest()
+	if err != nil {
+		t.Fatalf("while obtaining index manifest from %s: %v", imgPath, err)
+	}
+	if len(idxManifest.Manifests) != 1 {
+		t.Fatalf("while reading %s: single manifest expected, found %d manifests", imgPath, len(idxManifest.Manifests))
+	}
+	imageDigest := idxManifest.Manifests[0].Digest
+
+	img, err := ix.Image(imageDigest)
+	if err != nil {
+		t.Fatalf("while initializing image from %s: %v", imgPath, err)
+	}
+
+	cg, err := img.ConfigFile()
+	if err != nil {
+		t.Fatalf("while accessing config for %s: %v", imgPath, err)
+	}
+
+	assert.Equal(t, arch, cg.Architecture)
 }
 
 func (c imgBuildTests) buildWithAuth(t *testing.T) {
