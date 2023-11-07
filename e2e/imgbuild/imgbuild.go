@@ -8,15 +8,20 @@
 package imgbuild
 
 import (
+	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	ocisif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
@@ -1945,6 +1950,104 @@ DEMO=demo=with===equals==signs
 	})
 }
 
+func (c imgBuildTests) buildUseExistingBuildkitd(t *testing.T) {
+	const (
+		bkLaunchTimeout = 10 * time.Second
+	)
+
+	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, "", "build_use_existing_buildkitd_e2e_", "dir")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			tmpdirCleanup(t)
+		}
+	})
+
+	outputImgPath := filepath.Join(tmpdir, "image.oci.sif")
+
+	var cmd *exec.Cmd
+	var err error
+	var cmdPipe io.ReadCloser
+	e2e.Privileged(func(t *testing.T) {
+		var buildkitd string
+		buildkitd, err = exec.LookPath("buildkitd")
+		if err != nil {
+			return
+		}
+		cmd = exec.Command(buildkitd)
+		cmdPipe, err = cmd.StderrPipe()
+		if err != nil {
+			cmd = nil
+		}
+		err = cmd.Start()
+		if err != nil {
+			cmd = nil
+		}
+	})(t)
+
+	if cmd == nil {
+		t.Skipf("could not launch our own buildkitd (%v), skipping test", err)
+	}
+
+	shutdownBk := func() {
+		e2e.Privileged(func(t *testing.T) {
+			if (cmd == nil) || (cmd.Process == nil) {
+				return
+			}
+
+			if err := cmd.Process.Kill(); err != nil {
+				t.Errorf("While trying to shut down our own buildkit: %v", err)
+			}
+		})(t)
+	}
+
+	launchChan := make(chan error, 3)
+	cmdReader := bufio.NewReader(cmdPipe)
+	var outputLines bytes.Buffer
+	go func() {
+		for {
+			line, err := cmdReader.ReadString('\n')
+			if err != nil {
+				launchChan <- err
+				return
+			}
+			if strings.Contains(line, "running server on") {
+				launchChan <- nil
+				return
+			}
+			outputLines.WriteString(line)
+		}
+	}()
+
+	timeoutChan := make(chan bool, 3)
+	go func() {
+		time.Sleep(bkLaunchTimeout)
+		timeoutChan <- true
+	}()
+
+	select {
+	case err := <-launchChan:
+		if err == io.EOF {
+			t.Skipf("could not launch our own buildkitd (%v), skipping test", outputLines.String())
+		}
+		if err != nil {
+			t.Skipf("could not launch our own buildkitd (%v), skipping test", err)
+		}
+	case <-timeoutChan:
+		shutdownBk()
+		t.Skip("could not launch our own buildkitd (timeout encoutered), skipping test")
+	}
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--oci", outputImgPath, filepath.Join("..", "test", "defs", "Dockerfile.simple")),
+		e2e.ExpectExit(0, e2e.ExpectError(e2e.RegexMatch, "buildkitd already running.+will use that daemon")),
+	)
+
+	shutdownBk()
+}
+
 func (c imgBuildTests) buildDockerfile(t *testing.T) {
 	profiles := []e2e.Profile{e2e.UserProfile, e2e.RootProfile}
 	for _, profile := range profiles {
@@ -2283,6 +2386,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"buildArgs":                       c.buildWithBuildArgs,        // builds from definition with build args (build arg file) support
 		"dockerfile":                      c.buildDockerfile,           // build OCI-SIF image from Dockerfile
 		"auth":                            np(c.buildWithAuth),         // build with custom auth file
+		"buildkitd":                       c.buildUseExistingBuildkitd, // build using already-running buildkitd
 		"issue 3848":                      c.issue3848,                 // https://github.com/hpcng/singularity/issues/3848
 		"issue 4203":                      c.issue4203,                 // https://github.com/sylabs/singularity/issues/4203
 		"issue 4407":                      c.issue4407,                 // https://github.com/sylabs/singularity/issues/4407
