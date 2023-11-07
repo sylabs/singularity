@@ -109,6 +109,10 @@ func fakerootExec() {
 }
 
 func runBuild(cmd *cobra.Command, args []string) {
+	if keepLayers && !isOCI {
+		sylog.Fatalf("--keep-layers is only supported when building an OCI-SIF (--oci mode)")
+	}
+
 	if buildArgs.nvidia {
 		if buildArgs.remote {
 			sylog.Fatalf("--nv option is not supported for remote build")
@@ -216,6 +220,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 			BuildVarArgs:    buildArgs.buildVarArgs,
 			BuildVarArgFile: buildArgs.buildVarArgFile,
 			ReqArch:         reqArch,
+			KeepLayers:      keepLayers,
 		}
 		bkclient.Run(cmd.Context(), bkOpts, dest, spec)
 	} else {
