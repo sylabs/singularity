@@ -271,6 +271,36 @@ func (c ctx) testDockerHost(t *testing.T) {
 func (c ctx) testDockerCredsPriority(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
+	privImgNoPrefix := strings.TrimPrefix(c.env.TestRegistryPrivImage, "docker://")
+	simpleDef := e2e.PrepareDefFile(e2e.DefFileDetails{
+		Bootstrap: "docker",
+		From:      privImgNoPrefix,
+	})
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(simpleDef)
+		}
+	})
+
+	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, c.env.TestDir, "build-auth", "")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			tmpdirCleanup(t)
+		}
+	})
+
+	dockerfile, err := e2e.WriteTempFile(tmpdir, "Dockerfile", fmt.Sprintf(
+		`
+FROM %s
+CMD /bin/true
+`,
+		privImgNoPrefix,
+	))
+	if err != nil {
+		t.Fatalf("while trying to generate test dockerfile: %v", err)
+	}
+	ocisifPath := dockerfile + ".oci.sif"
+
 	profiles := []e2e.Profile{
 		e2e.UserProfile,
 		e2e.RootProfile,
@@ -289,6 +319,12 @@ func (c ctx) testDockerCredsPriority(t *testing.T) {
 			})
 			t.Run("cstm exec", func(t *testing.T) {
 				c.dockerCredsPriorityTester(t, true, p, "exec", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true")
+			})
+			t.Run("def df build", func(t *testing.T) {
+				c.dockerCredsPriorityTester(t, false, p, "build", "--oci", "-F", ocisifPath, dockerfile)
+			})
+			t.Run("cstm df build", func(t *testing.T) {
+				c.dockerCredsPriorityTester(t, true, p, "build", "--oci", "-F", ocisifPath, dockerfile)
 			})
 		})
 	}
