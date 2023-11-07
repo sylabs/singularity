@@ -561,6 +561,11 @@ func (l *Launcher) addSystemBindMounts(mounts *[]specs.Mount) error {
 }
 
 func (l *Launcher) addUserBindMounts(mounts *[]specs.Mount) error {
+	if !l.singularityConf.UserBindControl {
+		sylog.Warningf("Ignoring bind mount request(s): user bind control disabled by system administrator")
+		return nil
+	}
+
 	// First get binds from -B/--bind and env var
 	binds, err := bind.ParseBindPath(strings.Join(l.cfg.BindPaths, ","))
 	if err != nil {
@@ -576,10 +581,18 @@ func (l *Launcher) addUserBindMounts(mounts *[]specs.Mount) error {
 	}
 
 	for _, b := range binds {
-		if !l.singularityConf.UserBindControl {
-			sylog.Warningf("Ignoring bind mount request: user bind control disabled by system administrator")
-			return nil
+		// Special Case - user is manually requesting all of /dev to be bound
+		if b.Source == "/dev" {
+			if b.Destination != "/dev" {
+				return fmt.Errorf("host /dev may only be bound to /dev in container")
+			}
+			// Handle as we do in --no-compat, including devpts setup.
+			if err := l.addDevBind(mounts); err != nil {
+				return fmt.Errorf("while adding mount %q: %w", b.Source, err)
+			}
+			continue
 		}
+		// Anything else
 		if err := l.addBindMount(mounts, b, l.cfg.AllowSUID); err != nil {
 			return fmt.Errorf("while adding mount %q: %w", b.Source, err)
 		}
@@ -610,6 +623,11 @@ func (l *Launcher) addCwdMount(mounts *[]specs.Mount) error {
 }
 
 func (l *Launcher) addBindMount(mounts *[]specs.Mount, b bind.Path, allowSUID bool) (err error) {
+	// If request is for a /dev/xxx device, then we handle with device specific checks and flags.
+	if strings.HasPrefix(b.Source, "/dev") {
+		return addDevBindMount(mounts, b)
+	}
+
 	if b.ID() != "" || b.ImageSrc() != "" {
 		if !l.singularityConf.UserBindControl {
 			sylog.Warningf("Ignoring image bind mount request: user bind control disabled by system administrator")
