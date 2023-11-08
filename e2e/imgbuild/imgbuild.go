@@ -2321,19 +2321,6 @@ func (c imgBuildTests) buildWithAuthTester(t *testing.T, withCustomAuthFile bool
 		}
 	})
 
-	// The following is disabled because it is now subsumed under
-	// testDockerCredsPriority() in e2e/docker/docker.go:
-	// dockerfile, err := e2e.WriteTempFile(tmpdir, "Dockerfile", fmt.Sprintf(
-	// 	`
-	// FROM %s
-	// CMD /bin/true
-	// `,
-	// 	privImgNoPrefix,
-	// ))
-	// if err != nil {
-	// 	t.Fatalf("while trying to generate test dockerfile: %v", err)
-	// }
-
 	prevCwd, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("could not get current working directory: %v", err)
@@ -2387,20 +2374,6 @@ func (c imgBuildTests) buildWithAuthTester(t *testing.T, withCustomAuthFile bool
 			whileLoggedIn: true,
 			expectExit:    0,
 		},
-		// The following is disabled because it is now subsumed under
-		// testDockerCredsPriority() in e2e/docker/docker.go:
-		// {
-		// 	name:          "privimg df logged out",
-		// 	args:          []string{"-F", "--oci", "--no-https", "--disable-cache", "./my_image_file.oci.sif", dockerfile},
-		// 	whileLoggedIn: false,
-		// 	expectExit:    255,
-		// },
-		// {
-		// 	name:          "privimg df logged in",
-		// 	args:          []string{"-F", "--oci", "--no-https", "--disable-cache", "./my_image_file.oci.sif", dockerfile},
-		// 	whileLoggedIn: true,
-		// 	expectExit:    0,
-		// },
 	}
 
 	for _, tt := range tests {
