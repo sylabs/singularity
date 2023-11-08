@@ -1235,9 +1235,9 @@ func (c ctx) testDockerUSER(t *testing.T) {
 	)
 
 	metaTests := map[string]string{
-		"uri":  dockerURI,
-		"ubos": userBuiltOCISIF,
-		"rbos": rootBuiltOCISIF,
+		"uri":          dockerURI,
+		"user oci-sif": userBuiltOCISIF,
+		"root oci-sif": rootBuiltOCISIF,
 	}
 
 	for subtestName, container := range metaTests {
