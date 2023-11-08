@@ -1204,7 +1204,7 @@ func (c ctx) testDockerUSER(t *testing.T) {
 	userBuiltOCISIF := filepath.Join(tmpdir, "docker-user.oci.sif")
 	c.env.RunSingularity(
 		t,
-		e2e.AsSubtest("df build"),
+		e2e.AsSubtest("user df build"),
 		e2e.WithProfile(e2e.UserProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs("--oci", userBuiltOCISIF, dockerfile),
@@ -1213,7 +1213,7 @@ func (c ctx) testDockerUSER(t *testing.T) {
 	rootBuiltOCISIF := filepath.Join(tmpdir, "rootbuilt-docker-user.oci.sif")
 	c.env.RunSingularity(
 		t,
-		e2e.AsSubtest("df build"),
+		e2e.AsSubtest("root df build"),
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
 		e2e.WithArgs("--oci", rootBuiltOCISIF, dockerfile),
