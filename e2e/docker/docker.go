@@ -290,13 +290,14 @@ func (c ctx) testDockerCredsPriority(t *testing.T) {
 		}
 	})
 
-	dockerfile, err := e2e.WriteTempFile(tmpdir, "Dockerfile", fmt.Sprintf(
+	dockerfileContent := fmt.Sprintf(
 		`
 FROM %s
 CMD /bin/true
 `,
 		privImgNoPrefix,
-	))
+	)
+	dockerfile, err := e2e.WriteTempFile(tmpdir, "Dockerfile", dockerfileContent)
 	if err != nil {
 		t.Fatalf("while trying to generate test dockerfile: %v", err)
 	}
