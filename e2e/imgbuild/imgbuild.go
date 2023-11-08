@@ -2096,6 +2096,107 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 					buildExpectExit: 0,
 					arch:            getNonNativeArch(),
 				},
+				// As of moby/buildkit v0.12.3, there's no mechanisms for
+				// issuing warnings about unconsumed build-args, missing
+				// build-args, etc., so there's not all that much to test here.
+				// Remember also that all the internal/pkg/build/buildkit code
+				// is doing is populating buildkit's map from our build-args
+				// map; and the correct populating of that map is already tested
+				// in buildWithBuildArgs().
+				{
+					name:            "ba none",
+					imgPath:         outputImgPath,
+					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs"),
+					actCmd:          "run",
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, "defval"),
+					},
+				},
+				{
+					name:            "ba wrong",
+					imgPath:         outputImgPath,
+					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs"),
+					actCmd:          "run",
+					buildArgs:       []string{"--build-arg", "ARG_TWO=something"},
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, "defval"),
+					},
+				},
+				{
+					name:            "ba wrong and right",
+					imgPath:         outputImgPath,
+					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs"),
+					actCmd:          "run",
+					buildArgs:       []string{"--build-arg", "ARG_TWO=something", "--build-arg", "ARG_ONE=special"},
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, "special"),
+					},
+				},
+				{
+					name:            "ba right",
+					imgPath:         outputImgPath,
+					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs"),
+					actCmd:          "run",
+					buildArgs:       []string{"--build-arg", "ARG_ONE=special"},
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, "special"),
+					},
+				},
+				{
+					name:            "ba nd none",
+					imgPath:         outputImgPath,
+					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs-nodefault"),
+					actCmd:          "run",
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, ""),
+					},
+				},
+				{
+					name:            "ba nd wrong",
+					imgPath:         outputImgPath,
+					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs-nodefault"),
+					actCmd:          "run",
+					buildArgs:       []string{"--build-arg", "ARG_TWO=something"},
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, ""),
+					},
+				},
+				{
+					name:            "ba nd wrong and right",
+					imgPath:         outputImgPath,
+					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs-nodefault"),
+					actCmd:          "run",
+					buildArgs:       []string{"--build-arg", "ARG_TWO=something", "--build-arg", "ARG_ONE=special"},
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, "special"),
+					},
+				},
+				{
+					name:            "ba nd right",
+					imgPath:         outputImgPath,
+					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs-nodefault"),
+					actCmd:          "run",
+					buildArgs:       []string{"--build-arg", "ARG_ONE=special"},
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, "special"),
+					},
+				},
 			}
 
 			for _, tt := range tests {

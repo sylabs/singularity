@@ -1,0 +1,8 @@
+FROM alpine
+
+ARG ARG_ONE
+
+RUN echo ${ARG_ONE} > /some_file
+
+CMD cat /some_file
+
