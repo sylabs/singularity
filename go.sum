@@ -620,12 +620,12 @@ github.com/sylabs/json-resp v0.9.0 h1:hj2NIT1c65bTTiu+/3ORoQ1miZuYyXr+TapHxa+rND
 github.com/sylabs/json-resp v0.9.0/go.mod h1:Q9X4wRlZNPv3x76KaL8vTCBO4aC/DP2gh13xdtEqd1g=
 github.com/sylabs/oci-tools v0.6.0 h1:y6/YE3a2Mqk/HD7BM2IR5ioKEO3b2vGaaLwKgjbZkQQ=
 github.com/sylabs/oci-tools v0.6.0/go.mod h1:Ry6ngChflh20WPq6mLvCKSw2OTd9iDB5aR8OQzeq4hM=
-github.com/sylabs/scs-build-client v0.8.0 h1:fneGVgL5qB4am1MfmTZXI7N/f8TDQJfJcIprc5o0mwk=
-github.com/sylabs/scs-build-client v0.8.0/go.mod h1:DhOk7ya3jJmlkNMISY+Ix6LuTk2xmoCoi2X88lMbZRU=
+github.com/sylabs/scs-build-client v0.7.5 h1:pgR+dC6jGjBO9ElEFTafX8G1HLR0FWRP1k5PX+FbcNU=
+github.com/sylabs/scs-build-client v0.7.5/go.mod h1:BeB2nV1//koiMcJ7L7dLm2NlqBZtmysHGafXq4UaA5I=
 github.com/sylabs/scs-key-client v0.7.3 h1:k//63VQmgtJb+oTXmyO2thdSjgvi18mJLDI9bYAAceA=
 github.com/sylabs/scs-key-client v0.7.3/go.mod h1:FHLCehXKHTrvGSx35qLvXUU1zGpu8ad4WGTkgs4h4wA=
-github.com/sylabs/scs-library-client v1.4.5 h1:X/WPO+U+hVVmp2jioGM4AWXaPo3ECAJQQlWxZmKJReE=
-github.com/sylabs/scs-library-client v1.4.5/go.mod h1:nCAsuxBKCNGHKCrMae0EuySFEJgYFSRgqq4X/c7kI2g=
+github.com/sylabs/scs-library-client v1.3.5 h1:OTpqcQLM3zsZWr2zzqjDfDjXreH2UPbfrWfRwsD5V6E=
+github.com/sylabs/scs-library-client v1.3.5/go.mod h1:PBd6LqmOhliHhTfzp3mVrJv3QVQFre8bMr6j2tDnu/c=
 github.com/sylabs/sif/v2 v2.15.0 h1:Nv0tzksFnoQiQ2eUwpAis9nVqEu4c3RcNSxX8P3Cecw=
 github.com/sylabs/sif/v2 v2.15.0/go.mod h1:X1H7eaPz6BAxA84POMESXoXfTqgAnLQkujyF/CQFWTc=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 h1:kdXcSzyDtseVEc4yCz2qF8ZrQvIDBJLl4S1c3GCXmoI=
@@ -843,8 +843,8 @@ golang.org/x/term v0.0.0-20210927222741-03fcf44c2211/go.mod h1:jbD1KX2456YbFQfuX
 golang.org/x/term v0.2.0/go.mod h1:TVmDHMZPmdnySmBfhjOoOdhjzdE1h4u1VwSiw2l1Nuc=
 golang.org/x/term v0.5.0/go.mod h1:jMB1sMXY+tzblOD4FWmEbocvup2/aLOaQEp7JmGp78k=
 golang.org/x/term v0.6.0/go.mod h1:m6U89DPEgQRMq3DNkDClhWw02AUbt2daBVO4cn4Hv9U=
-golang.org/x/term v0.13.0 h1:bb+I9cTfFazGW51MZqBVmZy7+JEJMouUHTUSKVQLBek=
-golang.org/x/term v0.13.0/go.mod h1:LTmsnFJwVN6bCy1rVCoS+qHT1HhALEFxKncY3WNNh4U=
+golang.org/x/term v0.14.0 h1:LGK9IlZ8T9jvdy6cTdfKUCltatMFOehAQo9SRC46UQ8=
+golang.org/x/term v0.14.0/go.mod h1:TySc+nGkYR6qt8km8wUhuFRTVSMIX3XPR58y2lC8vww=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.2/go.mod h1:bEr9sfX3Q8Zfm5fL9x+3itogRgK3+ptLWKqgva+5dAk=
 golang.org/x/text v0.3.3/go.mod h1:5Zoc/QRtKVWzQhOtBMvqHzDpF6irO9z98xDceosuGiQ=
