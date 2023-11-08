@@ -448,6 +448,11 @@ func persistentPreRun(*cobra.Command, []string) error {
 		isOCI = false
 	}
 
+	// --keep-layers is only valid in OCI mode, as native SIFs do not hold layers.
+	if keepLayers && !isOCI {
+		sylog.Fatalf("--keep-layers is only supported when creating OCI-SIF images (--oci mode)")
+	}
+
 	// Honor 'tmp sandbox' in singularity.conf, and allow negation with
 	// `--no-tmp-sandbox`.
 	canUseTmpSandbox = config.TmpSandboxAllowed
