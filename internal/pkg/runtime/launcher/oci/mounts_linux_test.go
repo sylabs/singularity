@@ -9,6 +9,7 @@
 package oci
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 	"github.com/sylabs/singularity/v4/pkg/util/bind"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
 )
@@ -153,6 +155,32 @@ func Test_addBindMount(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Device",
+			b: bind.Path{
+				Source:      "/dev/null",
+				Destination: "/dev/null",
+			},
+			userbind: true,
+			wantMounts: &[]specs.Mount{
+				{
+					Source:      "/dev/null",
+					Destination: "/dev/null",
+					Type:        "none",
+					Options:     []string{"bind", "nosuid"},
+				},
+			},
+		},
+		{
+			name: "DeviceBadDest",
+			b: bind.Path{
+				Source:      "/dev/null",
+				Destination: "/notdev/null",
+			},
+			userbind:   true,
+			wantMounts: &[]specs.Mount{},
+			wantErr:    true,
+		},
 	}
 	for _, tt := range tests {
 		for _, m := range *tt.wantMounts {
@@ -181,7 +209,8 @@ func Test_addBindMount(t *testing.T) {
 	}
 }
 
-func TestLauncher_addBindMounts(t *testing.T) {
+//nolint:maintidx
+func TestLauncher_addUserBindMounts(t *testing.T) {
 	tests := []struct {
 		name       string
 		cfg        launcher.Options
@@ -366,6 +395,62 @@ func TestLauncher_addBindMounts(t *testing.T) {
 			wantMounts: &[]specs.Mount{},
 			wantErr:    true,
 		},
+		{
+			name: "FullDev",
+			cfg: launcher.Options{
+				BindPaths: []string{"/dev"},
+			},
+			userbind: true,
+			wantMounts: &[]specs.Mount{
+				{
+					Source:      "/dev",
+					Destination: "/dev",
+					Type:        "bind",
+					Options:     []string{"nosuid", "rbind", "rprivate", "rw"},
+				},
+				{
+					Source:      "devpts",
+					Destination: "/dev/pts",
+					Type:        "devpts",
+					Options:     ptsFlags(t),
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "FullDevBadDest",
+			cfg: launcher.Options{
+				BindPaths: []string{"/dev:/notdev"},
+			},
+			userbind:   true,
+			wantMounts: &[]specs.Mount{},
+			wantErr:    true,
+		},
+		{
+			name: "SpecificDevice",
+			cfg: launcher.Options{
+				BindPaths: []string{"/dev/null"},
+			},
+			userbind: true,
+			wantMounts: &[]specs.Mount{
+				{
+					Source:      "/dev/null",
+					Destination: "/dev/null",
+					Type:        "none",
+					Options:     []string{"bind", "nosuid"},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "SpecificDeviceBadDest",
+			cfg: launcher.Options{
+				BindPaths: []string{"/dev/null:/notdev/null"},
+			},
+			userbind:   true,
+			wantMounts: &[]specs.Mount{},
+			wantErr:    true,
+		},
 	}
 	for _, tt := range tests {
 		for _, m := range *tt.wantMounts {
@@ -373,8 +458,11 @@ func TestLauncher_addBindMounts(t *testing.T) {
 		}
 		t.Run(tt.name, func(t *testing.T) {
 			l := &Launcher{
-				cfg:             tt.cfg,
-				singularityConf: &singularityconf.File{},
+				cfg: tt.cfg,
+				singularityConf: &singularityconf.File{
+					// Required as full `/dev` userbind test involves a devpts mount onto the mounted /dev.
+					MountDevPts: true,
+				},
 			}
 			if tt.userbind {
 				l.singularityConf.UserBindControl = true
@@ -395,6 +483,21 @@ func TestLauncher_addBindMounts(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Flags for /dev/pts depend on whether we are running as root, and what the tty GID is.
+func ptsFlags(t *testing.T) []string {
+	flags := []string{"nosuid", "noexec", "newinstance", "ptmxmode=0666", "mode=0620"}
+
+	if os.Geteuid() == 0 {
+		group, err := user.GetGrNam("tty")
+		if err != nil {
+			t.Fatalf("while identifying tty gid: %v", err)
+		}
+		flags = append(flags, fmt.Sprintf("gid=%d", group.GID))
+	}
+
+	return flags
 }
 
 func TestLauncher_addLibrariesMounts(t *testing.T) {
