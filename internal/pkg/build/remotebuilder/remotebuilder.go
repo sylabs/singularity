@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,11 +15,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"net/http"
 	"net/url"
 	"os"
 	"strings"
-	"time"
 
 	golog "github.com/go-log/log"
 	"github.com/pkg/errors"
@@ -51,9 +49,6 @@ func New(imagePath, libraryURL string, d types.Definition, isDetached, force boo
 		buildclient.OptBaseURL(builderAddr),
 		buildclient.OptBearerToken(authToken),
 		buildclient.OptUserAgent(useragent.Value()),
-		buildclient.OptHTTPClient(&http.Client{
-			Timeout: 30 * time.Second,
-		}),
 	)
 	if err != nil {
 		return nil, err
