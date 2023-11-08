@@ -1240,14 +1240,14 @@ func (c ctx) testDockerUSER(t *testing.T) {
 		"rbos": rootBuiltOCISIF,
 	}
 
-	for subtestName, whatToRun := range metaTests {
+	for subtestName, container := range metaTests {
 		t.Run(subtestName, func(t *testing.T) {
-			c.testDockerUSERWorker(t, whatToRun)
+			c.testDockerUSERWorker(t, container)
 		})
 	}
 }
 
-func (c ctx) testDockerUSERWorker(t *testing.T, whatToRun string) {
+func (c ctx) testDockerUSERWorker(t *testing.T, container string) {
 	tests := []struct {
 		name          string
 		cmd           string
@@ -1261,7 +1261,7 @@ func (c ctx) testDockerUSERWorker(t *testing.T, whatToRun string) {
 			name:    "OCIUser",
 			cmd:     "run",
 			profile: e2e.OCIUserProfile,
-			args:    []string{whatToRun},
+			args:    []string{container},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.ContainMatch, `uid=2000(testuser) gid=2000(testgroup)`),
 			},
@@ -1269,7 +1269,7 @@ func (c ctx) testDockerUSERWorker(t *testing.T, whatToRun string) {
 		{
 			name:    "OCIFakeroot",
 			profile: e2e.OCIFakerootProfile,
-			args:    []string{whatToRun},
+			args:    []string{container},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.ContainMatch, `uid=0(root) gid=0(root)`),
 			},
@@ -1278,7 +1278,7 @@ func (c ctx) testDockerUSERWorker(t *testing.T, whatToRun string) {
 			name:    "OCIRoot",
 			cmd:     "run",
 			profile: e2e.OCIRootProfile,
-			args:    []string{whatToRun},
+			args:    []string{container},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.ContainMatch, `uid=2000(testuser) gid=2000(testgroup)`),
 			},
@@ -1288,21 +1288,21 @@ func (c ctx) testDockerUSERWorker(t *testing.T, whatToRun string) {
 			name:       "WithHomeOCIUser",
 			cmd:        "run",
 			profile:    e2e.OCIUserProfile,
-			args:       []string{"--home", "/tmp", whatToRun},
+			args:       []string{"--home", "/tmp", container},
 			expectExit: 255,
 		},
 		{
 			name:       "WithHomeOCIFakeroot",
 			cmd:        "run",
 			profile:    e2e.OCIFakerootProfile,
-			args:       []string{"--home", "/tmp", whatToRun},
+			args:       []string{"--home", "/tmp", container},
 			expectExit: 255,
 		},
 		{
 			name:       "WithHomeOCIRoot",
 			cmd:        "run",
 			profile:    e2e.OCIRootProfile,
-			args:       []string{"--home", "/tmp", whatToRun},
+			args:       []string{"--home", "/tmp", container},
 			expectExit: 255,
 		},
 		// `--oci` modes: check that we don't override container-user's home directory
@@ -1310,7 +1310,7 @@ func (c ctx) testDockerUSERWorker(t *testing.T, whatToRun string) {
 			name:    "OrigHomeOCIUser",
 			cmd:     "exec",
 			profile: e2e.OCIUserProfile,
-			args:    []string{whatToRun, "env"},
+			args:    []string{container, "env"},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.RegexMatch, `\bHOME=/home/testuser\b`),
 			},
@@ -1320,7 +1320,7 @@ func (c ctx) testDockerUSERWorker(t *testing.T, whatToRun string) {
 			name:    "OrigHomeOCIFakeroot",
 			cmd:     "exec",
 			profile: e2e.OCIFakerootProfile,
-			args:    []string{whatToRun, "env"},
+			args:    []string{container, "env"},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.RegexMatch, `\bHOME=/root\b`),
 			},
@@ -1330,7 +1330,7 @@ func (c ctx) testDockerUSERWorker(t *testing.T, whatToRun string) {
 			name:    "OrigHomeOCIRoot",
 			cmd:     "exec",
 			profile: e2e.OCIRootProfile,
-			args:    []string{whatToRun, "env"},
+			args:    []string{container, "env"},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.RegexMatch, `\bHOME=/home/testuser\b`),
 			},
