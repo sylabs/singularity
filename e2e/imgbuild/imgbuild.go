@@ -18,9 +18,9 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
+	"text/template"
 	"time"
 
 	ocisif "github.com/sylabs/oci-tools/pkg/sif"
@@ -1962,6 +1962,7 @@ func (c imgBuildTests) buildUseExistingBuildkitd(t *testing.T) {
 		}
 	})
 
+	dockerfileSimple := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.simple.tmpl"))
 	outputImgPath := filepath.Join(tmpdir, "image.oci.sif")
 
 	var cmd *exec.Cmd
@@ -2041,7 +2042,7 @@ func (c imgBuildTests) buildUseExistingBuildkitd(t *testing.T) {
 		t,
 		e2e.WithProfile(e2e.RootProfile),
 		e2e.WithCommand("build"),
-		e2e.WithArgs("--oci", outputImgPath, filepath.Join("..", "test", "defs", "Dockerfile.simple")),
+		e2e.WithArgs("--oci", outputImgPath, dockerfileSimple),
 		e2e.ExpectExit(0, e2e.ExpectError(e2e.RegexMatch, "buildkitd already running.+will use that daemon")),
 	)
 
@@ -2058,6 +2059,11 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 					tmpdirCleanup(t)
 				}
 			})
+
+			dockerfileSimple := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.simple.tmpl"))
+			dockerfileBroken := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.broken.tmpl"))
+			dockerfileBuildArgs := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.buildargs.tmpl"))
+			dockerfileBuildArgsNoDef := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.buildargs-nodefault.tmpl"))
 
 			outputImgPath := filepath.Join(tmpdir, "image.oci.sif")
 
@@ -2077,7 +2083,7 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				{
 					name:            "simple",
 					imgPath:         outputImgPath,
-					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.simple"),
+					dockerfile:      dockerfileSimple,
 					actCmd:          "exec",
 					actArgs:         []string{"/bin/true"},
 					buildExpectExit: 0,
@@ -2086,15 +2092,8 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				{
 					name:            "broken",
 					imgPath:         outputImgPath,
-					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.broken"),
+					dockerfile:      dockerfileBroken,
 					buildExpectExit: 255,
-				},
-				{
-					name:            "crossarch",
-					imgPath:         outputImgPath,
-					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.simple"),
-					buildExpectExit: 0,
-					arch:            getNonNativeArch(),
 				},
 				// As of moby/buildkit v0.12.3, there's no mechanisms for
 				// issuing warnings about unconsumed build-args, missing
@@ -2106,7 +2105,7 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				{
 					name:            "ba none",
 					imgPath:         outputImgPath,
-					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs"),
+					dockerfile:      dockerfileBuildArgs,
 					actCmd:          "run",
 					buildExpectExit: 0,
 					actExpectExit:   0,
@@ -2117,7 +2116,7 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				{
 					name:            "ba wrong",
 					imgPath:         outputImgPath,
-					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs"),
+					dockerfile:      dockerfileBuildArgs,
 					actCmd:          "run",
 					buildArgs:       []string{"--build-arg", "ARG_TWO=something"},
 					buildExpectExit: 0,
@@ -2129,7 +2128,7 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				{
 					name:            "ba wrong and right",
 					imgPath:         outputImgPath,
-					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs"),
+					dockerfile:      dockerfileBuildArgs,
 					actCmd:          "run",
 					buildArgs:       []string{"--build-arg", "ARG_TWO=something", "--build-arg", "ARG_ONE=special"},
 					buildExpectExit: 0,
@@ -2141,7 +2140,7 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				{
 					name:            "ba right",
 					imgPath:         outputImgPath,
-					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs"),
+					dockerfile:      dockerfileBuildArgs,
 					actCmd:          "run",
 					buildArgs:       []string{"--build-arg", "ARG_ONE=special"},
 					buildExpectExit: 0,
@@ -2153,7 +2152,7 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				{
 					name:            "ba nd none",
 					imgPath:         outputImgPath,
-					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs-nodefault"),
+					dockerfile:      dockerfileBuildArgsNoDef,
 					actCmd:          "run",
 					buildExpectExit: 0,
 					actExpectExit:   0,
@@ -2164,7 +2163,7 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				{
 					name:            "ba nd wrong",
 					imgPath:         outputImgPath,
-					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs-nodefault"),
+					dockerfile:      dockerfileBuildArgsNoDef,
 					actCmd:          "run",
 					buildArgs:       []string{"--build-arg", "ARG_TWO=something"},
 					buildExpectExit: 0,
@@ -2176,7 +2175,7 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				{
 					name:            "ba nd wrong and right",
 					imgPath:         outputImgPath,
-					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs-nodefault"),
+					dockerfile:      dockerfileBuildArgsNoDef,
 					actCmd:          "run",
 					buildArgs:       []string{"--build-arg", "ARG_TWO=something", "--build-arg", "ARG_ONE=special"},
 					buildExpectExit: 0,
@@ -2188,7 +2187,7 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				{
 					name:            "ba nd right",
 					imgPath:         outputImgPath,
-					dockerfile:      filepath.Join("..", "test", "defs", "Dockerfile.buildargs-nodefault"),
+					dockerfile:      dockerfileBuildArgsNoDef,
 					actCmd:          "run",
 					buildArgs:       []string{"--build-arg", "ARG_ONE=special"},
 					buildExpectExit: 0,
@@ -2237,14 +2236,36 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 	}
 }
 
-func getNonNativeArch() string {
-	nativeArch := runtime.GOARCH
-	switch nativeArch {
-	case "amd64":
-		return "arm64"
-	default:
-		return "amd64"
+func (c imgBuildTests) createDockerfileFromTmpl(t *testing.T, tmpdir, tmplPath string) string {
+	dockerfile, err := os.CreateTemp(tmpdir, "Dockerfile-")
+	if err != nil {
+		t.Fatalf("failed to open temp file: %v", err)
 	}
+	dockerfileName := dockerfile.Name()
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(dockerfileName)
+		}
+	})
+	defer dockerfile.Close()
+
+	imageNoPrefix := strings.TrimPrefix(c.env.TestRegistryImage, "docker://")
+
+	tmplBytes, err := os.ReadFile(tmplPath)
+	if err != nil {
+		t.Fatalf("While trying to read template file %q: %v", tmplPath, err)
+	}
+	tmpl, err := template.New(filepath.Base(dockerfileName)).Parse(string(tmplBytes))
+	if err != nil {
+		t.Fatalf("While trying to parse template file %q: %v", tmplPath, err)
+	}
+
+	err = tmpl.Execute(dockerfile, struct{ Source string }{Source: imageNoPrefix})
+	if err != nil {
+		t.Fatalf("While trying to execute template %q: %v", tmplPath, err)
+	}
+
+	return dockerfileName
 }
 
 func verifyImgArch(t *testing.T, imgPath, arch string) {

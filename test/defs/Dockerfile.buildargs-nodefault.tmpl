@@ -1,6 +1,6 @@
-FROM alpine
+FROM {{ .Source }}
 
-ARG ARG_ONE=defval
+ARG ARG_ONE
 
 RUN echo ${ARG_ONE} > /some_file
 

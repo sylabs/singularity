@@ -17,6 +17,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -1492,6 +1493,46 @@ func checkNativeSIFPlatform(t *testing.T, imgPath, platform string) {
 	}
 }
 
+// Test that we can perform cross-architecture builds from Dockerfile using buildkit
+func (c ctx) testDockerCrossArchBk(t *testing.T) {
+	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, "", "dockerfile_crossarch_", "dir")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			tmpdirCleanup(t)
+		}
+	})
+
+	dockerfile, err := e2e.WriteTempFile(tmpdir, "Dockerfile", `
+FROM alpine
+CMD /bin/true
+`)
+	if err != nil {
+		t.Fatalf("While trying to create temporary Dockerfile: %v", err)
+	}
+
+	profiles := []e2e.Profile{e2e.UserProfile, e2e.RootProfile}
+	for _, profile := range profiles {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(profile.String()),
+			e2e.WithProfile(profile),
+			e2e.WithCommand("build"),
+			e2e.WithArgs("--oci", "--arch", getNonNativeArch(), filepath.Join(tmpdir, "image."+profile.String()+".oci.sif"), dockerfile),
+			e2e.ExpectExit(0),
+		)
+	}
+}
+
+func getNonNativeArch() string {
+	nativeArch := runtime.GOARCH
+	switch nativeArch {
+	case "amd64":
+		return "arm64"
+	default:
+		return "amd64"
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -1517,6 +1558,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			t.Run("cmd quotes", c.testDockerCMDQuotes)
 			t.Run("user", c.testDockerUSER)
 			t.Run("platform", c.testDockerPlatform)
+			t.Run("crossarch buildkit", c.testDockerCrossArchBk)
 			// Regressions
 			t.Run("issue 4524", c.issue4524)
 			t.Run("issue 1286", c.issue1286)
