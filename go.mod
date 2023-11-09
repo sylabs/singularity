@@ -64,6 +64,7 @@ require (
 	golang.org/x/text v0.14.0
 	google.golang.org/grpc v1.59.0
 	gopkg.in/yaml.v3 v3.0.1
+	gotest.tools v2.2.0+incompatible
 	gotest.tools/v3 v3.5.1
 	mvdan.cc/sh/v3 v3.7.1-0.20231014181306-8b673862efc6
 	tags.cncf.io/container-device-interface v0.6.2
