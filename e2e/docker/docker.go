@@ -17,6 +17,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -271,6 +272,37 @@ func (c ctx) testDockerHost(t *testing.T) {
 func (c ctx) testDockerCredsPriority(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
+	privImgNoPrefix := strings.TrimPrefix(c.env.TestRegistryPrivImage, "docker://")
+	simpleDef := e2e.PrepareDefFile(e2e.DefFileDetails{
+		Bootstrap: "docker",
+		From:      privImgNoPrefix,
+	})
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(simpleDef)
+		}
+	})
+
+	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, c.env.TestDir, "build-auth", "")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			tmpdirCleanup(t)
+		}
+	})
+
+	dockerfileContent := fmt.Sprintf(
+		`
+FROM %s
+CMD /bin/true
+`,
+		privImgNoPrefix,
+	)
+	dockerfile, err := e2e.WriteTempFile(tmpdir, "Dockerfile", dockerfileContent)
+	if err != nil {
+		t.Fatalf("while trying to generate test dockerfile: %v", err)
+	}
+	ocisifPath := dockerfile + ".oci.sif"
+
 	profiles := []e2e.Profile{
 		e2e.UserProfile,
 		e2e.RootProfile,
@@ -289,6 +321,12 @@ func (c ctx) testDockerCredsPriority(t *testing.T) {
 			})
 			t.Run("cstm exec", func(t *testing.T) {
 				c.dockerCredsPriorityTester(t, true, p, "exec", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true")
+			})
+			t.Run("def df build", func(t *testing.T) {
+				c.dockerCredsPriorityTester(t, false, p, "build", "--oci", "-F", ocisifPath, dockerfile)
+			})
+			t.Run("cstm df build", func(t *testing.T) {
+				c.dockerCredsPriorityTester(t, true, p, "build", "--oci", "-F", ocisifPath, dockerfile)
 			})
 		})
 	}
@@ -1157,6 +1195,60 @@ func (c ctx) testDockerCMDQuotes(t *testing.T) {
 // Check that the USER in a docker container is honored under --oci mode
 func (c ctx) testDockerUSER(t *testing.T) {
 	dockerURI := "docker://sylabsio/docker-user"
+	dockerfile := filepath.Join("..", "test", "defs", "Dockerfile.customuser")
+	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, "", "dockerfile-build-USER-", "temp dir for OCI-SIF images")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			tmpdirCleanup(t)
+		}
+	})
+	userBuiltOCISIF := filepath.Join(tmpdir, "docker-user.oci.sif")
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("user df build"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--oci", userBuiltOCISIF, dockerfile),
+		e2e.ExpectExit(0),
+	)
+	rootBuiltOCISIF := filepath.Join(tmpdir, "rootbuilt-docker-user.oci.sif")
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("root df build"),
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--oci", rootBuiltOCISIF, dockerfile),
+		e2e.ExpectExit(0),
+	)
+
+	// Sanity check singularity native engine... no support for USER
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("default"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("run"),
+		e2e.WithArgs(dockerURI),
+		e2e.ExpectExit(0, e2e.ExpectOutput(e2e.ContainMatch, fmt.Sprintf("uid=%d(%s) gid=%d",
+			e2e.UserProfile.ContainerUser(t).UID,
+			e2e.UserProfile.ContainerUser(t).Name,
+			e2e.UserProfile.ContainerUser(t).GID,
+		))),
+	)
+
+	metaTests := map[string]string{
+		"uri":          dockerURI,
+		"user oci-sif": userBuiltOCISIF,
+		"root oci-sif": rootBuiltOCISIF,
+	}
+
+	for subtestName, container := range metaTests {
+		t.Run(subtestName, func(t *testing.T) {
+			c.testDockerUSERWorker(t, container)
+		})
+	}
+}
+
+func (c ctx) testDockerUSERWorker(t *testing.T, container string) {
 	tests := []struct {
 		name          string
 		cmd           string
@@ -1165,26 +1257,12 @@ func (c ctx) testDockerUSER(t *testing.T) {
 		profile       e2e.Profile
 		expectExit    int
 	}{
-		// Sanity check singularity native engine... no support for USER
-		{
-			name:    "default",
-			cmd:     "run",
-			profile: e2e.UserProfile,
-			args:    []string{dockerURI},
-			expectOutputs: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ContainMatch, fmt.Sprintf("uid=%d(%s) gid=%d",
-					e2e.UserProfile.ContainerUser(t).UID,
-					e2e.UserProfile.ContainerUser(t).Name,
-					e2e.UserProfile.ContainerUser(t).GID,
-				)),
-			},
-		},
 		// `--oci` modes (USER honored by default)
 		{
 			name:    "OCIUser",
 			cmd:     "run",
 			profile: e2e.OCIUserProfile,
-			args:    []string{dockerURI},
+			args:    []string{container},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.ContainMatch, `uid=2000(testuser) gid=2000(testgroup)`),
 			},
@@ -1192,7 +1270,7 @@ func (c ctx) testDockerUSER(t *testing.T) {
 		{
 			name:    "OCIFakeroot",
 			profile: e2e.OCIFakerootProfile,
-			args:    []string{dockerURI},
+			args:    []string{container},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.ContainMatch, `uid=0(root) gid=0(root)`),
 			},
@@ -1201,7 +1279,7 @@ func (c ctx) testDockerUSER(t *testing.T) {
 			name:    "OCIRoot",
 			cmd:     "run",
 			profile: e2e.OCIRootProfile,
-			args:    []string{dockerURI},
+			args:    []string{container},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.ContainMatch, `uid=2000(testuser) gid=2000(testgroup)`),
 			},
@@ -1211,21 +1289,21 @@ func (c ctx) testDockerUSER(t *testing.T) {
 			name:       "WithHomeOCIUser",
 			cmd:        "run",
 			profile:    e2e.OCIUserProfile,
-			args:       []string{"--home", "/tmp", dockerURI},
+			args:       []string{"--home", "/tmp", container},
 			expectExit: 255,
 		},
 		{
 			name:       "WithHomeOCIFakeroot",
 			cmd:        "run",
 			profile:    e2e.OCIFakerootProfile,
-			args:       []string{"--home", "/tmp", dockerURI},
+			args:       []string{"--home", "/tmp", container},
 			expectExit: 255,
 		},
 		{
 			name:       "WithHomeOCIRoot",
 			cmd:        "run",
 			profile:    e2e.OCIRootProfile,
-			args:       []string{"--home", "/tmp", dockerURI},
+			args:       []string{"--home", "/tmp", container},
 			expectExit: 255,
 		},
 		// `--oci` modes: check that we don't override container-user's home directory
@@ -1233,7 +1311,7 @@ func (c ctx) testDockerUSER(t *testing.T) {
 			name:    "OrigHomeOCIUser",
 			cmd:     "exec",
 			profile: e2e.OCIUserProfile,
-			args:    []string{dockerURI, "env"},
+			args:    []string{container, "env"},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.RegexMatch, `\bHOME=/home/testuser\b`),
 			},
@@ -1243,7 +1321,7 @@ func (c ctx) testDockerUSER(t *testing.T) {
 			name:    "OrigHomeOCIFakeroot",
 			cmd:     "exec",
 			profile: e2e.OCIFakerootProfile,
-			args:    []string{dockerURI, "env"},
+			args:    []string{container, "env"},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.RegexMatch, `\bHOME=/root\b`),
 			},
@@ -1253,7 +1331,7 @@ func (c ctx) testDockerUSER(t *testing.T) {
 			name:    "OrigHomeOCIRoot",
 			cmd:     "exec",
 			profile: e2e.OCIRootProfile,
-			args:    []string{dockerURI, "env"},
+			args:    []string{container, "env"},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.RegexMatch, `\bHOME=/home/testuser\b`),
 			},
@@ -1262,11 +1340,15 @@ func (c ctx) testDockerUSER(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		cmd := "run"
+		if tt.cmd != "" {
+			cmd = tt.cmd
+		}
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(tt.profile),
-			e2e.WithCommand("run"),
+			e2e.WithCommand(cmd),
 			e2e.WithArgs(tt.args...),
 			e2e.ExpectExit(tt.expectExit, tt.expectOutputs...),
 		)
@@ -1412,6 +1494,46 @@ func checkNativeSIFPlatform(t *testing.T, imgPath, platform string) {
 	}
 }
 
+// Test that we can perform cross-architecture builds from Dockerfile using buildkit
+func (c ctx) testDockerCrossArchBk(t *testing.T) {
+	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, "", "dockerfile_crossarch_", "dir")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			tmpdirCleanup(t)
+		}
+	})
+
+	dockerfile, err := e2e.WriteTempFile(tmpdir, "Dockerfile", `
+FROM alpine
+CMD /bin/true
+`)
+	if err != nil {
+		t.Fatalf("While trying to create temporary Dockerfile: %v", err)
+	}
+
+	profiles := []e2e.Profile{e2e.UserProfile, e2e.RootProfile}
+	for _, profile := range profiles {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(profile.String()),
+			e2e.WithProfile(profile),
+			e2e.WithCommand("build"),
+			e2e.WithArgs("--oci", "--arch", getNonNativeArch(), filepath.Join(tmpdir, "image."+profile.String()+".oci.sif"), dockerfile),
+			e2e.ExpectExit(0),
+		)
+	}
+}
+
+func getNonNativeArch() string {
+	nativeArch := runtime.GOARCH
+	switch nativeArch {
+	case "amd64":
+		return "arm64"
+	default:
+		return "amd64"
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -1437,6 +1559,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			t.Run("cmd quotes", c.testDockerCMDQuotes)
 			t.Run("user", c.testDockerUSER)
 			t.Run("platform", c.testDockerPlatform)
+			t.Run("crossarch buildkit", c.testDockerCrossArchBk)
 			// Regressions
 			t.Run("issue 4524", c.issue4524)
 			t.Run("issue 1286", c.issue1286)

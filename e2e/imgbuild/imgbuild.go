@@ -8,20 +8,29 @@
 package imgbuild
 
 import (
+	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 	"strings"
 	"testing"
+	"text/template"
+	"time"
 
+	ocisif "github.com/sylabs/oci-tools/pkg/sif"
+	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/e2e/ecl"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"gotest.tools/v3/assert"
 )
 
 var testFileContent = "Test file content\n"
@@ -1941,6 +1950,100 @@ DEMO=demo=with===equals==signs
 	})
 }
 
+func (c imgBuildTests) buildUseExistingBuildkitd(t *testing.T) {
+	const (
+		bkLaunchTimeout = 10 * time.Second
+	)
+
+	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, "", "build_use_existing_buildkitd_e2e_", "dir")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			tmpdirCleanup(t)
+		}
+	})
+
+	dockerfileSimple := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.simple.tmpl"))
+	outputImgPath := filepath.Join(tmpdir, "image.oci.sif")
+
+	buildkitd, err := exec.LookPath("buildkitd")
+	if err != nil {
+		t.Skipf("could not locate 'buildkitd' binary (%v), skipping test", err)
+	}
+	unshare, err := exec.LookPath("unshare")
+	if err != nil {
+		t.Skipf("could not locate 'unshare' binary (%v), skipping test", err)
+	}
+	sockAddr := "unix://" + filepath.Join(tmpdir, "buildkitd_for_e2e.sock")
+	cmd := exec.Command(unshare, "-r", "-m", buildkitd, "--root", tmpdir, "--addr", sockAddr)
+	cmdPipe, err := cmd.StderrPipe()
+	if err != nil {
+		t.Skipf("could not obtain stderr pipe for our own buildkitd (error: %v), skipping test (sockAddr: %q)", err, sockAddr)
+	}
+	err = cmd.Start()
+	if err != nil {
+		t.Skipf("could not start our own buildkitd (error: %v), skipping test (sockAddr: %q)", err, sockAddr)
+	}
+
+	shutdownBk := func() {
+		if (cmd == nil) || (cmd.Process == nil) {
+			return
+		}
+
+		if err := cmd.Process.Kill(); err != nil {
+			t.Errorf("While trying to shut down our own buildkit: %v", err)
+		}
+	}
+
+	launchChan := make(chan error, 3)
+	cmdReader := bufio.NewReader(cmdPipe)
+	var outputLines bytes.Buffer
+	outputLines.WriteString("\n\ncommand line: " + strings.Join(cmd.Args, " ") + "\n\n")
+	go func() {
+		for {
+			line, err := cmdReader.ReadString('\n')
+			if err != nil {
+				launchChan <- err
+				return
+			}
+			outputLines.WriteString(line)
+			if strings.Contains(line, "running server on") {
+				launchChan <- nil
+				return
+			}
+		}
+	}()
+
+	timeoutChan := make(chan bool, 3)
+	go func() {
+		time.Sleep(bkLaunchTimeout)
+		timeoutChan <- true
+	}()
+
+	select {
+	case err := <-launchChan:
+		if err == io.EOF {
+			t.Skipf("launching buildkitd was unsuccessful, skipping test; buildkitd output: %s", outputLines.String())
+		}
+		if err != nil {
+			t.Skipf("launching buildkitd was unsuccessful (error: %v), skipping test; buildkit output: %s", err, outputLines.String())
+		}
+	case <-timeoutChan:
+		shutdownBk()
+		t.Skip("launching buildkitd was unsuccessful (timeout encoutered), skipping test")
+	}
+
+	t.Setenv("BUILDKIT_HOST", sockAddr)
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs("--oci", outputImgPath, dockerfileSimple),
+		e2e.ExpectExit(0, e2e.ExpectError(e2e.RegexMatch, "buildkitd already running.+will use that daemon")),
+	)
+
+	shutdownBk()
+}
+
 func (c imgBuildTests) buildDockerfile(t *testing.T) {
 	profiles := []e2e.Profile{e2e.UserProfile, e2e.RootProfile}
 	for _, profile := range profiles {
@@ -1952,10 +2055,17 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				}
 			})
 
+			dockerfileSimple := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.simple.tmpl"))
+			dockerfileBroken := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.broken.tmpl"))
+			dockerfileBuildArgs := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.buildargs.tmpl"))
+			dockerfileBuildArgsNoDef := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.buildargs-nodefault.tmpl"))
+
 			outputImgPath := filepath.Join(tmpdir, "image.oci.sif")
 
 			tests := []struct {
 				name            string
+				imgPath         string
+				dockerfile      string
 				buildArgs       []string
 				actCmd          string
 				actArgs         []string
@@ -1963,26 +2073,135 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				buildExpects    []e2e.SingularityCmdResultOp
 				actExpectExit   int
 				actExpects      []e2e.SingularityCmdResultOp
+				arch            string
 			}{
 				{
 					name:            "simple",
-					buildArgs:       []string{outputImgPath, filepath.Join("..", "test", "defs", "Dockerfile.simple")},
+					imgPath:         outputImgPath,
+					dockerfile:      dockerfileSimple,
 					actCmd:          "exec",
-					actArgs:         []string{outputImgPath, "/bin/true"},
+					actArgs:         []string{"/bin/true"},
 					buildExpectExit: 0,
 					actExpectExit:   0,
 				},
 				{
 					name:            "broken",
-					buildArgs:       []string{outputImgPath, filepath.Join("..", "test", "defs", "Dockerfile.broken")},
+					imgPath:         outputImgPath,
+					dockerfile:      dockerfileBroken,
 					buildExpectExit: 255,
+				},
+				// As of moby/buildkit v0.12.3, there's no mechanisms for
+				// issuing warnings about unconsumed build-args, missing
+				// build-args, etc., so there's not all that much to test here.
+				// Remember also that all the internal/pkg/build/buildkit code
+				// is doing is populating buildkit's map from our build-args
+				// map; and the correct populating of that map is already tested
+				// in buildWithBuildArgs().
+				{
+					name:            "ba none",
+					imgPath:         outputImgPath,
+					dockerfile:      dockerfileBuildArgs,
+					actCmd:          "run",
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, "defval"),
+					},
+				},
+				{
+					name:            "ba wrong",
+					imgPath:         outputImgPath,
+					dockerfile:      dockerfileBuildArgs,
+					actCmd:          "run",
+					buildArgs:       []string{"--build-arg", "ARG_TWO=something"},
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, "defval"),
+					},
+				},
+				{
+					name:            "ba wrong and right",
+					imgPath:         outputImgPath,
+					dockerfile:      dockerfileBuildArgs,
+					actCmd:          "run",
+					buildArgs:       []string{"--build-arg", "ARG_TWO=something", "--build-arg", "ARG_ONE=special"},
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, "special"),
+					},
+				},
+				{
+					name:            "ba right",
+					imgPath:         outputImgPath,
+					dockerfile:      dockerfileBuildArgs,
+					actCmd:          "run",
+					buildArgs:       []string{"--build-arg", "ARG_ONE=special"},
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, "special"),
+					},
+				},
+				{
+					name:            "ba nd none",
+					imgPath:         outputImgPath,
+					dockerfile:      dockerfileBuildArgsNoDef,
+					actCmd:          "run",
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, ""),
+					},
+				},
+				{
+					name:            "ba nd wrong",
+					imgPath:         outputImgPath,
+					dockerfile:      dockerfileBuildArgsNoDef,
+					actCmd:          "run",
+					buildArgs:       []string{"--build-arg", "ARG_TWO=something"},
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, ""),
+					},
+				},
+				{
+					name:            "ba nd wrong and right",
+					imgPath:         outputImgPath,
+					dockerfile:      dockerfileBuildArgsNoDef,
+					actCmd:          "run",
+					buildArgs:       []string{"--build-arg", "ARG_TWO=something", "--build-arg", "ARG_ONE=special"},
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, "special"),
+					},
+				},
+				{
+					name:            "ba nd right",
+					imgPath:         outputImgPath,
+					dockerfile:      dockerfileBuildArgsNoDef,
+					actCmd:          "run",
+					buildArgs:       []string{"--build-arg", "ARG_ONE=special"},
+					buildExpectExit: 0,
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, "special"),
+					},
 				},
 			}
 
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
-					if len(tt.buildArgs) > 0 {
-						buildArgs := append([]string{"-F", "--oci"}, tt.buildArgs...)
+					if tt.dockerfile != "" {
+						buildArgs := []string{"-F", "--oci"}
+						if tt.arch != "" {
+							buildArgs = append(buildArgs, "--arch", tt.arch)
+						}
+						buildArgs = append(buildArgs, tt.buildArgs...)
+						buildArgs = append(buildArgs, tt.imgPath, tt.dockerfile)
 						c.env.RunSingularity(
 							t,
 							e2e.AsSubtest("build"),
@@ -1991,9 +2210,12 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 							e2e.WithArgs(buildArgs...),
 							e2e.ExpectExit(tt.buildExpectExit, tt.buildExpects...),
 						)
+						if tt.arch != "" {
+							verifyImgArch(t, tt.imgPath, tt.arch)
+						}
 					}
-					if len(tt.actArgs) > 0 {
-						actArgs := append([]string{"--oci"}, tt.actArgs...)
+					if tt.actCmd != "" {
+						actArgs := append([]string{"--oci", tt.imgPath}, tt.actArgs...)
 						c.env.RunSingularity(
 							t,
 							e2e.AsSubtest("act"),
@@ -2007,6 +2229,71 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 			}
 		})
 	}
+}
+
+func (c imgBuildTests) createDockerfileFromTmpl(t *testing.T, tmpdir, tmplPath string) string {
+	dockerfile, err := os.CreateTemp(tmpdir, "Dockerfile-")
+	if err != nil {
+		t.Fatalf("failed to open temp file: %v", err)
+	}
+	dockerfileName := dockerfile.Name()
+	t.Cleanup(func() {
+		if !t.Failed() {
+			os.Remove(dockerfileName)
+		}
+	})
+	defer dockerfile.Close()
+
+	imageNoPrefix := strings.TrimPrefix(c.env.TestRegistryImage, "docker://")
+
+	tmplBytes, err := os.ReadFile(tmplPath)
+	if err != nil {
+		t.Fatalf("While trying to read template file %q: %v", tmplPath, err)
+	}
+	tmpl, err := template.New(filepath.Base(dockerfileName)).Parse(string(tmplBytes))
+	if err != nil {
+		t.Fatalf("While trying to parse template file %q: %v", tmplPath, err)
+	}
+
+	err = tmpl.Execute(dockerfile, struct{ Source string }{Source: imageNoPrefix})
+	if err != nil {
+		t.Fatalf("While trying to execute template %q: %v", tmplPath, err)
+	}
+
+	return dockerfileName
+}
+
+func verifyImgArch(t *testing.T, imgPath, arch string) {
+	fi, err := sif.LoadContainerFromPath(imgPath, sif.OptLoadWithFlag(os.O_RDONLY))
+	if err != nil {
+		t.Fatalf("while loading SIF (%s): %v", imgPath, err)
+	}
+	defer fi.UnloadContainer()
+
+	ix, err := ocisif.ImageIndexFromFileImage(fi)
+	if err != nil {
+		t.Fatalf("while obtaining image index from %s: %v", imgPath, err)
+	}
+	idxManifest, err := ix.IndexManifest()
+	if err != nil {
+		t.Fatalf("while obtaining index manifest from %s: %v", imgPath, err)
+	}
+	if len(idxManifest.Manifests) != 1 {
+		t.Fatalf("while reading %s: single manifest expected, found %d manifests", imgPath, len(idxManifest.Manifests))
+	}
+	imageDigest := idxManifest.Manifests[0].Digest
+
+	img, err := ix.Image(imageDigest)
+	if err != nil {
+		t.Fatalf("while initializing image from %s: %v", imgPath, err)
+	}
+
+	cg, err := img.ConfigFile()
+	if err != nil {
+		t.Fatalf("while accessing config for %s: %v", imgPath, err)
+	}
+
+	assert.Equal(t, arch, cg.Architecture)
 }
 
 func (c imgBuildTests) buildWithAuth(t *testing.T) {
@@ -2049,17 +2336,6 @@ func (c imgBuildTests) buildWithAuthTester(t *testing.T, withCustomAuthFile bool
 			tmpdirCleanup(t)
 		}
 	})
-
-	dockerfile, err := e2e.WriteTempFile(tmpdir, "Dockerfile", fmt.Sprintf(
-		`
-FROM %s
-CMD /bin/true
-`,
-		privImgNoPrefix,
-	))
-	if err != nil {
-		t.Fatalf("while trying to generate test dockerfile: %v", err)
-	}
 
 	prevCwd, err := os.Getwd()
 	if err != nil {
@@ -2111,18 +2387,6 @@ CMD /bin/true
 		{
 			name:          "privimg logged in",
 			args:          []string{"-F", "--no-https", "--disable-cache", "./my_image_file.sif", simpleDef},
-			whileLoggedIn: true,
-			expectExit:    0,
-		},
-		{
-			name:          "privimg df logged out",
-			args:          []string{"-F", "--oci", "--no-https", "--disable-cache", "./my_image_file.oci.sif", dockerfile},
-			whileLoggedIn: false,
-			expectExit:    255,
-		},
-		{
-			name:          "privimg df logged in",
-			args:          []string{"-F", "--oci", "--no-https", "--disable-cache", "./my_image_file.oci.sif", dockerfile},
 			whileLoggedIn: true,
 			expectExit:    0,
 		},
@@ -2193,40 +2457,41 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	np := testhelper.NoParallel
 
 	return testhelper.Tests{
-		"bad path":                        c.badPath,                   // try to build from a non existent path
-		"build encrypt with PEM file":     c.buildEncryptPemFile,       // build encrypted images with certificate
-		"build encrypted with passphrase": c.buildEncryptPassphrase,    // build encrypted images with passphrase
-		"definition":                      c.buildDefinition,           // builds from definition template
-		"from local image":                c.buildLocalImage,           // build and image from an existing image
-		"from":                            c.buildFrom,                 // builds from definition file and URI
-		"multistage":                      c.buildMultiStageDefinition, // multistage build from definition templates
-		"non-root build":                  c.nonRootBuild,              // build sifs from non-root
-		"build and update sandbox":        c.buildUpdateSandbox,        // build/update sandbox
-		"fingerprint check":               c.buildWithFingerprint,      // definition file includes fingerprint check
-		"build with bind mount":           c.buildBindMount,            // build image with bind mount
-		"test with writable tmpfs":        c.testWritableTmpfs,         // build image, using writable tmpfs in the test step
-		"library host":                    c.buildLibraryHost,          // build image with hostname in library URI
-		"proot":                           c.buildProot,                // build image as an unpriv user with proot
-		"customShebang":                   c.buildCustomShebang,        // build image with custom #! in %test and %runscript
-		"no-setgroups":                    c.buildNoSetgroups,          // build with --fakeroot --no-setgroups
-		"buildArgs":                       c.buildWithBuildArgs,        // builds from definition with build args (build arg file) support
-		"dockerfile":                      c.buildDockerfile,           // build OCI-SIF image from Dockerfile
-		"auth":                            np(c.buildWithAuth),         // build with custom auth file
-		"issue 3848":                      c.issue3848,                 // https://github.com/hpcng/singularity/issues/3848
-		"issue 4203":                      c.issue4203,                 // https://github.com/sylabs/singularity/issues/4203
-		"issue 4407":                      c.issue4407,                 // https://github.com/sylabs/singularity/issues/4407
-		"issue 4583":                      c.issue4583,                 // https://github.com/sylabs/singularity/issues/4583
-		"issue 4820":                      c.issue4820,                 // https://github.com/sylabs/singularity/issues/4820
-		"issue 4837":                      c.issue4837,                 // https://github.com/sylabs/singularity/issues/4837
-		"issue 4967":                      c.issue4967,                 // https://github.com/sylabs/singularity/issues/4967
-		"issue 4969":                      c.issue4969,                 // https://github.com/sylabs/singularity/issues/4969
-		"issue 5166":                      c.issue5166,                 // https://github.com/sylabs/singularity/issues/5166
-		"issue 5250":                      c.issue5250,                 // https://github.com/sylabs/singularity/issues/5250
-		"issue 5315":                      c.issue5315,                 // https://github.com/sylabs/singularity/issues/5315
-		"issue 5435":                      c.issue5435,                 // https://github.com/hpcng/singularity/issues/5435
-		"issue 5668":                      c.issue5668,                 // https://github.com/hpcng/singularity/issues/5435
-		"issue 5690":                      c.issue5690,                 // https://github.com/hpcng/singularity/issues/5690
-		"issue 1273":                      c.issue1273,                 // https://github.com/sylabs/singularity/issues/1273
-		"issue 1812":                      c.issue1812,                 // https://github.com/sylabs/singularity/issues/1812
+		"bad path":                        c.badPath,                       // try to build from a non existent path
+		"build encrypt with PEM file":     c.buildEncryptPemFile,           // build encrypted images with certificate
+		"build encrypted with passphrase": c.buildEncryptPassphrase,        // build encrypted images with passphrase
+		"definition":                      c.buildDefinition,               // builds from definition template
+		"from local image":                c.buildLocalImage,               // build and image from an existing image
+		"from":                            c.buildFrom,                     // builds from definition file and URI
+		"multistage":                      c.buildMultiStageDefinition,     // multistage build from definition templates
+		"non-root build":                  c.nonRootBuild,                  // build sifs from non-root
+		"build and update sandbox":        c.buildUpdateSandbox,            // build/update sandbox
+		"fingerprint check":               c.buildWithFingerprint,          // definition file includes fingerprint check
+		"build with bind mount":           c.buildBindMount,                // build image with bind mount
+		"test with writable tmpfs":        c.testWritableTmpfs,             // build image, using writable tmpfs in the test step
+		"library host":                    c.buildLibraryHost,              // build image with hostname in library URI
+		"proot":                           c.buildProot,                    // build image as an unpriv user with proot
+		"customShebang":                   c.buildCustomShebang,            // build image with custom #! in %test and %runscript
+		"no-setgroups":                    c.buildNoSetgroups,              // build with --fakeroot --no-setgroups
+		"buildArgs":                       c.buildWithBuildArgs,            // builds from definition with build args (build arg file) support
+		"dockerfile":                      c.buildDockerfile,               // build OCI-SIF image from Dockerfile
+		"auth":                            np(c.buildWithAuth),             // build with custom auth file
+		"buildkitd":                       np(c.buildUseExistingBuildkitd), // build using already-running buildkitd
+		"issue 3848":                      c.issue3848,                     // https://github.com/hpcng/singularity/issues/3848
+		"issue 4203":                      c.issue4203,                     // https://github.com/sylabs/singularity/issues/4203
+		"issue 4407":                      c.issue4407,                     // https://github.com/sylabs/singularity/issues/4407
+		"issue 4583":                      c.issue4583,                     // https://github.com/sylabs/singularity/issues/4583
+		"issue 4820":                      c.issue4820,                     // https://github.com/sylabs/singularity/issues/4820
+		"issue 4837":                      c.issue4837,                     // https://github.com/sylabs/singularity/issues/4837
+		"issue 4967":                      c.issue4967,                     // https://github.com/sylabs/singularity/issues/4967
+		"issue 4969":                      c.issue4969,                     // https://github.com/sylabs/singularity/issues/4969
+		"issue 5166":                      c.issue5166,                     // https://github.com/sylabs/singularity/issues/5166
+		"issue 5250":                      c.issue5250,                     // https://github.com/sylabs/singularity/issues/5250
+		"issue 5315":                      c.issue5315,                     // https://github.com/sylabs/singularity/issues/5315
+		"issue 5435":                      c.issue5435,                     // https://github.com/hpcng/singularity/issues/5435
+		"issue 5668":                      c.issue5668,                     // https://github.com/hpcng/singularity/issues/5435
+		"issue 5690":                      c.issue5690,                     // https://github.com/hpcng/singularity/issues/5690
+		"issue 1273":                      c.issue1273,                     // https://github.com/sylabs/singularity/issues/1273
+		"issue 1812":                      c.issue1812,                     // https://github.com/sylabs/singularity/issues/1812
 	}
 }

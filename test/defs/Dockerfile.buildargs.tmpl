@@ -1,0 +1,8 @@
+FROM {{ .Source }}
+
+ARG ARG_ONE=defval
+
+RUN echo ${ARG_ONE} > /some_file
+
+CMD cat /some_file
+
