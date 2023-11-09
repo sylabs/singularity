@@ -74,7 +74,11 @@ type Opts struct {
 
 func Run(ctx context.Context, opts *Opts, dest, spec string) {
 	sylog.Debugf("Requested build architecture is: %q", opts.ReqArch)
-	listenSocket := ensureBuildkitd(ctx, opts)
+	bkSocket := os.Getenv("BUILDKIT_HOST")
+	if bkSocket == "" {
+		bkSocket = bkDefaultSocket
+	}
+	listenSocket := ensureBuildkitd(ctx, opts, bkSocket)
 	if listenSocket == "" {
 		sylog.Fatalf("Failed to launch buildkitd daemon within specified timeout (%v).", bkLaunchTimeout)
 	}
@@ -113,11 +117,12 @@ func Run(ctx context.Context, opts *Opts, dest, spec string) {
 }
 
 // ensureBuildkitd checks if a buildkitd daemon is already running, and if not,
-// launches one.
-func ensureBuildkitd(ctx context.Context, opts *Opts) string {
-	if isBuildkitdRunning(ctx, opts) {
-		sylog.Infof("Found buildkitd already running at %q; will use that daemon.", bkDefaultSocket)
-		return bkDefaultSocket
+// launches one. The bkSocket argument is the address at which to look for an
+// already-running daemon.
+func ensureBuildkitd(ctx context.Context, opts *Opts, bkSocket string) string {
+	if isBuildkitdRunning(ctx, opts, bkSocket) {
+		sylog.Infof("Found buildkitd already running at %q; will use that daemon.", bkSocket)
+		return bkSocket
 	}
 
 	sylog.Infof("Did not find usable running buildkitd daemon; spawning our own.")
@@ -138,12 +143,14 @@ func ensureBuildkitd(ctx context.Context, opts *Opts) string {
 	return <-socketChan
 }
 
-// isBuildkitdRunning tries to determine whether there's already an instance of buildkitd running.
-func isBuildkitdRunning(ctx context.Context, opts *Opts) bool {
+// isBuildkitdRunning tries to determine whether there's already an instance of
+// buildkitd running. The bkSocket argument is the address at which to look for
+// an already-running daemon.
+func isBuildkitdRunning(ctx context.Context, opts *Opts, bkSocket string) bool {
 	if opts.ReqArch != "" {
 		return false
 	}
-	c, err := client.New(ctx, bkDefaultSocket, client.WithFailFast())
+	c, err := client.New(ctx, bkSocket, client.WithFailFast())
 	if err != nil {
 		return false
 	}
