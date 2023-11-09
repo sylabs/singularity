@@ -1959,7 +1959,10 @@ func (c imgBuildTests) buildUseExistingBuildkitd(t *testing.T) {
 		}
 	})
 
-	dockerfileSimple := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.simple.tmpl"))
+	imageNoPrefix := strings.TrimPrefix(c.env.TestRegistryImage, "docker://")
+
+	tmplValues := struct{ Source string }{Source: imageNoPrefix}
+	dockerfileSimple := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.simple.tmpl"), tmplValues)
 	outputImgPath := filepath.Join(tmpdir, "image.oci.sif")
 
 	buildkitd, err := exec.LookPath("buildkitd")
@@ -2041,7 +2044,17 @@ func (c imgBuildTests) buildUseExistingBuildkitd(t *testing.T) {
 	shutdownBk()
 }
 
+// Test build from Dockerfile. Must not be run in parallel because it changes
+// the working dir.
 func (c imgBuildTests) buildDockerfile(t *testing.T) {
+	// Preserve previous working directory value
+	prevWd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("While trying to determine current dir: %v", err)
+	}
+	defer os.Chdir(prevWd)
+
+	imageNoPrefix := strings.TrimPrefix(c.env.TestRegistryImage, "docker://")
 	profiles := []e2e.Profile{e2e.UserProfile, e2e.RootProfile}
 	for _, profile := range profiles {
 		t.Run(profile.String(), func(t *testing.T) {
@@ -2052,12 +2065,46 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				}
 			})
 
-			dockerfileSimple := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.simple.tmpl"))
-			dockerfileBroken := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.broken.tmpl"))
-			dockerfileBuildArgs := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.buildargs.tmpl"))
-			dockerfileBuildArgsNoDef := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.buildargs-nodefault.tmpl"))
+			const addFileText = "Hello, world."
+			addFilePath, err := e2e.WriteTempFile(tmpdir, "addfile-", addFileText)
+			if err != nil {
+				t.Fatalf("While trying to write temporary file in %s: %v", tmpdir, err)
+			}
+			addFileBasename := filepath.Base(addFilePath)
+
+			type tmplValuesStruct struct {
+				Source  string
+				AddFile string
+			}
+
+			// Chdir to original working dir to allow access to templates using
+			// relative path.
+			if err := os.Chdir(prevWd); err != nil {
+				t.Fatalf("Could not chdir to %s: %v", prevWd, err)
+			}
+
+			tmplValues := tmplValuesStruct{
+				Source:  imageNoPrefix,
+				AddFile: addFileBasename,
+			}
+			badAddValues := tmplValuesStruct{
+				Source:  imageNoPrefix,
+				AddFile: "/this_should_not_exist/this_should_not_exist_either",
+			}
+			dockerfileSimple := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.simple.tmpl"), tmplValues)
+			dockerfileBroken := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.broken.tmpl"), tmplValues)
+			dockerfileBuildArgs := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.buildargs.tmpl"), tmplValues)
+			dockerfileBuildArgsNoDef := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.buildargs-nodefault.tmpl"), tmplValues)
+			dockerfileAdd := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.add.tmpl"), tmplValues)
+			dockerfileAddBad := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.add.tmpl"), badAddValues)
 
 			outputImgPath := filepath.Join(tmpdir, "image.oci.sif")
+
+			// Chdir to tmpdir so that Dockerfile ADD statements can be properly
+			// checked.
+			if err := os.Chdir(tmpdir); err != nil {
+				t.Fatalf("Could not chdir to %s: %v", tmpdir, err)
+			}
 
 			tests := []struct {
 				name            string
@@ -2187,6 +2234,24 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 						e2e.ExpectOutput(e2e.ExactMatch, "special"),
 					},
 				},
+				{
+					name:            "add",
+					imgPath:         outputImgPath,
+					dockerfile:      dockerfileAdd,
+					buildExpectExit: 0,
+					actCmd:          "exec",
+					actArgs:         []string{"cat", "/" + addFileBasename},
+					actExpectExit:   0,
+					actExpects: []e2e.SingularityCmdResultOp{
+						e2e.ExpectOutput(e2e.ExactMatch, addFileText),
+					},
+				},
+				{
+					name:            "add bad",
+					imgPath:         outputImgPath,
+					dockerfile:      dockerfileAddBad,
+					buildExpectExit: 255,
+				},
 			}
 
 			for _, tt := range tests {
@@ -2221,7 +2286,7 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 	}
 }
 
-func (c imgBuildTests) createDockerfileFromTmpl(t *testing.T, tmpdir, tmplPath string) string {
+func (c imgBuildTests) createDockerfileFromTmpl(t *testing.T, tmpdir, tmplPath string, values any) string {
 	dockerfile, err := os.CreateTemp(tmpdir, "Dockerfile-")
 	if err != nil {
 		t.Fatalf("failed to open temp file: %v", err)
@@ -2234,8 +2299,6 @@ func (c imgBuildTests) createDockerfileFromTmpl(t *testing.T, tmpdir, tmplPath s
 	})
 	defer dockerfile.Close()
 
-	imageNoPrefix := strings.TrimPrefix(c.env.TestRegistryImage, "docker://")
-
 	tmplBytes, err := os.ReadFile(tmplPath)
 	if err != nil {
 		t.Fatalf("While trying to read template file %q: %v", tmplPath, err)
@@ -2245,7 +2308,7 @@ func (c imgBuildTests) createDockerfileFromTmpl(t *testing.T, tmpdir, tmplPath s
 		t.Fatalf("While trying to parse template file %q: %v", tmplPath, err)
 	}
 
-	err = tmpl.Execute(dockerfile, struct{ Source string }{Source: imageNoPrefix})
+	err = tmpl.Execute(dockerfile, values)
 	if err != nil {
 		t.Fatalf("While trying to execute template %q: %v", tmplPath, err)
 	}
@@ -2431,7 +2494,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"customShebang":                   c.buildCustomShebang,            // build image with custom #! in %test and %runscript
 		"no-setgroups":                    c.buildNoSetgroups,              // build with --fakeroot --no-setgroups
 		"buildArgs":                       c.buildWithBuildArgs,            // builds from definition with build args (build arg file) support
-		"dockerfile":                      c.buildDockerfile,               // build OCI-SIF image from Dockerfile
+		"dockerfile":                      np(c.buildDockerfile),           // build OCI-SIF image from Dockerfile
 		"auth":                            np(c.buildWithAuth),             // build with custom auth file
 		"buildkitd":                       np(c.buildUseExistingBuildkitd), // build using already-running buildkitd
 		"issue 3848":                      c.issue3848,                     // https://github.com/hpcng/singularity/issues/3848

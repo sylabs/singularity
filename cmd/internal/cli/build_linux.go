@@ -210,6 +210,11 @@ func runBuild(cmd *cobra.Command, args []string) {
 		if cmd.Flags().Lookup("arch").Changed {
 			reqArch = buildArgs.arch
 		}
+		wd, err := os.Getwd()
+		if err != nil {
+			sylog.Fatalf("While trying to determine current dir: %v", err)
+		}
+
 		bkOpts := &bkclient.Opts{
 			AuthConf:        authConf,
 			ReqAuthFile:     reqAuthFile,
@@ -217,6 +222,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 			BuildVarArgFile: buildArgs.buildVarArgFile,
 			ReqArch:         reqArch,
 			KeepLayers:      keepLayers,
+			ContextDir:      wd,
 		}
 		bkclient.Run(cmd.Context(), bkOpts, dest, spec)
 	} else {

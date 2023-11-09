@@ -70,6 +70,8 @@ type Opts struct {
 	ReqArch string
 	// Keep individual layers when creating OCI-SIF?
 	KeepLayers bool
+	// Context dir in which to perform build (relevant for ADD statements, etc.)
+	ContextDir string
 }
 
 func Run(ctx context.Context, opts *Opts, dest, spec string) {
@@ -251,11 +253,8 @@ func newSolveOpt(_ context.Context, opts *Opts, w io.WriteCloser, buildDir, spec
 		return nil, errors.New("stdin not supported yet")
 	}
 
-	if spec == "" {
-		spec = filepath.Join(buildDir, "Dockerfile")
-	}
 	localDirs := map[string]string{
-		"context":    buildDir,
+		"context":    opts.ContextDir,
 		"dockerfile": filepath.Dir(spec),
 	}
 
