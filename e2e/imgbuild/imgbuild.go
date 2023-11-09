@@ -23,14 +23,11 @@ import (
 	"text/template"
 	"time"
 
-	ocisif "github.com/sylabs/oci-tools/pkg/sif"
-	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/e2e/ecl"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
-	"gotest.tools/v3/assert"
 )
 
 var testFileContent = "Test file content\n"
@@ -2073,7 +2070,6 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				buildExpects    []e2e.SingularityCmdResultOp
 				actExpectExit   int
 				actExpects      []e2e.SingularityCmdResultOp
-				arch            string
 			}{
 				{
 					name:            "simple",
@@ -2197,9 +2193,6 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				t.Run(tt.name, func(t *testing.T) {
 					if tt.dockerfile != "" {
 						buildArgs := []string{"-F", "--oci"}
-						if tt.arch != "" {
-							buildArgs = append(buildArgs, "--arch", tt.arch)
-						}
 						buildArgs = append(buildArgs, tt.buildArgs...)
 						buildArgs = append(buildArgs, tt.imgPath, tt.dockerfile)
 						c.env.RunSingularity(
@@ -2210,9 +2203,6 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 							e2e.WithArgs(buildArgs...),
 							e2e.ExpectExit(tt.buildExpectExit, tt.buildExpects...),
 						)
-						if tt.arch != "" {
-							verifyImgArch(t, tt.imgPath, tt.arch)
-						}
 					}
 					if tt.actCmd != "" {
 						actArgs := append([]string{"--oci", tt.imgPath}, tt.actArgs...)
@@ -2261,39 +2251,6 @@ func (c imgBuildTests) createDockerfileFromTmpl(t *testing.T, tmpdir, tmplPath s
 	}
 
 	return dockerfileName
-}
-
-func verifyImgArch(t *testing.T, imgPath, arch string) {
-	fi, err := sif.LoadContainerFromPath(imgPath, sif.OptLoadWithFlag(os.O_RDONLY))
-	if err != nil {
-		t.Fatalf("while loading SIF (%s): %v", imgPath, err)
-	}
-	defer fi.UnloadContainer()
-
-	ix, err := ocisif.ImageIndexFromFileImage(fi)
-	if err != nil {
-		t.Fatalf("while obtaining image index from %s: %v", imgPath, err)
-	}
-	idxManifest, err := ix.IndexManifest()
-	if err != nil {
-		t.Fatalf("while obtaining index manifest from %s: %v", imgPath, err)
-	}
-	if len(idxManifest.Manifests) != 1 {
-		t.Fatalf("while reading %s: single manifest expected, found %d manifests", imgPath, len(idxManifest.Manifests))
-	}
-	imageDigest := idxManifest.Manifests[0].Digest
-
-	img, err := ix.Image(imageDigest)
-	if err != nil {
-		t.Fatalf("while initializing image from %s: %v", imgPath, err)
-	}
-
-	cg, err := img.ConfigFile()
-	if err != nil {
-		t.Fatalf("while accessing config for %s: %v", imgPath, err)
-	}
-
-	assert.Equal(t, arch, cg.Architecture)
 }
 
 func (c imgBuildTests) buildWithAuth(t *testing.T) {

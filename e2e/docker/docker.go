@@ -31,6 +31,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"golang.org/x/sys/unix"
+	"gotest.tools/assert"
 )
 
 type ctx struct {
@@ -1511,16 +1512,19 @@ CMD /bin/true
 		t.Fatalf("While trying to create temporary Dockerfile: %v", err)
 	}
 
+	arch := getNonNativeArch()
 	profiles := []e2e.Profile{e2e.UserProfile, e2e.RootProfile}
 	for _, profile := range profiles {
+		imgPath := filepath.Join(tmpdir, "image."+profile.String()+".oci.sif")
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(profile.String()),
 			e2e.WithProfile(profile),
 			e2e.WithCommand("build"),
-			e2e.WithArgs("--oci", "--arch", getNonNativeArch(), filepath.Join(tmpdir, "image."+profile.String()+".oci.sif"), dockerfile),
+			e2e.WithArgs("--oci", "--arch", arch, imgPath, dockerfile),
 			e2e.ExpectExit(0),
 		)
+		verifyImgArch(t, imgPath, arch)
 	}
 }
 
@@ -1532,6 +1536,39 @@ func getNonNativeArch() string {
 	default:
 		return "amd64"
 	}
+}
+
+func verifyImgArch(t *testing.T, imgPath, arch string) {
+	fi, err := sif.LoadContainerFromPath(imgPath, sif.OptLoadWithFlag(os.O_RDONLY))
+	if err != nil {
+		t.Fatalf("while loading SIF (%s): %v", imgPath, err)
+	}
+	defer fi.UnloadContainer()
+
+	ix, err := ocisif.ImageIndexFromFileImage(fi)
+	if err != nil {
+		t.Fatalf("while obtaining image index from %s: %v", imgPath, err)
+	}
+	idxManifest, err := ix.IndexManifest()
+	if err != nil {
+		t.Fatalf("while obtaining index manifest from %s: %v", imgPath, err)
+	}
+	if len(idxManifest.Manifests) != 1 {
+		t.Fatalf("while reading %s: single manifest expected, found %d manifests", imgPath, len(idxManifest.Manifests))
+	}
+	imageDigest := idxManifest.Manifests[0].Digest
+
+	img, err := ix.Image(imageDigest)
+	if err != nil {
+		t.Fatalf("while initializing image from %s: %v", imgPath, err)
+	}
+
+	cg, err := img.ConfigFile()
+	if err != nil {
+		t.Fatalf("while accessing config for %s: %v", imgPath, err)
+	}
+
+	assert.Equal(t, arch, cg.Architecture)
 }
 
 // E2ETests is the main func to trigger the test suite
