@@ -72,6 +72,8 @@ type Opts struct {
 	KeepLayers bool
 	// Context dir in which to perform build (relevant for ADD statements, etc.)
 	ContextDir string
+	// Disable buildkitd's internal caching mechanism
+	DisableCache bool
 }
 
 func Run(ctx context.Context, opts *Opts, dest, spec string) {
@@ -266,7 +268,9 @@ func newSolveOpt(_ context.Context, opts *Opts, w io.WriteCloser, buildDir, spec
 		"filename": filepath.Base(spec),
 	}
 
-	frontendAttrs["no-cache"] = ""
+	if opts.DisableCache {
+		frontendAttrs["no-cache"] = ""
+	}
 
 	attachable := []session.Attachable{bkdaemon.NewAuthProvider(opts.AuthConf, ociauth.ChooseAuthFile(opts.ReqAuthFile))}
 

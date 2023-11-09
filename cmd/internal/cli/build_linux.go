@@ -223,6 +223,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 			ReqArch:         reqArch,
 			KeepLayers:      keepLayers,
 			ContextDir:      wd,
+			DisableCache:    disableCache,
 		}
 		bkclient.Run(cmd.Context(), bkOpts, dest, spec)
 	} else {
