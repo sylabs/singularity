@@ -35,6 +35,7 @@
 - When user requests a bind of `/dev:/dev` or `/dev/xxx:/dev/xxx` in OCI-mode,
   ensure that it is bind mounted with appropriate flags so that it is usable in
   the container.
+- Fix incorrect client timeout during remote build context upload.
 
 ## 4.0.1 \[2023-10-13\]
 
