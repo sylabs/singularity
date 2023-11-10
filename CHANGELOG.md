@@ -12,6 +12,7 @@
 
 - Support parentheses in `test` / `[` commands in container startup scripts,
   via dependency update of mvdan.cc/sh.
+- Fix incorrect client timeout during remote build context upload.
 
 ## 4.0.1 \[2023-10-13\]
 
