@@ -1,5 +1,13 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Fix incorrect client timeout during remote build context upload.
+- Support parentheses in `test` / `[` commands in container startup scripts,
+  via dependency update of mvdan.cc/sh.
+
 ## 3.11.5 \[2023-09-15\]
 
 ### Changed defaults / behaviours
