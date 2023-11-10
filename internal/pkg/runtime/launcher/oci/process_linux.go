@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"syscall"
 
@@ -25,7 +26,10 @@ import (
 	"golang.org/x/term"
 )
 
-const singularityLibs = "/.singularity.d/libs"
+const (
+	singularityLibs    = "/.singularity.d/libs"
+	scifExecutableName = "scif"
+)
 
 // Script that can be run by /bin/sh to emulate native mode shell behavior.
 // Set Singularity> prompt, try bash --norc, fall back to sh.
@@ -87,6 +91,20 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 			return nil, nil, fmt.Errorf("while getting ProcessArgs: %w", err)
 		}
 		sylog.Debugf("Native SIF container process/args: %v", args)
+	case l.cfg.AppName != "":
+		sylog.Debugf("SCIF app %q requested", l.cfg.AppName)
+		specArgs := getSpecArgs(imgSpec)
+		if len(specArgs) < 1 {
+			return nil, nil, fmt.Errorf("could not determine executable for container")
+		}
+		if filepath.Base(specArgs[0]) != scifExecutableName {
+			sylog.Warningf("OCI mode: SCIF app requested (%q) but container entrypoint does not seem to be a %s executable (container command-line: %q)", l.cfg.AppName, scifExecutableName, strings.Join(specArgs, " "))
+		}
+		args, err = l.prepareArgsForSCIF(specArgs, ep)
+		if err != nil {
+			return nil, nil, err
+		}
+		sylog.Debugf("args after prepareArgsForSCIF(): %v", args)
 	case ep.Action == "shell":
 		// OCI-SIF shell handling to emulate native runtime shell
 		args = []string{"/bin/sh", "-c", ociShellScript}
@@ -106,6 +124,23 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 	}
 
 	return &p, rtEnv, nil
+}
+
+func (l *Launcher) prepareArgsForSCIF(specArgs []string, ep launcher.ExecParams) ([]string, error) {
+	switch ep.Action {
+	case "run":
+		args := []string{specArgs[0], "run", l.cfg.AppName}
+		args = append(args, specArgs[1:]...)
+		if ep.Process != "" {
+			args = append(args, ep.Process)
+		}
+		if len(ep.Args) > 0 {
+			args = append(args, ep.Args...)
+		}
+		return args, nil
+	}
+
+	return []string{}, fmt.Errorf("unrecognized action %q", ep.Action)
 }
 
 // getProcessTerminal determines whether the container process should run with a terminal.
@@ -133,6 +168,12 @@ func getProcessArgs(imageSpec imgspecv1.Image, ep launcher.ExecParams) []string 
 		}
 	}
 	return processArgs
+}
+
+// getSpecArgs attempts to get the command-line args that the OCI container was
+// built to run.
+func getSpecArgs(imageSpec imgspecv1.Image) []string {
+	return append(imageSpec.Config.Entrypoint, imageSpec.Config.Cmd...)
 }
 
 // getProcessCwd computes the Cwd that the container process should start in.
