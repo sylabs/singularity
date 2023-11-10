@@ -70,6 +70,10 @@ type Opts struct {
 	ReqArch string
 	// Keep individual layers when creating OCI-SIF?
 	KeepLayers bool
+	// Context dir in which to perform build (relevant for ADD statements, etc.)
+	ContextDir string
+	// Disable buildkitd's internal caching mechanism
+	DisableCache bool
 }
 
 func Run(ctx context.Context, opts *Opts, dest, spec string) {
@@ -251,11 +255,8 @@ func newSolveOpt(_ context.Context, opts *Opts, w io.WriteCloser, buildDir, spec
 		return nil, errors.New("stdin not supported yet")
 	}
 
-	if spec == "" {
-		spec = filepath.Join(buildDir, "Dockerfile")
-	}
 	localDirs := map[string]string{
-		"context":    buildDir,
+		"context":    opts.ContextDir,
 		"dockerfile": filepath.Dir(spec),
 	}
 
@@ -267,7 +268,9 @@ func newSolveOpt(_ context.Context, opts *Opts, w io.WriteCloser, buildDir, spec
 		"filename": filepath.Base(spec),
 	}
 
-	frontendAttrs["no-cache"] = ""
+	if opts.DisableCache {
+		frontendAttrs["no-cache"] = ""
+	}
 
 	attachable := []session.Attachable{bkdaemon.NewAuthProvider(opts.AuthConf, ociauth.ChooseAuthFile(opts.ReqAuthFile))}
 
