@@ -128,8 +128,8 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 
 func (l *Launcher) prepareArgsForSCIF(specArgs []string, ep launcher.ExecParams) ([]string, error) {
 	switch ep.Action {
-	case "run":
-		args := []string{specArgs[0], "run", l.cfg.AppName}
+	case "run", "exec", "shell":
+		args := []string{specArgs[0], ep.Action, l.cfg.AppName}
 		args = append(args, specArgs[1:]...)
 		if ep.Process != "" {
 			args = append(args, ep.Process)
