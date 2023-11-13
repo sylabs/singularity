@@ -29,6 +29,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/containerd/containerd/blob/master/LICENSE>
 
+## github.com/containerd/log
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/containerd/log/blob/master/LICENSE>
+
 ## github.com/containernetworking/cni
 
 **License:** Apache-2.0
@@ -479,12 +485,6 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/gorilla/handlers/blob/master/LICENSE>
 
-## github.com/gorilla/websocket
-
-**License:** BSD-2-Clause
-
-**License URL:** <https://github.com/gorilla/websocket/blob/master/LICENSE>
-
 ## github.com/pkg/errors
 
 **License:** BSD-2-Clause
@@ -563,6 +563,12 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/gorilla/mux/blob/master/LICENSE>
 
+## github.com/gorilla/websocket
+
+**License:** BSD-3-Clause
+
+**License URL:** <https://github.com/gorilla/websocket/blob/master/LICENSE>
+
 ## github.com/klauspost/compress/internal/snapref
 
 **License:** BSD-3-Clause
@@ -622,12 +628,6 @@ The dependencies and their licenses are as follows:
 **License:** BSD-3-Clause
 
 **License URL:** <https://github.com/sylabs/sif/blob/master/v2/LICENSE.md>
-
-## github.com/theupdateframework/go-tuf/encrypted
-
-**License:** BSD-3-Clause
-
-**License URL:** <https://github.com/theupdateframework/go-tuf/blob/master/encrypted/LICENSE>
 
 ## github.com/ulikunitz/xz
 
