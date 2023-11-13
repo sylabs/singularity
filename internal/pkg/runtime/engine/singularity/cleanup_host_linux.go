@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"os"
 
-	sifuser "github.com/sylabs/sif/v2/pkg/user"
+	sifuser "github.com/sylabs/sif/v2/pkg/user" //nolint:staticcheck
 	"github.com/sylabs/singularity/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/pkg/sylog"
 )
