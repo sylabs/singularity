@@ -19,4 +19,4 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "daily"
-    target-branch: vault/release-3.11
+    target-branch: release-3.11
