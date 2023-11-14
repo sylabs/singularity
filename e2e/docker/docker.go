@@ -29,6 +29,7 @@ import (
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/tmpl"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"golang.org/x/sys/unix"
 	"gotest.tools/assert"
@@ -1571,6 +1572,72 @@ func verifyImgArch(t *testing.T, imgPath, arch string) {
 	assert.Equal(t, arch, cg.Architecture)
 }
 
+// Test support for SCIF containers in OCI mode
+func (c ctx) testDockerSCIF(t *testing.T) {
+	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, "", "docker-scif-", "dir")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			tmpdirCleanup(t)
+		}
+	})
+
+	scifRecipeFilename := "local_scif_recipe"
+	scifRecipeFullpath := filepath.Join(tmpdir, scifRecipeFilename)
+	scifRecipeSource := filepath.Join("..", "test", "defs", "scif_recipe")
+	if err := fs.CopyFile(scifRecipeSource, scifRecipeFullpath, 0o755); err != nil {
+		t.Fatalf("While trying to copy %q to %q: %v", scifRecipeSource, scifRecipeFullpath, err)
+	}
+
+	tmplValues := struct{ SCIFRecipeFilename string }{SCIFRecipeFilename: scifRecipeFilename}
+	scifDockerfile := tmpl.Execute(t, tmpdir, "Dockerfile-", filepath.Join("..", "test", "defs", "Dockerfile.scif.tmpl"), tmplValues)
+	scifImageFilename := "scif-image.oci.sif"
+	scifImageFullpath := filepath.Join(tmpdir, scifImageFilename)
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("build"),
+		e2e.WithProfile(e2e.OCIUserProfile),
+		e2e.WithCommand("build"),
+		e2e.WithDir(tmpdir),
+		e2e.WithArgs("--oci", scifImageFilename, scifDockerfile),
+		e2e.ExpectExit(0),
+	)
+
+	tests := []struct {
+		name       string
+		cmd        string
+		app        string
+		expects    []e2e.SingularityCmdResultOp
+		expectExit int
+	}{
+		{
+			name: "echo",
+			cmd:  "run",
+			app:  "hello-world-echo",
+			expects: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.ContainMatch, "The best app is hello-world-echo"),
+			},
+			expectExit: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		args := []string{}
+		if tt.app != "" {
+			args = append(args, "--app", tt.app)
+		}
+		args = append(args, scifImageFullpath)
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithCommand(tt.cmd),
+			e2e.WithArgs(args...),
+			e2e.ExpectExit(0, tt.expects...),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -1597,6 +1664,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			t.Run("user", c.testDockerUSER)
 			t.Run("platform", c.testDockerPlatform)
 			t.Run("crossarch buildkit", c.testDockerCrossArchBk)
+			t.Run("scif", c.testDockerSCIF)
 			// Regressions
 			t.Run("issue 4524", c.issue4524)
 			t.Run("issue 1286", c.issue1286)

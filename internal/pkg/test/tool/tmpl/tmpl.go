@@ -13,8 +13,9 @@ import (
 )
 
 // Execute creates a file in tmpdir based on namePattern whose contents are the
-// result of executing the Go template found in tmplPath over the struct passed
-// in the values argument. Returns the full path of the created file.
+// result of executing the Go template in tmplPath, over the struct passed in
+// the values argument. Returns the full path of the created file. The created
+// file will be automatically removed at the end of the test t unless t fails.
 func Execute(t *testing.T, tmpdir, namePattern, tmplPath string, values any) string {
 	outfile, err := os.CreateTemp(tmpdir, namePattern)
 	if err != nil {

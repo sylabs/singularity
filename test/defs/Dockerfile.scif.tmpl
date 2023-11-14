@@ -1,0 +1,9 @@
+FROM continuumio/miniconda3
+
+RUN pip install scif
+
+ADD ./{{ .SCIFRecipeFilename }} /
+
+RUN scif install /{{ .SCIFRecipeFilename }}
+
+CMD ["scif"]
