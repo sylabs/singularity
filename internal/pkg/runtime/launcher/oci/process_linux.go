@@ -100,7 +100,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 		if filepath.Base(specArgs[0]) != scifExecutableName {
 			sylog.Warningf("OCI mode: SCIF app requested (%q) but container entrypoint does not seem to be a %s executable (container command-line: %q)", l.cfg.AppName, scifExecutableName, strings.Join(specArgs, " "))
 		}
-		args, err = l.prepareArgsForSCIF(specArgs, ep)
+		args, err = l.argsForSCIF(specArgs, ep)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -126,7 +126,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 	return &p, rtEnv, nil
 }
 
-func (l *Launcher) prepareArgsForSCIF(specArgs []string, ep launcher.ExecParams) ([]string, error) {
+func (l *Launcher) argsForSCIF(specArgs []string, ep launcher.ExecParams) ([]string, error) {
 	switch ep.Action {
 	case "run", "exec", "shell":
 		args := []string{specArgs[0], ep.Action, l.cfg.AppName}

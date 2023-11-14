@@ -32,11 +32,7 @@
   are now supported. If the entrypoint of an OCI container is the `scif`
   executable, then the `run` / `exec` / `shell` commands in `--oci` mode can be
   given the `--app <appname>` flag, and will automatically invoke the relevant
-  SCIF command. For example:
-  `singularity run --oci --app myapp mycontainer.oci.sif arg1 arg2` will
-  automatically run `scif run myapp arg1 arg2` inside the container. The
-  `inspect --oci` command will also run `scif inspect`, or
-  `scif inspect <appname>` if used with the `--app appname` flag.
+  SCIF command.
 
 ### Bug Fixes
 

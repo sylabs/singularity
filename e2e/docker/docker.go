@@ -1593,23 +1593,26 @@ func (c ctx) testDockerSCIF(t *testing.T) {
 	scifImageFilename := "scif-image.oci.sif"
 	scifImageFullpath := filepath.Join(tmpdir, scifImageFilename)
 
-	scifInspectOutAllPath := filepath.Join("..", "test", "defs", "scif_recipe.inspect_output.all")
-	scifInspectOutAllBytes, err := os.ReadFile(scifInspectOutAllPath)
-	if err != nil {
-		t.Fatalf("While trying to read contents of %s: %v", scifInspectOutAllPath, err)
-	}
-	scifInspectOutOnePath := filepath.Join("..", "test", "defs", "scif_recipe.inspect_output.one")
-	scifInspectOutOneBytes, err := os.ReadFile(scifInspectOutOnePath)
-	if err != nil {
-		t.Fatalf("While trying to read contents of %s: %v", scifInspectOutOnePath, err)
-	}
+	// Uncomment when `singularity inspect --oci` for Docker-style SCIF
+	// containers is enabled.
+	// See: https://github.com/sylabs/singularity/pull/2360
+	// scifInspectOutAllPath := filepath.Join("..", "test", "defs", "scif_recipe.inspect_output.all")
+	// scifInspectOutAllBytes, err := os.ReadFile(scifInspectOutAllPath)
+	// if err != nil {
+	// 	t.Fatalf("While trying to read contents of %s: %v", scifInspectOutAllPath, err)
+	// }
+	// scifInspectOutOnePath := filepath.Join("..", "test", "defs", "scif_recipe.inspect_output.one")
+	// scifInspectOutOneBytes, err := os.ReadFile(scifInspectOutOnePath)
+	// if err != nil {
+	// 	t.Fatalf("While trying to read contents of %s: %v", scifInspectOutOnePath, err)
+	// }
 
-	testInspectOutput := func(bytes []byte) func(t *testing.T, r *e2e.SingularityCmdResult) {
-		return func(t *testing.T, r *e2e.SingularityCmdResult) {
-			got := string(r.Stdout)
-			assert.Equal(t, got, string(bytes))
-		}
-	}
+	// testInspectOutput := func(bytes []byte) func(t *testing.T, r *e2e.SingularityCmdResult) {
+	// 	return func(t *testing.T, r *e2e.SingularityCmdResult) {
+	// 		got := string(r.Stdout)
+	// 		assert.Equal(t, got, string(bytes))
+	// 	}
+	// }
 
 	c.env.RunSingularity(
 		t,
@@ -1678,25 +1681,27 @@ func (c ctx) testDockerSCIF(t *testing.T) {
 			},
 			expectExit: 0,
 		},
-		{
-			name:    "insp all",
-			cmd:     "inspect",
-			preArgs: []string{"--oci"},
-			expects: []e2e.SingularityCmdResultOp{
-				testInspectOutput(scifInspectOutAllBytes),
-			},
-			expectExit: 0,
-		},
-		{
-			name:    "insp one",
-			cmd:     "inspect",
-			app:     "hello-world-script",
-			preArgs: []string{"--oci"},
-			expects: []e2e.SingularityCmdResultOp{
-				testInspectOutput(scifInspectOutOneBytes),
-			},
-			expectExit: 0,
-		},
+		// Uncomment when `singularity inspect --oci` for Docker-style SCIF
+		// containers is enabled.
+		// See: https://github.com/sylabs/singularity/pull/2360
+		// {
+		//  name:    "insp all",
+		//  cmd:     "inspect",
+		//  preArgs: []string{"--oci", "--list-apps"},
+		//  expects: []e2e.SingularityCmdResultOp{
+		//      testInspectOutput(scifInspectOutAllBytes),
+		//  },
+		//  expectExit: 0,
+		// }, {
+		//  name:    "insp one",
+		//  cmd:     "inspect",
+		//  app:     "hello-world-script",
+		//  preArgs: []string{"--oci"},
+		//  expects: []e2e.SingularityCmdResultOp{
+		//      testInspectOutput(scifInspectOutOneBytes),
+		//  },
+		//  expectExit: 0,
+		// },
 	}
 
 	for _, tt := range tests {
