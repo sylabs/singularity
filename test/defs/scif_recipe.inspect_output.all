@@ -1,0 +1,32 @@
+{
+    "hello-world-echo": {
+        "appenv": [
+            "THEBESTAPP=$SCIF_APPNAME",
+            "export THEBESTAPP"
+        ],
+        "apprun": [
+            "THEBESTAPP=$SCIF_APPNAME",
+            "export THEBESTAPP",
+            "THEBESTAPP=$SCIF_APPNAME",
+            "export THEBESTAPP",
+            "    echo \"The best app is $THEBESTAPP\""
+        ]
+    },
+    "hello-world-script": {
+        "appinstall": [
+            "    echo \"echo 'Hello World!'\" >> bin/hello-world.sh",
+            "    chmod u+x bin/hello-world.sh"
+        ],
+        "appenv": [
+            "THEBESTAPP=$SCIF_APPNAME",
+            "export THEBESTAPP"
+        ],
+        "apprun": [
+            "THEBESTAPP=$SCIF_APPNAME",
+            "export THEBESTAPP",
+            "THEBESTAPP=$SCIF_APPNAME",
+            "export THEBESTAPP",
+            "    /bin/bash hello-world.sh"
+        ]
+    }
+}

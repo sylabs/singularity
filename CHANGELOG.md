@@ -27,6 +27,12 @@
   builds, `--authfile` and other authentication options, and more. See the [user
   guide](https://docs.sylabs.io/guides/latest/user-guide/build_a_container.html#dockerfile)
   for more information.
+- Docker-style SCIF containers
+  ([https://sci-f.github.io/tutorial-preview-install](https://sci-f.github.io/tutorial-preview-install))
+  are now supported. If the entrypoint of an OCI container is the `scif`
+  executable, then the `run` / `exec` / `shell` commands in `--oci` mode can be
+  given the `--app <appname>` flag, and will automatically invoke the relevant
+  SCIF command.
 
 ### Bug Fixes
 

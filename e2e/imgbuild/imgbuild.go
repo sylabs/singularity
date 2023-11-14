@@ -20,13 +20,13 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"text/template"
 	"time"
 
 	"github.com/sylabs/singularity/v4/e2e/ecl"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/tmpl"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
@@ -1962,7 +1962,7 @@ func (c imgBuildTests) buildUseExistingBuildkitd(t *testing.T) {
 	imageNoPrefix := strings.TrimPrefix(c.env.TestRegistryImage, "docker://")
 
 	tmplValues := struct{ Source string }{Source: imageNoPrefix}
-	dockerfileSimple := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.simple.tmpl"), tmplValues)
+	dockerfileSimple := tmpl.Execute(t, tmpdir, "Dockerfile-", filepath.Join("..", "test", "defs", "Dockerfile.simple.tmpl"), tmplValues)
 	outputImgPath := filepath.Join(tmpdir, "image.oci.sif")
 
 	buildkitd, err := exec.LookPath("buildkitd")
@@ -2091,12 +2091,12 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 				Source:  imageNoPrefix,
 				AddFile: "/this_should_not_exist/this_should_not_exist_either",
 			}
-			dockerfileSimple := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.simple.tmpl"), tmplValues)
-			dockerfileBroken := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.broken.tmpl"), tmplValues)
-			dockerfileBuildArgs := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.buildargs.tmpl"), tmplValues)
-			dockerfileBuildArgsNoDef := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.buildargs-nodefault.tmpl"), tmplValues)
-			dockerfileAdd := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.add.tmpl"), tmplValues)
-			dockerfileAddBad := c.createDockerfileFromTmpl(t, tmpdir, filepath.Join("..", "test", "defs", "Dockerfile.add.tmpl"), badAddValues)
+			dockerfileSimple := tmpl.Execute(t, tmpdir, "Dockerfile-", filepath.Join("..", "test", "defs", "Dockerfile.simple.tmpl"), tmplValues)
+			dockerfileBroken := tmpl.Execute(t, tmpdir, "Dockerfile-", filepath.Join("..", "test", "defs", "Dockerfile.broken.tmpl"), tmplValues)
+			dockerfileBuildArgs := tmpl.Execute(t, tmpdir, "Dockerfile-", filepath.Join("..", "test", "defs", "Dockerfile.buildargs.tmpl"), tmplValues)
+			dockerfileBuildArgsNoDef := tmpl.Execute(t, tmpdir, "Dockerfile-", filepath.Join("..", "test", "defs", "Dockerfile.buildargs-nodefault.tmpl"), tmplValues)
+			dockerfileAdd := tmpl.Execute(t, tmpdir, "Dockerfile-", filepath.Join("..", "test", "defs", "Dockerfile.add.tmpl"), tmplValues)
+			dockerfileAddBad := tmpl.Execute(t, tmpdir, "Dockerfile-", filepath.Join("..", "test", "defs", "Dockerfile.add.tmpl"), badAddValues)
 
 			outputImgPath := filepath.Join(tmpdir, "image.oci.sif")
 
@@ -2284,36 +2284,6 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 			}
 		})
 	}
-}
-
-func (c imgBuildTests) createDockerfileFromTmpl(t *testing.T, tmpdir, tmplPath string, values any) string {
-	dockerfile, err := os.CreateTemp(tmpdir, "Dockerfile-")
-	if err != nil {
-		t.Fatalf("failed to open temp file: %v", err)
-	}
-	dockerfileName := dockerfile.Name()
-	t.Cleanup(func() {
-		if !t.Failed() {
-			os.Remove(dockerfileName)
-		}
-	})
-	defer dockerfile.Close()
-
-	tmplBytes, err := os.ReadFile(tmplPath)
-	if err != nil {
-		t.Fatalf("While trying to read template file %q: %v", tmplPath, err)
-	}
-	tmpl, err := template.New(filepath.Base(dockerfileName)).Parse(string(tmplBytes))
-	if err != nil {
-		t.Fatalf("While trying to parse template file %q: %v", tmplPath, err)
-	}
-
-	err = tmpl.Execute(dockerfile, values)
-	if err != nil {
-		t.Fatalf("While trying to execute template %q: %v", tmplPath, err)
-	}
-
-	return dockerfileName
 }
 
 func (c imgBuildTests) buildWithAuth(t *testing.T) {

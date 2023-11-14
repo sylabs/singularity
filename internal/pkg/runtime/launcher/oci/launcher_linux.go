@@ -192,10 +192,6 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "ContainAll")
 	}
 
-	if lo.AppName != "" {
-		badOpt = append(badOpt, "AppName")
-	}
-
 	if lo.KeyInfo != nil {
 		badOpt = append(badOpt, "KeyInfo")
 	}
