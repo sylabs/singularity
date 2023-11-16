@@ -89,8 +89,8 @@ github.com/containerd/cgroups/v3 v3.0.2 h1:f5WFqIVSgo5IZmtTT3qVBo6TzI1ON6sycSBKk
 github.com/containerd/cgroups/v3 v3.0.2/go.mod h1:JUgITrzdFqp42uI2ryGA+ge0ap/nxzYgkGmIcetmErE=
 github.com/containerd/console v1.0.3 h1:lIr7SlA5PxZyMV30bDW0MGbiOPXwc63yRuCP0ARubLw=
 github.com/containerd/console v1.0.3/go.mod h1:7LqA/THxQ86k76b8c/EMSiaJ3h1eZkMkXar0TQ1gf3U=
-github.com/containerd/containerd v1.7.8 h1:RkwgOW3AVUT3H/dyT0W03Dc8AzlpMG65lX48KftOFSM=
-github.com/containerd/containerd v1.7.8/go.mod h1:L/Hn9qylJtUFT7cPeM0Sr3fATj+WjHwRQ0lyrYk3OPY=
+github.com/containerd/containerd v1.7.9 h1:KOhK01szQbM80YfW1H6RZKh85PHGqY/9OcEZ35Je8sc=
+github.com/containerd/containerd v1.7.9/go.mod h1:0/W44LWEYfSHoxBtsHIiNU/duEkgpMokemafHVCpq9Y=
 github.com/containerd/continuity v0.4.3 h1:6HVkalIp+2u1ZLH1J/pYX2oBVXlJZvh1X1A7bEZ9Su8=
 github.com/containerd/continuity v0.4.3/go.mod h1:F6PTNCKepoxEaXLQp3wDAjygEnImnZ/7o4JzpodfroQ=
 github.com/containerd/fifo v1.1.0 h1:4I2mbh5stb1u6ycIABlBw9zgtlK8viPI9QkQNRQEEmY=
@@ -624,8 +624,8 @@ github.com/sylabs/scs-build-client v0.9.2 h1:lSyY0hmEytjsN+P1YDr4+Q6AFdEs0E5utIc
 github.com/sylabs/scs-build-client v0.9.2/go.mod h1:5b/kF000CblhrnFmcPGI1h8LGUKm4EW6pEbF49nVXuA=
 github.com/sylabs/scs-key-client v0.7.3 h1:k//63VQmgtJb+oTXmyO2thdSjgvi18mJLDI9bYAAceA=
 github.com/sylabs/scs-key-client v0.7.3/go.mod h1:FHLCehXKHTrvGSx35qLvXUU1zGpu8ad4WGTkgs4h4wA=
-github.com/sylabs/scs-library-client v1.4.5 h1:X/WPO+U+hVVmp2jioGM4AWXaPo3ECAJQQlWxZmKJReE=
-github.com/sylabs/scs-library-client v1.4.5/go.mod h1:nCAsuxBKCNGHKCrMae0EuySFEJgYFSRgqq4X/c7kI2g=
+github.com/sylabs/scs-library-client v1.3.5 h1:OTpqcQLM3zsZWr2zzqjDfDjXreH2UPbfrWfRwsD5V6E=
+github.com/sylabs/scs-library-client v1.3.5/go.mod h1:PBd6LqmOhliHhTfzp3mVrJv3QVQFre8bMr6j2tDnu/c=
 github.com/sylabs/sif/v2 v2.15.0 h1:Nv0tzksFnoQiQ2eUwpAis9nVqEu4c3RcNSxX8P3Cecw=
 github.com/sylabs/sif/v2 v2.15.0/go.mod h1:X1H7eaPz6BAxA84POMESXoXfTqgAnLQkujyF/CQFWTc=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 h1:kdXcSzyDtseVEc4yCz2qF8ZrQvIDBJLl4S1c3GCXmoI=
