@@ -758,8 +758,10 @@ func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 	// Execution of runc/crun run, wrapped with overlay prep / cleanup.
 	err = l.RunWrapped(ctx, id.String(), b.Path(), "")
 
-	// Unmounts pristine rootfs from bundle, and removes the bundle.
-	if cleanupErr := b.Delete(ctx); cleanupErr != nil {
+	// Unmounts pristine rootfs from bundle, and removes the bundle. We want to
+	// make a best effort here even if the main context has been canceled, hence
+	// the use of context.Background().
+	if cleanupErr := b.Delete(context.Background()); cleanupErr != nil { //nolint:contextcheck
 		sylog.Errorf("Couldn't cleanup bundle: %v", err)
 	}
 
