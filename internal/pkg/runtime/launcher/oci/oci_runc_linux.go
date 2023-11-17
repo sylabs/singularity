@@ -22,9 +22,7 @@ import (
 )
 
 // Delete deletes container resources
-//
-// FIXME: use context for cancellation, or remove.
-func Delete(_ context.Context, containerID string, systemdCgroups bool) error {
+func Delete(ctx context.Context, containerID string, systemdCgroups bool) error {
 	runtimeBin, err := Runtime()
 	if err != nil {
 		return err
@@ -42,7 +40,7 @@ func Delete(_ context.Context, containerID string, systemdCgroups bool) error {
 	}
 	runtimeArgs = append(runtimeArgs, "delete", containerID)
 
-	cmd := exec.Command(runtimeBin, runtimeArgs...)
+	cmd := exec.CommandContext(ctx, runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdout
@@ -177,9 +175,7 @@ func Resume(containerID string, systemdCgroups bool) error {
 }
 
 // Run runs a container (equivalent to create/start/delete)
-//
-// FIXME: use context for cancellation, or remove.
-func Run(_ context.Context, containerID, bundlePath, pidFile string, systemdCgroups bool) error {
+func Run(ctx context.Context, containerID, bundlePath, pidFile string, systemdCgroups bool) error {
 	runtimeBin, err := Runtime()
 	if err != nil {
 		return err
@@ -215,7 +211,7 @@ func Run(_ context.Context, containerID, bundlePath, pidFile string, systemdCgro
 	go signalProxy(containerID, signals)
 
 	runtimeArgs = append(runtimeArgs, containerID)
-	cmd := exec.Command(runtimeBin, runtimeArgs...)
+	cmd := exec.CommandContext(ctx, runtimeBin, runtimeArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin

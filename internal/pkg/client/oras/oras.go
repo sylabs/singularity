@@ -30,10 +30,26 @@ import (
 )
 
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
-//
-// FIXME: use context for cancellation.
-func DownloadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string, pb *progress.DownloadBar) error {
-	im, err := remoteImage(ref, ociAuth, reqAuthFile, pb)
+func DownloadImage(ctx context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string, pb *progress.DownloadBar) error {
+	if pb != nil {
+		// Due to the way our progress bar is implemented in remoteImage() -
+		// namely, using a custom http.RoundTripper, whose API does not allow
+		// for explicit passing of a context var - we need to handle context
+		// cancellation ourselves in the case where pb is not nil.
+		doneChan := make(chan struct{})
+		defer close(doneChan)
+		go func() {
+			select {
+			case <-ctx.Done():
+				pb.Abort(true)
+				return
+			case <-doneChan:
+				return
+			}
+		}()
+	}
+
+	im, err := remoteImage(ctx, ref, ociAuth, reqAuthFile, pb)
 	if err != nil {
 		return err
 	}
@@ -103,9 +119,7 @@ func DownloadImage(_ context.Context, path, ref string, ociAuth *ocitypes.Docker
 
 // UploadImage uploads the image specified by path and pushes it to the provided oci reference,
 // it will use credentials if supplied
-//
-// FIXME: use context for cancellation.
-func UploadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) error {
+func UploadImage(ctx context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) error {
 	// ensure that are uploading a SIF
 	if err := ensureSIF(path); err != nil {
 		return err
@@ -128,7 +142,11 @@ func UploadImage(_ context.Context, path, ref string, ociAuth *ocitypes.DockerAu
 		return err
 	}
 
-	remoteOpts := []remote.Option{ociauth.AuthOptn(ociAuth, reqAuthFile), remote.WithUserAgent(useragent.Value())}
+	remoteOpts := []remote.Option{
+		ociauth.AuthOptn(ociAuth, reqAuthFile),
+		remote.WithUserAgent(useragent.Value()),
+		remote.WithContext(ctx),
+	}
 	if term.IsTerminal(2) {
 		pb := &progress.DownloadBar{}
 		progChan := make(chan ggcrv1.Update, 1)
@@ -177,10 +195,8 @@ func ensureSIF(filepath string) error {
 }
 
 // RefHash returns the digest of the SIF layer of the OCI manifest for supplied ref
-//
-// FIXME: use context for cancellation.
-func RefHash(_ context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) (ggcrv1.Hash, error) {
-	im, err := remoteImage(ref, ociAuth, reqAuthFile, nil)
+func RefHash(ctx context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) (ggcrv1.Hash, error) {
+	im, err := remoteImage(ctx, ref, ociAuth, reqAuthFile, nil)
 	if err != nil {
 		return ggcrv1.Hash{}, err
 	}
@@ -238,7 +254,7 @@ func sha256sum(r io.Reader) (result string, nBytes int64, err error) {
 }
 
 // remoteImage returns a v1.Image for the provided remote ref.
-func remoteImage(ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string, pb *progress.DownloadBar) (ggcrv1.Image, error) {
+func remoteImage(ctx context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string, pb *progress.DownloadBar) (ggcrv1.Image, error) {
 	ref = strings.TrimPrefix(ref, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
@@ -251,7 +267,10 @@ func remoteImage(ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile str
 		return nil, fmt.Errorf("invalid reference %q: %w", ref, err)
 	}
 
-	remoteOpts := []remote.Option{ociauth.AuthOptn(ociAuth, reqAuthFile)}
+	remoteOpts := []remote.Option{
+		ociauth.AuthOptn(ociAuth, reqAuthFile),
+		remote.WithContext(ctx),
+	}
 	if pb != nil {
 		rt := progress.NewRoundTripper(nil, pb)
 		remoteOpts = append(remoteOpts, remote.WithTransport(rt))

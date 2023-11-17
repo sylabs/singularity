@@ -304,9 +304,7 @@ func imgLayersToSquashfs(img ggcrv1.Image, digest ggcrv1.Hash, workDir string) (
 }
 
 // PushOCISIF pushes a single image from sourceFile to the OCI registry destRef.
-//
-// FIXME: Use context for cancellation.
-func PushOCISIF(_ context.Context, sourceFile, destRef string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) error {
+func PushOCISIF(ctx context.Context, sourceFile, destRef string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) error {
 	destRef = strings.TrimPrefix(destRef, "docker://")
 	destRef = strings.TrimPrefix(destRef, "//")
 	ir, err := name.ParseReference(destRef)
@@ -338,7 +336,11 @@ func PushOCISIF(_ context.Context, sourceFile, destRef string, ociAuth *ocitypes
 		return fmt.Errorf("while obtaining image: %w", err)
 	}
 
-	remoteOpts := []remote.Option{ociauth.AuthOptn(ociAuth, reqAuthFile), remote.WithUserAgent(useragent.Value())}
+	remoteOpts := []remote.Option{
+		ociauth.AuthOptn(ociAuth, reqAuthFile),
+		remote.WithUserAgent(useragent.Value()),
+		remote.WithContext(ctx),
+	}
 	if term.IsTerminal(2) {
 		pb := &progress.DownloadBar{}
 		progChan := make(chan ggcrv1.Update, 1)
