@@ -107,9 +107,7 @@ func (cp *ArchConveyorPacker) prepareFakerootEnv() (func(), error) {
 }
 
 // Get just stores the source
-//
-// FIXME: use context for cancellation.
-func (cp *ArchConveyorPacker) Get(_ context.Context, b *types.Bundle) (err error) {
+func (cp *ArchConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err error) {
 	cp.b = b
 
 	// check for pacstrap on system
@@ -142,7 +140,7 @@ func (cp *ArchConveyorPacker) Get(_ context.Context, b *types.Bundle) (err error
 	args := []string{"-C", pacConf, "-c", "-d", "-G", "-M", cp.b.RootfsPath, "haveged"}
 	args = append(args, instList...)
 
-	pacCmd := exec.Command(pacstrapPath, args...)
+	pacCmd := exec.CommandContext(ctx, pacstrapPath, args...)
 	pacCmd.Stdout = os.Stdout
 	pacCmd.Stderr = os.Stderr
 	sylog.Debugf("\n\tPacstrap Path: %s\n\tPac Conf: %s\n\tRootfs: %s\n\tInstall List: %s\n", pacstrapPath, pacConf, cp.b.RootfsPath, instList)
@@ -152,7 +150,7 @@ func (cp *ArchConveyorPacker) Get(_ context.Context, b *types.Bundle) (err error
 	}
 
 	// Pacman package signing setup
-	cmd := exec.Command("arch-chroot", cp.b.RootfsPath, "/bin/sh", "-c", "haveged -w 1024; pacman-key --init; pacman-key --populate archlinux")
+	cmd := exec.CommandContext(ctx, "arch-chroot", cp.b.RootfsPath, "/bin/sh", "-c", "haveged -w 1024; pacman-key --init; pacman-key --populate archlinux")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
@@ -160,7 +158,7 @@ func (cp *ArchConveyorPacker) Get(_ context.Context, b *types.Bundle) (err error
 	}
 
 	// Clean up haveged
-	cmd = exec.Command("arch-chroot", cp.b.RootfsPath, "pacman", "-Rs", "--noconfirm", "haveged")
+	cmd = exec.CommandContext(ctx, "arch-chroot", cp.b.RootfsPath, "pacman", "-Rs", "--noconfirm", "haveged")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err = cmd.Run(); err != nil {
