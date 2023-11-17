@@ -4,6 +4,8 @@ This package contains the end-to-end (e2e) tests for `singularity`.
 
 ## Contributing
 
+### Introduction
+
 The e2e tests are split into *groups*, which gather tests that exercise a
 specific area of functionality.
 
@@ -51,6 +53,8 @@ package env
 
 - Declare a ctx struct that holds the `e2e.TestEnv` structure, and can be
   extended with any other group-specific variables.
+  - For more information on `e2e.TestEnv`, see the relevant
+    [subsection](#initialization-and-the-e2etestenv-struct) below.
 
 ```go
 type ctx struct {
@@ -58,9 +62,9 @@ type ctx struct {
 }
 ```
 
-- Add tests, which are member functions of the `ctx`. The following example
-  tests that when an environment variable is set, it can be echoed from a
-  `singularity exec`.
+- Add tests, which are member functions (=methods) of the `ctx`. The following
+  example tests that when an environment variable is set, it can be echoed from
+  a `singularity exec`.
 
 ```go
 func (c ctx) echoEnv(t *testing.T) {
@@ -101,7 +105,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 }
 ```
 
-- Putting this altogether, the `e2e/env/env.go` will look like:
+- Putting this all together, the `e2e/env/env.go` will look like:
 
 ```go
 package env 
@@ -144,6 +148,25 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
     }
 }
 ```
+
+### Initialization and the e2e.TestEnv struct
+
+The `e2e.TestEnv` struct is created and initialized in the e2e.Run() function,
+defined in the e2e/suite.go file. This function initializes many fields of the
+struct and carries out initialization procedures that are necessary for the
+entire e2e suite to work. Here are a few examples:
+
+- Creating a temporary test directory (intended to serve as the parent dir for
+  any more specific temporary subdirs that may be needed in the course of
+  specific tests), and setting the `TestDir` field of the struct to point to
+  that directory.
+- Setting up "fake" home directories for the current user and for root, so that
+  actions that affect the home dir (caches, tokens, config changes, etc.) will
+  not affect the files in the users' real home dirs.
+  - This is achieved by creating temporary homedirs for the user and for root,
+    and bind-mouting them over the real ones.
+  - Because the e2e suite is run inside a dedicated mount namespace, this
+    bind-mount does not affect the "outside world."
 
 ## Running
 
