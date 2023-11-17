@@ -17,12 +17,6 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/Netflix/go-expect/blob/master/LICENSE>
 
-## github.com/container-orchestrated-devices/container-device-interface/pkg/parser
-
-**License:** Apache-2.0
-
-**License URL:** <https://github.com/container-orchestrated-devices/container-device-interface/blob/master/pkg/parser/LICENSE>
-
 ## github.com/containerd/containerd
 
 **License:** Apache-2.0
@@ -478,6 +472,12 @@ The dependencies and their licenses are as follows:
 **License:** Apache-2.0
 
 **Project URL:** <https://oras.land/oras-go/pkg>
+
+## tags.cncf.io/container-device-interface/pkg/parser
+
+**License:** Apache-2.0
+
+**Project URL:** <https://tags.cncf.io/container-device-interface/pkg/parser>
 
 ## github.com/godbus/dbus/v5
 
