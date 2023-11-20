@@ -17,7 +17,7 @@ import (
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/opencontainers/go-digest"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
-	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
@@ -26,13 +26,13 @@ import (
 // If the ImageReference points at a multi-arch repository with an image index
 // (manifest list), it will traverse this to retrieve the digest of the image
 // manifest for the requested architecture specified in sysCtx.
-func ImageDigest(ctx context.Context, sysCtx *types.SystemContext, imgCache *cache.Handle, ref types.ImageReference) (digest.Digest, error) {
+func ImageDigest(ctx context.Context, tOpts *ocitransport.TransportOptions, imgCache *cache.Handle, ref types.ImageReference) (digest.Digest, error) {
 	// For OCI registries (docker://) attempt to use HEAD operation and cached
 	// image manifest/image index to avoid hitting GET API limits.
 	if ref.Transport().Name() == "docker" {
-		return dockerDigest(ctx, sysCtx, imgCache, ref)
+		return dockerDigest(ctx, tOpts, imgCache, ref)
 	}
-	return directDigest(ctx, sysCtx, imgCache, ref)
+	return directDigest(ctx, tOpts, imgCache, ref)
 }
 
 // directDigest obtains the image manifest digest for an ImageReference, by
@@ -40,8 +40,10 @@ func ImageDigest(ctx context.Context, sysCtx *types.SystemContext, imgCache *cac
 // a multi-arch repository with an image index (manifest list), it will traverse
 // this to retrieve the digest of the image manifest for the requested
 // architecture specified in sysCtx.
-func directDigest(ctx context.Context, sysCtx *types.SystemContext, imgCache *cache.Handle, ref types.ImageReference) (digest.Digest, error) {
-	source, err := ref.NewImageSource(ctx, sysCtx)
+func directDigest(ctx context.Context, tOpts *ocitransport.TransportOptions, imgCache *cache.Handle, ref types.ImageReference) (digest.Digest, error) {
+	// TODO - replace with ggcr code
+	//nolint:staticcheck
+	source, err := ref.NewImageSource(ctx, ocitransport.SystemContextFromTransportOptions(tOpts))
 	if err != nil {
 		return "", err
 	}
@@ -56,7 +58,7 @@ func directDigest(ctx context.Context, sysCtx *types.SystemContext, imgCache *ca
 		return "", err
 	}
 
-	digest, err := digestFromManifestOrIndex(sysCtx, mf)
+	digest, err := digestFromManifestOrIndex(tOpts, mf)
 	if err != nil {
 		return "", err
 	}
@@ -76,24 +78,26 @@ func directDigest(ctx context.Context, sysCtx *types.SystemContext, imgCache *ca
 // image source, attempting to use a HEAD against the registry, and cached image
 // index / manifest, to avoid unnecessary GET operations that count against
 // Docker Hub API limits.
-func dockerDigest(ctx context.Context, sysCtx *types.SystemContext, imgCache *cache.Handle, ref types.ImageReference) (digest.Digest, error) {
+func dockerDigest(ctx context.Context, tOpts *ocitransport.TransportOptions, imgCache *cache.Handle, ref types.ImageReference) (digest.Digest, error) {
 	if imgCache == nil || imgCache.IsDisabled() {
-		return directDigest(ctx, sysCtx, imgCache, ref)
+		return directDigest(ctx, tOpts, imgCache, ref)
 	}
 
-	d, err := docker.GetDigest(ctx, sysCtx, ref)
+	// TODO - replace with ggcr code
+	//nolint:staticcheck
+	d, err := docker.GetDigest(ctx, ocitransport.SystemContextFromTransportOptions(tOpts), ref)
 	if err != nil {
 		// If a custom auth file has been requested (via sysCtx) and is outright
 		// missing, docker.GetDigest still returns a generic "access to the
 		// resource is denied" error. Therefore, check if a non-default auth
 		// file was requested and, if so, generate a more useful error.
-		if sysCtx.AuthFilePath != syfs.DockerConf() {
-			return d, fmt.Errorf("could not read necessary credentials from file %q", sysCtx.AuthFilePath)
+		if tOpts.AuthFilePath != syfs.DockerConf() {
+			return d, fmt.Errorf("could not read necessary credentials from file %q", tOpts.AuthFilePath)
 		}
 
 		// Not all registries send digest in HEAD. Fall back to digest from retrieved manifest.
 		sylog.Debugf("Couldn't get digest from HEAD against registry: %v", err)
-		return directDigest(ctx, sysCtx, imgCache, ref)
+		return directDigest(ctx, tOpts, imgCache, ref)
 	}
 	sylog.Debugf("%s has digest %s via HEAD", ref.DockerReference().String(), d.String())
 
@@ -104,7 +108,7 @@ func dockerDigest(ctx context.Context, sysCtx *types.SystemContext, imgCache *ca
 			sylog.Warningf("While opening cached image index or manifest: %v", err)
 		}
 		sylog.Debugf("No cached image index or manifest")
-		return directDigest(ctx, sysCtx, imgCache, ref)
+		return directDigest(ctx, tOpts, imgCache, ref)
 	}
 	defer r.Close()
 	sylog.Debugf("Found cached image index or manifest for %s", d)
@@ -113,15 +117,15 @@ func dockerDigest(ctx context.Context, sysCtx *types.SystemContext, imgCache *ca
 	if err != nil {
 		return "", fmt.Errorf("while reading cached image index or manifest: %w", err)
 	}
-	return digestFromManifestOrIndex(sysCtx, mf)
+	return digestFromManifestOrIndex(tOpts, mf)
 }
 
 // digestFromManifestOrIndex returns the digest of the provided manifest, or the
 // digest of the manifest of an image satisfying sysCtx platform requirements if
 // an image index is supplied.
-func digestFromManifestOrIndex(sysCtx *types.SystemContext, manifestOrIndex []byte) (digest.Digest, error) {
-	if sysCtx == nil {
-		return "", fmt.Errorf("internal error: nil sysCtx")
+func digestFromManifestOrIndex(tOpts *ocitransport.TransportOptions, manifestOrIndex []byte) (digest.Digest, error) {
+	if tOpts == nil {
+		return "", fmt.Errorf("internal error: nil TransportOptions")
 	}
 
 	// mediaType is only a SHOULD for manifests and image indexes,so we can't
@@ -145,7 +149,7 @@ func digestFromManifestOrIndex(sysCtx *types.SystemContext, manifestOrIndex []by
 		return "", fmt.Errorf("not a valid image manifest or image index")
 	}
 
-	requiredPlatform := ociplatform.SysCtxToPlatform(sysCtx)
+	requiredPlatform := tOpts.Platform
 	sylog.Debugf("Content is an image index, finding image for %s", requiredPlatform)
 	for _, mf := range ix.Manifests {
 		if mf.Platform == nil {

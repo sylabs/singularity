@@ -18,7 +18,7 @@ import (
 	"strings"
 	"syscall"
 
-	ocitypes "github.com/containers/image/v5/types"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 	keyclient "github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/v4/internal/pkg/build"
@@ -200,7 +200,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	authConf, err := makeDockerCredentials(cmd)
+	authConf, err := makeOCICredentials(cmd)
 	if err != nil {
 		sylog.Fatalf("While creating Docker credentials: %v", err)
 	}
@@ -357,7 +357,7 @@ func runBuildRemote(ctx context.Context, cmd *cobra.Command, dst, spec string) {
 	}
 }
 
-func runBuildLocal(ctx context.Context, authConf *ocitypes.DockerAuthConfig, cmd *cobra.Command, dst, spec string) {
+func runBuildLocal(ctx context.Context, authConf *authn.AuthConfig, cmd *cobra.Command, dst, spec string) {
 	var keyInfo *cryptkey.KeyInfo
 	if buildArgs.encrypt || promptForPassphrase || cmd.Flags().Lookup("pem-path").Changed {
 		if os.Getuid() != 0 {
@@ -467,7 +467,7 @@ func runBuildLocal(ctx context.Context, authConf *ocitypes.DockerAuthConfig, cmd
 				LibraryURL:        buildArgs.libraryURL,
 				LibraryAuthToken:  authToken,
 				KeyServerOpts:     ko,
-				DockerAuthConfig:  authConf,
+				OCIAuthConfig:     authConf,
 				DockerDaemonHost:  dockerHost,
 				DockerAuthFile:    reqAuthFile,
 				EncryptionKeyInfo: keyInfo,

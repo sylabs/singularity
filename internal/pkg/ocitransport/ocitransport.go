@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package ociimage
+package ocitransport
 
 import (
 	"fmt"
@@ -18,7 +18,19 @@ import (
 	"github.com/containers/image/v5/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/sylabs/singularity/v4/pkg/util/slice"
 )
+
+var ociTransports = []string{"docker", "docker-archive", "docker-daemon", "oci", "oci-archive"}
+
+// SupportedTransport returns whether or not the transport given is supported. To fit within a switch/case
+// statement, this function will return transport if it is supported
+func SupportedTransport(transport string) string {
+	if slice.ContainsString(ociTransports, transport) {
+		return transport
+	}
+	return ""
+}
 
 // TransportOptions provides authentication, platform etc. configuration for
 // interactions with image transports.
@@ -35,18 +47,21 @@ type TransportOptions struct {
 	// DockerDaemonHost provides the URI to use when interacting with a Docker
 	// daemon.
 	DockerDaemonHost string
-	// Platform specifies the OS / Architeture / Variant
-	Platform  v1.Platform
+	// Platform specifies the OS / Architecture / Variant that the pulled images
+	// should satisfy.
+	Platform v1.Platform
+	// UserAgent will be set on HTTP(S) request made by transports.
 	UserAgent string
-	TmpDir    string
+	// TmpDir is a location in which a transport can create temporary files.
+	TmpDir string
 }
 
 // SystemContext returns a containers/image/v5 types.SystemContext struct for
-// compatibility with operations that still use container/image.
+// compatibility with operations that still use containers/image.
 //
-// Deprecated: for containers/image compatibility only. To be removes in
-// SingularityCE v5
-func (t *TransportOptions) SystemContext() *types.SystemContext {
+// Deprecated: for containers/image compatibility only. To be removed in
+// SingularityCE v5.
+func (t *TransportOptions) SystemContext() types.SystemContext {
 	sc := types.SystemContext{
 		AuthFilePath:            t.AuthFilePath,
 		BigFilesTemporaryDir:    t.TmpDir,
@@ -54,6 +69,7 @@ func (t *TransportOptions) SystemContext() *types.SystemContext {
 		OSChoice:                t.Platform.OS,
 		ArchitectureChoice:      t.Platform.Architecture,
 		VariantChoice:           t.Platform.Variant,
+		DockerDaemonHost:        t.DockerDaemonHost,
 	}
 
 	if t.AuthConfig != nil {
@@ -70,16 +86,21 @@ func (t *TransportOptions) SystemContext() *types.SystemContext {
 		sc.OCIInsecureSkipTLSVerify = true
 	}
 
-	return &sc
+	return sc
 }
 
 // TransportOptionsFromSystemContext returns a TransportOptions struct
-// initialized from a containers/image SystemContext.
+// initialized from a containers/image SystemContext. If the SystemContext is
+// nil, then nil is returned.
 //
 // Deprecated: for containers/image compatibility only. To be removed in
-// SingularityCE v5
-func TransportOptionsFromSystemContext(sc types.SystemContext) TransportOptions {
-	to := TransportOptions{
+// SingularityCE v5.
+func TransportOptionsFromSystemContext(sc *types.SystemContext) *TransportOptions {
+	if sc == nil {
+		return nil
+	}
+
+	tOpts := TransportOptions{
 		AuthFilePath: sc.AuthFilePath,
 		TmpDir:       sc.BigFilesTemporaryDir,
 		UserAgent:    sc.DockerRegistryUserAgent,
@@ -92,18 +113,32 @@ func TransportOptionsFromSystemContext(sc types.SystemContext) TransportOptions 
 	}
 
 	if sc.DockerAuthConfig != nil {
-		to.AuthConfig = &authn.AuthConfig{
+		tOpts.AuthConfig = &authn.AuthConfig{
 			Username:      sc.DockerAuthConfig.Username,
 			Password:      sc.DockerAuthConfig.Password,
 			IdentityToken: sc.DockerAuthConfig.IdentityToken,
 		}
 	}
 
-	return to
+	return &tOpts
+}
+
+// SystemContextFromTransportOptions returns a containers/image SystemContext
+// initialized from a TransportOptions struct. If the TrasnportOptions is nil,
+// then nil is returned.
+//
+// Deprecated: for containers/image compatibility only. To be removed in
+// SingularityCE v5
+func SystemContextFromTransportOptions(tOpts *TransportOptions) *types.SystemContext {
+	if tOpts == nil {
+		return nil
+	}
+	sc := tOpts.SystemContext()
+	return &sc
 }
 
 // defaultPolicy is Singularity's default containers/image OCI signature verification policy - accept anything.
-func defaultPolicy() (*signature.PolicyContext, error) {
+func DefaultPolicy() (*signature.PolicyContext, error) {
 	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
 	return signature.NewPolicyContext(policy)
 }

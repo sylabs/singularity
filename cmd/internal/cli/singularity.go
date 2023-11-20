@@ -19,7 +19,7 @@ import (
 	"strings"
 	"text/template"
 
-	ocitypes "github.com/containers/image/v5/types"
+	"github.com/google/go-containerregistry/pkg/authn"
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/spf13/cobra"
 	scskeyclient "github.com/sylabs/scs-key-client/client"
@@ -69,10 +69,10 @@ var (
 // Common options used with multiple sub-commands.
 var (
 	// OCI Registry Authentication
-	dockerAuthConfig ocitypes.DockerAuthConfig
-	dockerLogin      bool
-	dockerHost       string
-	noHTTPS          bool
+	authConfig  authn.AuthConfig
+	dockerLogin bool
+	dockerHost  string
+	noHTTPS     bool
 
 	// Encryption Material
 	encryptionPEMPath   string
@@ -173,7 +173,7 @@ var singConfigFileFlag = cmdline.Flag{
 // --docker-username
 var dockerUsernameFlag = cmdline.Flag{
 	ID:            "dockerUsernameFlag",
-	Value:         &dockerAuthConfig.Username,
+	Value:         &authConfig.Username,
 	DefaultValue:  "",
 	Name:          "docker-username",
 	Usage:         "specify a username for docker authentication",
@@ -185,7 +185,7 @@ var dockerUsernameFlag = cmdline.Flag{
 // --docker-password
 var dockerPasswordFlag = cmdline.Flag{
 	ID:            "dockerPasswordFlag",
-	Value:         &dockerAuthConfig.Password,
+	Value:         &authConfig.Password,
 	DefaultValue:  "",
 	Name:          "docker-password",
 	Usage:         "specify a password for docker authentication",

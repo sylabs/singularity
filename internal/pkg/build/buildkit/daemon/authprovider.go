@@ -40,10 +40,9 @@ import (
 
 	authutil "github.com/containerd/containerd/remotes/docker/auth"
 	remoteserrors "github.com/containerd/containerd/remotes/errors"
-	ocitypes "github.com/containers/image/v5/types"
 	"github.com/docker/cli/cli/config"
-	"github.com/docker/cli/cli/config/types"
 	"github.com/gofrs/flock"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/session/auth"
 	"github.com/moby/buildkit/session/auth/authprovider"
@@ -65,10 +64,10 @@ const (
 	dockerHubRegistryHost        = "registry-1.docker.io"
 )
 
-func NewAuthProvider(authConf *ocitypes.DockerAuthConfig, reqAuthFile string) session.Attachable {
+func NewAuthProvider(authConf *authn.AuthConfig, reqAuthFile string) session.Attachable {
 	if authConf != nil {
 		return &authProvider{
-			authConfigCache: map[string]*types.AuthConfig{},
+			authConfigCache: map[string]*authn.AuthConfig{},
 			config:          *authConf,
 			seeds:           &tokenSeeds{dir: config.Dir()},
 			loggerCache:     map[string]struct{}{},
@@ -87,8 +86,8 @@ func NewAuthProvider(authConf *ocitypes.DockerAuthConfig, reqAuthFile string) se
 }
 
 type authProvider struct {
-	authConfigCache map[string]*types.AuthConfig
-	config          ocitypes.DockerAuthConfig
+	authConfigCache map[string]*authn.AuthConfig
+	config          authn.AuthConfig
 	seeds           *tokenSeeds
 	logger          progresswriter.Logger
 	loggerCache     map[string]struct{}
@@ -228,7 +227,7 @@ func (ap *authProvider) VerifyTokenAuthority(_ context.Context, req *auth.Verify
 }
 
 //nolint:unparam
-func (ap *authProvider) getAuthConfig(host string) (*types.AuthConfig, error) {
+func (ap *authProvider) getAuthConfig(host string) (*authn.AuthConfig, error) {
 	ap.mu.Lock()
 	defer ap.mu.Unlock()
 
@@ -237,7 +236,7 @@ func (ap *authProvider) getAuthConfig(host string) (*types.AuthConfig, error) {
 	}
 
 	if _, exists := ap.authConfigCache[host]; !exists {
-		ap.authConfigCache[host] = &types.AuthConfig{
+		ap.authConfigCache[host] = &authn.AuthConfig{
 			Username:      ap.config.Username,
 			Password:      ap.config.Password,
 			IdentityToken: ap.config.IdentityToken,

@@ -17,9 +17,11 @@ import (
 	"text/template"
 
 	"github.com/containers/image/v5/types"
+	"github.com/google/go-containerregistry/pkg/authn"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/shell"
 	sytypes "github.com/sylabs/singularity/v4/pkg/build/types"
@@ -110,35 +112,32 @@ exec "$@"
 
 // OCIConveyorPacker holds stuff that needs to be packed into the bundle
 type OCIConveyorPacker struct {
-	srcRef    types.ImageReference
-	b         *sytypes.Bundle
-	imgConfig imgspecv1.ImageConfig
-	sysCtx    *types.SystemContext
+	srcRef           types.ImageReference
+	b                *sytypes.Bundle
+	imgConfig        imgspecv1.ImageConfig
+	transportOptions *ocitransport.TransportOptions
 }
 
 // Get downloads container information from the specified source
 func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err error) {
 	cp.b = b
 
-	// DockerInsecureSkipTLSVerify is set only if --no-https is specified to honor
-	// configuration from /etc/containers/registries.conf because DockerInsecureSkipTLSVerify
-	// can have three possible values true/false and undefined, so we left it as undefined instead
-	// of forcing it to false in order to delegate decision to /etc/containers/registries.conf:
-	// https://github.com/sylabs/singularity/issues/5172
-	cp.sysCtx = &types.SystemContext{
-		OCIInsecureSkipTLSVerify: cp.b.Opts.NoHTTPS,
-		DockerAuthConfig:         cp.b.Opts.DockerAuthConfig,
-		DockerDaemonHost:         cp.b.Opts.DockerDaemonHost,
-		AuthFilePath:             ociauth.ChooseAuthFile(cp.b.Opts.DockerAuthFile),
-		DockerRegistryUserAgent:  useragent.Value(),
-		BigFilesTemporaryDir:     b.TmpDir,
-		OSChoice:                 cp.b.Opts.Platform.OS,
-		ArchitectureChoice:       cp.b.Opts.Platform.Architecture,
-		VariantChoice:            cp.b.Opts.Platform.Variant,
+	cp.transportOptions = &ocitransport.TransportOptions{
+		Insecure:         cp.b.Opts.NoHTTPS,
+		DockerDaemonHost: cp.b.Opts.DockerDaemonHost,
+		AuthConfig:       cp.b.Opts.OCIAuthConfig,
+		AuthFilePath:     ociauth.ChooseAuthFile(cp.b.Opts.DockerAuthFile),
+		UserAgent:        useragent.Value(),
+		TmpDir:           b.TmpDir,
+		Platform:         cp.b.Opts.Platform,
 	}
 
-	if cp.b.Opts.NoHTTPS {
-		cp.sysCtx.DockerInsecureSkipTLSVerify = types.NewOptionalBool(true)
+	if cp.b.Opts.OCIAuthConfig == nil && cp.b.Opts.DockerAuthConfig != nil {
+		cp.transportOptions.AuthConfig = &authn.AuthConfig{
+			Username:      cp.b.Opts.DockerAuthConfig.Username,
+			Password:      cp.b.Opts.DockerAuthConfig.Password,
+			IdentityToken: cp.b.Opts.DockerAuthConfig.IdentityToken,
+		}
 	}
 
 	// Add registry and namespace to image reference if specified
@@ -162,7 +161,7 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 	}
 
 	// Fetch the image into a temporary containers/image oci layout dir.
-	cp.srcRef, _, err = ociimage.FetchLayout(ctx, cp.sysCtx, imgCache, ref, b.TmpDir)
+	cp.srcRef, _, err = ociimage.FetchLayout(ctx, cp.transportOptions, imgCache, ref, b.TmpDir)
 	if err != nil {
 		return err
 	}
@@ -211,7 +210,9 @@ func (cp *OCIConveyorPacker) Pack(ctx context.Context) (*sytypes.Bundle, error) 
 }
 
 func (cp *OCIConveyorPacker) getConfig(ctx context.Context) (imgspecv1.ImageConfig, error) {
-	img, err := cp.srcRef.NewImage(ctx, cp.sysCtx)
+	// TODO - replace with ggcr code
+	//nolint:staticcheck
+	img, err := cp.srcRef.NewImage(ctx, ocitransport.SystemContextFromTransportOptions(cp.transportOptions))
 	if err != nil {
 		return imgspecv1.ImageConfig{}, err
 	}
@@ -235,7 +236,9 @@ func (cp *OCIConveyorPacker) insertOCIConfig() error {
 }
 
 func (cp *OCIConveyorPacker) unpackTmpfs(ctx context.Context) error {
-	imageSource, err := cp.srcRef.NewImageSource(ctx, cp.sysCtx)
+	// TODO - replace with ggcr code
+	//nolint:staticcheck
+	imageSource, err := cp.srcRef.NewImageSource(ctx, ocitransport.SystemContextFromTransportOptions(cp.transportOptions))
 	if err != nil {
 		return fmt.Errorf("error creating image source: %s", err)
 	}

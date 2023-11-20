@@ -14,7 +14,7 @@ import (
 	"runtime"
 	"syscall"
 
-	ocitypes "github.com/containers/image/v5/types"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/v4/docs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
@@ -506,34 +506,37 @@ func definitionFromSpec(spec string) (types.Definition, error) {
 	return def, nil
 }
 
-// makeDockerCredentials creates an *ocitypes.DockerAuthConfig to use for
-// OCI/Docker registry operation configuration. Note that if we don't have a
-// username or password set it will return a nil pointer, as containers/image
-// requires this to fall back to .docker/config based authentication.
-func makeDockerCredentials(cmd *cobra.Command) (authConf *ocitypes.DockerAuthConfig, err error) {
+// makeOCICredentials creates an *authn.AuthConfig that should be used for
+// explicit OCI/Docker registry authentication when appropriate. If
+// `--docker-login` has been specified then interactive authentication will be
+// performed. If `--docker-login` has not been specified, and explicit
+// credentials have not been supplied via env-vars/flags, then a nil AuthConfig
+// will be returned.
+func makeOCICredentials(cmd *cobra.Command) (*authn.AuthConfig, error) {
 	usernameFlag := cmd.Flags().Lookup("docker-username")
 	passwordFlag := cmd.Flags().Lookup("docker-password")
 
+	var err error
 	if dockerLogin {
 		if !usernameFlag.Changed {
-			dockerAuthConfig.Username, err = interactive.AskQuestion("Enter Docker Username: ")
+			authConfig.Username, err = interactive.AskQuestion("Enter Docker/OCI registry username: ")
 			if err != nil {
-				return authConf, err
+				return &authConfig, err
 			}
-			usernameFlag.Value.Set(dockerAuthConfig.Username)
+			usernameFlag.Value.Set(authConfig.Username)
 			usernameFlag.Changed = true
 		}
 
-		dockerAuthConfig.Password, err = interactive.AskQuestionNoEcho("Enter Docker Password: ")
+		authConfig.Password, err = interactive.AskQuestionNoEcho("Enter Docker / OCI registry password: ")
 		if err != nil {
-			return authConf, err
+			return &authConfig, err
 		}
-		passwordFlag.Value.Set(dockerAuthConfig.Password)
+		passwordFlag.Value.Set(authConfig.Password)
 		passwordFlag.Changed = true
 	}
 
 	if usernameFlag.Changed || passwordFlag.Changed {
-		return &dockerAuthConfig, nil
+		return &authConfig, nil
 	}
 
 	// If a username / password have not been explicitly set, return a nil

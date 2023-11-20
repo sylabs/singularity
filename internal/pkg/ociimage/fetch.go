@@ -22,6 +22,7 @@ import (
 	"github.com/containers/image/v5/types"
 	"github.com/opencontainers/go-digest"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/term"
 )
@@ -29,13 +30,13 @@ import (
 // FetchLayout will fetch the OCI image specified by imageRef to a containers/image OCI layout in layoutDir.
 // An ImageReference to the image that was fetched into layoutDir is returned on success.
 // If imgCache is non-nil, and enabled, the image will be pulled through the cache.
-func FetchLayout(ctx context.Context, sysCtx *types.SystemContext, imgCache *cache.Handle, imageRef, layoutDir string) (types.ImageReference, digest.Digest, error) {
-	policyCtx, err := defaultPolicy()
+func FetchLayout(ctx context.Context, tOpts *ocitransport.TransportOptions, imgCache *cache.Handle, imageRef, layoutDir string) (types.ImageReference, digest.Digest, error) {
+	policyCtx, err := ocitransport.DefaultPolicy()
 	if err != nil {
 		return nil, "", err
 	}
 
-	srcRef, err := ParseImageRef(imageRef)
+	srcRef, err := ocitransport.ParseImageRef(imageRef)
 	if err != nil {
 		return nil, "", fmt.Errorf("invalid image source: %v", err)
 	}
@@ -44,7 +45,7 @@ func FetchLayout(ctx context.Context, sysCtx *types.SystemContext, imgCache *cac
 	// Perform a tar extraction first, and handle as an oci layout.
 	if os.Geteuid() != 0 && srcRef.Transport().Name() == "oci-archive" {
 		var tmpDir string
-		tmpDir, err = os.MkdirTemp(sysCtx.BigFilesTemporaryDir, "temp-oci-")
+		tmpDir, err = os.MkdirTemp(tOpts.TmpDir, "temp-oci-")
 		if err != nil {
 			return nil, "", fmt.Errorf("could not create temporary oci directory: %v", err)
 		}
@@ -71,7 +72,7 @@ func FetchLayout(ctx context.Context, sysCtx *types.SystemContext, imgCache *cac
 
 	if imgCache != nil && !imgCache.IsDisabled() {
 		// Grab the modified source ref from the cache
-		srcRef, imgDigest, err = CacheReference(ctx, sysCtx, imgCache, srcRef)
+		srcRef, imgDigest, err = CacheReference(ctx, tOpts, imgCache, srcRef)
 		if err != nil {
 			return nil, "", err
 		}
@@ -84,7 +85,9 @@ func FetchLayout(ctx context.Context, sysCtx *types.SystemContext, imgCache *cac
 
 	copyOpts := copy.Options{
 		ReportWriter: os.Stdout,
-		SourceCtx:    sysCtx,
+		// TODO - replace with ggcr code
+		//nolint:staticcheck
+		SourceCtx: ocitransport.SystemContextFromTransportOptions(tOpts),
 	}
 	if (sylog.GetLevel() <= -1) || !term.IsTerminal(2) {
 		copyOpts.ReportWriter = io.Discard

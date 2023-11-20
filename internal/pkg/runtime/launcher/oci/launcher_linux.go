@@ -28,7 +28,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
-	ociclient "github.com/sylabs/singularity/v4/internal/pkg/client/oci"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
@@ -663,8 +663,8 @@ func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 		return fmt.Errorf("%w: instanceName", ErrNotImplemented)
 	}
 
-	if l.cfg.SysContext == nil {
-		return fmt.Errorf("launcher SysContext must be set for OCI image handling")
+	if l.cfg.TransportOptions == nil {
+		return fmt.Errorf("launcher TransportOptions must be set for OCI image handling")
 	}
 
 	// Handle bare image paths and check image file format.
@@ -734,7 +734,7 @@ func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 		b, err = native.New(
 			native.OptBundlePath(bundleDir),
 			native.OptImageRef(image),
-			native.OptSysCtx(l.cfg.SysContext),
+			native.OptTransportOptions(l.cfg.TransportOptions),
 			native.OptImgCache(imgCache),
 		)
 	}
@@ -914,7 +914,7 @@ func normalizeImageRef(imageRef string) (string, error) {
 	// We can't just look for a `<transport>:<path>` pair as bare filenames can contain colons.
 	// If we don't match a supported oci source transport, assume we have a bare filename.
 	parts := strings.SplitN(imageRef, ":", 2)
-	if len(parts) == 2 && ociclient.IsSupported(parts[0]) != "" {
+	if len(parts) == 2 && ocitransport.SupportedTransport(parts[0]) != "" {
 		return imageRef, nil
 	}
 

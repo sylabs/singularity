@@ -11,10 +11,11 @@ import (
 	"fmt"
 	"os"
 
-	ocitypes "github.com/containers/image/v5/types"
+	"github.com/google/go-containerregistry/pkg/authn"
 	gccrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -23,7 +24,7 @@ import (
 
 type PullOptions struct {
 	TmpDir      string
-	OciAuth     *ocitypes.DockerAuthConfig
+	OciAuth     *authn.AuthConfig
 	DockerHost  string
 	NoHTTPS     bool
 	NoCleanUp   bool
@@ -33,30 +34,17 @@ type PullOptions struct {
 	ReqAuthFile string
 }
 
-// sysCtx provides authentication and tempDir config for containers/image OCI operations
-//
-//nolint:unparam
-func sysCtx(opts PullOptions) (*ocitypes.SystemContext, error) {
-	// DockerInsecureSkipTLSVerify is set only if --no-https is specified to honor
-	// configuration from /etc/containers/registries.conf because DockerInsecureSkipTLSVerify
-	// can have three possible values true/false and undefined, so we left it as undefined instead
-	// of forcing it to false in order to delegate decision to /etc/containers/registries.conf:
-	// https://github.com/sylabs/singularity/issues/5172
-	sysCtx := &ocitypes.SystemContext{
-		OCIInsecureSkipTLSVerify: opts.NoHTTPS,
-		DockerAuthConfig:         opts.OciAuth,
-		AuthFilePath:             ociauth.ChooseAuthFile(opts.ReqAuthFile),
-		DockerRegistryUserAgent:  useragent.Value(),
-		BigFilesTemporaryDir:     opts.TmpDir,
-		DockerDaemonHost:         opts.DockerHost,
-		OSChoice:                 opts.Platform.OS,
-		ArchitectureChoice:       opts.Platform.Architecture,
-		VariantChoice:            opts.Platform.Variant,
+// transportOptions maps PullOptions to OCI image transport options
+func transportOptions(opts PullOptions) *ocitransport.TransportOptions {
+	return &ocitransport.TransportOptions{
+		AuthConfig:       opts.OciAuth,
+		AuthFilePath:     ociauth.ChooseAuthFile(opts.ReqAuthFile),
+		Insecure:         opts.NoHTTPS,
+		TmpDir:           opts.TmpDir,
+		UserAgent:        useragent.Value(),
+		DockerDaemonHost: opts.DockerHost,
+		Platform:         opts.Platform,
 	}
-	if opts.NoHTTPS {
-		sysCtx.DockerInsecureSkipTLSVerify = ocitypes.NewOptionalBool(true)
-	}
-	return sysCtx, nil
 }
 
 // Pull will create a SIF / OCI-SIF image to the cache or direct to a temporary file if cache is disabled

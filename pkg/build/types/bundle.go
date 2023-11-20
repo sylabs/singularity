@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	ocitypes "github.com/containers/image/v5/types"
+	"github.com/google/go-containerregistry/pkg/authn"
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	scskeyclient "github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
@@ -47,7 +48,10 @@ type Options struct {
 	LibraryAuthToken string `json:"libraryAuthToken"`
 	// KeyServerOpts contains options for keyserver used for SIF fingerprint verification in builds.
 	KeyServerOpts []scskeyclient.Option
-	// contains docker credentials if specified.
+	// If non-nil, provides credentials to be used when authenticating to OCI registries.
+	OCIAuthConfig *authn.AuthConfig
+	// If non-nil, provides credentials to be used when authenticating to OCI registries.
+	// Deprecated: Use OCIAuthConfig, which takes precedence if both are set.
 	DockerAuthConfig *ocitypes.DockerAuthConfig
 	// Custom docker Daemon host
 	DockerDaemonHost string

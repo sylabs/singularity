@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"os"
 
-	ocitypes "github.com/containers/image/v5/types"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
@@ -19,7 +19,7 @@ import (
 )
 
 // pull will pull an oras image into the cache if directTo="", or a specific file if directTo is set.
-func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) (imagePath string, err error) {
+func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, ociAuth *authn.AuthConfig, reqAuthFile string) (imagePath string, err error) {
 	hash, err := RefHash(ctx, pullFrom, ociAuth, reqAuthFile)
 	if err != nil {
 		return "", fmt.Errorf("failed to get checksum for %s: %s", pullFrom, err)
@@ -68,7 +68,7 @@ func pull(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string
 }
 
 // Pull will pull an oras image to the cache or direct to a temporary file if cache is disabled
-func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom, tmpDir string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) (imagePath string, err error) {
+func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom, tmpDir string, ociAuth *authn.AuthConfig, reqAuthFile string) (imagePath string, err error) {
 	directTo := ""
 
 	if imgCache.IsDisabled() {
@@ -84,7 +84,7 @@ func Pull(ctx context.Context, imgCache *cache.Handle, pullFrom, tmpDir string, 
 }
 
 // PullToFile will pull an oras image to the specified location, through the cache, or directly if cache is disabled
-func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) (imagePath string, err error) {
+func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom string, ociAuth *authn.AuthConfig, reqAuthFile string) (imagePath string, err error) {
 	directTo := ""
 	if imgCache.IsDisabled() {
 		directTo = pullTo

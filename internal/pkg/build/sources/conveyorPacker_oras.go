@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -29,7 +30,16 @@ func (cp *OrasConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 	// full uri for name determination and output
 	fullRef := "oras:" + ref
 
-	imagePath, err := oras.Pull(ctx, b.Opts.ImgCache, fullRef, b.Opts.TmpDir, b.Opts.DockerAuthConfig, b.Opts.DockerAuthFile)
+	authConfig := b.Opts.OCIAuthConfig
+	if authConfig == nil && b.Opts.DockerAuthConfig != nil {
+		authConfig = &authn.AuthConfig{
+			Username:      b.Opts.DockerAuthConfig.Username,
+			Password:      b.Opts.DockerAuthConfig.Password,
+			IdentityToken: b.Opts.DockerAuthConfig.IdentityToken,
+		}
+	}
+
+	imagePath, err := oras.Pull(ctx, b.Opts.ImgCache, fullRef, b.Opts.TmpDir, authConfig, b.Opts.DockerAuthFile)
 	if err != nil {
 		return fmt.Errorf("while fetching library image: %v", err)
 	}

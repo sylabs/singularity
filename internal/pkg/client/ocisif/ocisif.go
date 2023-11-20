@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	ocitypes "github.com/containers/image/v5/types"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
@@ -30,6 +30,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -50,7 +51,7 @@ var ErrFailedSquashfsConversion = errors.New("could not convert layer to squashf
 
 type PullOptions struct {
 	TmpDir      string
-	OciAuth     *ocitypes.DockerAuthConfig
+	OciAuth     *authn.AuthConfig
 	DockerHost  string
 	NoHTTPS     bool
 	NoCleanUp   bool
@@ -59,52 +60,30 @@ type PullOptions struct {
 	KeepLayers  bool
 }
 
-// sysCtx provides authentication and tempDir config for containers/image OCI operations
-//
-//nolint:unparam
-func sysCtx(opts PullOptions) (*ocitypes.SystemContext, error) {
-	// DockerInsecureSkipTLSVerify is set only if --no-https is specified to honor
-	// configuration from /etc/containers/registries.conf because DockerInsecureSkipTLSVerify
-	// can have three possible values true/false and undefined, so we left it as undefined instead
-	// of forcing it to false in order to delegate decision to /etc/containers/registries.conf:
-	// https://github.com/sylabs/singularity/issues/5172
-	sysCtx := &ocitypes.SystemContext{
-		OCIInsecureSkipTLSVerify: opts.NoHTTPS,
-		DockerAuthConfig:         opts.OciAuth,
-		AuthFilePath:             ociauth.ChooseAuthFile(opts.ReqAuthFile),
-		DockerRegistryUserAgent:  useragent.Value(),
-		BigFilesTemporaryDir:     opts.TmpDir,
-		DockerDaemonHost:         opts.DockerHost,
-		OSChoice:                 opts.Platform.OS,
-		ArchitectureChoice:       opts.Platform.Architecture,
-		VariantChoice:            opts.Platform.Variant,
-	}
-	if opts.NoHTTPS {
-		sysCtx.DockerInsecureSkipTLSVerify = ocitypes.NewOptionalBool(true)
-	}
-
-	return sysCtx, nil
-}
-
 // PullOCISIF will create an OCI-SIF image in the cache if directTo="", or a specific file if directTo is set.
 func PullOCISIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, opts PullOptions) (imagePath string, err error) {
-	sys, err := sysCtx(opts)
+	tOpts := &ocitransport.TransportOptions{
+		AuthConfig:       opts.OciAuth,
+		AuthFilePath:     ociauth.ChooseAuthFile(opts.ReqAuthFile),
+		Insecure:         opts.NoHTTPS,
+		TmpDir:           opts.TmpDir,
+		UserAgent:        useragent.Value(),
+		DockerDaemonHost: opts.DockerHost,
+		Platform:         opts.Platform,
+	}
+
+	ref, err := ocitransport.ParseImageRef(pullFrom)
 	if err != nil {
 		return "", err
 	}
 
-	ref, err := ociimage.ParseImageRef(pullFrom)
-	if err != nil {
-		return "", err
-	}
-
-	hash, err := ociimage.ImageDigest(ctx, sys, imgCache, ref)
+	hash, err := ociimage.ImageDigest(ctx, tOpts, imgCache, ref)
 	if err != nil {
 		return "", fmt.Errorf("failed to get digest for %s: %s", pullFrom, err)
 	}
 
 	if directTo != "" {
-		if err := createOciSif(ctx, sys, imgCache, pullFrom, directTo, opts); err != nil {
+		if err := createOciSif(ctx, tOpts, imgCache, pullFrom, directTo, opts); err != nil {
 			return "", fmt.Errorf("while creating OCI-SIF: %w", err)
 		}
 		imagePath = directTo
@@ -121,7 +100,7 @@ func PullOCISIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom 
 		}
 		defer cacheEntry.CleanTmp()
 		if !cacheEntry.Exists {
-			if err := createOciSif(ctx, sys, imgCache, pullFrom, cacheEntry.TmpPath, opts); err != nil {
+			if err := createOciSif(ctx, tOpts, imgCache, pullFrom, cacheEntry.TmpPath, opts); err != nil {
 				return "", fmt.Errorf("while creating OCI-SIF: %w", err)
 			}
 
@@ -139,7 +118,7 @@ func PullOCISIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom 
 }
 
 // createOciSif will convert an OCI source into an OCI-SIF using sylabs/oci-tools
-func createOciSif(ctx context.Context, sysCtx *ocitypes.SystemContext, imgCache *cache.Handle, imageSrc, imageDest string, opts PullOptions) error {
+func createOciSif(ctx context.Context, tOpts *ocitransport.TransportOptions, imgCache *cache.Handle, imageSrc, imageDest string, opts PullOptions) error {
 	tmpDir, err := os.MkdirTemp(opts.TmpDir, "oci-sif-tmp-")
 	if err != nil {
 		return err
@@ -161,16 +140,19 @@ func createOciSif(ctx context.Context, sysCtx *ocitypes.SystemContext, imgCache 
 	}
 
 	sylog.Debugf("Fetching image to temporary layout %q", layoutDir)
-	layoutRef, _, err := ociimage.FetchLayout(ctx, sysCtx, imgCache, imageSrc, layoutDir)
+	layoutRef, _, err := ociimage.FetchLayout(ctx, tOpts, imgCache, imageSrc, layoutDir)
 	if err != nil {
 		return fmt.Errorf("while fetching OCI image: %w", err)
 	}
-	if err := ociplatform.CheckImageRefPlatform(ctx, sysCtx, layoutRef); err != nil {
+
+	if err := ociplatform.CheckImageRefPlatform(ctx, tOpts, layoutRef); err != nil {
 		return fmt.Errorf("while checking OCI image: %w", err)
 	}
 
 	// Step 2 - Work from containers/image ImageReference -> gocontainerregistry digest & manifest
-	layoutSrc, err := layoutRef.NewImageSource(ctx, sysCtx)
+	// TODO - replace with ggcr code
+	//nolint:staticcheck
+	layoutSrc, err := layoutRef.NewImageSource(ctx, ocitransport.SystemContextFromTransportOptions(tOpts))
 	if err != nil {
 		return err
 	}
@@ -304,7 +286,7 @@ func imgLayersToSquashfs(img ggcrv1.Image, digest ggcrv1.Hash, workDir string) (
 }
 
 // PushOCISIF pushes a single image from sourceFile to the OCI registry destRef.
-func PushOCISIF(ctx context.Context, sourceFile, destRef string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) error {
+func PushOCISIF(ctx context.Context, sourceFile, destRef string, ociAuth *authn.AuthConfig, reqAuthFile string) error {
 	destRef = strings.TrimPrefix(destRef, "docker://")
 	destRef = strings.TrimPrefix(destRef, "//")
 	ir, err := name.ParseReference(destRef)
