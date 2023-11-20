@@ -814,6 +814,43 @@ that as the name of the subtest.
 
 Overall, then, we end up with two levels of subtest nesting here: one level for
 the profile, and another for the subtest names as defined in the struct array.
+Here's an example of what the test output log looks like in this case:
+
+```
+=== RUN   TestE2E/SEQ/INSTANCE/auth
+=== RUN   TestE2E/SEQ/INSTANCE/auth/User
+    singularitycmd.go:698: Running command "/usr/local/bin/singularity registry logout --authfile ./my_local_authfile docker://localhost:41151"
+=== RUN   TestE2E/SEQ/INSTANCE/auth/User/start_before_auth
+    instance.go:299: Running command "/usr/local/bin/singularity instance start --authfile ./my_local_authfile --disable-cache --no-https docker://localhost:41151/private/e2eprivrepo/my-alpine:latest actionAuthTesterInstance"
+=== NAME  TestE2E/SEQ/INSTANCE/auth/User
+    singularitycmd.go:698: Running command "/usr/local/bin/singularity registry login --authfile ./my_local_authfile -u e2e -p e2e docker://localhost:41151"
+=== RUN   TestE2E/SEQ/INSTANCE/auth/User/start
+    instance.go:299: Running command "/usr/local/bin/singularity instance start --authfile ./my_local_authfile --disable-cache --no-https docker://localhost:41151/private/e2eprivrepo/my-alpine:latest actionAuthTesterInstance"
+=== NAME  TestE2E/SEQ/INSTANCE/auth/User
+    singularitycmd.go:698: Running command "/usr/local/bin/singularity registry login --authfile ./my_local_authfile -u e2e -p e2e docker://localhost:41151"
+=== RUN   TestE2E/SEQ/INSTANCE/auth/User/stop
+    instance.go:299: Running command "/usr/local/bin/singularity instance stop actionAuthTesterInstance"
+=== NAME  TestE2E/SEQ/INSTANCE/auth/User
+    singularitycmd.go:698: Running command "/usr/local/bin/singularity registry logout --authfile ./my_local_authfile docker://localhost:41151"
+=== RUN   TestE2E/SEQ/INSTANCE/auth/User/start_noauth
+    instance.go:299: Running command "/usr/local/bin/singularity instance start --authfile ./my_local_authfile --disable-cache --no-https docker://localhost:41151/private/e2eprivrepo/my-alpine:latest actionAuthTesterInstance"
+=== RUN   TestE2E/SEQ/INSTANCE/auth/Root
+    singularitycmd.go:698: Running command "/usr/local/bin/singularity registry logout --authfile ./my_local_authfile docker://localhost:41151"
+=== RUN   TestE2E/SEQ/INSTANCE/auth/Root/start_before_auth
+    instance.go:299: Running command "/usr/local/bin/singularity instance start --authfile ./my_local_authfile --disable-cache --no-https docker://localhost:41151/private/e2eprivrepo/my-alpine:latest actionAuthTesterInstance"
+=== NAME  TestE2E/SEQ/INSTANCE/auth/Root
+    singularitycmd.go:698: Running command "/usr/local/bin/singularity registry login --authfile ./my_local_authfile -u e2e -p e2e docker://localhost:41151"
+=== RUN   TestE2E/SEQ/INSTANCE/auth/Root/start
+    instance.go:299: Running command "/usr/local/bin/singularity instance start --authfile ./my_local_authfile --disable-cache --no-https docker://localhost:41151/private/e2eprivrepo/my-alpine:latest actionAuthTesterInstance"
+=== NAME  TestE2E/SEQ/INSTANCE/auth/Root
+    singularitycmd.go:698: Running command "/usr/local/bin/singularity registry login --authfile ./my_local_authfile -u e2e -p e2e docker://localhost:41151"
+=== RUN   TestE2E/SEQ/INSTANCE/auth/Root/stop
+    instance.go:299: Running command "/usr/local/bin/singularity instance stop actionAuthTesterInstance"
+=== NAME  TestE2E/SEQ/INSTANCE/auth/Root
+    singularitycmd.go:698: Running command "/usr/local/bin/singularity registry logout --authfile ./my_local_authfile docker://localhost:41151"
+=== RUN   TestE2E/SEQ/INSTANCE/auth/Root/start_noauth
+    instance.go:299: Running command "/usr/local/bin/singularity instance start --authfile ./my_local_authfile --disable-cache --no-https docker://localhost:41151/private/e2eprivrepo/my-alpine:latest actionAuthTesterInstance"
+```
 
 ### Temporary dirs & files, and cleanup
 
