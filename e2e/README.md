@@ -855,6 +855,104 @@ Here's an example of what the test output log looks like in this case:
 
 ### Temporary dirs & files, and cleanup
 
+Tests should be written so that the state of the filesystem after they run is
+the same as it was before. To this end, it will typically be necessary to create
+temporary files or even temporary directories.
+
+As noted [above](#initialization-and-the-e2etestenv-struct), the initialization
+code that runs at the beginning of the e2e suite creates a temporary directory
+and stores its path in `testenv.TestDir`. Note however that this is **a single
+directory for the entirety of this e2e run**, no matter how many individual
+tests & subtests are run as part of it.
+
+Therefore, an individual test or subtest should take active steps to avoid name
+clashes for the temporary files & directories it creates. The best strategy for
+this is as follows:
+
+- **Location**: Temporary files & directories should be created under
+  `testenv.TestDir`.
+  - That way, if the same test was executed as part of a different run of the
+    e2e suite, the files would be in different places (because `testenv.TestDir`
+    differs per-run).
+- **Naming**: Temporary files & directories should have a name that is unique to
+  the test/subtest being run.
+  - That way, temporary files & directories created by different tests/subtests
+    in a single e2e run won't clash with one another.
+
+The functions in Go's standard library for creating temporary files and for
+creating temporary directories support customizing both the location and the
+name of the file/dir, and so both these goals can be accomplished:
+
+- **Files:**
+  - The function `os.CreateTemp(dir, pattern string) (*File, error)` in the `os`
+    package of the standard Go library accepts both a parent directory in which
+    to create the file (`dir`) and a pattern for the filename to include
+    (`pattern`). Typically, the pattern is used as a prefix, but other behaviors
+    are possible. See the full documentation for this function
+    [here](https://pkg.go.dev/os#CreateTemp).
+  - The function `e2e.WriteTempFile(dir, pattern, content string) (string,
+    error)` defined in e2e/internal/e2e/fileutil.go behaves similarly - indeed,
+    it calls os.CreateTemp() with the `dir` and `pattern` arguments it is given.
+    - It differs from os.CreateTemp() in that it opens the temporary file it
+      created, writes the `content` to it, closes it, and returns the path to
+      the temporary file as the first return value.
+- **Directories:**
+  - The function `os.MkdirTemp(dir, pattern string) (string, error)` in the `os`
+    package of the standard Go library accepts both a parent directory in which
+    to create the temporary subdir (`dir`) and a pattern for the dirname to
+    include (`pattern`). Typically, the pattern is used as a prefix, but other
+    behaviors are possible. See the full documentation for this function
+    [here](https://pkg.go.dev/os#MkdirTemp).
+  - The function `e2e.MakeTempDir(t *testing.T, baseDir string, prefix string,
+    context string) (string, func(t *testing.T))` defined in
+    e2e/internal/e2e/fileutil.go behaves similarly - indeed, it calls
+    fs.MakeTmpDir() (defined in internal/pkg/util/fs/helper.go) with the `dir`
+    and `pattern` arguments it is given, and fs.MakeTmpDir() in turn calls
+    os.MkdirTemp() with these arguments.
+    - It differs from os.MkdirTemp() in that it doesn't return an error value
+      (any errors that arise will be issued as `t.Fatal(<...>)` errors to the
+      `*testing.T` object passed as the first argument), and it returns,
+      alongside the path to the created directory, a function that when called
+      will remove the directory in question.
+    - The latter is very useful for cleanup purposes, a topic we turn to
+      presently.
+
+Even if all files & directories are created in temporary locations as just
+specified, tests should still clean up after themselves, removing any files and
+directories they create. This can be done using `defer` statements, but the
+preferred practice is to use the `t.Cleanup(f func())` method of Go's
+`*testing.T` object.
+
+There are several advantages to this approach. First, it allows for *conditional
+cleanup*: it is often desirable, whether it be for debugging the e2e test itself
+or for debugging an issue that these tests have revealed in Singularity, to
+retain the temporary files of a failed test. We can therefore make the cleanup
+of a test conditional on that test having passed. Here is a typical example, in
+this case using the second return value of e2e.MakeTempDir() discussed above to
+perform the cleanup, taken from the actionOciOverlayTeardown() test in
+e2e/actions/oci.go:
+
+```go
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "oci_overlay_teardown-", "")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			cleanup(t)
+		}
+	})
+```
+
+In this example, the contents of the temporary directory (whose name will begin
+with "oci_overlay_teardown-", and whose full name can be gleaned from the test
+output) will be preserved in cases where the test fails.
+
+The second advantage of t.Cleanup() over the use of `defer` statements concerns
+the timing of their execution. While `defer` statements execute whenever the
+current function returns, t.Cleanup() statements execute when the current named
+test completes. That means that one can write a test that calls a helper
+function, have that helper function create various temporary files/dirs *and*
+set up their cleanup, and still use those files/dirs from the calling function,
+because their cleanup will occur only when the entire named test concludes.
+
 ### Parallel (PAR) vs. non-parallel (SEQ) tests
 
 ## Useful utility functions
