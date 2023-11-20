@@ -199,18 +199,19 @@ The images immediately pushed to the testing registry (in what follows,
 `<registryURI>` should be understood as shorthand for
 `"docker://"+testenv.TestRegistry`):
 
-- `<registryURI>/my-alpine:latest`: Created by copying `docker://alpine:latest`
-  at runtime.
-- `<registryURI>/aufs-sanity:latest`: An image with many small layers, useful
-  for testing overlay and `--keep-layers` behaviors. Created by copying
-  `docker://sylabsio/aufs-sanity:latest` at runtime.
-- `<registryURI>/private/e2eprivrepo/my-alpine:latest`: Another copy of
-  `docker://alpine:latest` created at runtime, but pushed into a private
-  location in the testing repo that requires authentication.
-  - To push the private image, e2e.Run() makes use of the
-    PrivateRepoLogin()/PrivateRepoLogout() functions defined in
-    e2e/internal/e2e/private_repo.go. See the comments on those functions for
-    more information.
+- `<registryURI>/my-alpine:latest`:
+  - Created by copying `docker://alpine:latest` at runtime.
+- `<registryURI>/aufs-sanity:latest`:
+  - An image with many small layers, useful for testing overlay and
+    `--keep-layers` behaviors. Created by copying
+    `docker://sylabsio/aufs-sanity:latest` at runtime.
+- `<registryURI>/private/e2eprivrepo/my-alpine:latest`:
+  - Another copy of `docker://alpine:latest` created at runtime, but pushed into
+  a private location in the testing repo that requires authentication.
+    - To push the private image, e2e.Run() makes use of the
+      PrivateRepoLogin()/PrivateRepoLogout() functions defined in
+      e2e/internal/e2e/private_repo.go. See the comments on those functions for
+      more information.
 
 The following URIs are then stored in `testenv` fields for convenience:
 
@@ -853,6 +854,8 @@ Here's an example of what the test output log looks like in this case:
 ```
 
 ### Temporary dirs & files, and cleanup
+
+### Parallel (PAR) vs. non-parallel (SEQ) tests
 
 ## Useful utility functions
 
