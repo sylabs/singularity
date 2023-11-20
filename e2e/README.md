@@ -314,8 +314,10 @@ Variables with the bolded names above are defined globally in e2e/internal/e2e,
 so that to access RootProfile from outside the e2e/internal/e2e package, for
 example, one would typically write `e2e.RootProfile`.
 
-However, e2e/internal/e2e/profile.go also defines three maps for convenient
-access to groups of profiles:
+### Convenience maps of profiles
+
+e2e/internal/e2e/profile.go also defines three maps for convenient access to
+groups of profiles:
 
 - NativeProfiles
 - OCIProfiles
@@ -463,6 +465,361 @@ Thus, in the code snippet above, we see that for the test to pass, the CLI must
 return the exit code 0 (indicating a successful run), and the output from
 stdout (disregarding stderr) must be exactly the string `BAR` - no more, and no
 less, up to a terminating newline.
+
+While this particular example tests what is expected to be a successful run,
+these same options also let you test that Singularity errors out correctly under
+the circumstances where you want it to do so. You would typically do that by
+combining an appropriate non-zero exit status as the first argument to
+e2e.ExpectExit(), with an additional e2e.ExpectError() (or e2e.ExpectErrorf())
+functional option to verify that the stderr output of the CLI run is what you
+want it to be.
+
+## Best practices in writing e2e tests
+
+### Inline struct arrays for subtests
+
+While the code snippets given so far demonstrate a single execution of
+testenv.RunSingularity(), it is quite common for a single test to run
+testenv.RunSingularity() multiple times, each time modifying something about the
+run conditions.
+
+To enhance the readability of the e2e sources, we ask that tests of this sort be
+written using an array of *struct literals* for the individual tests. As an
+example, here is the exitSignals() test from e2e/actions/actions.go:
+
+```go
+func (c actionTests) exitSignals(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	tests := []struct {
+		name string
+		args []string
+		exit int
+	}{
+		{
+			name: "Exit0",
+			args: []string{c.env.ImagePath, "/bin/sh", "-c", "exit 0"},
+			exit: 0,
+		},
+		{
+			name: "Exit1",
+			args: []string{c.env.ImagePath, "/bin/sh", "-c", "exit 1"},
+			exit: 1,
+		},
+		{
+			name: "Exit134",
+			args: []string{c.env.ImagePath, "/bin/sh", "-c", "exit 134"},
+			exit: 134,
+		},
+		{
+			name: "SignalKill",
+			args: []string{c.env.ImagePath, "/bin/sh", "-c", "kill -KILL $$"},
+			exit: 137,
+		},
+		{
+			name: "SignalAbort",
+			args: []string{c.env.ImagePath, "/bin/sh", "-c", "kill -ABRT $$"},
+			exit: 134,
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(tt.exit),
+		)
+	}
+}
+```
+
+In lieu of explicitly writing out a series of calls to RunSingularity() with
+slightly different arguments each time, we define a new inline struct type
+containing only the properties we want to vary in each subtest (in this case,
+only the additional arguments to `exec` and the expected exit code, alongside
+the name for the subtest). We place the array of these structs into a local
+variable (`tests`), and iterate over this array to create the actual CLI calls
+we are interested in.
+
+This approach cleanly separates the varying aspects of each subtest (contained
+in the struct array) from those that remain constant (coded in the body of the
+for-loop).
+
+Note that the struct type defined here includes a field `name`, which we use to
+execute each CLI run as its own separate subtest (by passing
+`e2e.AsSubtest(tt.name)` as one of the functional options to RunSingularity()).
+This is important, because otherwise Go would end up affixing a running counter
+to the main test name, which would make test logs a lot less informative as far
+as where test failures have/haven't occurred.
+
+Anything that can be passed in a functional argument to RunSingularity() can be
+part of the struct type we define. The following is the actionCompat() test from
+e2e/actions/actions.go:
+
+```go
+func (c actionTests) actionCompat(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	type test struct {
+		name     string
+		args     []string
+		exitCode int
+		expect   e2e.SingularityCmdResultOp
+	}
+
+	tests := []test{
+		{
+			name:     "containall",
+			args:     []string{"--compat", c.env.ImagePath, "sh", "-c", "ls -lah $HOME"},
+			exitCode: 0,
+			expect:   e2e.ExpectOutput(e2e.ContainMatch, "total 0"),
+		},
+		{
+			name:     "writable-tmpfs",
+			args:     []string{"--compat", c.env.ImagePath, "sh", "-c", "touch /test"},
+			exitCode: 0,
+		},
+		{
+			name:     "no-init",
+			args:     []string{"--compat", c.env.ImagePath, "sh", "-c", "ps"},
+			exitCode: 0,
+			expect:   e2e.ExpectOutput(e2e.UnwantedContainMatch, "sinit"),
+		},
+		{
+			name:     "no-umask",
+			args:     []string{"--compat", c.env.ImagePath, "sh", "-c", "umask"},
+			exitCode: 0,
+			expect:   e2e.ExpectOutput(e2e.ContainMatch, "0022"),
+		},
+	}
+
+	oldUmask := syscall.Umask(0)
+	defer syscall.Umask(oldUmask)
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(
+				tt.exitCode,
+				tt.expect,
+			),
+		)
+	}
+}
+```
+
+Here, we pass different [e2e.ExpectOutput()](#the-e2eexpectexit-option) options
+for each of the different subtest (even passing none at all, for the
+"writable-tmpfs" subtest).
+
+Or consider the testCLICallbacks() test in e2e/plugin/plugin.go:
+
+```go
+func (c ctx) testCLICallbacks(t *testing.T) {
+	pluginDir := "./plugin/testdata/cli"
+	pluginName := "github.com/sylabs/singularity/e2e-cli-plugin"
+
+	// plugin sif file
+	sifFile := filepath.Join(c.env.TestDir, "plugin.sif")
+	defer os.Remove(sifFile)
+
+	tests := []struct {
+		name       string
+		profile    e2e.Profile
+		command    string
+		args       []string
+		expectExit int
+	}{
+		{
+			name:       "Compile",
+			profile:    e2e.UserProfile,
+			command:    "plugin compile",
+			args:       []string{"--out", sifFile, pluginDir},
+			expectExit: 0,
+		},
+		{
+			name:       "Install",
+			profile:    e2e.RootProfile,
+			command:    "plugin install",
+			args:       []string{sifFile},
+			expectExit: 0,
+		},
+		{
+			name:       "CLICallback",
+			profile:    e2e.UserProfile,
+			command:    "exit",
+			args:       []string{"42"},
+			expectExit: 42,
+		},
+		{
+			name:       "SingularityConfigCallback",
+			profile:    e2e.UserProfile,
+			command:    "shell",
+			args:       []string{c.env.TestDir},
+			expectExit: 43,
+		},
+		{
+			name:       "Uninstall",
+			profile:    e2e.RootProfile,
+			command:    "plugin uninstall",
+			args:       []string{pluginName},
+			expectExit: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(tt.profile),
+			e2e.WithCommand(tt.command),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(tt.expectExit),
+		)
+	}
+}
+```
+
+Here, we see that both the *profile* and the *command* to be run vary from
+subtest to subtest, so they have been included in the struct type that the
+function defines.
+
+### Iterating over profiles
+
+Often we are interested in running the same test in different profiles. We could
+do this by duplicating cells in a struct array like the one just shown, varying
+the `profile` field each time. But this is not a particularly perspicuous way to
+achieve this goal. That's because we would be using a data structure intended to
+capture *everything that varies from subtest to subtest* when, in reality, we're
+not varying anything except the profile.
+
+A better way to achieve this is to embed the call to RunSingularity() inside a
+for-loop iterating over the set of profiles we want to test. For example:
+
+```go
+func (c actionTests) actionTmpSandboxFlag(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	profiles := []e2e.Profile{
+    e2e.UserProfile, 
+    e2e.RootProfile, 
+    e2e.FakerootProfile, 
+    e2e.UserNamespaceProfile,
+  }
+
+	for _, p := range profiles {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(p.String()),
+			e2e.WithProfile(p),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs("--sif-fuse=false", "--no-tmp-sandbox", "-u", c.env.ImagePath, "/bin/true"),
+			e2e.ExpectExit(255),
+		)
+	}
+}
+```
+
+It is common to pair this pattern with the
+[subtests-in-structs](#inline-struct-arrays-for-subtests) discussed above, which
+can be easily done as follows:
+
+```go
+func (c *ctx) testInstanceAuthFile(t *testing.T) {
+	e2e.EnsureORASImage(t, c.env)
+	instanceName := "actionAuthTesterInstance"
+	localAuthFileName := "./my_local_authfile"
+	authFileArgs := []string{"--authfile", localAuthFileName}
+
+  <...>
+
+  tests := []struct {
+		name          string
+		subCmd        string
+		args          []string
+		whileLoggedIn bool
+		expectExit    int
+	}{
+		{
+			name:          "start before auth",
+			subCmd:        "start",
+			args:          append(authFileArgs, "--disable-cache", <...>),
+			whileLoggedIn: false,
+			expectExit:    255,
+		},
+		{
+			name:          "start",
+			subCmd:        "start",
+			args:          append(authFileArgs, "--disable-cache", <...>),
+			whileLoggedIn: true,
+			expectExit:    0,
+		},
+		{
+			name:          "stop",
+			subCmd:        "stop",
+			args:          []string{instanceName},
+			whileLoggedIn: true,
+			expectExit:    0,
+		},
+		{
+			name:          "start noauth",
+			subCmd:        "start",
+			args:          append(authFileArgs, "--disable-cache", <...>),
+			whileLoggedIn: false,
+			expectExit:    255,
+		},
+	}
+
+	profiles := []e2e.Profile{
+		e2e.UserProfile,
+		e2e.RootProfile,
+	}
+
+	for _, p := range profiles {
+		t.Run(p.String(), func(t *testing.T) {
+			for _, tt := range tests {
+				if tt.whileLoggedIn {
+					e2e.PrivateRepoLogin(t, c.env, p, localAuthFileName)
+				} else {
+					e2e.PrivateRepoLogout(t, c.env, p, localAuthFileName)
+				}
+				c.env.RunSingularity(
+					t,
+					e2e.AsSubtest(tt.name),
+					e2e.WithProfile(p),
+					e2e.WithCommand("instance "+tt.subCmd),
+					e2e.WithArgs(tt.args...),
+					e2e.ExpectExit(tt.expectExit),
+				)
+			}
+		})
+	}
+}
+```
+
+Notice that we want to avoid running the same subtest in different profiles with
+the same test name (in which case, Go would just affix a running counter to the
+test names, which would not make for very readable output). For this reason, we
+run the batch of tests in each profile as a separate subtest, using the
+`t.Run(<subtest_name>, func(t *testing.T) {<...>})` method of Go's testing object.
+We use the profile's `.String()` method to retrieve the profile's name, and use
+that as the name of the subtest.
+
+Overall, then, we end up with two levels of subtest nesting here: one level for
+the profile, and another for the subtest names as defined in the struct array.
+
+### Temporary dirs & files, and cleanup
+
+## Useful utility functions
+
+## Common pitfalls
 
 ## Running the e2e suite
 
