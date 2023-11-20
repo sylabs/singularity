@@ -13,12 +13,12 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/containers/image/v5/transports"
 	"github.com/containers/image/v5/types"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/ocibundle"
@@ -34,7 +34,11 @@ type Bundle struct {
 	imageSpec *imgspecv1.Image
 	// bundlePath is the location where the OCI bundle will be created.
 	bundlePath string
-	// sysCtx provides containers/image transport configuration (auth etc.)
+	// transportOptions provides auth / platform etc. configuration for
+	// interactions with image transports.
+	transportOptions *ocitransport.TransportOptions
+	// sysCtx provides transport configuration (auth etc.)
+	// Deprecated: Use transportOptions
 	sysCtx *types.SystemContext
 	// imgCache is a Singularity image cache, which OCI blobs are pulled through.
 	// Note that we only use the 'blob' cache section. The 'oci-tmp' cache section holds
@@ -73,10 +77,24 @@ func OptImageRef(ref string) Option {
 	}
 }
 
+// OptTransportOptions sets configuration for interaction with image transports.
+func OptTransportOptions(tOpts *ocitransport.TransportOptions) Option {
+	return func(b *Bundle) error {
+		b.transportOptions = tOpts
+		return nil
+	}
+}
+
 // OptSysCtx sets the OCI client SystemContext holding auth information etc.
+// Deprecated: please use OptTransportOptions
 func OptSysCtx(sc *types.SystemContext) Option {
 	return func(b *Bundle) error {
 		b.sysCtx = sc
+		if sc != nil {
+			//nolint:staticcheck
+			tOpts := ocitransport.TransportOptionsFromSystemContext(sc)
+			b.transportOptions = tOpts
+		}
 		return nil
 	}
 }
@@ -153,15 +171,17 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	}
 	defer os.RemoveAll(tmpLayout)
 
-	layoutRef, _, err := ociimage.FetchLayout(ctx, b.sysCtx, b.imgCache, b.imageRef, tmpLayout)
+	layoutRef, _, err := ociimage.FetchLayout(ctx, b.transportOptions, b.imgCache, b.imageRef, tmpLayout)
 	if err != nil {
 		return err
 	}
 
-	sylog.Debugf("Original imgref: %s, OCI layout: %s", b.imageRef, transports.ImageName(layoutRef))
+	sylog.Debugf("Original imgref: %s, OCI layout: %s", b.imageRef, layoutRef)
 
 	// Get the Image Manifest and ImageSpec
-	img, err := layoutRef.NewImage(ctx, b.sysCtx)
+	// TODO - replace with ggcr code
+	//nolint:staticcheck
+	img, err := layoutRef.NewImage(ctx, ocitransport.SystemContextFromTransportOptions(b.transportOptions))
 	if err != nil {
 		return err
 	}

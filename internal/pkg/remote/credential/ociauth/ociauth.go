@@ -30,7 +30,6 @@ import (
 	"os"
 	"sync"
 
-	ocitypes "github.com/containers/image/v5/types"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/cli/cli/config/types"
@@ -104,15 +103,10 @@ func (sk *singularityKeychain) Resolve(target authn.Resource) (authn.Authenticat
 	}), nil
 }
 
-func AuthOptn(ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) remote.Option {
+func AuthOptn(ociAuth *authn.AuthConfig, reqAuthFile string) remote.Option {
 	// If explicit credentials in ociAuth were passed in, use those.
 	if ociAuth != nil {
-		auth := authn.FromConfig(authn.AuthConfig{
-			Username:      ociAuth.Username,
-			Password:      ociAuth.Password,
-			IdentityToken: ociAuth.IdentityToken,
-		})
-		return remote.WithAuth(auth)
+		return remote.WithAuth(authn.FromConfig(*ociAuth))
 	}
 
 	return remote.WithAuthFromKeychain(&singularityKeychain{reqAuthFile: reqAuthFile})

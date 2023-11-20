@@ -15,7 +15,7 @@ import (
 	"os"
 	"strings"
 
-	ocitypes "github.com/containers/image/v5/types"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
@@ -30,7 +30,7 @@ import (
 )
 
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
-func DownloadImage(ctx context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string, pb *progress.DownloadBar) error {
+func DownloadImage(ctx context.Context, path, ref string, ociAuth *authn.AuthConfig, reqAuthFile string, pb *progress.DownloadBar) error {
 	if pb != nil {
 		// Due to the way our progress bar is implemented in remoteImage() -
 		// namely, using a custom http.RoundTripper, whose API does not allow
@@ -119,7 +119,7 @@ func DownloadImage(ctx context.Context, path, ref string, ociAuth *ocitypes.Dock
 
 // UploadImage uploads the image specified by path and pushes it to the provided oci reference,
 // it will use credentials if supplied
-func UploadImage(ctx context.Context, path, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) error {
+func UploadImage(ctx context.Context, path, ref string, ociAuth *authn.AuthConfig, reqAuthFile string) error {
 	// ensure that are uploading a SIF
 	if err := ensureSIF(path); err != nil {
 		return err
@@ -195,7 +195,7 @@ func ensureSIF(filepath string) error {
 }
 
 // RefHash returns the digest of the SIF layer of the OCI manifest for supplied ref
-func RefHash(ctx context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) (ggcrv1.Hash, error) {
+func RefHash(ctx context.Context, ref string, ociAuth *authn.AuthConfig, reqAuthFile string) (ggcrv1.Hash, error) {
 	im, err := remoteImage(ctx, ref, ociAuth, reqAuthFile, nil)
 	if err != nil {
 		return ggcrv1.Hash{}, err
@@ -254,7 +254,7 @@ func sha256sum(r io.Reader) (result string, nBytes int64, err error) {
 }
 
 // remoteImage returns a v1.Image for the provided remote ref.
-func remoteImage(ctx context.Context, ref string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string, pb *progress.DownloadBar) (ggcrv1.Image, error) {
+func remoteImage(ctx context.Context, ref string, ociAuth *authn.AuthConfig, reqAuthFile string, pb *progress.DownloadBar) (ggcrv1.Image, error) {
 	ref = strings.TrimPrefix(ref, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 

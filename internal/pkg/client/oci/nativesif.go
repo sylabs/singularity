@@ -13,23 +13,21 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/build"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	buildtypes "github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // pullNativeSIF will build a SIF image into the cache if directTo="", or a specific file if directTo is set.
 func pullNativeSIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, opts PullOptions) (imagePath string, err error) {
-	sys, err := sysCtx(opts)
+	to := transportOptions(opts)
+
+	ref, err := ocitransport.ParseImageRef(pullFrom)
 	if err != nil {
 		return "", err
 	}
 
-	ref, err := ociimage.ParseImageRef(pullFrom)
-	if err != nil {
-		return "", err
-	}
-
-	hash, err := ociimage.ImageDigest(ctx, sys, imgCache, ref)
+	hash, err := ociimage.ImageDigest(ctx, to, imgCache, ref)
 	if err != nil {
 		return "", fmt.Errorf("failed to get checksum for %s: %s", pullFrom, err)
 	}
@@ -75,20 +73,20 @@ func convertOciToSIF(ctx context.Context, imgCache *cache.Handle, image, cachedI
 	b, err := build.NewBuild(
 		image,
 		build.Config{
-			Dest:      cachedImgPath,
-			Format:    "sif",
-			NoCleanUp: opts.NoCleanUp,
+			Dest:   cachedImgPath,
+			Format: "sif",
 			Opts: buildtypes.Options{
 				TmpDir:           opts.TmpDir,
 				NoCache:          imgCache.IsDisabled(),
 				NoTest:           true,
 				NoHTTPS:          opts.NoHTTPS,
-				DockerAuthConfig: opts.OciAuth,
 				DockerDaemonHost: opts.DockerHost,
 				ImgCache:         imgCache,
 				Platform:         opts.Platform,
+				OCIAuthConfig:    opts.OciAuth,
 				DockerAuthFile:   opts.ReqAuthFile,
 			},
+			NoCleanUp: opts.NoCleanUp,
 		},
 	)
 	if err != nil {

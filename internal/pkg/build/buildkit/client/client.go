@@ -31,7 +31,7 @@ import (
 
 	"github.com/blang/semver/v4"
 	"github.com/containerd/console"
-	ocitypes "github.com/containers/image/v5/types"
+	"github.com/google/go-containerregistry/pkg/authn"
 	moby_buildkit_v1 "github.com/moby/buildkit/api/services/control"
 	"github.com/moby/buildkit/client"
 	dockerfile "github.com/moby/buildkit/frontend/dockerfile/builder"
@@ -58,7 +58,7 @@ const (
 type Opts struct {
 	// Optional Docker authentication config derived from interactive login or
 	// environment variables
-	AuthConf *ocitypes.DockerAuthConfig
+	AuthConf *authn.AuthConfig
 	// Optional user requested authentication file for writing/reading OCI
 	// registry credentials
 	ReqAuthFile string

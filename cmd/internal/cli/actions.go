@@ -13,7 +13,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/containers/image/v5/types"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/v4/docs"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
@@ -23,6 +22,7 @@ import (
 	ocisifclient "github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/shub"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/native"
@@ -93,7 +93,7 @@ func actionPreRun(cmd *cobra.Command, args []string) {
 }
 
 func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, pullFrom string) (string, error) {
-	ociAuth, err := makeDockerCredentials(cmd)
+	ociAuth, err := makeOCICredentials(cmd)
 	if err != nil {
 		sylog.Fatalf("While creating Docker credentials: %v", err)
 	}
@@ -112,7 +112,7 @@ func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, 
 }
 
 func handleOras(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, pullFrom string) (string, error) {
-	ociAuth, err := makeDockerCredentials(cmd)
+	ociAuth, err := makeOCICredentials(cmd)
 	if err != nil {
 		return "", fmt.Errorf("while creating docker credentials: %v", err)
 	}
@@ -185,7 +185,7 @@ func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string)
 		image, err = handleOras(ctx, imgCache, cmd, origImageURI)
 	case uri.Shub:
 		image, err = handleShub(ctx, imgCache, origImageURI)
-	case oci.IsSupported(t):
+	case ocitransport.SupportedTransport(t):
 		image, err = handleOCI(ctx, imgCache, cmd, origImageURI)
 	case uri.HTTP:
 		image, err = handleNet(ctx, imgCache, origImageURI)
@@ -395,18 +395,14 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 	if isOCI {
 		sylog.Debugf("Using OCI runtime launcher.")
 
-		sysCtx := &types.SystemContext{
-			OCIInsecureSkipTLSVerify: noHTTPS,
-			DockerAuthConfig:         &dockerAuthConfig,
-			DockerDaemonHost:         dockerHost,
-			OSChoice:                 "linux",
-			AuthFilePath:             ociauth.ChooseAuthFile(reqAuthFile),
-			DockerRegistryUserAgent:  useragent.Value(),
+		tOpts := &ocitransport.TransportOptions{
+			Insecure:         noHTTPS,
+			AuthConfig:       &authConfig,
+			DockerDaemonHost: dockerHost,
+			AuthFilePath:     ociauth.ChooseAuthFile(reqAuthFile),
+			UserAgent:        useragent.Value(),
 		}
-		if noHTTPS {
-			sysCtx.DockerInsecureSkipTLSVerify = types.NewOptionalBool(true)
-		}
-		opts = append(opts, launcher.OptSysContext(sysCtx))
+		opts = append(opts, launcher.OptTransportOptions(tOpts))
 
 		l, err = ocilauncher.NewLauncher(opts...)
 		if err != nil {

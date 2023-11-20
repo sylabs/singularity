@@ -18,6 +18,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/shub"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/v4/pkg/cmdline"
@@ -271,7 +272,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Warningf("Pull from oras:// is a direct download, --arch and --platform have no effect.")
 		}
 
-		ociAuth, err := makeDockerCredentials(cmd)
+		ociAuth, err := makeOCICredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 		}
@@ -292,8 +293,8 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if err != nil {
 			sylog.Fatalf("While pulling from image from http(s): %v\n", err)
 		}
-	case oci.IsSupported(transport):
-		ociAuth, err := makeDockerCredentials(cmd)
+	case ocitransport.SupportedTransport(transport):
+		ociAuth, err := makeOCICredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
 		}

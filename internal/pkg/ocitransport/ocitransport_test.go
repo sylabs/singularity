@@ -3,20 +3,18 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package oci
+package ocitransport
 
 import (
 	"testing"
-
-	"github.com/containers/image/v5/transports"
 )
 
-func TestIsSupported(t *testing.T) {
+func TestSupportedTransport(t *testing.T) {
 	// We individually check all the known transports. This is a
 	// very naive test since mimicking the actual code but still ensures
 	// that everything is consistent
-	for _, transport := range transports.ListNames() {
-		if IsSupported(transport) == "" {
+	for _, transport := range ociTransports {
+		if SupportedTransport(transport) == "" {
 			t.Fatalf("transport %s reported as not supported", transport)
 		}
 	}
@@ -38,7 +36,7 @@ func TestIsSupported(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if IsSupported(tt.transport) != "" {
+			if SupportedTransport(tt.transport) != "" {
 				t.Fatalf("invalid transport %s reported as supported", tt.transport)
 			}
 		})

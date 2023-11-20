@@ -18,6 +18,7 @@ import (
 	"github.com/containers/image/v5/types"
 	"github.com/opencontainers/go-digest"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
@@ -29,11 +30,11 @@ type CachedImageReference struct {
 }
 
 // CacheReference converts an ImageReference into a CachedImageReference to cache its blobs.
-func CacheReference(ctx context.Context, sysCtx *types.SystemContext, imgCache *cache.Handle, src types.ImageReference) (types.ImageReference, digest.Digest, error) {
+func CacheReference(ctx context.Context, tOpts *ocitransport.TransportOptions, imgCache *cache.Handle, src types.ImageReference) (types.ImageReference, digest.Digest, error) {
 	if imgCache == nil || imgCache.IsDisabled() {
 		return nil, "", fmt.Errorf("undefined image cache")
 	}
-	digest, err := ImageDigest(ctx, sysCtx, imgCache, src)
+	digest, err := ImageDigest(ctx, tOpts, imgCache, src)
 	if err != nil {
 		return nil, "", err
 	}
@@ -56,13 +57,13 @@ func CacheReference(ctx context.Context, sysCtx *types.SystemContext, imgCache *
 // CachedReferenceFromURI parses a uri-like reference to an OCI image (e.g.
 // docker://ubuntu) into it's transport:reference combination and then returns
 // a CachedImageReference.
-func CachedReferenceFromURI(ctx context.Context, sysCtx *types.SystemContext, imgCache *cache.Handle, uri string) (types.ImageReference, digest.Digest, error) {
-	ref, err := ParseImageRef(uri)
+func CachedReferenceFromURI(ctx context.Context, tOpts *ocitransport.TransportOptions, imgCache *cache.Handle, uri string) (types.ImageReference, digest.Digest, error) {
+	ref, err := ocitransport.ParseImageRef(uri)
 	if err != nil {
 		return nil, "", fmt.Errorf("unable to parse image name %v: %v", uri, err)
 	}
 
-	return CacheReference(ctx, sysCtx, imgCache, ref)
+	return CacheReference(ctx, tOpts, imgCache, ref)
 }
 
 // NewImageSource wraps the cache's oci-layout ref to first download the real source image to the cache

@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/containers/image/v5/types"
+	"github.com/google/go-containerregistry/pkg/authn"
 	scslibrary "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -80,13 +80,13 @@ func (lr *libraryRegistry) convertRef(libraryRef scslibrary.Ref) (string, error)
 	return ref, nil
 }
 
-// authConfig returns a DockerAuthConfig with current token to authenticate
+// authConfig returns an authn.AuthConfig with current token to authenticate
 // against the library's backing OCI registry, if logged in - nil otherwise.
-func (lr *libraryRegistry) authConfig() *types.DockerAuthConfig {
+func (lr *libraryRegistry) authConfig() *authn.AuthConfig {
 	if lr.ud == nil {
 		return nil
 	}
-	return &types.DockerAuthConfig{
+	return &authn.AuthConfig{
 		Username: lr.ud.Username,
 		Password: lr.ud.OidcMeta.Secret,
 	}

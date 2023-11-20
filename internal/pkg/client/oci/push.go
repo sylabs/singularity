@@ -9,14 +9,14 @@ import (
 	"context"
 	"fmt"
 
-	ocitypes "github.com/containers/image/v5/types"
+	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/pkg/image"
 )
 
 // Push pushes an image into an OCI registry, as an OCI image (not an ORAS artifact).
 // At present, only OCI-SIF images can be pushed in this manner.
-func Push(ctx context.Context, sourceFile string, destRef string, ociAuth *ocitypes.DockerAuthConfig, reqAuthFile string) error {
+func Push(ctx context.Context, sourceFile string, destRef string, ociAuth *authn.AuthConfig, reqAuthFile string) error {
 	img, err := image.Init(sourceFile, false)
 	if err != nil {
 		return err

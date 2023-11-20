@@ -8,13 +8,13 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/containers/image/v5/types"
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	ggcrempty "github.com/google/go-containerregistry/pkg/v1/empty"
 	ggcrmutate "github.com/google/go-containerregistry/pkg/v1/mutate"
 	ggcrrandom "github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/opencontainers/go-digest"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"gotest.tools/v3/assert"
 )
 
@@ -65,32 +65,34 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 	index, indexImageDigest := imageWithIndex(t)
 
 	tests := []struct {
-		name            string
-		sysCtx          *types.SystemContext
-		manifestOrIndex []byte
-		want            digest.Digest
-		wantErr         bool
+		name             string
+		transportOptions *ocitransport.TransportOptions
+		manifestOrIndex  []byte
+		want             digest.Digest
+		wantErr          bool
 	}{
 		{
-			name:            "ImageManifestDefaultSysCtx",
-			sysCtx:          &types.SystemContext{},
-			manifestOrIndex: manifest,
-			want:            manifestImageDigest,
-			wantErr:         false,
+			name:             "ImageManifestDefaultSysCtx",
+			transportOptions: &ocitransport.TransportOptions{},
+			manifestOrIndex:  manifest,
+			want:             manifestImageDigest,
+			wantErr:          false,
 		},
 		{
-			name:            "ImageIndexDefaultSysCtx",
-			sysCtx:          &types.SystemContext{},
-			manifestOrIndex: index,
-			want:            indexImageDigest,
-			wantErr:         false,
+			name:             "ImageIndexDefaultSysCtx",
+			transportOptions: &ocitransport.TransportOptions{},
+			manifestOrIndex:  index,
+			want:             indexImageDigest,
+			wantErr:          false,
 		},
 		{
 			name: "ImageIndexExplicitSysCtx",
-			sysCtx: &types.SystemContext{
-				OSChoice:           runtime.GOOS,
-				ArchitectureChoice: runtime.GOARCH,
-				VariantChoice:      ociplatform.CPUVariant(),
+			transportOptions: &ocitransport.TransportOptions{
+				Platform: ggcrv1.Platform{
+					OS:           runtime.GOOS,
+					Architecture: runtime.GOARCH,
+					Variant:      ociplatform.CPUVariant(),
+				},
 			},
 			manifestOrIndex: index,
 			want:            indexImageDigest,
@@ -98,10 +100,12 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 		},
 		{
 			name: "ImageIndexBadOS",
-			sysCtx: &types.SystemContext{
-				OSChoice:           "myOS",
-				ArchitectureChoice: runtime.GOARCH,
-				VariantChoice:      ociplatform.CPUVariant(),
+			transportOptions: &ocitransport.TransportOptions{
+				Platform: ggcrv1.Platform{
+					OS:           "myOS",
+					Architecture: runtime.GOARCH,
+					Variant:      ociplatform.CPUVariant(),
+				},
 			},
 			manifestOrIndex: index,
 			want:            "",
@@ -109,10 +113,12 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 		},
 		{
 			name: "ImageIndexBadArch",
-			sysCtx: &types.SystemContext{
-				OSChoice:           runtime.GOOS,
-				ArchitectureChoice: "myArch",
-				VariantChoice:      ociplatform.CPUVariant(),
+			transportOptions: &ocitransport.TransportOptions{
+				Platform: ggcrv1.Platform{
+					OS:           runtime.GOOS,
+					Architecture: "myArch",
+					Variant:      ociplatform.CPUVariant(),
+				},
 			},
 			manifestOrIndex: index,
 			want:            "",
@@ -120,10 +126,12 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 		},
 		{
 			name: "ImageIndexBadVariant",
-			sysCtx: &types.SystemContext{
-				OSChoice:           runtime.GOOS,
-				ArchitectureChoice: runtime.GOARCH,
-				VariantChoice:      "myVariant",
+			transportOptions: &ocitransport.TransportOptions{
+				Platform: ggcrv1.Platform{
+					OS:           runtime.GOOS,
+					Architecture: runtime.GOARCH,
+					Variant:      "myVariant",
+				},
 			},
 			manifestOrIndex: index,
 			want:            "",
@@ -132,7 +140,7 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := digestFromManifestOrIndex(tt.sysCtx, tt.manifestOrIndex)
+			got, err := digestFromManifestOrIndex(tt.transportOptions, tt.manifestOrIndex)
 			assert.Equal(t, tt.want, got)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("digestFromManifestOrIndex() error = %v, wantErr %v", err, tt.wantErr)
