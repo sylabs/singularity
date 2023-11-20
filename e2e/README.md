@@ -740,7 +740,7 @@ func (c *ctx) testInstanceAuthFile(t *testing.T) {
 
   <...>
 
-  tests := []struct {
+	tests := []struct {
 		name          string
 		subCmd        string
 		args          []string
@@ -750,14 +750,14 @@ func (c *ctx) testInstanceAuthFile(t *testing.T) {
 		{
 			name:          "start before auth",
 			subCmd:        "start",
-			args:          append(authFileArgs, "--disable-cache", <...>),
+			args:          append(authFileArgs, "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, instanceName),
 			whileLoggedIn: false,
 			expectExit:    255,
 		},
 		{
 			name:          "start",
 			subCmd:        "start",
-			args:          append(authFileArgs, "--disable-cache", <...>),
+			args:          append(authFileArgs, "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, instanceName),
 			whileLoggedIn: true,
 			expectExit:    0,
 		},
@@ -771,7 +771,7 @@ func (c *ctx) testInstanceAuthFile(t *testing.T) {
 		{
 			name:          "start noauth",
 			subCmd:        "start",
-			args:          append(authFileArgs, "--disable-cache", <...>),
+			args:          append(authFileArgs, "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, instanceName),
 			whileLoggedIn: false,
 			expectExit:    255,
 		},
@@ -816,7 +816,7 @@ Overall, then, we end up with two levels of subtest nesting here: one level for
 the profile, and another for the subtest names as defined in the struct array.
 Here's an example of what the test output log looks like in this case:
 
-```
+```console
 === RUN   TestE2E/SEQ/INSTANCE/auth
 === RUN   TestE2E/SEQ/INSTANCE/auth/User
     singularitycmd.go:698: Running command "/usr/local/bin/singularity registry logout --authfile ./my_local_authfile docker://localhost:41151"
