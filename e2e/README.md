@@ -357,6 +357,8 @@ func (c ctx) echoEnv(t *testing.T) {
 }
 ```
 
+### Functional options to testenv.RunSingularity()
+
 The first argument to testenv.RunSingularity() is Go's `*testing.T` object for
 the current test. But the rest of the arguments are a variadic set of
 [functional
@@ -366,9 +368,101 @@ testenv.RunSingularity(), and we will highlight only some of them here; the
 reader should consult e2e/internal/e2e/singularitycmd.go for the full set of
 options.
 
-- **e2e.AsSubtest(name string)**: for the purposes of Go's testing framework,
-  consider this CLI run a separate named *subtest* of the current test (passed
-  in the first argument of testenv.RunSingularity()).
+- **e2e.AsSubtest(string)**:
+  - For the purposes of Go's testing framework, consider this CLI run a separate
+    named *subtest* of the current test (passed in the first argument of
+    testenv.RunSingularity()).
+- **e2e.WithCommand(string)**:
+  - The CLI command to execute. (E.g. to run `singularity help`, one would pass
+    `e2e.WithCommand("help")` as one of the functional options to
+    testenv.RunSingularity()).
+- **e2e.WithArgs(...string)**:
+  - Additional arguments to pass to the CLI command defined in
+    e2e.WithCommand(), above.
+- **e2e.WithEnv([]string)**:
+  - Environment variables to set for this run of the CLI.
+- **e2e.WithDir(string)**:
+  - The current working directory in which to run the CLI.
+- **e2e.WithProfile(e2e.Profile)**:
+  - The [profile](#profiles) for this run of the CLI.
+- **e2e.PreRun(func(\*testing.T))** and **e2e.PostRun(func(\*testing.T))**:
+  - Code to run before and after the CLI run itself. Note that the function
+    passed as an argument to PreRun()/PostRun() receives the Go `*testing.T`
+    object as an argument, and returns no values. Therefore, the function is
+    expected to use methods like t.Skip(), t.Error()/t.Errorf(),
+    t.Fatal()/t.Fatalf(), etc., as appropriate.
+- **e2e.ExpectExit()**:
+  - Discussed separately, [below](#the-e2eexpectexit-option).
+
+### The e2e.ExpectExit() option
+
+The functional argument e2e.ExpectExit() is more complex than
+testenv.RunSingularity()'s other functional arguments, and deserves to be
+discussed in slightly more detail.
+
+The purpose of this argument is, as its name suggests, to define what is
+expected of this CLI run, such that the test will be considered to have failed
+(specifically, the Fail() method of the `*testing.T` object will be called) if
+the expected conditions are not met.
+
+Here, once again, is the `e2e.ExpectExit()` functional argument from the earlier
+example:
+
+```go
+        e2e.ExpectExit(
+            0,
+            e2e.ExpectOutput(e2e.ExactMatch, "BAR"),
+        ),
+```
+
+The first argument is the Unix [exit
+code](https://www.baeldung.com/linux/status-codes) the test expects the CLI to
+return. (Zero, as in this example, means that the CLI run has terminated
+successfully; though that does not yet mean it did what we expected; keep
+reading!)
+
+The rest of the arguments to e2e.ExpectExit() are a variadic set of [functional
+options](https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis)
+again. *(Yes: functional options inside a functional option!)* The most common
+functional options to e2e.ExpectExit() are **e2e.ExpectOutput()** and
+**e2e.ExpectError()**, for examining stdout and stderr output, respectively.
+(Note that much like fmt.Print() has a fmt.Printf() counterpart, so too do
+e2e.ExpectOutput() and e2e.ExpectError() have e2e.ExpectOutputf() and
+e2e.ExpectErrorf() counterparts that allow for standard Go string formatting
+directives. See e2e/internal/e2e/singularitycmd.go for details.)
+
+*Note: Since the APIs of e2e.ExpectOutput() and e2e.ExpectError() are identical,
+we will discuss e2e.ExpectOutput() from here on out, but the same applies to
+e2e.ExpectError() as well.*
+
+e2e.ExpectOutput() takes two arguments. The first is the **match type**, and the
+second is a string. (Or, in the e2e.Expect{Output,Error}f variants, a string
+followed by a set of arguments corresponding to the format directives in the
+string.) The following match types are defined in
+e2e/internal/e2e/singularitycmd.go:
+
+- **ContainMatch**:
+  - For the test to pass, the output must contain the string in the second
+    argument.
+- **ExactMatch**:
+  - For the test to pass, the output must be equal to string in the second
+    argument. (In particular, it cannot contain anything before or after this
+    string, apart from a final newline.)
+- **UnwantedContainMatch**:
+  - For the test to pass, the output must *not* contain the string in the second
+    argument.
+- **UnwantedExactMatch**:
+  - For the test to pass, the output must *not* be equal to string in the second
+    argument.
+- **RegexMatch**:
+  - For the test to pass, it must match the [regular
+    expression](https://github.com/google/re2/wiki/Syntax) specified in the
+    second argument.
+
+Thus, in the code snippet above, we see that for the test to pass, the CLI must
+return the exit code 0 (indicating a successful run), and the output from
+stdout (disregarding stderr) must be exactly the string `BAR` - no more, and no
+less, up to a terminating newline.
 
 ## Running the e2e suite
 
