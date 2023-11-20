@@ -2,12 +2,6 @@
 
 ## Changes Since Last Release
 
-### Changed defaults / behaviours
-
-- Added `libnvidia-nvvm` to `nvliblist.conf`. Newer NVIDIA Drivers (known with
-  >= 525.85.05) require this lib to compile OpenCL programs against NVIDIA GPUs,
-  i.e. `libnvidia-opencl` depends on `libnvidia-nvvm`.
-
 ### New Features & Functionality
 
 - The `registry login` and `registry logout` commands now support a `--authfile
@@ -34,14 +28,22 @@
   given the `--app <appname>` flag, and will automatically invoke the relevant
   SCIF command.
 
+## 4.0.2 \[2023-11-16\]
+
+### Changed defaults / behaviours
+
+- Added `libnvidia-nvvm` to `nvliblist.conf`. Newer NVIDIA Drivers (known with
+  >= 525.85.05) require this lib to compile OpenCL programs against NVIDIA GPUs,
+  i.e. `libnvidia-opencl` depends on `libnvidia-nvvm`.
+
 ### Bug Fixes
 
 - Support parentheses in `test` / `[` commands in container startup scripts,
   via dependency update of mvdan.cc/sh.
+- Fix incorrect client timeout during remote build context upload.
 - When user requests a bind of `/dev:/dev` or `/dev/xxx:/dev/xxx` in OCI-mode,
   ensure that it is bind mounted with appropriate flags so that it is usable in
   the container.
-- Fix incorrect client timeout during remote build context upload.
 
 ## 4.0.1 \[2023-10-13\]
 
