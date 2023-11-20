@@ -15,9 +15,10 @@ import (
 )
 
 const (
-	userProfile              = "UserProfile"
-	rootProfile              = "RootProfile"
-	fakerootProfile          = "FakerootProfile"
+	userProfile     = "UserProfile"
+	rootProfile     = "RootProfile"
+	fakerootProfile = "FakerootProfile"
+
 	userNamespaceProfile     = "UserNamespaceProfile"
 	rootUserNamespaceProfile = "RootUserNamespaceProfile"
 	ociUserProfile           = "OCIUserProfile"
@@ -36,13 +37,12 @@ var (
 	UserNamespaceProfile = NativeProfiles[userNamespaceProfile]
 	// RootUserNamespaceProfile is the execution profile for root and a user namespace, using the Singularity native runtime.
 	RootUserNamespaceProfile = NativeProfiles[rootUserNamespaceProfile]
-	// OCIUserProfile is the execution profile for a regular user, using the Singularity native runtime.
+	// OCIUserProfile is the execution profile for a regular user, using Singularity's OCI mode.
 	OCIUserProfile = OCIProfiles[ociUserProfile]
-	// RootProfile is the execution profile for root, using the Singularity native runtime.
+	// OCIRootProfile is the execution profile for root, using Singularity's OCI mode.
 	OCIRootProfile = OCIProfiles[ociRootProfile]
-	// FakerootProfile is the execution profile for fakeroot, using the Singularity native runtime.
+	// OCIFakerootProfile is the execution profile for fakeroot, using Singularity's OCI mode.
 	OCIFakerootProfile = OCIProfiles[ociFakerootProfile]
-	// UserNamespaceProfile is the execution profile for a regular user and a user namespace, using the Singularity native runtime.
 )
 
 // Profile represents various properties required to run an E2E test

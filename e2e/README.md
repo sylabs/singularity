@@ -271,8 +271,106 @@ mutexes to ensure they are concurrency-safe.
     to the local testing registry as a Docker/OCI image.
   - The image is pushed to `<registryURI>/registry_test_oci-sif:latest`, and
     this URI is saved in `testenv.TestRegistryOCISIF`.
+  
+## Profiles
 
-## Running
+The e2e suite defines a set of **profiles** representing different ways that
+Singularity might be run. For example, running Singularity as root; running
+Singularity as a regular user with the `--fakeroot` flag; running singularity as
+root with the `--oci` flag; and so forth.
+
+Profiles control the following aspects of Singularity execution:
+
+- Whether Singularity is run as root or as a regular user.
+- The default CWD (current working directory) in which to run Singularity.
+  *(optional)*
+- A set of options (e.g. `--fakeroot`) to pass to Singularity CLI commands.
+- The set of commands to which the aforementioned options will be added.
+- Whether Singularity is run in OCI mode.
+- A gating function that will only let tests in this profile run under
+  particular conditions. Note that this function does not return a boolean
+  value; instead, it receives the `*testing.T` object corresponding to the
+  current Go test, and calls `t.Skip()` if the conditions aren't met.
+- The UID on the host.
+- The UID in-container.
+
+The e2e suite defines, in e2e/internal/e2e/profile.go, the following profiles:
+
+- **UserProfile**: a regular user, using the Singularity native runtime
+- **RootProfile**: root, using the Singularity native runtime
+- **FakerootProfile**: fakeroot, using the Singularity native runtime
+- **UserNamespaceProfile**: a regular user and a user namespace, using the
+  Singularity native runtime
+- **RootUserNamespaceProfile**: root and a user namespace, using the Singularity
+  native runtime
+- **OCIUserProfile**: a regular user, using Singularity's OCI mode
+- **OCIRootProfile**: root, using Singularity's OCI mode
+- **FakerootProfile**: fakeroot, using Singularity's OCI mode
+
+To see the particular values that each of these profiles sets, please consult
+e2e/internal/e2e/profile.go.
+
+Variables with the bolded names above are defined globally in e2e/internal/e2e,
+so that to access RootProfile from outside the e2e/internal/e2e package, for
+example, one would typically write `e2e.RootProfile`.
+
+However, e2e/internal/e2e/profile.go also defines three maps for convenient
+access to groups of profiles:
+
+- NativeProfiles
+- OCIProfiles
+- AllProfiles
+
+All three of these are maps from the name of a profile to a profile variable
+(and the maps' names are hopefully self-explanatory). As with the individual
+profiles, these maps would typically be accessed by writing
+`e2e.NativeProfiles`, etc.
+
+Individual profiles define a set of public methods. E.g. `p.Privileged()` will
+return a `bool` value indicating whether `p` is a root profile. See
+e2e/internal/e2e/profile.go for the full set of public methods.
+
+## Invoking the Singularity CLI
+
+An e2e test typically proceeds by invoking the Singularity CLI one or more
+times. In order to use the Singularity CLI from within the e2e suite in a way
+that respects [profiles](#profiles) and interacts with Go's `*testing.T`
+structure correctly, the e2e suite defines the testenv.RunSingularity()
+function, briefly demonstrated in the [Introduction](#introduction):
+
+```go
+func (c ctx) echoEnv(t *testing.T) {
+    e2e.EnsureImage(t, c.env)
+
+    env := []string{`FOO=BAR`}
+    c.env.RunSingularity(
+        t,
+        e2e.WithProfile(e2e.UserProfile),
+        e2e.WithCommand("exec"),
+        e2e.WithEnv(env),
+        e2e.WithArgs("/bin/sh", "-c" "echo $FOO"),
+        e2e.ExpectExit(
+            0,
+            e2e.ExpectOutput(e2e.ExactMatch, "BAR"),
+        ),
+    )
+}
+```
+
+The first argument to testenv.RunSingularity() is Go's `*testing.T` object for
+the current test. But the rest of the arguments are a variadic set of
+[functional
+options](https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis).
+The e2e suite defines a whole host of functional options for
+testenv.RunSingularity(), and we will highlight only some of them here; the
+reader should consult e2e/internal/e2e/singularitycmd.go for the full set of
+options.
+
+- **e2e.AsSubtest(name string)**: for the purposes of Go's testing framework,
+  consider this CLI run a separate named *subtest* of the current test (passed
+  in the first argument of testenv.RunSingularity()).
+
+## Running the e2e suite
 
 To run all end to end tests, use the `e2e-tests` make target:
 
