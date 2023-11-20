@@ -9,6 +9,11 @@ import (
 	"testing"
 )
 
+// PrivateRepoLogin logs in to the private repo at env.TestRegistryPrivURI. In
+// all cases, the global default e2e repo username & password are used. If
+// reqAuthFile is empty, the credentials will be stored in the default location
+// ($HOME/.singularity/docker-config.json); if it is non-empty, the credentials
+// will be stored as an authfile at the specified path.
 func PrivateRepoLogin(t *testing.T, env TestEnv, profile Profile, reqAuthFile string) {
 	args := []string{}
 	if reqAuthFile != "" {
@@ -24,6 +29,10 @@ func PrivateRepoLogin(t *testing.T, env TestEnv, profile Profile, reqAuthFile st
 	)
 }
 
+// PrivateRepoLogout logs out of the private repo at env.TestRegistryPrivURI. If
+// reqAuthFile is empty, login credentials will be removed from the default
+// location ($HOME/.singularity/docker-config.json); if it is non-empty, login
+// credentials will be removed from the authfile at the specified path.
 func PrivateRepoLogout(t *testing.T, env TestEnv, profile Profile, reqAuthFile string) {
 	args := []string{}
 	if reqAuthFile != "" {
