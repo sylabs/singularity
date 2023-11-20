@@ -955,9 +955,111 @@ because their cleanup will occur only when the entire named test concludes.
 
 ### Parallel (PAR) vs. non-parallel (SEQ) tests
 
+Go's testing facility allows tests to be run in parallel, utilizing the compute
+power of multicore systems. This is enabled by calling `t.Parallel()`, which the
+suite.Run() function (in e2e/internal/testhelper/testhelper.go), called by the
+main e2e.Run() function (in e2e/suite.go) does indeed call.
+
+You should therefore assume, when writing an individual e2e test, that it *will*
+run in parallel to other e2e tests.
+
+In general, you should try your best to make your test safe to run in parallel.
+For example, if your test involves building a new image file, don't just put the
+file in the current directory; create a [dedicated temporary
+directory](#temporary-dirs--files-and-cleanup) for this particular test under
+`testenv.TestDir`, and build & use your image by specifying an absolute path to
+your image file in that temporary subdir.
+
+With that said, it is still the case that *some* tests cannot be run in parallel
+to one another. Some examples include:
+
+- Tests that require changing the current working directory.
+  - Note that this does not include calls to
+    [e2e.WithDir()](#functional-options-to-testenvrunsingularity) in
+    testenv.RunSingularity(). These *are* safe to run in parallel, as they only
+    affect the singularity process that the test launches, not the process
+    running the test code itself.
+- Tests that require changing the OS
+  [umask](https://en.wikipedia.org/wiki/Umask).
+- Tests that affect files in the user's homedir (or in root's homedir, i.e.
+  `/root`).
+  - Even though the e2e suite sets up ["fake"
+    homedirs](#initialization-and-the-e2etestenv-struct) for the current user
+    and for root, those homedirs are still one and the same for the entire e2e
+    run. And so, if two different tests were to manipulate files in the homedir
+    at once, they could interfere with each other.
+  - Examples where this concern arises include any test that would potentially
+    change, or be sensitive to, the contents of files inside the user's
+    `$HOME/.singularity` directory, such as `remote.yaml`, `docker-config.json`,
+    and others, as well as any test that changes the content of the system
+    `singularity.conf`.
+
+To deal with such cases, e2e/internal/testhelper/testhelper.go defines a
+function `testhelper.NoParallel(func(*testing.T)) func(*testing.T)`. This
+function returns the argument it was given, but first adds it to a data
+structure that holds all the test functions that *cannot* be run in parallel.
+The suite.Run() function in e2e/internal/testhelper/testhelper.go then makes
+sure that these tests are run sequentially, and not in parallel with any other
+tests.
+
+It is for this reason that a typical test name in the e2e suite looks as follows:
+
+```plain
+<...>
+TestE2E/PAR/BUILD/build_with_bind_mount
+<...>
+TestE2E/SEQ/DOCKER/cred_prio
+<...>
+```
+
+`TestE2E` is the test name for the entire e2e suite; it is followed by `PAR`,
+for the set of tests run in parallel, or by `SEQ`, for those tests that cannot
+be run in parallel and are run sequentially.
+
+The fact that the testhelper.NoParallel() function returns its argument as its
+sole return value makes it handy to use in the construction of
+`testhelper.Tests` structs. Here, for example, is the E2ETests() function of the
+"REMOTE" tests group (note that `testhelper.NoParallel` is assigned to the local
+variable `np` for the sake of brevity, another best practice in writing
+E2ETests() functions):
+
+```go
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
+	c := ctx{
+		env: env,
+	}
+
+	np := testhelper.NoParallel
+
+	return testhelper.Tests{
+		"add":            c.remoteAdd,
+		"list":           c.remoteList,
+		"default or not": c.remoteDefaultOrNot,
+		"remove":         c.remoteRemove,
+		"status":         c.remoteStatus,
+		"test help":      c.remoteTestHelp,
+		"use":            c.remoteUse,
+		"use exclusive":  np(c.remoteUseExclusive),
+	}
+}
+```
+
+As can be seen here, the c.remoteUseExclusive() test cannot be run in parallel,
+but it can be marked for sequential running *and* added to the
+`testhelper.Tests` struct in one fell swoop, by making use of the return value
+of testhelper.NoParallel().
+
 ## Useful utility functions
 
 ## Common pitfalls
+
+(to be expanded)
+
+- forgetting to add your test function to the `testhelper.Tests` struct created
+  by your testing group's E2ETests() function
+- remember that the E2E_TESTS variable is a regular expression that is *only
+  matched against the toplevel test name* (typically, right below the group name
+  that's right below the "PAR" or "SEQ" label)
 
 ## Running the e2e suite
 
