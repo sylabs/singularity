@@ -181,6 +181,9 @@ entire e2e suite to work. Here are a few examples:
   set, they will be used to generate `docker-config.json` files, which will be
   placed inside the `.singularity` subdir of the "fake" user homedir and the
   fake `/root` (see above).
+  - By supplying login credentials to DockerHub in this fashion, one can run e2e
+    tests without hitting the rate-limits that apply when accessing DockerHub
+    anonymously.
 
 #### The local Docker/OCI registry
 
@@ -238,10 +241,36 @@ mutexes to ensure they are concurrency-safe.
   - The path to this image file is saved in `testenv.ImagePath`.
 - EnsureOCIArchive():
   - Copies `testenv.TestRegistryImage` from the local testing registry to an OCI
-    archive (a local .tar file with the contents of the OCI image, to be used
-    via URIs with the `oci-archive:` transport prefix).
+    archive (in a local .tar file), to be used via URIs with the `oci-archive:`
+    transport prefix.
   - The image is saved to a file named "oci.tar" inside `testenv.TestDir`.
   - The path to this image file is saved in `testenv.OCIArchivePath`.
+- EnsureOCISIF():
+  - Copies `testenv.TestRegistryImage` from the local testing registry to an
+    OCI-SIF.
+  - The image is saved to a file named "oci-sif.sif" inside `testenv.TestDir`.
+  - The path to this image file is saved in `testenv.OCISIFPath`.
+- EnsureDockerArchive():
+  - Copies `testenv.TestRegistryImage` from the local testing registry to a
+    Docker archive (in a local .tar file), to be used via URIs with the
+    `docker-archive:` transport prefix.
+  - The image is saved to a file named "docker.tar" inside `testenv.TestDir`.
+  - The path to this image file is saved in `testenv.DockerArchivePath`.
+- EnsureORASImage():
+  - Pushes the SIF in `testenv.ImagePath` (see above, under EnsureImage()) to
+    the local testing registry via the ORAS protocol.
+  - The image is pushed to `<registryURI>/oras_test_sif:latest`, and this URI is
+    saved in `testenv.OrasTestImage`.
+- EnsureORASOCISIF():
+  - Pushes the OCI-SIF in `testenv.OCISIFPath` (see above, under EnsureOCISIF())
+    to the local testing registry via the ORAS protocol.
+  - The image is pushed to `<registryURI>/oras_test_oci-sif:latest`, and this
+    URI is saved in `testenv.OrasTestOCISIF`.
+- EnsureRegistryOCISIF():
+  - Pushes the OCI-SIF in `testenv.OCISIFPath` (see above, under EnsureOCISIF())
+    to the local testing registry as a Docker/OCI image.
+  - The image is pushed to `<registryURI>/registry_test_oci-sif:latest`, and
+    this URI is saved in `testenv.TestRegistryOCISIF`.
 
 ## Running
 

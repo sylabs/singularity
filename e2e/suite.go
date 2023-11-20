@@ -248,13 +248,10 @@ func Run(t *testing.T) {
 	// Local registry ORAS SIF image, built on demand by e2e.EnsureORASImage
 	testenv.OrasTestImage = fmt.Sprintf("oras://%s/oras_test_sif:latest", testenv.TestRegistry)
 
-	// Local private registry ORAS SIF image, built on demand by e2e.EnsureORASPrivImage
-	testenv.OrasTestPrivImage = fmt.Sprintf("oras://%s/oras-alpine:latest", testenv.TestRegistryPrivPath)
-
 	// Local registry ORAS OCI-SIF image, built on demand by e2e.EnsureORASOCISIF
 	testenv.OrasTestOCISIF = fmt.Sprintf("oras://%s/oras_test_oci-sif:latest", testenv.TestRegistry)
 
-	// OCI-SIF image pushed as OCI image to local registry
+	// OCI-SIF image pushed as OCI image to local registry, built on demand by e2e.EnsureRegistryOCISIF
 	testenv.TestRegistryOCISIF = fmt.Sprintf("docker://%s/registry_test_oci-sif:latest", testenv.TestRegistry)
 
 	t.Cleanup(func() {
