@@ -825,7 +825,7 @@ Overall, then, we end up with two levels of subtest nesting here: one level for
 the profile, and another for the subtest names as defined in the struct array.
 Here's an example of what the test output log looks like in this case:
 
-```console
+```plain
 === RUN   TestE2E/SEQ/INSTANCE/auth
 === RUN   TestE2E/SEQ/INSTANCE/auth/User
     singularitycmd.go:698: Running command "/usr/local/bin/singularity registry logout --authfile ./my_local_authfile docker://localhost:41151"
@@ -1026,7 +1026,7 @@ be run in parallel and are run sequentially.
 
 The fact that the testhelper.NoParallel() function returns its argument as its
 sole return value makes it handy to use in the construction of
-`testhelper.Tests` structs. Here, for example, is the E2ETests() function of the
+`testhelper.Tests` maps. Here, for example, is the E2ETests() function of the
 "REMOTE" tests group (note that `testhelper.NoParallel` is assigned to the local
 variable `np` for the sake of brevity, another best practice in writing
 E2ETests() functions):
@@ -1054,8 +1054,8 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 
 As can be seen here, the c.remoteUseExclusive() test cannot be run in parallel,
 but it can be marked for sequential running *and* added to the
-`testhelper.Tests` struct in one fell swoop, by making use of the return value
-of testhelper.NoParallel().
+`testhelper.Tests` map in one fell swoop, by making use of the return value of
+testhelper.NoParallel().
 
 ## Useful utility functions
 
@@ -1114,13 +1114,122 @@ particularly useful for writing e2e tests:
 
 ## Common pitfalls
 
-(to be expanded)
+**Scenario 1:** You've written your new test function, placed it in the right
+file (e.g. `imgbuild.go`), and now... your test doesn't seem to be running. You
+can find it in the e2e output logs anywhere.
 
-- forgetting to add your test function to the `testhelper.Tests` struct created
-  by your testing group's E2ETests() function
-- remember that the E2E_TESTS variable is a regular expression that is *only
-  matched against the toplevel test name* (typically, right below the group name
-  that's right below the "PAR" or "SEQ" label)
+**Common cause:** You've forgotten to add your test function to the
+`testhelper.Tests` map created by your testing group's E2ETests() function.
+
+This function is typically located at the bottom of the Go source file
+corresponding to the e2e group (see the [introduction](#introduction) for an
+example). Your test function - really, a method of the group's e2e context
+object - won't run unless it is added to the `testhelper.Tests` map.
+
+Make sure to also [mark your test
+appropriately](#parallel-par-vs-non-parallel-seq-tests) if it cannot be run in
+parallel.
+
+**Scenario 2:** You're trying to get the e2e test to only run your test. You've
+set the [E2E_GROUPS and E2E_TESTS](#running-the-e2e-suite) environment
+variables, and you've double checked the spelling of the group & test names, but
+it's not catching your test; nothing is running.
+
+**Common cause:** You're trying to use E2E_TESTS to filter tests by something
+*other* than the top-level test name. Here is an example of a test name from a
+specific e2e subtest:
+
+```plain
+TestE2E/SEQ/INSTANCE/auth/Root/start_before_auth
+```
+
+`TestE2E` is the single top-level name for all e2e tests; next comes [`PAR` or
+`SEQ`](#parallel-par-vs-non-parallel-seq-tests), then comes the group name
+(which is what E2E_GROUPS matches), followed by the top-level test name (which
+is what E2E_TESTS matches; in this case, `auth`). The E2E_TESTS environment
+variable is a regular expression that is matched only against the top-level test
+name.
+
+At the present, there is no way to match against more deeply-embedded components
+of the test path. However, individual top-level tests are usually short enough
+to make this granularity sufficient in practice.
+
+**Another common cause:** You've confused the test function's name for the test
+name, or the test group source file's name for the group name.
+
+The values that E2E_TESTS matches against are the values of the keys in the
+`testhelper.Tests` map. Consider this example, repeated from earlier:
+
+```go
+func E2ETests(env e2e.TestEnv) testhelper.Tests {
+	c := ctx{
+		env: env,
+	}
+
+	np := testhelper.NoParallel
+
+	return testhelper.Tests{
+		"add":            c.remoteAdd,
+		"list":           c.remoteList,
+		"default or not": c.remoteDefaultOrNot,
+		"remove":         c.remoteRemove,
+		"status":         c.remoteStatus,
+		"test help":      c.remoteTestHelp,
+		"use":            c.remoteUse,
+		"use exclusive":  np(c.remoteUseExclusive),
+	}
+}
+```
+
+To run only the c.remoteUseExclusive() test, the environment variable value
+`E2E_TESTS=remoteUseExclusive` won't work. That's because, as far as the testing
+suite is concerned, the test's name is `use exclusive`. Therefore, a correct
+value to run this test only would be, e.g., `E2E_TESTS=use.exclusive`.
+
+In a similar vein, it is important to note that the name of the `.go` file for
+an e2e group is not the same thing as the name of that test group. For example,
+the file e2e/imgbuild/imgbuild.go, which contains the code for the package
+`imgbuild`, is responsible for the e2e group named `BUILD` (and *not*
+`IMGBUILD`!). This can be seen by consulting the `e2eGroups` map defined in
+e2e/suite.go:
+
+```go
+var e2eGroups = map[string]testhelper.Group{
+	"ACTIONS":    actions.E2ETests,
+	"BUILDCFG":   e2ebuildcfg.E2ETests,
+	"BUILD":      imgbuild.E2ETests, // <--- this one!
+	"CACHE":      cache.E2ETests,
+	"CGROUPS":    cgroups.E2ETests,
+	"CMDENVVARS": cmdenvvars.E2ETests,
+	"CONFIG":     config.E2ETests,
+	"DELETE":     delete.E2ETests,
+	"DOCKER":     docker.E2ETests,
+	"ECL":        ecl.E2ETests,
+	"ENV":        singularityenv.E2ETests,
+	"GPU":        gpu.E2ETests,
+	"HELP":       help.E2ETests,
+	"INSPECT":    inspect.E2ETests,
+	"INSTANCE":   instance.E2ETests,
+	"KEY":        key.E2ETests,
+	"KEYSERVER":  keyserver.E2ETests,
+	"OCI":        oci.E2ETests,
+	"OVERLAY":    overlay.E2ETests,
+	"PLUGIN":     plugin.E2ETests,
+	"PULL":       pull.E2ETests,
+	"PUSH":       push.E2ETests,
+	"REGISTRY":   registry.E2ETests,
+	"REMOTE":     remote.E2ETests,
+	"RUN":        run.E2ETests,
+	"RUNHELP":    runhelp.E2ETests,
+	"SECURITY":   security.E2ETests,
+	"SIGN":       sign.E2ETests,
+	"VERIFY":     verify.E2ETests,
+	"VERSION":    version.E2ETests,
+}
+```
+
+Thus, to run only tests from this group, set `E2E_GROUPS=BUILD` (and *not*
+`E2E_GROUPS=IMGBUILD`!).
 
 ## Running the e2e suite
 
@@ -1139,7 +1248,7 @@ make -C builddir e2e-test E2E_GROUPS=VERSION,HELP
 ```
 
 To run specific top-level tests (as defined in the `testhelper.Tests` struct
-returned by eache group's `E2ETests` function) supply a regular expression in an
+returned by each group's `E2ETests` function) supply a regular expression in an
 `E2E_TESTS` argument to the make target:
 
 ```sh
@@ -1152,5 +1261,5 @@ that are run:
 
 ```sh
 # Only run e2e tests in the VERSION group that have a name that begins with 'semantic'
-make -C builddir e2e-test E2E_GROUP=VERSION E2E_TESTS=^semantic
+make -C builddir e2e-test E2E_GROUPS=VERSION E2E_TESTS=^semantic
 ```
