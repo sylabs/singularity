@@ -68,7 +68,6 @@ var (
 
 var e2eGroups = map[string]testhelper.Group{
 	"ACTIONS":        actions.E2ETests,
-	"E2EBUILDCFG":    e2ebuildcfg.E2ETests,
 	"BUILD":          build.E2ETests,
 	"CACHE":          cache.E2ETests,
 	"CGROUPS":        cgroups.E2ETests,
@@ -76,8 +75,8 @@ var e2eGroups = map[string]testhelper.Group{
 	"CONFIG":         config.E2ETests,
 	"DELETE":         delete.E2ETests,
 	"DOCKER":         docker.E2ETests,
+	"E2EBUILDCFG":    e2ebuildcfg.E2ETests,
 	"ECL":            ecl.E2ETests,
-	"SINGULARITYENV": singularityenv.E2ETests,
 	"GPU":            gpu.E2ETests,
 	"HELP":           help.E2ETests,
 	"INSPECT":        inspect.E2ETests,
@@ -95,6 +94,7 @@ var e2eGroups = map[string]testhelper.Group{
 	"RUNHELP":        runhelp.E2ETests,
 	"SECURITY":       security.E2ETests,
 	"SIGN":           sign.E2ETests,
+	"SINGULARITYENV": singularityenv.E2ETests,
 	"VERIFY":         verify.E2ETests,
 	"VERSION":        version.E2ETests,
 }
