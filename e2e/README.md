@@ -1197,7 +1197,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 To run only the c.remoteUseExclusive() test, the environment variable value
 `E2E_TESTS=remoteUseExclusive` won't work. That's because, as far as the testing
 suite is concerned, the test's name is `use exclusive`. Therefore, a correct
-value to run this test only would be, e.g., `E2E_TESTS=use.exclusive`.
+value to run this test only would be, e.g., `E2E_TESTS="use exclusive"`.
 
 In a similar vein, it is important to note that the name of the `.go` file for
 an e2e group is not the same thing as the name of that test group. For example,
