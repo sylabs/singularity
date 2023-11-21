@@ -1051,6 +1051,59 @@ of testhelper.NoParallel().
 
 ## Useful utility functions
 
+Some useful utility functions for e2e testing have already been discussed above,
+including:
+
+- [`e2e.WriteTempFile(dir, pattern, content string) (string,
+  error)`](#temporary-dirs--files-and-cleanup)
+- [`e2e.MakeTempDir(t *testing.T, baseDir string, prefix string, context string)
+  (string, func(t *testing.T))`](#temporary-dirs--files-and-cleanup)
+
+Here are some additional utility functions that are available, and which are
+particularly useful for writing e2e tests:
+
+- The `require` package (internal/pkg/test/tool/require/require.go)
+  - While not strictly part of the e2e suite - it is available for use in
+    unit-tests, as well - the `require` package defines a set of functions that
+    allow you to gate a given test, so that it only runs if a particular
+    requirement is met.
+  - The functions in this package typically take, as their first argument, a `t
+    *testing.T` object, and will call the t.Skip() function if the requirement
+    is not satisfied (and will no-op if it is satisfied).
+  - Some examples include:
+    - `require.Filesystem(t *testing.T, fs string)`: only run the current test
+      if the OS supports the filesystem named in `fs`
+    - `require.Command(t *testing.T, command string)`: only run the current test
+      if the executable `command` can be found on the path
+      - Note that this function uses `bin.FindBin(command)` first, and only then
+        falls back to `exec.LookPath(command)`, so that it emulates the same
+        preferences (e.g. `squashfuse_ll` for `squashfuse`, if available) that
+        Singularity itself uses
+    - `require.Arch(t *testing.T, arch string)`: only run the current test if
+      the CPU architecture we're currently running on is `arch`
+    - `require.ArchIn(t *testing.T, archs []string)`: only run the current test
+      if the CPU architecture we're currently running on is among those listed
+      in `archs`
+  - See internal/pkg/test/tool/require/require.go for the full set of
+    require.XYZ() functions.
+
+- `user.CurrentUser(t *testing.T) *user.User`, defined in
+  e2e/internal/e2e/user.go, returns a struct with information about the current
+  user (UID, GID, home directory, etc.)
+  - The `user.User` struct is defined in internal/pkg/util/user/identity_unix.go
+
+- `tmpl.Execute(t *testing.T, tmpdir, namePattern, tmplPath string, values any)
+  string`, defined in internal/pkg/test/tool/tmpl/tmpl.go
+  - This is a convenience function for the use of [Go
+    templates](https://pkg.go.dev/text/template) in tests.
+    - Like the `require` package, it is available for unit-tests as well as e2e
+      tests.
+  - Execute() injects a given set of `values` into a template (whose path is
+    given by `tmplPath`), and places the result in a new, temporary file created
+    in `tmpdir` and named using the pattern `namePattern`.
+  - The created file is automatically removed at the end of the test `t`, unless
+    the test fails.
+
 ## Common pitfalls
 
 (to be expanded)
