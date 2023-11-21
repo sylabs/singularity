@@ -23,6 +23,7 @@ import (
 
 	// Tests imports
 	"github.com/sylabs/singularity/v4/e2e/actions"
+	"github.com/sylabs/singularity/v4/e2e/build"
 	e2ebuildcfg "github.com/sylabs/singularity/v4/e2e/buildcfg"
 	"github.com/sylabs/singularity/v4/e2e/cache"
 	"github.com/sylabs/singularity/v4/e2e/cgroups"
@@ -34,7 +35,6 @@ import (
 	singularityenv "github.com/sylabs/singularity/v4/e2e/env"
 	"github.com/sylabs/singularity/v4/e2e/gpu"
 	"github.com/sylabs/singularity/v4/e2e/help"
-	"github.com/sylabs/singularity/v4/e2e/imgbuild"
 	"github.com/sylabs/singularity/v4/e2e/inspect"
 	"github.com/sylabs/singularity/v4/e2e/instance"
 	"github.com/sylabs/singularity/v4/e2e/key"
@@ -69,7 +69,7 @@ var (
 var e2eGroups = map[string]testhelper.Group{
 	"ACTIONS":        actions.E2ETests,
 	"E2EBUILDCFG":    e2ebuildcfg.E2ETests,
-	"IMGBUILD":       imgbuild.E2ETests,
+	"BUILD":          build.E2ETests,
 	"CACHE":          cache.E2ETests,
 	"CGROUPS":        cgroups.E2ETests,
 	"CMDENVVARS":     cmdenvvars.E2ETests,
