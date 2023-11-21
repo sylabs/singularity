@@ -23,6 +23,7 @@ import (
 
 	// Tests imports
 	"github.com/sylabs/singularity/v4/e2e/actions"
+	"github.com/sylabs/singularity/v4/e2e/build"
 	e2ebuildcfg "github.com/sylabs/singularity/v4/e2e/buildcfg"
 	"github.com/sylabs/singularity/v4/e2e/cache"
 	"github.com/sylabs/singularity/v4/e2e/cgroups"
@@ -34,7 +35,6 @@ import (
 	singularityenv "github.com/sylabs/singularity/v4/e2e/env"
 	"github.com/sylabs/singularity/v4/e2e/gpu"
 	"github.com/sylabs/singularity/v4/e2e/help"
-	"github.com/sylabs/singularity/v4/e2e/imgbuild"
 	"github.com/sylabs/singularity/v4/e2e/inspect"
 	"github.com/sylabs/singularity/v4/e2e/instance"
 	"github.com/sylabs/singularity/v4/e2e/key"
@@ -67,36 +67,36 @@ var (
 )
 
 var e2eGroups = map[string]testhelper.Group{
-	"ACTIONS":    actions.E2ETests,
-	"BUILDCFG":   e2ebuildcfg.E2ETests,
-	"BUILD":      imgbuild.E2ETests,
-	"CACHE":      cache.E2ETests,
-	"CGROUPS":    cgroups.E2ETests,
-	"CMDENVVARS": cmdenvvars.E2ETests,
-	"CONFIG":     config.E2ETests,
-	"DELETE":     delete.E2ETests,
-	"DOCKER":     docker.E2ETests,
-	"ECL":        ecl.E2ETests,
-	"ENV":        singularityenv.E2ETests,
-	"GPU":        gpu.E2ETests,
-	"HELP":       help.E2ETests,
-	"INSPECT":    inspect.E2ETests,
-	"INSTANCE":   instance.E2ETests,
-	"KEY":        key.E2ETests,
-	"KEYSERVER":  keyserver.E2ETests,
-	"OCI":        oci.E2ETests,
-	"OVERLAY":    overlay.E2ETests,
-	"PLUGIN":     plugin.E2ETests,
-	"PULL":       pull.E2ETests,
-	"PUSH":       push.E2ETests,
-	"REGISTRY":   registry.E2ETests,
-	"REMOTE":     remote.E2ETests,
-	"RUN":        run.E2ETests,
-	"RUNHELP":    runhelp.E2ETests,
-	"SECURITY":   security.E2ETests,
-	"SIGN":       sign.E2ETests,
-	"VERIFY":     verify.E2ETests,
-	"VERSION":    version.E2ETests,
+	"ACTIONS":        actions.E2ETests,
+	"BUILD":          build.E2ETests,
+	"CACHE":          cache.E2ETests,
+	"CGROUPS":        cgroups.E2ETests,
+	"CMDENVVARS":     cmdenvvars.E2ETests,
+	"CONFIG":         config.E2ETests,
+	"DELETE":         delete.E2ETests,
+	"DOCKER":         docker.E2ETests,
+	"E2EBUILDCFG":    e2ebuildcfg.E2ETests,
+	"ECL":            ecl.E2ETests,
+	"GPU":            gpu.E2ETests,
+	"HELP":           help.E2ETests,
+	"INSPECT":        inspect.E2ETests,
+	"INSTANCE":       instance.E2ETests,
+	"KEY":            key.E2ETests,
+	"KEYSERVER":      keyserver.E2ETests,
+	"OCI":            oci.E2ETests,
+	"OVERLAY":        overlay.E2ETests,
+	"PLUGIN":         plugin.E2ETests,
+	"PULL":           pull.E2ETests,
+	"PUSH":           push.E2ETests,
+	"REGISTRY":       registry.E2ETests,
+	"REMOTE":         remote.E2ETests,
+	"RUN":            run.E2ETests,
+	"RUNHELP":        runhelp.E2ETests,
+	"SECURITY":       security.E2ETests,
+	"SIGN":           sign.E2ETests,
+	"SINGULARITYENV": singularityenv.E2ETests,
+	"VERIFY":         verify.E2ETests,
+	"VERSION":        version.E2ETests,
 }
 
 // Run is the main func for the test framework, initializes the required vars
