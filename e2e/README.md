@@ -233,7 +233,8 @@ particular EnsureXYZ() function is called.
 
 Below is a description of each of the EnsureXYZ() functions, and the image they
 create. These functions are defined in e2e/internal/e2e/image.go, and they use
-mutexes to ensure they are concurrency-safe.
+mutexes to ensure they are concurrency-safe, and that the initialization they
+perform is only ever done once in the course of an entire e2e suite run.
 
 - EnsureImage():
   - Builds the "main" test image, whose definition is located in
@@ -272,6 +273,13 @@ mutexes to ensure they are concurrency-safe.
     to the local testing registry as a Docker/OCI image.
   - The image is pushed to `<registryURI>/registry_test_oci-sif:latest`, and
     this URI is saved in `testenv.TestRegistryOCISIF`.
+
+**Any test whose correct operation depends on the existence of one of the images
+listed here should begin by calling the corresponding EnsureXYZ() function.**
+
+Remember that the actual initialization carried out by these functions will only
+ever happen once, and so the performance cost of an EnsureXYZ() call to
+initialize an image that has already been initialized is negligible.
   
 ## Profiles
 
