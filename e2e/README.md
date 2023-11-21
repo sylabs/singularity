@@ -1199,51 +1199,6 @@ To run only the c.remoteUseExclusive() test, the environment variable value
 suite is concerned, the test's name is `use exclusive`. Therefore, a correct
 value to run this test only would be, e.g., `E2E_TESTS="use exclusive"`.
 
-In a similar vein, it is important to note that the name of the `.go` file for
-an e2e group is not the same thing as the name of that test group. For example,
-the file e2e/imgbuild/imgbuild.go, which contains the code for the package
-`imgbuild`, is responsible for the e2e group named `BUILD` (and *not*
-`IMGBUILD`!). This can be seen by consulting the `e2eGroups` map defined in
-e2e/suite.go:
-
-```go
-var e2eGroups = map[string]testhelper.Group{
-	"ACTIONS":    actions.E2ETests,
-	"BUILDCFG":   e2ebuildcfg.E2ETests,
-	"BUILD":      imgbuild.E2ETests, // <--- this one!
-	"CACHE":      cache.E2ETests,
-	"CGROUPS":    cgroups.E2ETests,
-	"CMDENVVARS": cmdenvvars.E2ETests,
-	"CONFIG":     config.E2ETests,
-	"DELETE":     delete.E2ETests,
-	"DOCKER":     docker.E2ETests,
-	"ECL":        ecl.E2ETests,
-	"ENV":        singularityenv.E2ETests,
-	"GPU":        gpu.E2ETests,
-	"HELP":       help.E2ETests,
-	"INSPECT":    inspect.E2ETests,
-	"INSTANCE":   instance.E2ETests,
-	"KEY":        key.E2ETests,
-	"KEYSERVER":  keyserver.E2ETests,
-	"OCI":        oci.E2ETests,
-	"OVERLAY":    overlay.E2ETests,
-	"PLUGIN":     plugin.E2ETests,
-	"PULL":       pull.E2ETests,
-	"PUSH":       push.E2ETests,
-	"REGISTRY":   registry.E2ETests,
-	"REMOTE":     remote.E2ETests,
-	"RUN":        run.E2ETests,
-	"RUNHELP":    runhelp.E2ETests,
-	"SECURITY":   security.E2ETests,
-	"SIGN":       sign.E2ETests,
-	"VERIFY":     verify.E2ETests,
-	"VERSION":    version.E2ETests,
-}
-```
-
-Thus, to run only tests from this group, set `E2E_GROUPS=BUILD` (and *not*
-`E2E_GROUPS=IMGBUILD`!).
-
 ## Running the e2e suite
 
 To run all end to end tests, use the `e2e-tests` make target:
