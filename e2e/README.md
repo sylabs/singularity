@@ -164,7 +164,7 @@ entire e2e suite to work. Here are a few examples:
   actions that affect the home dir (caches, tokens, config changes, etc.) will
   not affect the files in the users' real home dirs.
   - This is achieved by creating temporary homedirs for the user and for root,
-    and bind-mouting them over the real ones (`$HOME` and `/root`,
+    and bind-mounting them over the real ones (`$HOME` and `/root`,
     respectively).
   - Because the e2e suite is run inside a dedicated mount namespace, this
     bind-mount does not affect the "outside world."
@@ -371,8 +371,7 @@ func (c ctx) echoEnv(t *testing.T) {
 ### Functional options to testenv.RunSingularity()
 
 The first argument to testenv.RunSingularity() is Go's `*testing.T` object for
-the current test. But the rest of the arguments are a variadic set of
-[functional
+the current test. This is followed by one or more [functional
 options](https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis).
 The e2e suite defines a whole host of functional options for
 testenv.RunSingularity(), and we will highlight only some of them here; the
@@ -380,9 +379,10 @@ reader should consult e2e/internal/e2e/singularitycmd.go for the full set of
 options.
 
 - **e2e.AsSubtest(string)**:
-  - For the purposes of Go's testing framework, consider this CLI run a separate
-    named *subtest* of the current test (passed in the first argument of
-    testenv.RunSingularity()).
+  - Executes the singularity command in a separate named *subtest* of the
+    current test (passed in the first argument of testenv.RunSingularity()).
+- **e2e.WithProfile(e2e.Profile)**:
+  - The [profile](#profiles) for this run of the CLI.
 - **e2e.WithCommand(string)**:
   - The CLI command to execute. (E.g. to run `singularity help`, one would pass
     `e2e.WithCommand("help")` as one of the functional options to
@@ -390,12 +390,14 @@ options.
 - **e2e.WithArgs(...string)**:
   - Additional arguments to pass to the CLI command defined in
     e2e.WithCommand(), above.
+    - **Important:** Not all arguments to the CLI belong here - in particular,
+      those that are specified by [profiles](#profiles), such as `--oci` or
+      `--fakeroot`, should be provided by choosing the correct profile in
+      e2e.WithProfile(), above.
 - **e2e.WithEnv([]string)**:
   - Environment variables to set for this run of the CLI.
 - **e2e.WithDir(string)**:
   - The current working directory in which to run the CLI.
-- **e2e.WithProfile(e2e.Profile)**:
-  - The [profile](#profiles) for this run of the CLI.
 - **e2e.PreRun(func(\*testing.T))** and **e2e.PostRun(func(\*testing.T))**:
   - Code to run before and after the CLI run itself. Note that the function
     passed as an argument to PreRun()/PostRun() receives the Go `*testing.T`
@@ -411,10 +413,10 @@ The functional argument e2e.ExpectExit() is more complex than
 testenv.RunSingularity()'s other functional arguments, and deserves to be
 discussed in slightly more detail.
 
-The purpose of this argument is, as its name suggests, to define what is
-expected of this CLI run, such that the test will be considered to have failed
-(specifically, the Fail() method of the `*testing.T` object will be called) if
-the expected conditions are not met.
+The purpose of this argument is to define what is expected of this CLI run, such
+that the test will be considered to have failed (specifically, the Fail() method
+of the `*testing.T` object will be called) if the expected conditions are not
+met.
 
 Here, once again, is the `e2e.ExpectExit()` functional argument from the earlier
 example:
@@ -432,15 +434,15 @@ return. (Zero, as in this example, means that the CLI run has terminated
 successfully; though that does not yet mean it did what we expected; keep
 reading!)
 
-The rest of the arguments to e2e.ExpectExit() are a variadic set of [functional
+The rest of the arguments to e2e.ExpectExit() are zero or more [functional
 options](https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis)
-again. *(Yes: functional options inside a functional option!)* The most common
-functional options to e2e.ExpectExit() are **e2e.ExpectOutput()** and
-**e2e.ExpectError()**, for examining stdout and stderr output, respectively.
-(Note that much like fmt.Print() has a fmt.Printf() counterpart, so too do
-e2e.ExpectOutput() and e2e.ExpectError() have e2e.ExpectOutputf() and
-e2e.ExpectErrorf() counterparts that allow for standard Go string formatting
-directives. See e2e/internal/e2e/singularitycmd.go for details.)
+again. The most common functional options to e2e.ExpectExit() are
+**e2e.ExpectOutput()** and **e2e.ExpectError()**, for examining stdout and
+stderr output, respectively. (Note that much like fmt.Print() has a fmt.Printf()
+counterpart, so too do e2e.ExpectOutput() and e2e.ExpectError() have
+e2e.ExpectOutputf() and e2e.ExpectErrorf() counterparts that allow for standard
+Go string formatting directives. See e2e/internal/e2e/singularitycmd.go for
+details.)
 
 *Note: Since the APIs of e2e.ExpectOutput() and e2e.ExpectError() are identical,
 we will discuss e2e.ExpectOutput() from here on out, but the same applies to
@@ -492,8 +494,9 @@ testenv.RunSingularity(), it is quite common for a single test to run
 testenv.RunSingularity() multiple times, each time modifying something about the
 run conditions.
 
-To enhance the readability of the e2e sources, we ask that tests of this sort be
-written using an array of *struct literals* for the individual tests. As an
+To enhance the readability of the e2e sources, tests of this sort should be
+written using the [table driven test
+pattern](https://dave.cheney.net/2019/05/07/prefer-table-driven-tests). As an
 example, here is the exitSignals() test from e2e/actions/actions.go:
 
 ```go
@@ -545,13 +548,12 @@ func (c actionTests) exitSignals(t *testing.T) {
 }
 ```
 
-In lieu of explicitly writing out a series of calls to RunSingularity() with
-slightly different arguments each time, we define a new inline struct type
-containing only the properties we want to vary in each subtest (in this case,
-only the additional arguments to `exec` and the expected exit code, alongside
-the name for the subtest). We place the array of these structs into a local
-variable (`tests`), and iterate over this array to create the actual CLI calls
-we are interested in.
+Instead of writing a series of calls to RunSingularity() with slightly different
+arguments each time, we define a new inline struct type containing only the
+properties we want to vary in each subtest (in this case, only the additional
+arguments to `exec` and the expected exit code, alongside the name for the
+subtest). We place the array of these structs into a local variable (`tests`),
+and iterate over this array to create the actual CLI calls we are interested in.
 
 This approach cleanly separates the varying aspects of each subtest (contained
 in the struct array) from those that remain constant (coded in the body of the
@@ -562,7 +564,11 @@ execute each CLI run as its own separate subtest (by passing
 `e2e.AsSubtest(tt.name)` as one of the functional options to RunSingularity()).
 This is important, because otherwise Go would end up affixing a running counter
 to the main test name, which would make test logs a lot less informative as far
-as where test failures have/haven't occurred.
+as where test failures have/haven't occurred. Subtest names should strike a
+balance between clearly representing what the subtest does, on the one hand, and
+brevity, on the other. Brevity is important here because, as can be seen in the
+examples [below](#common-pitfalls), full test names can get rather long once the
+names of nested subsets are all spelled out.
 
 Anything that can be passed in a functional argument to RunSingularity() can be
 part of the struct type we define. The following is the actionCompat() test from
@@ -625,7 +631,7 @@ func (c actionTests) actionCompat(t *testing.T) {
 ```
 
 Here, we pass different [e2e.ExpectOutput()](#the-e2eexpectexit-option) options
-for each of the different subtest (even passing none at all, for the
+for each of the different subtests (even passing none at all, for the
 "writable-tmpfs" subtest).
 
 Or consider the testCLICallbacks() test in e2e/plugin/plugin.go:
@@ -703,11 +709,11 @@ function defines.
 ### Iterating over profiles
 
 Often we are interested in running the same test in different profiles. We could
-do this by duplicating cells in a struct array like the one just shown, varying
-the `profile` field each time. But this is not a particularly perspicuous way to
-achieve this goal. That's because we would be using a data structure intended to
-capture *everything that varies from subtest to subtest* when, in reality, we're
-not varying anything except the profile.
+do this by using multiple entries in a table driven test, varying the `profile`
+field each time. But this is not the tidiest way to achieve this goal. That's
+because we would be using a data structure intended to capture *everything that
+varies from subtest to subtest* when, in reality, we're not varying anything
+except the profile.
 
 A better way to achieve this is to embed the call to RunSingularity() inside a
 for-loop iterating over the set of profiles we want to test. For example:
@@ -736,9 +742,10 @@ func (c actionTests) actionTmpSandboxFlag(t *testing.T) {
 }
 ```
 
-It is common to pair this pattern with the
-[subtests-in-structs](#inline-struct-arrays-for-subtests) discussed above, which
-can be easily done as follows:
+It is common to pair this pattern with the [table driven test
+pattern](https://dave.cheney.net/2019/05/07/prefer-table-driven-tests) discussed
+[above](#inline-struct-arrays-for-subtests), which can be easily done as
+follows:
 
 ```go
 func (c *ctx) testInstanceAuthFile(t *testing.T) {
@@ -950,16 +957,16 @@ e2e/actions/oci.go:
 ```
 
 In this example, the contents of the temporary directory (whose name will begin
-with "oci_overlay_teardown-", and whose full name can be gleaned from the test
+with "oci_overlay_teardown-", and whose full name can be read from the test
 output) will be preserved in cases where the test fails.
 
 The second advantage of t.Cleanup() over the use of `defer` statements concerns
 the timing of their execution. While `defer` statements execute whenever the
 current function returns, t.Cleanup() statements execute when the current named
-test completes. That means that one can write a test that calls a helper
+test completes. This makes it possible to write a test that calls a helper
 function, have that helper function create various temporary files/dirs *and*
 set up their cleanup, and still use those files/dirs from the calling function,
-because their cleanup will occur only when the entire named test concludes.
+because their cleanup will occur only when the entire named test finishes.
 
 ### Parallel (PAR) vs. non-parallel (SEQ) tests
 
@@ -993,9 +1000,9 @@ to one another. Some examples include:
   `/root`).
   - Even though the e2e suite sets up ["fake"
     homedirs](#initialization-and-the-e2etestenv-struct) for the current user
-    and for root, those homedirs are still one and the same for the entire e2e
-    run. And so, if two different tests were to manipulate files in the homedir
-    at once, they could interfere with each other.
+    and for root, those homedirs are still shared by the entire e2e run. And so,
+    if two different tests were to manipulate files in the homedir at once, they
+    could interfere with each other.
   - Examples where this concern arises include any test that would potentially
     change, or be sensitive to, the contents of files inside the user's
     `$HOME/.singularity` directory, such as `remote.yaml`, `docker-config.json`,
@@ -1004,11 +1011,8 @@ to one another. Some examples include:
 
 To deal with such cases, e2e/internal/testhelper/testhelper.go defines a
 function `testhelper.NoParallel(func(*testing.T)) func(*testing.T)`. This
-function returns the argument it was given, but first adds it to a data
-structure that holds all the test functions that *cannot* be run in parallel.
-The suite.Run() function in e2e/internal/testhelper/testhelper.go then makes
-sure that these tests are run sequentially, and not in parallel with any other
-tests.
+function marks the test function it is given as an argument to run sequentially,
+and not in parallel with any other tests.
 
 It is for this reason that a typical test name in the e2e suite looks as follows:
 
@@ -1024,12 +1028,11 @@ TestE2E/SEQ/DOCKER/cred_prio
 for the set of tests run in parallel, or by `SEQ`, for those tests that cannot
 be run in parallel and are run sequentially.
 
-The fact that the testhelper.NoParallel() function returns its argument as its
-sole return value makes it handy to use in the construction of
-`testhelper.Tests` maps. Here, for example, is the E2ETests() function of the
-"REMOTE" tests group (note that `testhelper.NoParallel` is assigned to the local
-variable `np` for the sake of brevity, another best practice in writing
-E2ETests() functions):
+For convenience, testhelper.NoParallel() returns its argument as its sole return
+value. This makes it handy to use in the construction of `testhelper.Tests`
+maps. Here, for example, is the E2ETests() function of the "REMOTE" tests group
+(note that `testhelper.NoParallel` is assigned to the local variable `np` for
+the sake of brevity, another best practice in writing E2ETests() functions):
 
 ```go
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
@@ -1070,7 +1073,8 @@ including:
 Here are some additional utility functions that are available, and which are
 particularly useful for writing e2e tests:
 
-- The `require` package (internal/pkg/test/tool/require/require.go)
+- The `require` package
+  ([internal/pkg/test/tool/require/require.go](https://github.com/sylabs/singularity/blob/main/internal/pkg/test/tool/require/require.go))
   - While not strictly part of the e2e suite - it is available for use in
     unit-tests, as well - the `require` package defines a set of functions that
     allow you to gate a given test, so that it only runs if a particular
@@ -1096,12 +1100,14 @@ particularly useful for writing e2e tests:
     require.XYZ() functions.
 
 - `user.CurrentUser(t *testing.T) *user.User`, defined in
-  e2e/internal/e2e/user.go, returns a struct with information about the current
-  user (UID, GID, home directory, etc.)
+  [e2e/internal/e2e/user.go](https://github.com/sylabs/singularity/blob/main/e2e/internal/e2e/user.go),
+  returns a struct with information about the current user (UID, GID, home
+  directory, etc.)
   - The `user.User` struct is defined in internal/pkg/util/user/identity_unix.go
 
 - `tmpl.Execute(t *testing.T, tmpdir, namePattern, tmplPath string, values any)
-  string`, defined in internal/pkg/test/tool/tmpl/tmpl.go
+  string`, defined in
+  [internal/pkg/test/tool/tmpl/tmpl.go](https://github.com/sylabs/singularity/blob/main/internal/pkg/test/tool/tmpl/tmpl.go)
   - This is a convenience function for the use of [Go
     templates](https://pkg.go.dev/text/template) in tests.
     - Like the `require` package, it is available for unit-tests as well as e2e
@@ -1114,7 +1120,9 @@ particularly useful for writing e2e tests:
 
 ## Common pitfalls
 
-**Scenario 1:** You've written your new test function, placed it in the right
+### Test not visible in logs
+
+**Scenario:** You've written your new test function, placed it in the right
 file (e.g. `imgbuild.go`), and now... your test doesn't seem to be running. You
 can find it in the e2e output logs anywhere.
 
@@ -1130,12 +1138,14 @@ Make sure to also [mark your test
 appropriately](#parallel-par-vs-non-parallel-seq-tests) if it cannot be run in
 parallel.
 
-**Scenario 2:** You're trying to get the e2e test to only run your test. You've
+### E2E_GROUPS / E2E_TESTS filtering not working
+
+**Scenario:** You're trying to get the e2e test to only run your test. You've
 set the [E2E_GROUPS and E2E_TESTS](#running-the-e2e-suite) environment
 variables, and you've double checked the spelling of the group & test names, but
 it's not catching your test; nothing is running.
 
-**Common cause:** You're trying to use E2E_TESTS to filter tests by something
+**Common cause 1:** You're trying to use E2E_TESTS to filter tests by something
 *other* than the top-level test name. Here is an example of a test name from a
 specific e2e subtest:
 
@@ -1150,11 +1160,14 @@ is what E2E_TESTS matches; in this case, `auth`). The E2E_TESTS environment
 variable is a regular expression that is matched only against the top-level test
 name.
 
-At the present, there is no way to match against more deeply-embedded components
-of the test path. However, individual top-level tests are usually short enough
-to make this granularity sufficient in practice.
+If you want to match against more deeply-embedded components
+of the test path, you can do so as follows:
 
-**Another common cause:** You've confused the test function's name for the test
+```console
+make -C builddir e2e-test -run /my/specific/test/name/here
+```
+
+**Common cause 2:** You've confused the test function's name for the test
 name, or the test group source file's name for the group name.
 
 The values that E2E_TESTS matches against are the values of the keys in the
