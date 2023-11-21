@@ -200,29 +200,6 @@ func EnsureORASImage(t *testing.T, env TestEnv) {
 	})
 }
 
-var orasPrivImageOnce sync.Once
-
-func EnsureORASPrivImage(t *testing.T, env TestEnv) {
-	EnsureImage(t, env)
-
-	ensureMutex.Lock()
-	defer ensureMutex.Unlock()
-
-	orasPrivImageOnce.Do(func() {
-		t.Logf("Pushing %s to %s", env.ImagePath, env.OrasTestPrivImage)
-		env.RunSingularity(
-			t,
-			WithProfile(UserProfile),
-			WithCommand("push"),
-			WithArgs(env.ImagePath, env.OrasTestPrivImage),
-			ExpectExit(0),
-		)
-		if t.Failed() {
-			t.Fatalf("failed to push ORAS image to local private registry")
-		}
-	})
-}
-
 var orasOCISIFOnce sync.Once
 
 func EnsureORASOCISIF(t *testing.T, env TestEnv) {
