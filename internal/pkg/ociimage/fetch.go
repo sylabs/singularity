@@ -17,87 +17,93 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/containers/image/v5/copy"
-	ocilayout "github.com/containers/image/v5/oci/layout"
-	"github.com/containers/image/v5/types"
-	"github.com/opencontainers/go-digest"
+	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
-	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
-	"golang.org/x/term"
 )
 
-// FetchLayout will fetch the OCI image specified by imageRef to a containers/image OCI layout in layoutDir.
-// An ImageReference to the image that was fetched into layoutDir is returned on success.
-// If imgCache is non-nil, and enabled, the image will be pulled through the cache.
-func FetchLayout(ctx context.Context, tOpts *ocitransport.TransportOptions, imgCache *cache.Handle, imageRef, layoutDir string) (types.ImageReference, digest.Digest, error) {
-	policyCtx, err := ocitransport.DefaultPolicy()
-	if err != nil {
-		return nil, "", err
+// CachedImage will ensure that the provided v1.Image is present in the Singularity
+// OCI cache layout dir, and return a new v1.Image pointing to the cached copy.
+func CachedImage(ctx context.Context, imgCache *cache.Handle, srcImg v1.Image) (v1.Image, error) {
+	if imgCache == nil || imgCache.IsDisabled() {
+		return nil, fmt.Errorf("undefined image cache")
 	}
 
-	srcRef, err := ocitransport.ParseImageRef(imageRef)
+	digest, err := srcImg.Digest()
 	if err != nil {
-		return nil, "", fmt.Errorf("invalid image source: %v", err)
+		return nil, err
 	}
 
-	// oci-archive direct handling by containers/image can fail as non-root.
-	// Perform a tar extraction first, and handle as an oci layout.
-	if os.Geteuid() != 0 && srcRef.Transport().Name() == "oci-archive" {
+	layoutDir, err := imgCache.GetOciCacheDir(cache.OciBlobCacheType)
+	if err != nil {
+		return nil, err
+	}
+
+	cachedRef := layoutDir + "@" + digest.String()
+	sylog.Debugf("Caching image to %s", cachedRef)
+
+	OCISourceSink.WriteImage(srcImg, layoutDir)
+
+	return OCISourceSink.Image(ctx, cachedRef, nil)
+}
+
+// FetchToLayout will fetch the OCI image specified by imageRef to an OCI layout
+// and return a v1.Image referencing it. If imgCache is non-nil, and enabled,
+// the image will be fetched into Singularity's cache - which is a multi-image
+// OCI layout. If the cache is disabled, the image will be fetched into a
+// subdirectory of the provided tmpDir. The caller is responsible for cleaning
+// up tmpDir.
+func FetchToLayout(ctx context.Context, tOpts *TransportOptions, imgCache *cache.Handle, imageURI, tmpDir string) (ggcrv1.Image, error) {
+	// oci-archive - Perform a tar extraction first, and handle as an oci layout.
+	if strings.HasPrefix(imageURI, "oci-archive:") {
 		var tmpDir string
-		tmpDir, err = os.MkdirTemp(tOpts.TmpDir, "temp-oci-")
+		tmpDir, err := os.MkdirTemp(tOpts.TmpDir, "temp-oci-")
 		if err != nil {
-			return nil, "", fmt.Errorf("could not create temporary oci directory: %v", err)
+			return nil, fmt.Errorf("could not create temporary oci directory: %v", err)
 		}
 		defer os.RemoveAll(tmpDir)
 
-		archiveParts := strings.SplitN(srcRef.StringWithinTransport(), ":", 2)
-		sylog.Debugf("Extracting oci-archive %q to %q", archiveParts[0], tmpDir)
-		err = extractArchive(archiveParts[0], tmpDir)
+		// oci-archive:<path>[:tag]
+		refParts := strings.SplitN(imageURI, ":", 3)
+		sylog.Debugf("Extracting oci-archive %q to %q", refParts[1], tmpDir)
+		err = extractArchive(refParts[1], tmpDir)
 		if err != nil {
-			return nil, "", fmt.Errorf("error extracting the OCI archive file: %v", err)
+			return nil, fmt.Errorf("error extracting the OCI archive file: %v", err)
 		}
 		// We may or may not have had a ':tag' in the source to handle
-		if len(archiveParts) == 2 {
-			srcRef, err = ocilayout.ParseReference(tmpDir + ":" + archiveParts[1])
-		} else {
-			srcRef, err = ocilayout.ParseReference(tmpDir)
-		}
-		if err != nil {
-			return nil, "", err
+		imageURI = "oci:" + tmpDir
+		if len(refParts) == 3 {
+			imageURI = imageURI + ":" + refParts[2]
 		}
 	}
 
-	var imgDigest digest.Digest
+	srcType, srcRef, err := URItoSourceSinkRef(imageURI)
+	if err != nil {
+		return nil, err
+	}
+
+	srcImg, err := srcType.Image(ctx, srcRef, tOpts)
+	if err != nil {
+		return nil, err
+	}
 
 	if imgCache != nil && !imgCache.IsDisabled() {
-		// Grab the modified source ref from the cache
-		srcRef, imgDigest, err = CacheReference(ctx, tOpts, imgCache, srcRef)
-		if err != nil {
-			return nil, "", err
-		}
+		// Ensure the image is cached, and return reference to the cached image.
+		return CachedImage(ctx, imgCache, srcImg)
 	}
 
-	lr, err := ocilayout.ParseReference(layoutDir + ":" + imgDigest.String())
+	// No cache - write to layout directory provided
+	tmpLayout, err := os.MkdirTemp(tmpDir, "layout-")
 	if err != nil {
-		return nil, "", err
+		return nil, err
+	}
+	sylog.Debugf("Copying %q to temporary layout at %q", srcRef, tmpLayout)
+	if err = OCISourceSink.WriteImage(srcImg, tmpLayout); err != nil {
+		return nil, err
 	}
 
-	copyOpts := copy.Options{
-		ReportWriter: os.Stdout,
-		// TODO - replace with ggcr code
-		//nolint:staticcheck
-		SourceCtx: ocitransport.SystemContextFromTransportOptions(tOpts),
-	}
-	if (sylog.GetLevel() <= -1) || !term.IsTerminal(2) {
-		copyOpts.ReportWriter = io.Discard
-	}
-	_, err = copy.Image(ctx, policyCtx, lr, srcRef, &copyOpts)
-	if err != nil {
-		return nil, "", err
-	}
-
-	return lr, imgDigest, nil
+	return OCISourceSink.Image(ctx, tmpLayout, tOpts)
 }
 
 // Perform a dumb tar(gz) extraction with no chown, id remapping etc.

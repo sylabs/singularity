@@ -16,12 +16,10 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/containers/image/v5/types"
 	"github.com/google/go-containerregistry/pkg/authn"
-	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
-	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/shell"
 	sytypes "github.com/sylabs/singularity/v4/pkg/build/types"
@@ -112,17 +110,17 @@ exec "$@"
 
 // OCIConveyorPacker holds stuff that needs to be packed into the bundle
 type OCIConveyorPacker struct {
-	srcRef           types.ImageReference
+	srcImg           v1.Image
 	b                *sytypes.Bundle
-	imgConfig        imgspecv1.ImageConfig
-	transportOptions *ocitransport.TransportOptions
+	imgConfig        v1.Config
+	transportOptions *ociimage.TransportOptions
 }
 
 // Get downloads container information from the specified source
 func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err error) {
 	cp.b = b
 
-	cp.transportOptions = &ocitransport.TransportOptions{
+	cp.transportOptions = &ociimage.TransportOptions{
 		Insecure:         cp.b.Opts.NoHTTPS,
 		DockerDaemonHost: cp.b.Opts.DockerDaemonHost,
 		AuthConfig:       cp.b.Opts.OCIAuthConfig,
@@ -161,22 +159,23 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 	}
 
 	// Fetch the image into a temporary containers/image oci layout dir.
-	cp.srcRef, _, err = ociimage.FetchLayout(ctx, cp.transportOptions, imgCache, ref, b.TmpDir)
+	cp.srcImg, err = ociimage.FetchToLayout(ctx, cp.transportOptions, imgCache, ref, b.TmpDir)
 	if err != nil {
 		return err
 	}
 
-	cp.imgConfig, err = cp.getConfig(ctx)
+	cf, err := cp.srcImg.ConfigFile()
 	if err != nil {
 		return err
 	}
+	cp.imgConfig = cf.Config
 
 	return nil
 }
 
 // Pack puts relevant objects in a Bundle.
 func (cp *OCIConveyorPacker) Pack(ctx context.Context) (*sytypes.Bundle, error) {
-	err := cp.unpackTmpfs(ctx)
+	err := cp.unpackRootfs(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("while unpacking tmpfs: %v", err)
 	}
@@ -209,22 +208,6 @@ func (cp *OCIConveyorPacker) Pack(ctx context.Context) (*sytypes.Bundle, error) 
 	return cp.b, nil
 }
 
-func (cp *OCIConveyorPacker) getConfig(ctx context.Context) (imgspecv1.ImageConfig, error) {
-	// TODO - replace with ggcr code
-	//nolint:staticcheck
-	img, err := cp.srcRef.NewImage(ctx, ocitransport.SystemContextFromTransportOptions(cp.transportOptions))
-	if err != nil {
-		return imgspecv1.ImageConfig{}, err
-	}
-	defer img.Close()
-
-	imgSpec, err := img.OCIConfig(ctx)
-	if err != nil {
-		return imgspecv1.ImageConfig{}, err
-	}
-	return imgSpec.Config, nil
-}
-
 func (cp *OCIConveyorPacker) insertOCIConfig() error {
 	conf, err := json.Marshal(cp.imgConfig)
 	if err != nil {
@@ -235,24 +218,8 @@ func (cp *OCIConveyorPacker) insertOCIConfig() error {
 	return nil
 }
 
-func (cp *OCIConveyorPacker) unpackTmpfs(ctx context.Context) error {
-	// TODO - replace with ggcr code
-	//nolint:staticcheck
-	imageSource, err := cp.srcRef.NewImageSource(ctx, ocitransport.SystemContextFromTransportOptions(cp.transportOptions))
-	if err != nil {
-		return fmt.Errorf("error creating image source: %s", err)
-	}
-	manifestData, mediaType, err := imageSource.GetManifest(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("error obtaining manifest source: %s", err)
-	}
-	if mediaType != imgspecv1.MediaTypeImageManifest {
-		return fmt.Errorf("error verifying manifest media type: %s", mediaType)
-	}
-	var manifest imgspecv1.Manifest
-	json.Unmarshal(manifestData, &manifest)
-
-	if err := ociimage.UnpackRootfs(ctx, cp.b.TmpDir, manifest, cp.b.RootfsPath); err != nil {
+func (cp *OCIConveyorPacker) unpackRootfs(ctx context.Context) error {
+	if err := ociimage.UnpackRootfs(ctx, cp.srcImg, cp.b.RootfsPath); err != nil {
 		return err
 	}
 

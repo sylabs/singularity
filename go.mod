@@ -199,7 +199,6 @@ require (
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
 	github.com/tonistiigi/vt100 v0.0.0-20230623042737-f9a4f7ef6531 // indirect
 	github.com/ulikunitz/xz v0.5.11 // indirect
-	github.com/urfave/cli v1.22.14 // indirect
 	github.com/vbatts/go-mtree v0.5.0 // indirect
 	github.com/vbatts/tar-split v0.11.5 // indirect
 	github.com/vishvananda/netlink v1.2.1-beta.2 // indirect

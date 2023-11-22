@@ -22,7 +22,7 @@ import (
 	ocisifclient "github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/shub"
-	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/native"
@@ -105,6 +105,7 @@ func handleOCI(ctx context.Context, imgCache *cache.Handle, cmd *cobra.Command, 
 		NoHTTPS:     noHTTPS,
 		OciSif:      isOCI,
 		KeepLayers:  keepLayers,
+		Platform:    getOCIPlatform(),
 		ReqAuthFile: reqAuthFile,
 	}
 
@@ -185,7 +186,7 @@ func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string)
 		image, err = handleOras(ctx, imgCache, cmd, origImageURI)
 	case uri.Shub:
 		image, err = handleShub(ctx, imgCache, origImageURI)
-	case ocitransport.SupportedTransport(t):
+	case ociimage.SupportedTransport(t):
 		image, err = handleOCI(ctx, imgCache, cmd, origImageURI)
 	case uri.HTTP:
 		image, err = handleNet(ctx, imgCache, origImageURI)
@@ -395,7 +396,7 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 	if isOCI {
 		sylog.Debugf("Using OCI runtime launcher.")
 
-		tOpts := &ocitransport.TransportOptions{
+		tOpts := &ociimage.TransportOptions{
 			Insecure:         noHTTPS,
 			AuthConfig:       &authConfig,
 			DockerDaemonHost: dockerHost,

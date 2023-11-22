@@ -18,7 +18,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oci"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/shub"
-	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/v4/pkg/cmdline"
@@ -293,7 +293,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if err != nil {
 			sylog.Fatalf("While pulling from image from http(s): %v\n", err)
 		}
-	case ocitransport.SupportedTransport(transport):
+	case ociimage.SupportedTransport(transport):
 		ociAuth, err := makeOCICredentials(cmd)
 		if err != nil {
 			sylog.Fatalf("While creating Docker credentials: %v", err)
