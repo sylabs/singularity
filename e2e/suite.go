@@ -230,14 +230,19 @@ func Run(t *testing.T) {
 	t.Log("Path to test image:", imagePath)
 	testenv.ImagePath = imagePath
 
+	// OCI Layout test directory path, built on demand by e2e.EnsureOCILayout
+	ociLayoutPath := path.Join(name, "oci-layout")
+	t.Log("Path to test OCI layout:", ociLayoutPath)
+	testenv.OCILayoutPath = ociLayoutPath
+
 	// OCI Archive test image path, built on demand by e2e.EnsureOCIArchive
-	ociArchivePath := path.Join(name, "oci.tar")
+	ociArchivePath := path.Join(name, "oci-archive.tar")
 	t.Log("Path to test OCI archive:", ociArchivePath)
 	testenv.OCIArchivePath = ociArchivePath
 
 	// OCI-SIF Image, retrieved on demand by e2e.EnsureOCISIF
 	ociSifPath := path.Join(name, "oci-sif.sif")
-	t.Log("Path to test OCI-SIF image:", ociArchivePath)
+	t.Log("Path to test OCI-SIF image:", ociSifPath)
 	testenv.OCISIFPath = ociSifPath
 
 	// Docker Archive test image path, built on demand by e2e.EnsureDockerArchive
