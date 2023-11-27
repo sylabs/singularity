@@ -8,7 +8,7 @@ package launcher
 import (
 	"fmt"
 
-	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/overlay"
 	"github.com/sylabs/singularity/v4/pkg/util/cryptkey"
 )
@@ -147,7 +147,7 @@ type Options struct {
 
 	// TransportOptions holds Docker/OCI image transport configuration (auth etc.)
 	// This will be used by a launcher handling OCI images directly.
-	TransportOptions *ocitransport.TransportOptions
+	TransportOptions *ociimage.TransportOptions
 
 	// NoTmpSandbox prohibits unpacking of images into temporary sandbox dirs.
 	NoTmpSandbox bool
@@ -529,7 +529,7 @@ func OptCacheDisabled(b bool) Option {
 }
 
 // OptTransportOptions sets Docker/OCI image transport options (auth etc.)
-func OptTransportOptions(tOpts *ocitransport.TransportOptions) Option {
+func OptTransportOptions(tOpts *ociimage.TransportOptions) Option {
 	return func(lo *Options) error {
 		lo.TransportOptions = tOpts
 		return nil

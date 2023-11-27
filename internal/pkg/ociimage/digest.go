@@ -17,7 +17,6 @@ import (
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/opencontainers/go-digest"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
-	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
@@ -26,7 +25,7 @@ import (
 // If the ImageReference points at a multi-arch repository with an image index
 // (manifest list), it will traverse this to retrieve the digest of the image
 // manifest for the requested architecture specified in sysCtx.
-func ImageDigest(ctx context.Context, tOpts *ocitransport.TransportOptions, imgCache *cache.Handle, ref types.ImageReference) (digest.Digest, error) {
+func ImageDigest(ctx context.Context, tOpts *TransportOptions, imgCache *cache.Handle, ref types.ImageReference) (digest.Digest, error) {
 	// For OCI registries (docker://) attempt to use HEAD operation and cached
 	// image manifest/image index to avoid hitting GET API limits.
 	if ref.Transport().Name() == "docker" {
@@ -40,10 +39,9 @@ func ImageDigest(ctx context.Context, tOpts *ocitransport.TransportOptions, imgC
 // a multi-arch repository with an image index (manifest list), it will traverse
 // this to retrieve the digest of the image manifest for the requested
 // architecture specified in sysCtx.
-func directDigest(ctx context.Context, tOpts *ocitransport.TransportOptions, imgCache *cache.Handle, ref types.ImageReference) (digest.Digest, error) {
+func directDigest(ctx context.Context, tOpts *TransportOptions, imgCache *cache.Handle, ref types.ImageReference) (digest.Digest, error) {
 	// TODO - replace with ggcr code
-	//nolint:staticcheck
-	source, err := ref.NewImageSource(ctx, ocitransport.SystemContextFromTransportOptions(tOpts))
+	source, err := ref.NewImageSource(ctx, SystemContextFromTransportOptions(tOpts))
 	if err != nil {
 		return "", err
 	}
@@ -58,34 +56,33 @@ func directDigest(ctx context.Context, tOpts *ocitransport.TransportOptions, img
 		return "", err
 	}
 
-	digest, err := digestFromManifestOrIndex(tOpts, mf)
-	if err != nil {
-		return "", err
-	}
+	// Digest of whatever the registry originally returned (index or manifest)
+	origDigest := digest.FromBytes(mf)
 
+	// Cache this index or manifest for future lookups
 	if imgCache != nil && !imgCache.IsDisabled() {
-		sylog.Debugf("Caching image index or manifest %s", digest.String())
-		err := imgCache.PutOciCacheBlob(cache.OciBlobCacheType, digest, io.NopCloser(bytes.NewBuffer(mf)))
+		sylog.Debugf("Caching image index or manifest %s", origDigest.String())
+		err := imgCache.PutOciCacheBlob(cache.OciBlobCacheType, origDigest, io.NopCloser(bytes.NewBuffer(mf)))
 		if err != nil {
 			sylog.Errorf("While caching image index or manifest: %v", err)
 		}
 	}
 
-	return digest, nil
+	// Actual digest of image (resolved through index if necessary)
+	return digestFromManifestOrIndex(tOpts, mf)
 }
 
 // dockerDigest obtains the image manifest digest for a registry (docker://)
 // image source, attempting to use a HEAD against the registry, and cached image
 // index / manifest, to avoid unnecessary GET operations that count against
 // Docker Hub API limits.
-func dockerDigest(ctx context.Context, tOpts *ocitransport.TransportOptions, imgCache *cache.Handle, ref types.ImageReference) (digest.Digest, error) {
+func dockerDigest(ctx context.Context, tOpts *TransportOptions, imgCache *cache.Handle, ref types.ImageReference) (digest.Digest, error) {
 	if imgCache == nil || imgCache.IsDisabled() {
 		return directDigest(ctx, tOpts, imgCache, ref)
 	}
 
 	// TODO - replace with ggcr code
-	//nolint:staticcheck
-	d, err := docker.GetDigest(ctx, ocitransport.SystemContextFromTransportOptions(tOpts), ref)
+	d, err := docker.GetDigest(ctx, SystemContextFromTransportOptions(tOpts), ref)
 	if err != nil {
 		// If a custom auth file has been requested (via sysCtx) and is outright
 		// missing, docker.GetDigest still returns a generic "access to the
@@ -123,7 +120,7 @@ func dockerDigest(ctx context.Context, tOpts *ocitransport.TransportOptions, img
 // digestFromManifestOrIndex returns the digest of the provided manifest, or the
 // digest of the manifest of an image satisfying sysCtx platform requirements if
 // an image index is supplied.
-func digestFromManifestOrIndex(tOpts *ocitransport.TransportOptions, manifestOrIndex []byte) (digest.Digest, error) {
+func digestFromManifestOrIndex(tOpts *TransportOptions, manifestOrIndex []byte) (digest.Digest, error) {
 	if tOpts == nil {
 		return "", fmt.Errorf("internal error: nil TransportOptions")
 	}

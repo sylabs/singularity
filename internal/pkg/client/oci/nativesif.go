@@ -13,7 +13,6 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/build"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
-	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	buildtypes "github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
@@ -22,7 +21,7 @@ import (
 func pullNativeSIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, opts PullOptions) (imagePath string, err error) {
 	to := transportOptions(opts)
 
-	ref, err := ocitransport.ParseImageRef(pullFrom)
+	ref, err := ociimage.URIToImageReference(pullFrom)
 	if err != nil {
 		return "", err
 	}

@@ -14,7 +14,6 @@ import (
 	ggcrrandom "github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/opencontainers/go-digest"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
-	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"gotest.tools/v3/assert"
 )
 
@@ -66,28 +65,28 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		transportOptions *ocitransport.TransportOptions
+		transportOptions *TransportOptions
 		manifestOrIndex  []byte
 		want             digest.Digest
 		wantErr          bool
 	}{
 		{
 			name:             "ImageManifestDefaultSysCtx",
-			transportOptions: &ocitransport.TransportOptions{},
+			transportOptions: &TransportOptions{},
 			manifestOrIndex:  manifest,
 			want:             manifestImageDigest,
 			wantErr:          false,
 		},
 		{
 			name:             "ImageIndexDefaultSysCtx",
-			transportOptions: &ocitransport.TransportOptions{},
+			transportOptions: &TransportOptions{},
 			manifestOrIndex:  index,
 			want:             indexImageDigest,
 			wantErr:          false,
 		},
 		{
 			name: "ImageIndexExplicitSysCtx",
-			transportOptions: &ocitransport.TransportOptions{
+			transportOptions: &TransportOptions{
 				Platform: ggcrv1.Platform{
 					OS:           runtime.GOOS,
 					Architecture: runtime.GOARCH,
@@ -100,7 +99,7 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 		},
 		{
 			name: "ImageIndexBadOS",
-			transportOptions: &ocitransport.TransportOptions{
+			transportOptions: &TransportOptions{
 				Platform: ggcrv1.Platform{
 					OS:           "myOS",
 					Architecture: runtime.GOARCH,
@@ -113,7 +112,7 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 		},
 		{
 			name: "ImageIndexBadArch",
-			transportOptions: &ocitransport.TransportOptions{
+			transportOptions: &TransportOptions{
 				Platform: ggcrv1.Platform{
 					OS:           runtime.GOOS,
 					Architecture: "myArch",
@@ -126,7 +125,7 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 		},
 		{
 			name: "ImageIndexBadVariant",
-			transportOptions: &ocitransport.TransportOptions{
+			transportOptions: &TransportOptions{
 				Platform: ggcrv1.Platform{
 					OS:           runtime.GOOS,
 					Architecture: runtime.GOARCH,

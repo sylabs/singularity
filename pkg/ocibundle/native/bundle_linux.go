@@ -18,7 +18,6 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
-	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/ocibundle"
@@ -36,7 +35,7 @@ type Bundle struct {
 	bundlePath string
 	// transportOptions provides auth / platform etc. configuration for
 	// interactions with image transports.
-	transportOptions *ocitransport.TransportOptions
+	transportOptions *ociimage.TransportOptions
 	// sysCtx provides transport configuration (auth etc.)
 	// Deprecated: Use transportOptions
 	sysCtx *types.SystemContext
@@ -78,7 +77,7 @@ func OptImageRef(ref string) Option {
 }
 
 // OptTransportOptions sets configuration for interaction with image transports.
-func OptTransportOptions(tOpts *ocitransport.TransportOptions) Option {
+func OptTransportOptions(tOpts *ociimage.TransportOptions) Option {
 	return func(b *Bundle) error {
 		b.transportOptions = tOpts
 		return nil
@@ -92,7 +91,7 @@ func OptSysCtx(sc *types.SystemContext) Option {
 		b.sysCtx = sc
 		if sc != nil {
 			//nolint:staticcheck
-			tOpts := ocitransport.TransportOptionsFromSystemContext(sc)
+			tOpts := ociimage.TransportOptionsFromSystemContext(sc)
 			b.transportOptions = tOpts
 		}
 		return nil
@@ -171,37 +170,27 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	}
 	defer os.RemoveAll(tmpLayout)
 
-	layoutRef, _, err := ociimage.FetchLayout(ctx, b.transportOptions, b.imgCache, b.imageRef, tmpLayout)
+	layoutImg, err := ociimage.FetchToLayout(ctx, b.transportOptions, b.imgCache, b.imageRef, tmpLayout)
 	if err != nil {
 		return err
 	}
 
-	sylog.Debugf("Original imgref: %s, OCI layout: %s", b.imageRef, layoutRef)
-
-	// Get the Image Manifest and ImageSpec
-	// TODO - replace with ggcr code
-	//nolint:staticcheck
-	img, err := layoutRef.NewImage(ctx, ocitransport.SystemContextFromTransportOptions(b.transportOptions))
-	if err != nil {
-		return err
-	}
-	defer img.Close()
-
-	manifestData, mediaType, err := img.Manifest(ctx)
+	manifestData, err := layoutImg.RawManifest()
 	if err != nil {
 		return fmt.Errorf("error obtaining manifest source: %s", err)
-	}
-	if mediaType != imgspecv1.MediaTypeImageManifest {
-		return fmt.Errorf("error verifying manifest media type: %s", mediaType)
 	}
 	var manifest imgspecv1.Manifest
 	if err := json.Unmarshal(manifestData, &manifest); err != nil {
 		return fmt.Errorf("error parsing manifest: %w", err)
 	}
 
-	b.imageSpec, err = img.OCIConfig(ctx)
+	configData, err := layoutImg.RawConfigFile()
 	if err != nil {
-		return err
+		return fmt.Errorf("error obtaining image config source: %s", err)
+	}
+	b.imageSpec = &imgspecv1.Image{}
+	if err := json.Unmarshal(configData, &manifest); err != nil {
+		return fmt.Errorf("error parsing image config: %w", err)
 	}
 
 	// Extract from temp oci layout into a temporary pristine rootfs dir, outside of the bundle.
@@ -213,7 +202,7 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	}
 	pristineRootfs := filepath.Join(b.rootfsParentDir, "rootfs")
 
-	if err := ociimage.UnpackRootfs(ctx, tmpLayout, manifest, pristineRootfs); err != nil {
+	if err := ociimage.UnpackRootfs(ctx, layoutImg, pristineRootfs); err != nil {
 		return err
 	}
 

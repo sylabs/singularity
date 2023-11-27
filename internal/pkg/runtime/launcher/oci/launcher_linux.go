@@ -28,7 +28,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
-	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
@@ -914,7 +914,7 @@ func normalizeImageRef(imageRef string) (string, error) {
 	// We can't just look for a `<transport>:<path>` pair as bare filenames can contain colons.
 	// If we don't match a supported oci source transport, assume we have a bare filename.
 	parts := strings.SplitN(imageRef, ":", 2)
-	if len(parts) == 2 && ocitransport.SupportedTransport(parts[0]) != "" {
+	if len(parts) == 2 && ociimage.SupportedTransport(parts[0]) != "" {
 		return imageRef, nil
 	}
 

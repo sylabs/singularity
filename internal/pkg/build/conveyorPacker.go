@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/build/sources"
-	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 )
 
@@ -45,7 +45,7 @@ func NewConveyorPacker(def types.Definition) (ConveyorPacker, error) {
 		return &sources.OrasConveyorPacker{}, nil
 	case "shub":
 		return &sources.ShubConveyorPacker{}, nil
-	case ocitransport.SupportedTransport(bs):
+	case ociimage.SupportedTransport(bs):
 		return &sources.OCIConveyorPacker{}, nil
 	case "busybox":
 		return &sources.BusyBoxConveyorPacker{}, nil

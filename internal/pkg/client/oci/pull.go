@@ -15,7 +15,7 @@ import (
 	gccrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
-	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -35,8 +35,8 @@ type PullOptions struct {
 }
 
 // transportOptions maps PullOptions to OCI image transport options
-func transportOptions(opts PullOptions) *ocitransport.TransportOptions {
-	return &ocitransport.TransportOptions{
+func transportOptions(opts PullOptions) *ociimage.TransportOptions {
+	return &ociimage.TransportOptions{
 		AuthConfig:       opts.OciAuth,
 		AuthFilePath:     ociauth.ChooseAuthFile(opts.ReqAuthFile),
 		Insecure:         opts.NoHTTPS,

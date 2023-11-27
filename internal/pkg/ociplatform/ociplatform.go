@@ -6,62 +6,17 @@
 package ociplatform
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 	"runtime"
 
-	"github.com/containers/image/v5/types"
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/sylabs/singularity/v4/internal/pkg/ocitransport"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
-// SysCtxToPlatform translates the xxxChoice values in a containers/image
-// types.SytemContext to a go-containerregistry v1.Platform.
-func SysCtxToPlatform(sysCtx *types.SystemContext) ggcrv1.Platform {
-	os := sysCtx.OSChoice
-	if os == "" {
-		os = runtime.GOOS
-	}
-	arch := sysCtx.ArchitectureChoice
-	if arch == "" {
-		arch = runtime.GOARCH
-	}
-	// Only set variant to the default for the system if arch matches the system arch.
-	// See https://github.com/sylabs/singularity/issues/2049
-	systemArch := arch == runtime.GOARCH
-	variant := sysCtx.VariantChoice
-	if variant == "" && systemArch {
-		variant = CPUVariant()
-	}
-	arch, variant = normalizeArch(arch, variant)
-	return ggcrv1.Platform{
-		Architecture: arch,
-		Variant:      variant,
-		OS:           os,
-	}
-}
-
-// CheckImageRefPlatform ensures that an image reference satisfies platform requirements in sysCtx
-func CheckImageRefPlatform(ctx context.Context, tOpts *ocitransport.TransportOptions, imageRef types.ImageReference) error {
-	if tOpts == nil {
-		return fmt.Errorf("internal error: TransportOptions is nil")
-	}
-	// TODO - replace with ggcr code
-	//nolint:staticcheck
-	img, err := imageRef.NewImage(ctx, ocitransport.SystemContextFromTransportOptions(tOpts))
-	if err != nil {
-		return err
-	}
-	defer img.Close()
-
-	rawConfig, err := img.ConfigBlob(ctx)
-	if err != nil {
-		return err
-	}
-	cf, err := v1.ParseConfigFile(bytes.NewBuffer(rawConfig))
+// CheckImagePlatform ensures that an image reference satisfies the provided platform requirements.
+func CheckImagePlatform(platform v1.Platform, img v1.Image) error {
+	cf, err := img.ConfigFile()
 	if err != nil {
 		return err
 	}
@@ -71,11 +26,11 @@ func CheckImageRefPlatform(ctx context.Context, tOpts *ocitransport.TransportOpt
 		return nil
 	}
 
-	if cf.Platform().Satisfies(tOpts.Platform) {
+	if cf.Platform().Satisfies(platform) {
 		return nil
 	}
 
-	return fmt.Errorf("image (%s) does not satisfy required platform (%s)", cf.Platform(), tOpts.Platform)
+	return fmt.Errorf("image (%s) does not satisfy required platform (%s)", cf.Platform(), platform)
 }
 
 func DefaultPlatform() (*ggcrv1.Platform, error) {
