@@ -12,20 +12,23 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/opencontainers/go-digest"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 )
 
 func TestHandle_PutOciCacheBlob(t *testing.T) {
 	tmpDir := t.TempDir()
-	content := []byte("BLOB CONTENT")
-	contentDigest := digest.FromBytes(content)
+	content := "BLOB CONTENT"
+	contentDigest, _, err := v1.SHA256(bytes.NewBufferString(content))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
 		name         string
 		disableCache bool
 		cacheType    string
-		blobDigest   digest.Digest
-		content      []byte
+		blobDigest   v1.Hash
+		content      string
 		wantErr      bool
 	}{
 		{
@@ -56,7 +59,7 @@ func TestHandle_PutOciCacheBlob(t *testing.T) {
 			name:         "BadDigest",
 			disableCache: false,
 			cacheType:    OciBlobCacheType,
-			blobDigest:   "NOT A DIGEST",
+			blobDigest:   v1.Hash{},
 			content:      content,
 			wantErr:      true,
 		},
@@ -70,13 +73,13 @@ func TestHandle_PutOciCacheBlob(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = h.PutOciCacheBlob(tt.cacheType, tt.blobDigest, io.NopCloser(bytes.NewBuffer(tt.content)))
+			err = h.PutOciCacheBlob(tt.cacheType, tt.blobDigest, io.NopCloser(bytes.NewBufferString(tt.content)))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Handle.PutOciCacheBlob() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !tt.wantErr {
-				cacheFile := filepath.Join(tmpDir, "cache", "blob", "blobs", tt.blobDigest.Algorithm().String(), tt.blobDigest.Hex())
+				cacheFile := filepath.Join(tmpDir, "cache", "blob", "blobs", tt.blobDigest.Algorithm, tt.blobDigest.Hex)
 				cacheContent, err := os.ReadFile(cacheFile)
 				if err != nil {
 					t.Errorf("Couldn't read expected cache file: %v", err)
@@ -91,8 +94,11 @@ func TestHandle_PutOciCacheBlob(t *testing.T) {
 
 func TestHandle_GetOciCacheBlob(t *testing.T) {
 	tmpDir := t.TempDir()
-	content := []byte("BLOB CONTENT")
-	contentDigest := digest.FromBytes(content)
+	content := "BLOB CONTENT"
+	contentDigest, _, err := v1.SHA256(bytes.NewBufferString(content))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	PutHandle, err := New(Config{
 		ParentDir: tmpDir,
@@ -105,7 +111,7 @@ func TestHandle_GetOciCacheBlob(t *testing.T) {
 	err = PutHandle.PutOciCacheBlob(
 		OciBlobCacheType,
 		contentDigest,
-		io.NopCloser(bytes.NewBuffer(content)))
+		io.NopCloser(bytes.NewBufferString(content)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -114,7 +120,7 @@ func TestHandle_GetOciCacheBlob(t *testing.T) {
 		name         string
 		disableCache bool
 		cacheType    string
-		blobDigest   digest.Digest
+		blobDigest   v1.Hash
 		wantContent  []byte
 		wantErr      bool
 	}{
@@ -146,7 +152,7 @@ func TestHandle_GetOciCacheBlob(t *testing.T) {
 			name:         "BadDigest",
 			disableCache: false,
 			cacheType:    OciBlobCacheType,
-			blobDigest:   "NOT A DIGEST",
+			blobDigest:   v1.Hash{},
 			wantContent:  nil,
 			wantErr:      true,
 		},

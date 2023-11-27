@@ -57,25 +57,12 @@ func CachedImage(ctx context.Context, imgCache *cache.Handle, srcImg v1.Image) (
 func FetchToLayout(ctx context.Context, tOpts *TransportOptions, imgCache *cache.Handle, imageURI, tmpDir string) (ggcrv1.Image, error) {
 	// oci-archive - Perform a tar extraction first, and handle as an oci layout.
 	if strings.HasPrefix(imageURI, "oci-archive:") {
-		var tmpDir string
-		tmpDir, err := os.MkdirTemp(tOpts.TmpDir, "temp-oci-")
+		layoutURI, cleanup, err := extractOCIArchive(imageURI, tmpDir)
 		if err != nil {
-			return nil, fmt.Errorf("could not create temporary oci directory: %v", err)
+			return nil, err
 		}
-		defer os.RemoveAll(tmpDir)
-
-		// oci-archive:<path>[:tag]
-		refParts := strings.SplitN(imageURI, ":", 3)
-		sylog.Debugf("Extracting oci-archive %q to %q", refParts[1], tmpDir)
-		err = extractArchive(refParts[1], tmpDir)
-		if err != nil {
-			return nil, fmt.Errorf("error extracting the OCI archive file: %v", err)
-		}
-		// We may or may not have had a ':tag' in the source to handle
-		imageURI = "oci:" + tmpDir
-		if len(refParts) == 3 {
-			imageURI = imageURI + ":" + refParts[2]
-		}
+		defer cleanup()
+		imageURI = layoutURI
 	}
 
 	srcType, srcRef, err := URItoSourceSinkRef(imageURI)
@@ -106,11 +93,37 @@ func FetchToLayout(ctx context.Context, tOpts *TransportOptions, imgCache *cache
 	return OCISourceSink.Image(ctx, tmpLayout, tOpts)
 }
 
-// Perform a dumb tar(gz) extraction with no chown, id remapping etc.
-// This is needed for non-root handling of `oci-archive` as the extraction
-// by containers/archive is failing when uid/gid don't match local machine
-// and we're not root
-func extractArchive(src string, dst string) error {
+// extractOCIArchive will extract a tar `oci-archive:` image into a temporary
+// layout dir. The caller is responsible for calling cleanup() to remove the
+// temporary layout.
+func extractOCIArchive(archiveURI, tmpDir string) (layoutURI string, cleanup func(), err error) {
+	layoutDir, err := os.MkdirTemp(tmpDir, "temp-oci-")
+	if err != nil {
+		return "", nil, fmt.Errorf("could not create temporary oci directory: %v", err)
+	}
+	// oci-archive:<path>[:tag]
+	refParts := strings.SplitN(archiveURI, ":", 3)
+	sylog.Debugf("Extracting oci-archive %q to %q", refParts[1], layoutDir)
+	err = extractTarNaive(refParts[1], layoutDir)
+	if err != nil {
+		os.RemoveAll(layoutDir)
+		return "", nil, fmt.Errorf("error extracting the OCI archive file: %v", err)
+	}
+	// We may or may not have had a ':tag' in the source to handle
+	layoutURI = "oci:" + layoutDir
+	if len(refParts) == 3 {
+		layoutURI = layoutURI + ":" + refParts[2]
+	}
+	cleanup = func() {
+		os.RemoveAll(layoutDir)
+	}
+	return layoutURI, cleanup, nil
+}
+
+// extractTarNaive will extract a tar with no chown, id remapping etc. It only
+// writes directories and regular files. This naive extraction avoids any
+// permissions / xattr issues when extracting a tarred OCI layout.
+func extractTarNaive(src string, dst string) error {
 	f, err := os.Open(src)
 	if err != nil {
 		return err

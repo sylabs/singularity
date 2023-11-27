@@ -9,15 +9,15 @@ import (
 	"testing"
 
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	ggcrempty "github.com/google/go-containerregistry/pkg/v1/empty"
 	ggcrmutate "github.com/google/go-containerregistry/pkg/v1/mutate"
 	ggcrrandom "github.com/google/go-containerregistry/pkg/v1/random"
-	"github.com/opencontainers/go-digest"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	"gotest.tools/v3/assert"
 )
 
-func imageWithManifest(t *testing.T) (rawManifest []byte, imageDigest digest.Digest) {
+func imageWithManifest(t *testing.T) (rawManifest []byte, imageDigest v1.Hash) {
 	im, err := ggcrrandom.Image(1024, 3)
 	if err != nil {
 		t.Fatal(err)
@@ -30,10 +30,10 @@ func imageWithManifest(t *testing.T) (rawManifest []byte, imageDigest digest.Dig
 	if err != nil {
 		t.Fatal(err)
 	}
-	return rm, digest.Digest(id.String())
+	return rm, id
 }
 
-func imageWithIndex(t *testing.T) (rawIndex []byte, imageDigest digest.Digest) {
+func imageWithIndex(t *testing.T) (rawIndex []byte, imageDigest v1.Hash) {
 	im, err := ggcrrandom.Image(1024, 3)
 	if err != nil {
 		t.Fatal(err)
@@ -56,7 +56,7 @@ func imageWithIndex(t *testing.T) (rawIndex []byte, imageDigest digest.Digest) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return ri, digest.Digest(id.String())
+	return ri, id
 }
 
 func Test_digestFromManifestOrIndex(t *testing.T) {
@@ -67,7 +67,7 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 		name             string
 		transportOptions *TransportOptions
 		manifestOrIndex  []byte
-		want             digest.Digest
+		want             v1.Hash
 		wantErr          bool
 	}{
 		{
@@ -107,7 +107,7 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 				},
 			},
 			manifestOrIndex: index,
-			want:            "",
+			want:            v1.Hash{},
 			wantErr:         true,
 		},
 		{
@@ -120,7 +120,7 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 				},
 			},
 			manifestOrIndex: index,
-			want:            "",
+			want:            v1.Hash{},
 			wantErr:         true,
 		},
 		{
@@ -133,7 +133,7 @@ func Test_digestFromManifestOrIndex(t *testing.T) {
 				},
 			},
 			manifestOrIndex: index,
-			want:            "",
+			want:            v1.Hash{},
 			wantErr:         true,
 		},
 	}

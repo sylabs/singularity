@@ -70,12 +70,7 @@ func PullOCISIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom 
 		Platform:         opts.Platform,
 	}
 
-	ref, err := ociimage.URIToImageReference(pullFrom)
-	if err != nil {
-		return "", err
-	}
-
-	hash, err := ociimage.ImageDigest(ctx, tOpts, imgCache, ref)
+	hash, err := ociimage.ImageDigest(ctx, tOpts, imgCache, pullFrom)
 	if err != nil {
 		return "", fmt.Errorf("failed to get digest for %s: %s", pullFrom, err)
 	}

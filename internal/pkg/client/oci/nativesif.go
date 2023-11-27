@@ -21,12 +21,7 @@ import (
 func pullNativeSIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, opts PullOptions) (imagePath string, err error) {
 	to := transportOptions(opts)
 
-	ref, err := ociimage.URIToImageReference(pullFrom)
-	if err != nil {
-		return "", err
-	}
-
-	hash, err := ociimage.ImageDigest(ctx, to, imgCache, ref)
+	hash, err := ociimage.ImageDigest(ctx, to, imgCache, pullFrom)
 	if err != nil {
 		return "", fmt.Errorf("failed to get checksum for %s: %s", pullFrom, err)
 	}
