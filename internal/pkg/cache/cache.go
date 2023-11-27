@@ -19,7 +19,6 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
-	"github.com/opencontainers/go-digest"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -114,7 +113,7 @@ func (h *Handle) GetOciCacheDir(cacheType string) (cacheDir string, err error) {
 	return h.getCacheTypeDir(cacheType), nil
 }
 
-func (h *Handle) GetOciCacheBlob(cacheType string, blobDigest digest.Digest) (io.ReadCloser, error) {
+func (h *Handle) GetOciCacheBlob(cacheType string, blobDigest v1.Hash) (io.ReadCloser, error) {
 	if h.disabled {
 		return nil, errCacheDisabled
 	}
@@ -133,7 +132,7 @@ func (h *Handle) GetOciCacheBlob(cacheType string, blobDigest digest.Digest) (io
 	return layout.Blob(hash)
 }
 
-func (h *Handle) PutOciCacheBlob(cacheType string, blobDigest digest.Digest, r io.ReadCloser) (err error) {
+func (h *Handle) PutOciCacheBlob(cacheType string, blobDigest v1.Hash, r io.ReadCloser) (err error) {
 	if h.disabled {
 		return errCacheDisabled
 	}

@@ -10,12 +10,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/containers/image/v5/docker"
-	dockerarchive "github.com/containers/image/v5/docker/archive"
-	dockerdaemon "github.com/containers/image/v5/docker/daemon"
-	ociarchive "github.com/containers/image/v5/oci/archive"
-	ocilayout "github.com/containers/image/v5/oci/layout"
-	"github.com/containers/image/v5/signature"
 	"github.com/containers/image/v5/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -138,43 +132,6 @@ func SystemContextFromTransportOptions(tOpts *TransportOptions) *types.SystemCon
 	}
 	sc := tOpts.SystemContext()
 	return &sc
-}
-
-// DefaultPolicy is Singularity's default containers/image OCI signature verification policy - accept anything.
-func DefaultPolicy() (*signature.PolicyContext, error) {
-	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
-	return signature.NewPolicyContext(policy)
-}
-
-// URIToImageReference parses a uri-like OCI image reference into a containers/image types.ImageReference.
-func URIToImageReference(imageRef string) (types.ImageReference, error) {
-	parts := strings.SplitN(imageRef, ":", 2)
-	if len(parts) < 2 {
-		return nil, fmt.Errorf("could not parse image ref: %s", imageRef)
-	}
-
-	var srcRef types.ImageReference
-	var err error
-
-	switch parts[0] {
-	case "docker":
-		srcRef, err = docker.ParseReference(parts[1])
-	case "docker-archive":
-		srcRef, err = dockerarchive.ParseReference(parts[1])
-	case "docker-daemon":
-		srcRef, err = dockerdaemon.ParseReference(parts[1])
-	case "oci":
-		srcRef, err = ocilayout.ParseReference(parts[1])
-	case "oci-archive":
-		srcRef, err = ociarchive.ParseReference(parts[1])
-	default:
-		return nil, errUnsupportedTransport
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return srcRef, nil
 }
 
 // URItoSourceSinkRef parses a uri-like OCI image reference into a SourceSink and ref
