@@ -623,8 +623,8 @@ github.com/sylabs/scs-build-client v0.9.2 h1:lSyY0hmEytjsN+P1YDr4+Q6AFdEs0E5utIc
 github.com/sylabs/scs-build-client v0.9.2/go.mod h1:5b/kF000CblhrnFmcPGI1h8LGUKm4EW6pEbF49nVXuA=
 github.com/sylabs/scs-key-client v0.7.3 h1:k//63VQmgtJb+oTXmyO2thdSjgvi18mJLDI9bYAAceA=
 github.com/sylabs/scs-key-client v0.7.3/go.mod h1:FHLCehXKHTrvGSx35qLvXUU1zGpu8ad4WGTkgs4h4wA=
-github.com/sylabs/scs-library-client v1.4.5 h1:X/WPO+U+hVVmp2jioGM4AWXaPo3ECAJQQlWxZmKJReE=
-github.com/sylabs/scs-library-client v1.4.5/go.mod h1:nCAsuxBKCNGHKCrMae0EuySFEJgYFSRgqq4X/c7kI2g=
+github.com/sylabs/scs-library-client v1.3.5 h1:OTpqcQLM3zsZWr2zzqjDfDjXreH2UPbfrWfRwsD5V6E=
+github.com/sylabs/scs-library-client v1.3.5/go.mod h1:PBd6LqmOhliHhTfzp3mVrJv3QVQFre8bMr6j2tDnu/c=
 github.com/sylabs/sif/v2 v2.15.0 h1:Nv0tzksFnoQiQ2eUwpAis9nVqEu4c3RcNSxX8P3Cecw=
 github.com/sylabs/sif/v2 v2.15.0/go.mod h1:X1H7eaPz6BAxA84POMESXoXfTqgAnLQkujyF/CQFWTc=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 h1:kdXcSzyDtseVEc4yCz2qF8ZrQvIDBJLl4S1c3GCXmoI=
@@ -655,8 +655,8 @@ github.com/vbatts/go-mtree v0.5.0 h1:dM+5XZdqH0j9CSZeerhoN/tAySdwnmevaZHO1XGW2Vc
 github.com/vbatts/go-mtree v0.5.0/go.mod h1:7JbaNHyBMng+RP8C3Q4E+4Ca8JnGQA2R/MB+jb4tSOk=
 github.com/vbatts/tar-split v0.11.5 h1:3bHCTIheBm1qFTcgh9oPu+nNBtX+XJIupG/vacinCts=
 github.com/vbatts/tar-split v0.11.5/go.mod h1:yZbwRsSeGjusneWgA781EKej9HF8vme8okylkAeNKLk=
-github.com/vbauerster/mpb/v8 v8.6.2 h1:9EhnJGQRtvgDVCychJgR96EDCOqgg2NsMuk5JUcX4DA=
-github.com/vbauerster/mpb/v8 v8.6.2/go.mod h1:oVJ7T+dib99kZ/VBjoBaC8aPXiSAihnzuKmotuihyFo=
+github.com/vbauerster/mpb/v8 v8.7.0 h1:n2LTGyol7qqNBcLQn8FL5Bga2O8CGF75OOYsJVFsfMg=
+github.com/vbauerster/mpb/v8 v8.7.0/go.mod h1:0RgdqeTpu6cDbdWeSaDvEvfgm9O598rBnRZ09HKaV0k=
 github.com/vishvananda/netlink v1.2.1-beta.2 h1:Llsql0lnQEbHj0I1OuKyp8otXp0r3q0mPkuhwHfStVs=
 github.com/vishvananda/netlink v1.2.1-beta.2/go.mod h1:twkDnbuQxJYemMlGd4JFIcuhgX83tXhKS2B/PRMpOho=
 github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae/go.mod h1:DD4vA1DwXk04H54A1oHXtwZmA0grkVMdPxx/VGLCah0=
