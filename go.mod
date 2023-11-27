@@ -48,7 +48,7 @@ require (
 	github.com/sylabs/scs-key-client v0.7.3
 	github.com/sylabs/scs-library-client v1.4.5
 	github.com/sylabs/sif/v2 v2.15.0
-	github.com/vbauerster/mpb/v8 v8.6.2
+	github.com/vbauerster/mpb/v8 v8.7.0
 	golang.org/x/crypto v0.15.0
 	golang.org/x/sys v0.14.0
 	golang.org/x/term v0.14.0
