@@ -1,7 +1,7 @@
 # go tool default build options
 GO111MODULE := on
-GO_TAGS := containers_image_openpgp exclude_graphdriver_btrfs exclude_graphdriver_devicemapper sylog singularity_engine fakeroot_engine
-GO_TAGS_SUID := containers_image_openpgp exclude_graphdriver_btrfs exclude_graphdriver_devicemapper sylog singularity_engine fakeroot_engine
+GO_TAGS := sylog singularity_engine fakeroot_engine
+GO_TAGS_SUID := sylog singularity_engine fakeroot_engine
 GO_LDFLAGS :=
 # Need to use non-pie build on ppc64le
 # https://github.com/hpcng/singularity/issues/5762

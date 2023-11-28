@@ -3,7 +3,6 @@ run:
   timeout: 5m
   build-tags:
     - apparmor
-    - containers_image_openpgp
     - e2e_test
     - fakeroot_engine
     - seccomp
