@@ -43,7 +43,7 @@ func CachedImage(ctx context.Context, imgCache *cache.Handle, srcImg v1.Image) (
 	cachedRef := layoutDir + "@" + digest.String()
 	sylog.Debugf("Caching image to %s", cachedRef)
 
-	OCISourceSink.WriteImage(srcImg, layoutDir)
+	OCISourceSink.WriteImage(srcImg, layoutDir, nil)
 
 	return OCISourceSink.Image(ctx, cachedRef, nil)
 }
@@ -86,7 +86,7 @@ func FetchToLayout(ctx context.Context, tOpts *TransportOptions, imgCache *cache
 		return nil, err
 	}
 	sylog.Debugf("Copying %q to temporary layout at %q", srcRef, tmpLayout)
-	if err = OCISourceSink.WriteImage(srcImg, tmpLayout); err != nil {
+	if err = OCISourceSink.WriteImage(srcImg, tmpLayout, nil); err != nil {
 		return nil, err
 	}
 

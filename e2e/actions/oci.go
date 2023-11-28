@@ -10,7 +10,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"os/user"
 	"path/filepath"
 	"strconv"
@@ -44,18 +43,11 @@ var (
 func (c actionTests) actionOciRun(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 	e2e.EnsureORASImage(t, c.env)
+	e2e.EnsureOCILayout(t, c.env)
 	e2e.EnsureOCIArchive(t, c.env)
 	e2e.EnsureOCISIF(t, c.env)
 	e2e.EnsureDockerArchive(t, c.env)
 	e2e.EnsureORASOCISIF(t, c.env)
-
-	// Prepare oci source (oci directory layout)
-	ociLayout := t.TempDir()
-	cmd := exec.Command("tar", "-C", ociLayout, "-xf", c.env.OCIArchivePath)
-	err := cmd.Run()
-	if err != nil {
-		t.Fatalf("Error extracting oci archive to layout: %v", err)
-	}
 
 	tests := []struct {
 		name         string
@@ -99,18 +91,18 @@ func (c actionTests) actionOciRun(t *testing.T) {
 		},
 		{
 			name:     "oci",
-			imageRef: "oci:" + ociLayout,
+			imageRef: "oci:" + c.env.OCILayoutPath,
 			exit:     0,
 		},
 		{
 			name:     "true",
-			imageRef: "oci:" + ociLayout,
+			imageRef: "oci:" + c.env.OCILayoutPath,
 			argv:     []string{"true"},
 			exit:     0,
 		},
 		{
 			name:     "false",
-			imageRef: "oci:" + ociLayout,
+			imageRef: "oci:" + c.env.OCILayoutPath,
 			argv:     []string{"false"},
 			exit:     1,
 		},

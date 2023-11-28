@@ -120,20 +120,6 @@ func TransportOptionsFromSystemContext(sc *types.SystemContext) *TransportOption
 	return &tOpts
 }
 
-// SystemContextFromTransportOptions returns a containers/image SystemContext
-// initialized from a TransportOptions struct. If the TrasnportOptions is nil,
-// then nil is returned.
-//
-// Deprecated: for containers/image compatibility only. To be removed in
-// SingularityCE v5
-func SystemContextFromTransportOptions(tOpts *TransportOptions) *types.SystemContext {
-	if tOpts == nil {
-		return nil
-	}
-	sc := tOpts.SystemContext()
-	return &sc
-}
-
 // URItoSourceSinkRef parses a uri-like OCI image reference into a SourceSink and ref
 func URItoSourceSinkRef(imageURI string) (SourceSink, string, error) {
 	parts := strings.SplitN(imageURI, ":", 2)

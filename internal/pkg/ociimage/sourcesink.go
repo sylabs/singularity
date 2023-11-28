@@ -158,7 +158,7 @@ func (ss SourceSink) Image(ctx context.Context, ref string, tOpts *TransportOpti
 	}
 }
 
-func (ss SourceSink) WriteImage(img v1.Image, dstName string) error {
+func (ss SourceSink) WriteImage(img v1.Image, dstName string, tOpts *TransportOptions) error {
 	switch ss {
 	case OCISourceSink:
 		lp, err := layout.FromPath(dstName)
@@ -169,6 +169,29 @@ func (ss SourceSink) WriteImage(img v1.Image, dstName string) error {
 			}
 		}
 		return lp.AppendImage(img)
+
+	case RegistrySourceSink:
+		var nameOpts []name.Option
+		if tOpts != nil && tOpts.Insecure {
+			nameOpts = append(nameOpts, name.Insecure)
+		}
+		dstRef, err := name.ParseReference(dstName, nameOpts...)
+		if err != nil {
+			return err
+		}
+		remoteOpts := []remote.Option{}
+		if tOpts != nil {
+			remoteOpts = append(remoteOpts,
+				remote.WithPlatform(tOpts.Platform),
+				ociauth.AuthOptn(tOpts.AuthConfig, tOpts.AuthFilePath))
+		}
+		return remote.Write(dstRef, img, remoteOpts...)
+
+	case TarballSourceSink:
+		// Only supports writing a single image per tarball.
+		dstRef := name.MustParseReference("image")
+		return tarball.WriteToFile(dstName, dstRef, img)
+
 	case UnknownSourceSink:
 		return errUnsupportedTransport
 	default:

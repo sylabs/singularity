@@ -9,31 +9,25 @@ package e2e
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
 	"sync"
 	"testing"
 
-	"github.com/containers/image/v5/copy"
-	"github.com/containers/image/v5/docker"
-	dockerarchive "github.com/containers/image/v5/docker/archive"
-	ociarchive "github.com/containers/image/v5/oci/archive"
-	ocilayout "github.com/containers/image/v5/oci/layout"
-	"github.com/containers/image/v5/signature"
-	"github.com/containers/image/v5/types"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
+	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/exec"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
-	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
 var (
-	ensureMutex sync.Mutex
-	pullMutex   sync.Mutex
+	ensureMutex  sync.Mutex
+	pullMutex    sync.Mutex
+	ociCopyMutex sync.Mutex
 )
 
 // EnsureImage checks if e2e test image is already built or built
@@ -112,50 +106,61 @@ func BusyboxSIF(t *testing.T) string {
 
 // CopyImage will copy an OCI image from source to destination
 func CopyOCIImage(t *testing.T, source, dest string, insecureSource, insecureDest bool) {
-	policy := &signature.Policy{Default: []signature.PolicyRequirement{signature.NewPRInsecureAcceptAnything()}}
-	policyCtx, err := signature.NewPolicyContext(policy)
-	if err != nil {
-		t.Fatalf("failed to copy %s to %s: %s", source, dest, err)
-	}
-
-	srcCtx := &types.SystemContext{
-		OCIInsecureSkipTLSVerify:    insecureSource,
-		DockerInsecureSkipTLSVerify: types.NewOptionalBool(insecureSource),
-		DockerRegistryUserAgent:     useragent.Value(),
-	}
-	dstCtx := &types.SystemContext{
-		OCIInsecureSkipTLSVerify:    insecureDest,
-		DockerInsecureSkipTLSVerify: types.NewOptionalBool(insecureDest),
-		DockerRegistryUserAgent:     useragent.Value(),
-	}
-
-	srcRef, err := parseRef(source)
-	if err != nil {
-		t.Fatalf("failed to parse %s reference: %s", source, err)
-	}
-	dstRef, err := parseRef(dest)
-	if err != nil {
-		t.Fatalf("failed to parse %s reference: %s", dest, err)
-	}
-
+	// Mutex required due to https://github.com/google/go-containerregistry/issues/1849
+	ociCopyMutex.Lock()
+	defer ociCopyMutex.Unlock()
 	// Use the auth config written out in dockerhub_auth.go - only if
 	// source/dest are not insecure, or are the localhost. We don't want to
 	// inadvertently send out credentials over http (!)
 	u := CurrentUser(t)
 	configPath := filepath.Join(u.Dir, ".singularity", syfs.DockerConfFile)
-	if !insecureSource || isLocalHost(source) {
-		srcCtx.AuthFilePath = configPath
-	}
-	if !insecureDest || isLocalHost(dest) {
-		dstCtx.AuthFilePath = configPath
+
+	srcType, srcRef, err := ociimage.URItoSourceSinkRef(source)
+	if err != nil {
+		t.Fatalf("failed to parse %s reference: %s", source, err)
 	}
 
-	_, err = copy.Image(context.Background(), policyCtx, dstRef, srcRef, &copy.Options{
-		ReportWriter:   io.Discard,
-		SourceCtx:      srcCtx,
-		DestinationCtx: dstCtx,
-	})
+	platform, err := ociplatform.DefaultPlatform()
 	if err != nil {
+		t.Fatalf("failed to obtain platform: %s", err)
+	}
+
+	srcOpts := ociimage.TransportOptions{
+		Insecure: insecureSource,
+		Platform: *platform,
+	}
+	if !insecureSource || isLocalHost(source) {
+		srcOpts.AuthFilePath = configPath
+	}
+
+	srcImage, err := srcType.Image(context.Background(), srcRef, &srcOpts)
+	if err != nil {
+		t.Fatalf("failed to initialize source: %v", err)
+	}
+
+	// Must copy through a temp layout due to https://github.com/google/go-containerregistry/issues/1849
+	tmpDir, cleanup := MakeTempDir(t, "", "copy-oci-image-", "")
+	defer cleanup(t)
+	if err := ociimage.OCISourceSink.WriteImage(srcImage, tmpDir, nil); err != nil {
+		t.Fatalf("failed to write temporary layout: %s", err)
+	}
+	tmpImg, err := ociimage.OCISourceSink.Image(context.Background(), tmpDir, nil)
+	if err != nil {
+		t.Fatalf("failed to initialize temporary layout source: %v", err)
+	}
+
+	dstType, dstRef, err := ociimage.URItoSourceSinkRef(dest)
+	if err != nil {
+		t.Fatalf("failed to parse %s reference: %s", dest, err)
+	}
+	dstOpts := ociimage.TransportOptions{
+		Insecure: insecureSource,
+	}
+	if !insecureDest || isLocalHost(dest) {
+		dstOpts.AuthFilePath = configPath
+	}
+
+	if err := dstType.WriteImage(tmpImg, dstRef, &dstOpts); err != nil {
 		t.Fatalf("failed to copy %s to %s: %s", source, dest, err)
 	}
 }
@@ -266,9 +271,34 @@ func DownloadFile(url string, path string) error {
 	return nil
 }
 
+func EnsureOCILayout(t *testing.T, env TestEnv) {
+	ensureMutex.Lock()
+	defer ensureMutex.Unlock()
+
+	switch _, err := os.Stat(env.OCILayoutPath); {
+	case err == nil:
+		// OK: dir exists, return
+		return
+
+	case os.IsNotExist(err):
+		// OK: dir does not exist, continue
+
+	default:
+		// FATAL: something else is wrong
+		t.Fatalf("Failed when checking image %q: %+v\n",
+			env.OCILayoutPath,
+			err)
+	}
+
+	// Prepare oci-archive source
+	t.Logf("Copying %s to %s", env.TestRegistryImage, "oci:"+env.OCILayoutPath)
+	CopyOCIImage(t, env.TestRegistryImage, "oci:"+env.OCILayoutPath, true, false)
+}
+
 // EnsureImage checks if e2e OCI test archive is available, and fetches
 // it otherwise.
 func EnsureOCIArchive(t *testing.T, env TestEnv) {
+	EnsureOCILayout(t, env)
 	ensureMutex.Lock()
 	defer ensureMutex.Unlock()
 
@@ -287,9 +317,12 @@ func EnsureOCIArchive(t *testing.T, env TestEnv) {
 			err)
 	}
 
-	// Prepare oci-archive source
-	t.Logf("Copying %s to %s", env.TestRegistryImage, "oci-archive:"+env.OCIArchivePath)
-	CopyOCIImage(t, env.TestRegistryImage, "oci-archive:"+env.OCIArchivePath, true, false)
+	t.Logf("Tarring %s to %s", env.OCILayoutPath, "oci-archive:"+env.OCIArchivePath)
+	cmd := exec.Command("tar", "-cf", env.OCIArchivePath, "-C", env.OCILayoutPath, "index.json", "oci-layout", "blobs")
+	err := cmd.Run(t)
+	if err.ExitCode != 0 {
+		t.Fatalf("Error tarring oci layout to archive: %v", err)
+	}
 }
 
 // EnsureImage checks if e2e OCI-SIF file is available, and fetches it
@@ -346,26 +379,4 @@ func EnsureDockerArchive(t *testing.T, env TestEnv) {
 	// Prepare oci-archive source
 	t.Logf("Copying %s to %s", env.TestRegistryImage, "docker-archive:"+env.DockerArchivePath)
 	CopyOCIImage(t, env.TestRegistryImage, "docker-archive:"+env.DockerArchivePath, true, false)
-}
-
-func parseRef(refString string) (ref types.ImageReference, err error) {
-	parts := strings.SplitN(refString, ":", 2)
-	if len(parts) < 2 {
-		return nil, fmt.Errorf("could not parse image ref: %s", refString)
-	}
-
-	switch parts[0] {
-	case "docker":
-		ref, err = docker.ParseReference(parts[1])
-	case "docker-archive":
-		ref, err = dockerarchive.ParseReference(parts[1])
-	case "oci":
-		ref, err = ocilayout.ParseReference(parts[1])
-	case "oci-archive":
-		ref, err = ociarchive.ParseReference(parts[1])
-	default:
-		return nil, fmt.Errorf("cannot create an OCI container from %s source", parts[0])
-	}
-
-	return ref, err
 }
