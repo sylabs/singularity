@@ -20,12 +20,13 @@ import (
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
-// CachedImage will ensure that the provided v1.Image is present in the Singularity
+// cachedImage will ensure that the provided v1.Image is present in the Singularity
 // OCI cache layout dir, and return a new v1.Image pointing to the cached copy.
-func CachedImage(ctx context.Context, imgCache *cache.Handle, srcImg v1.Image) (v1.Image, error) {
+func cachedImage(ctx context.Context, imgCache *cache.Handle, srcImg v1.Image) (v1.Image, error) {
 	if imgCache == nil || imgCache.IsDisabled() {
 		return nil, fmt.Errorf("undefined image cache")
 	}
@@ -42,10 +43,11 @@ func CachedImage(ctx context.Context, imgCache *cache.Handle, srcImg v1.Image) (
 
 	cachedRef := layoutDir + "@" + digest.String()
 	sylog.Debugf("Caching image to %s", cachedRef)
+	if err := OCISourceSink.WriteImage(srcImg, layoutDir, nil); err != nil {
+		return nil, err
+	}
 
-	OCISourceSink.WriteImage(srcImg, layoutDir, nil)
-
-	return OCISourceSink.Image(ctx, cachedRef, nil)
+	return OCISourceSink.Image(ctx, cachedRef, nil, nil)
 }
 
 // FetchToLayout will fetch the OCI image specified by imageRef to an OCI layout
@@ -70,14 +72,24 @@ func FetchToLayout(ctx context.Context, tOpts *TransportOptions, imgCache *cache
 		return nil, err
 	}
 
-	srcImg, err := srcType.Image(ctx, srcRef, tOpts)
+	rt := progress.NewRoundTripper(ctx, nil)
+
+	srcImg, err := srcType.Image(ctx, srcRef, tOpts, rt)
 	if err != nil {
+		rt.ProgressShutdown()
 		return nil, err
 	}
 
 	if imgCache != nil && !imgCache.IsDisabled() {
 		// Ensure the image is cached, and return reference to the cached image.
-		return CachedImage(ctx, imgCache, srcImg)
+		cachedImg, err := cachedImage(ctx, imgCache, srcImg)
+		if err != nil {
+			rt.ProgressShutdown()
+			return nil, err
+		}
+		rt.ProgressComplete()
+		rt.ProgressWait()
+		return cachedImg, nil
 	}
 
 	// No cache - write to layout directory provided
@@ -87,10 +99,13 @@ func FetchToLayout(ctx context.Context, tOpts *TransportOptions, imgCache *cache
 	}
 	sylog.Debugf("Copying %q to temporary layout at %q", srcRef, tmpLayout)
 	if err = OCISourceSink.WriteImage(srcImg, tmpLayout, nil); err != nil {
+		rt.ProgressShutdown()
 		return nil, err
 	}
+	rt.ProgressComplete()
+	rt.ProgressWait()
 
-	return OCISourceSink.Image(ctx, tmpLayout, tOpts)
+	return OCISourceSink.Image(ctx, tmpLayout, tOpts, nil)
 }
 
 // extractOCIArchive will extract a tar `oci-archive:` image into a temporary

@@ -14,29 +14,34 @@ import (
 	"github.com/vbauerster/mpb/v8/decor"
 )
 
+var defaultOption = []mpb.BarOption{
+	mpb.PrependDecorators(
+		decor.Counters(decor.SizeB1024(0), "%.1f / %.1f"),
+	),
+	mpb.AppendDecorators(
+		decor.Percentage(),
+		decor.AverageSpeed(decor.SizeB1024(0), " % .1f "),
+		decor.AverageETA(decor.ET_STYLE_GO),
+	),
+}
+
+var unknownSizeOption = []mpb.BarOption{
+	mpb.PrependDecorators(
+		decor.Current(decor.SizeB1024(0), "%.1f / ???"),
+	),
+	mpb.AppendDecorators(
+		decor.AverageSpeed(decor.SizeB1024(0), " % .1f "),
+	),
+}
+
+// initProgressBar initializes an mpb.Progress with a single bar.
 func initProgressBar(totalSize int64) (*mpb.Progress, *mpb.Bar) {
 	p := mpb.New()
 
 	if totalSize > 0 {
-		return p, p.AddBar(totalSize,
-			mpb.PrependDecorators(
-				decor.Counters(decor.SizeB1024(0), "%.1f / %.1f"),
-			),
-			mpb.AppendDecorators(
-				decor.Percentage(),
-				decor.AverageSpeed(decor.SizeB1024(0), " % .1f "),
-				decor.AverageETA(decor.ET_STYLE_GO),
-			),
-		)
+		return p, p.AddBar(totalSize, defaultOption...)
 	}
-	return p, p.AddBar(totalSize,
-		mpb.PrependDecorators(
-			decor.Current(decor.SizeB1024(0), "%.1f / ???"),
-		),
-		mpb.AppendDecorators(
-			decor.AverageSpeed(decor.SizeB1024(0), " % .1f "),
-		),
-	)
+	return p, p.AddBar(totalSize, unknownSizeOption...)
 }
 
 // See: https://ixday.github.io/post/golang-cancel-copy/

@@ -18,6 +18,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
@@ -32,7 +33,7 @@ const (
 	DaemonSourceSink
 )
 
-func getDockerImage(ctx context.Context, src string, tOpts *TransportOptions) (v1.Image, error) {
+func getDockerImage(ctx context.Context, src string, tOpts *TransportOptions, rt *progress.RoundTripper) (v1.Image, error) {
 	var nameOpts []name.Option
 	if tOpts != nil && tOpts.Insecure {
 		nameOpts = append(nameOpts, name.Insecure)
@@ -51,6 +52,10 @@ func getDockerImage(ctx context.Context, src string, tOpts *TransportOptions) (v
 		pullOpts = append(pullOpts,
 			remote.WithPlatform(tOpts.Platform),
 			ociauth.AuthOptn(tOpts.AuthConfig, tOpts.AuthFilePath))
+	}
+
+	if rt != nil {
+		pullOpts = append(pullOpts, remote.WithTransport(rt))
 	}
 
 	return remote.Image(srcRef, pullOpts...)
@@ -141,10 +146,10 @@ func (ss SourceSink) Reference(s string, tOpts *TransportOptions) (name.Referenc
 	}
 }
 
-func (ss SourceSink) Image(ctx context.Context, ref string, tOpts *TransportOptions) (v1.Image, error) {
+func (ss SourceSink) Image(ctx context.Context, ref string, tOpts *TransportOptions, rt *progress.RoundTripper) (v1.Image, error) {
 	switch ss {
 	case RegistrySourceSink:
-		return getDockerImage(ctx, ref, tOpts)
+		return getDockerImage(ctx, ref, tOpts, rt)
 	case TarballSourceSink:
 		return tarball.ImageFromPath(ref, nil)
 	case OCISourceSink:

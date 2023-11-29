@@ -6,65 +6,83 @@
 package progress
 
 import (
-	"io"
+	"context"
 	"net/http"
+
+	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/vbauerster/mpb/v8"
+	"golang.org/x/term"
 )
 
-const contentSizeThreshold = 1024
+const contentSizeThreshold = 64 * 1024
 
 type RoundTripper struct {
 	inner http.RoundTripper
-	pb    *DownloadBar
+	p     *mpb.Progress
+	bars  []*mpb.Bar
+	sizes []int64
 }
 
-func NewRoundTripper(inner http.RoundTripper, pb *DownloadBar) *RoundTripper {
+// NewRoundTripper wraps inner (or http.DefaultTransport if inner is nil) with
+// progress bar functionality. A separate bar will be displayed for every GET
+// request that returns a body >64KiB, updated as the response body is read. The
+// caller is responsible for calling rt.ProgressWait / rt.ProgressShutdown when
+// all requests are completed, so that the mpb progress container exits
+// correctly. Note that if requests are made, but the response body is not
+// read, the progress bar will remain 'stuck', preventing rt.ProgressWait
+// from returning. rt.ProgressComplete is provided to override all bars to be
+// 100% complete, to satisfy rt.ProgressWait where appropriate.
+func NewRoundTripper(ctx context.Context, inner http.RoundTripper) *RoundTripper {
 	if inner == nil {
 		inner = http.DefaultTransport
 	}
 
 	rt := RoundTripper{
 		inner: inner,
-		pb:    pb,
+	}
+
+	if term.IsTerminal(2) && sylog.GetLevel() >= 0 {
+		rt.p = mpb.NewWithContext(ctx)
 	}
 
 	return &rt
 }
 
-type rtReadCloser struct {
-	inner io.ReadCloser
-	pb    *DownloadBar
-}
-
-func (r *rtReadCloser) Read(p []byte) (int, error) {
-	return r.inner.Read(p)
-}
-
-func (r *rtReadCloser) Close() error {
-	err := r.inner.Close()
-	if err == nil {
-		r.pb.Wait()
-	} else {
-		r.pb.Abort(false)
-	}
-
-	return err
-}
-
 func (t *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	if t.pb != nil && req.Body != nil && req.ContentLength >= contentSizeThreshold {
-		t.pb.Init(req.ContentLength)
-		req.Body = &rtReadCloser{
-			inner: t.pb.bar.ProxyReader(req.Body),
-			pb:    t.pb,
-		}
+	if t.p == nil || req.Method != http.MethodGet {
+		return t.inner.RoundTrip(req)
 	}
+
 	resp, err := t.inner.RoundTrip(req)
-	if t.pb != nil && resp != nil && resp.Body != nil && resp.ContentLength >= contentSizeThreshold {
-		t.pb.Init(resp.ContentLength)
-		resp.Body = &rtReadCloser{
-			inner: t.pb.bar.ProxyReader(resp.Body),
-			pb:    t.pb,
-		}
+	if resp != nil && resp.Body != nil && resp.ContentLength >= contentSizeThreshold {
+		bar := t.p.AddBar(resp.ContentLength, defaultOption...)
+		t.bars = append(t.bars, bar)
+		t.sizes = append(t.sizes, resp.ContentLength)
+		resp.Body = bar.ProxyReader(resp.Body)
 	}
 	return resp, err
+}
+
+// ProgressComplete overrides all progress bars, setting them to 100% complete.
+func (t *RoundTripper) ProgressComplete() {
+	if t.p != nil {
+		for i, bar := range t.bars {
+			bar.SetCurrent(t.sizes[i])
+		}
+	}
+}
+
+// ProgressWait shuts down the mpb Progress container by waiting for all bars to
+// complete.
+func (t *RoundTripper) ProgressWait() {
+	if t.p != nil {
+		t.p.Wait()
+	}
+}
+
+// ProgressShutdown immediately shuts down the mpb Progress container.
+func (t *RoundTripper) ProgressShutdown() {
+	if t.p != nil {
+		t.p.Shutdown()
+	}
 }

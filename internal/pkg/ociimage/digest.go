@@ -56,7 +56,7 @@ func ImageDigest(ctx context.Context, tOpts *TransportOptions, imgCache *cache.H
 // digest of the image manifest for the requested architecture specified in
 // tOpts.
 func directDigest(ctx context.Context, tOpts *TransportOptions, srcType SourceSink, srcRef string) (v1.Hash, error) {
-	img, err := srcType.Image(ctx, srcRef, tOpts)
+	img, err := srcType.Image(ctx, srcRef, tOpts, nil)
 	if err != nil {
 		return v1.Hash{}, err
 	}
