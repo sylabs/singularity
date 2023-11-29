@@ -28,6 +28,10 @@
   given the `--app <appname>` flag, and will automatically invoke the relevant
   SCIF command.
 
+### Bug Fixes
+
+- Execute correct `%appstart` script when using `instance start` with `--app`.
+
 ## 4.0.2 \[2023-11-16\]
 
 ### Changed defaults / behaviours
