@@ -133,7 +133,7 @@ func CopyOCIImage(t *testing.T, source, dest string, insecureSource, insecureDes
 		srcOpts.AuthFilePath = configPath
 	}
 
-	srcImage, err := srcType.Image(context.Background(), srcRef, &srcOpts)
+	srcImage, err := srcType.Image(context.Background(), srcRef, &srcOpts, nil)
 	if err != nil {
 		t.Fatalf("failed to initialize source: %v", err)
 	}
@@ -144,7 +144,7 @@ func CopyOCIImage(t *testing.T, source, dest string, insecureSource, insecureDes
 	if err := ociimage.OCISourceSink.WriteImage(srcImage, tmpDir, nil); err != nil {
 		t.Fatalf("failed to write temporary layout: %s", err)
 	}
-	tmpImg, err := ociimage.OCISourceSink.Image(context.Background(), tmpDir, nil)
+	tmpImg, err := ociimage.OCISourceSink.Image(context.Background(), tmpDir, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to initialize temporary layout source: %v", err)
 	}

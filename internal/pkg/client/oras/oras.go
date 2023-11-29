@@ -30,27 +30,11 @@ import (
 )
 
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
-func DownloadImage(ctx context.Context, path, ref string, ociAuth *authn.AuthConfig, reqAuthFile string, pb *progress.DownloadBar) error {
-	if pb != nil {
-		// Due to the way our progress bar is implemented in remoteImage() -
-		// namely, using a custom http.RoundTripper, whose API does not allow
-		// for explicit passing of a context var - we need to handle context
-		// cancellation ourselves in the case where pb is not nil.
-		doneChan := make(chan struct{})
-		defer close(doneChan)
-		go func() {
-			select {
-			case <-ctx.Done():
-				pb.Abort(true)
-				return
-			case <-doneChan:
-				return
-			}
-		}()
-	}
-
-	im, err := remoteImage(ctx, ref, ociAuth, reqAuthFile, pb)
+func DownloadImage(ctx context.Context, path, ref string, ociAuth *authn.AuthConfig, reqAuthFile string) error {
+	rt := progress.NewRoundTripper(ctx, nil)
+	im, err := remoteImage(ctx, ref, ociAuth, reqAuthFile, rt)
 	if err != nil {
+		rt.ProgressShutdown()
 		return err
 	}
 
@@ -62,6 +46,7 @@ func DownloadImage(ctx context.Context, path, ref string, ociAuth *authn.AuthCon
 	//
 	manifest, err := im.Manifest()
 	if err != nil {
+		rt.ProgressShutdown()
 		return err
 	}
 	if len(manifest.Layers) != 1 {
@@ -70,12 +55,14 @@ func DownloadImage(ctx context.Context, path, ref string, ociAuth *authn.AuthCon
 	layer := manifest.Layers[0]
 	if layer.MediaType != SifLayerMediaTypeV1 &&
 		layer.MediaType != SifLayerMediaTypeProto {
+		rt.ProgressShutdown()
 		return fmt.Errorf("invalid layer mediatype: %s", layer.MediaType)
 	}
 
 	// Retrieve image to a temporary OCI layout
 	tmpDir, err := os.MkdirTemp("", "oras-tmp-")
 	if err != nil {
+		rt.ProgressShutdown()
 		return err
 	}
 	defer func() {
@@ -85,11 +72,16 @@ func DownloadImage(ctx context.Context, path, ref string, ociAuth *authn.AuthCon
 	}()
 	tmpLayout, err := layout.Write(tmpDir, empty.Index)
 	if err != nil {
+		rt.ProgressShutdown()
 		return err
 	}
 	if err := tmpLayout.AppendImage(im); err != nil {
+		rt.ProgressShutdown()
 		return err
 	}
+
+	rt.ProgressComplete()
+	rt.ProgressWait()
 
 	// Copy SIF blob out from layout to final location
 	blob, err := tmpLayout.Blob(layer.Digest)
@@ -254,7 +246,7 @@ func sha256sum(r io.Reader) (result string, nBytes int64, err error) {
 }
 
 // remoteImage returns a v1.Image for the provided remote ref.
-func remoteImage(ctx context.Context, ref string, ociAuth *authn.AuthConfig, reqAuthFile string, pb *progress.DownloadBar) (ggcrv1.Image, error) {
+func remoteImage(ctx context.Context, ref string, ociAuth *authn.AuthConfig, reqAuthFile string, rt *progress.RoundTripper) (ggcrv1.Image, error) {
 	ref = strings.TrimPrefix(ref, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
@@ -271,8 +263,8 @@ func remoteImage(ctx context.Context, ref string, ociAuth *authn.AuthConfig, req
 		ociauth.AuthOptn(ociAuth, reqAuthFile),
 		remote.WithContext(ctx),
 	}
-	if pb != nil {
-		rt := progress.NewRoundTripper(nil, pb)
+
+	if rt != nil {
 		remoteOpts = append(remoteOpts, remote.WithTransport(rt))
 	}
 
