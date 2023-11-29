@@ -55,7 +55,38 @@ func (c *ctx) testBasicEchoServer(t *testing.T) {
 				return
 			}
 			// Try to contact the instance.
-			echo(t, instanceStartPort)
+			echo(t, instanceStartPort, false)
+			c.stopInstance(t, instanceName)
+		}),
+		e2e.ExpectExit(0),
+	)
+}
+
+// Test that a basic reverse-echo server defined in an appstart script can be started,
+// communicated with, and stopped.
+func (c *ctx) testAppEchoServer(t *testing.T) {
+	const instanceName = "echoApp"
+
+	args := []string{
+		"--app",
+		"foo",
+		c.env.ImagePath,
+		instanceName,
+		strconv.Itoa(instanceStartPort),
+	}
+
+	// Start the instance.
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(c.profile),
+		e2e.WithCommand("instance start"),
+		e2e.WithArgs(args...),
+		e2e.PostRun(func(t *testing.T) {
+			if t.Failed() {
+				return
+			}
+			// Try to contact the instance.
+			echo(t, instanceStartPort, true)
 			c.stopInstance(t, instanceName)
 		}),
 		e2e.ExpectExit(0),
@@ -77,7 +108,7 @@ func (c *ctx) testCreateManyInstances(t *testing.T) {
 			e2e.WithCommand("instance start"),
 			e2e.WithArgs(c.env.ImagePath, instanceName, strconv.Itoa(port)),
 			e2e.PostRun(func(t *testing.T) {
-				echo(t, port)
+				echo(t, port, false)
 			}),
 			e2e.ExpectExit(0),
 		)
@@ -403,6 +434,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 				function func(*testing.T)
 			}{
 				{"BasicEchoServer", c.testBasicEchoServer},
+				{"AppEchoServer", c.testAppEchoServer},
 				{"BasicOptions", c.testBasicOptions},
 				{"Contain", c.testContain},
 				{"InstanceFromURI", c.testInstanceFromURI},
