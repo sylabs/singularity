@@ -246,7 +246,7 @@ var OciAttachCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
 	Run: func(cmd *cobra.Command, args []string) {
-		if err := oci.Attach(cmd.Context(), args[0]); err != nil {
+		if err := oci.Attach(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
 	},
