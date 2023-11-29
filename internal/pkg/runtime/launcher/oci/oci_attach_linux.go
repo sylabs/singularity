@@ -10,7 +10,6 @@ package oci
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"io"
 	"net"
@@ -53,9 +52,7 @@ const (
 )
 
 // Attach attaches the console to a running container
-//
-// FIXME: use context for cancellation, or remove.
-func Attach(_ context.Context, containerID string) error {
+func Attach(containerID string) error {
 	streams := attachStreams{
 		OutputStream: os.Stdout,
 		ErrorStream:  os.Stderr,
