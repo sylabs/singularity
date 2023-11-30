@@ -121,3 +121,9 @@ func findSquashfuse(name string) (path string, err error) {
 	// squashfuse if found on PATH
 	return findOnPath(name)
 }
+
+// findSingularityBuildkitd returns the bundled singularity-buildkitd.
+func FindSingularityBuildkitd() (path string, err error) {
+	bkd := filepath.Join(buildcfg.LIBEXECDIR, "singularity", "bin", "singularity-buildkitd")
+	return exec.LookPath(bkd)
+}

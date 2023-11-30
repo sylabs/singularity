@@ -23,10 +23,13 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/blang/semver/v4"
@@ -40,19 +43,21 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/sylabs/singularity/v4/internal/pkg/build/args"
-	bkdaemon "github.com/sylabs/singularity/v4/internal/pkg/build/buildkit/daemon"
+	bkauth "github.com/sylabs/singularity/v4/internal/pkg/build/buildkit/auth"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/sync/errgroup"
 )
 
 const (
-	buildTag        = "tag"
-	bkDefaultSocket = "unix:///run/buildkit/buildkitd.sock"
-	bkLaunchTimeout = 120 * time.Second
-	bkMinVersion    = "v0.12.3"
+	buildTag          = "tag"
+	bkDefaultSocket   = "unix:///run/buildkit/buildkitd.sock"
+	bkLaunchTimeout   = 120 * time.Second
+	bkShutdownTimeout = 10 * time.Second
+	bkMinVersion      = "v0.12.3"
 )
 
 type Opts struct {
@@ -76,20 +81,24 @@ type Opts struct {
 	DisableCache bool
 }
 
-func Run(ctx context.Context, opts *Opts, dest, spec string) {
+func Run(ctx context.Context, opts *Opts, dest, spec string) error {
 	sylog.Debugf("Requested build architecture is: %q", opts.ReqArch)
 	bkSocket := os.Getenv("BUILDKIT_HOST")
 	if bkSocket == "" {
 		bkSocket = bkDefaultSocket
 	}
-	listenSocket := ensureBuildkitd(ctx, opts, bkSocket)
-	if listenSocket == "" {
-		sylog.Fatalf("Failed to launch buildkitd daemon within specified timeout (%v).", bkLaunchTimeout)
+
+	listenSocket, bkCleanup, err := ensureBuildkitd(ctx, opts, bkSocket)
+	if err != nil {
+		return fmt.Errorf("failed to launch / connect to buildkitd daemon: %w", err)
+	}
+	if bkCleanup != nil {
+		defer bkCleanup()
 	}
 
 	tarFile, err := os.CreateTemp("", "singularity-buildkit-tar-")
 	if err != nil {
-		sylog.Fatalf("While trying to build tar image from dockerfile: %v", err)
+		return fmt.Errorf("while creating temporary tar file: %w", err)
 	}
 	defer tarFile.Close()
 	defer func() {
@@ -100,7 +109,7 @@ func Run(ctx context.Context, opts *Opts, dest, spec string) {
 	}()
 
 	if err := buildImage(ctx, opts, tarFile, listenSocket, spec, false); err != nil {
-		sylog.Fatalf("While building from dockerfile: %v", err)
+		return fmt.Errorf("while building from dockerfile: %w", err)
 	}
 	sylog.Debugf("Saved OCI image as tar: %s", tarFile.Name())
 	tarFile.Close()
@@ -111,76 +120,131 @@ func Run(ctx context.Context, opts *Opts, dest, spec string) {
 	if opts.ReqArch != "" {
 		platform, err := ociplatform.PlatformFromArch(opts.ReqArch)
 		if err != nil {
-			sylog.Fatalf("could not determine OCI platform from architecture %q: %v", opts.ReqArch, err)
+			return fmt.Errorf("could not determine OCI platform from architecture %q: %w", opts.ReqArch, err)
 		}
 		pullOpts.Platform = *platform
 	}
 	if _, err := ocisif.PullOCISIF(ctx, nil, dest, "oci-archive:"+tarFile.Name(), pullOpts); err != nil {
-		sylog.Fatalf("While converting OCI tar image to OCI-SIF: %v", err)
+		return fmt.Errorf("while converting OCI tar image to OCI-SIF: %w", err)
 	}
+
+	return nil
 }
 
 // ensureBuildkitd checks if a buildkitd daemon is already running, and if not,
-// launches one. The bkSocket argument is the address at which to look for an
-// already-running daemon.
-func ensureBuildkitd(ctx context.Context, opts *Opts, bkSocket string) string {
-	if isBuildkitdRunning(ctx, opts, bkSocket) {
-		sylog.Infof("Found buildkitd already running at %q; will use that daemon.", bkSocket)
-		return bkSocket
+// launches one. The trySocket argument is the address at which to look for an
+// already-running daemon. The bkSocket returned is the address of the running
+// buildkitd, which may have been started by us. The cleanup function, if
+// non-nil, will cleanly shutdown a daemon started by us.
+func ensureBuildkitd(ctx context.Context, opts *Opts, trySocket string) (bkSocket string, cleanup func(), err error) {
+	if opts.ReqArch != "" {
+		sylog.Infof("Specific architecture requested. Starting built-in singularity-buildkitd.")
+		return startBuildkitd(ctx, opts)
 	}
 
-	sylog.Infof("Did not find usable running buildkitd daemon; spawning our own.")
-	socketChan := make(chan string, 1)
-	go func() {
-		daemonOpts := &bkdaemon.Opts{
-			ReqArch: opts.ReqArch,
-		}
-		if err := bkdaemon.Run(ctx, daemonOpts, socketChan); err != nil {
-			sylog.Fatalf("buildkitd returned error: %v", err)
-		}
-	}()
-	go func() {
-		time.Sleep(bkLaunchTimeout)
-		socketChan <- ""
-	}()
+	var ok bool
+	if ok, err = isBuildkitdRunning(ctx, trySocket, bkMinVersion); ok {
+		sylog.Infof("Found system buildkitd already running at %q; will use that daemon.", bkSocket)
+		return trySocket, nil, nil
+	}
+	sylog.Debugf("while checking for existing buildkitd: %v", err)
 
-	return <-socketChan
+	sylog.Infof("Did not find usable system buildkitd daemon. Starting built-in singularity-buildkitd.")
+	return startBuildkitd(ctx, opts)
+}
+
+// startBuildkitd starts a singularity-buildkitd process. On success it returns
+// the address of the socket on which the daemon is listening. The daemon will
+// be shutdown cleanly when the context is canceled.
+func startBuildkitd(ctx context.Context, opts *Opts) (bkSocket string, cleanup func(), err error) {
+	bkCmd, err := bin.FindSingularityBuildkitd()
+	if err != nil {
+		return "", nil, err
+	}
+
+	bkSocket = generateSocketAddress()
+
+	// singularity-buildkitd <socket-uri> [architecture]
+	args := []string{bkSocket}
+	if opts.ReqArch != "" {
+		args = append(args, opts.ReqArch)
+	}
+	cmd := exec.CommandContext(ctx, bkCmd, args...)
+	cmd.WaitDelay = bkShutdownTimeout
+	cmd.Cancel = func() error {
+		sylog.Infof("Terminating singularity-buildkitd (PID %d)", cmd.Process.Pid)
+		return cmd.Process.Signal(syscall.SIGTERM)
+	}
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	cleanup = func() {
+		if err := cmd.Cancel(); err != nil {
+			sylog.Errorf("while canceling buildkit daemon process: %v", err)
+		}
+		cmd.Wait()
+	}
+
+	if err := cmd.Start(); err != nil {
+		return "", nil, err
+	}
+
+	timeout := time.After(bkLaunchTimeout)
+	tick := time.NewTicker(time.Second)
+	for {
+		select {
+		case <-ctx.Done():
+			cleanup()
+			return "", nil, fmt.Errorf(ctx.Err().Error())
+		case <-timeout:
+			cleanup()
+			return "", nil, fmt.Errorf("singularity-buildkitd failed to start")
+		case <-tick.C:
+			if ok, err := isBuildkitdRunning(ctx, bkSocket, ""); ok {
+				return bkSocket, cleanup, nil
+			} else {
+				sylog.Debugf("singularity-buildkitd not ready, waiting 1s to retry... %v", err)
+			}
+		}
+	}
 }
 
 // isBuildkitdRunning tries to determine whether there's already an instance of
 // buildkitd running. The bkSocket argument is the address at which to look for
-// an already-running daemon.
-func isBuildkitdRunning(ctx context.Context, opts *Opts, bkSocket string) bool {
-	if opts.ReqArch != "" {
-		return false
-	}
+// an already-running daemon. The reqVersion argument is an optional string
+// specifcying a minimum buildkitd version that must be satisfied.
+func isBuildkitdRunning(ctx context.Context, bkSocket, reqVersion string) (bool, error) {
 	c, err := client.New(ctx, bkSocket, client.WithFailFast())
 	if err != nil {
-		return false
+		return false, err
 	}
 	defer c.Close()
 
 	cc := c.ControlClient()
 	ir := moby_buildkit_v1.InfoRequest{}
 	bkInfo, err := cc.Info(ctx, &ir)
-	found := (err == nil)
-	if found {
-		sylog.Infof("Found running buildkit, version: %s", bkInfo.BuildkitVersion.Version)
-		minVer, err := semver.Make(strings.TrimPrefix(bkMinVersion, "v"))
-		if err != nil {
-			sylog.Fatalf("While trying to parse minimal version cutoff for buildkit daemon (%q): %v", bkMinVersion, err)
-		}
-		foundVer, err := semver.Make(strings.TrimPrefix(bkInfo.BuildkitVersion.Version, "v"))
-		if err != nil {
-			sylog.Fatalf("While trying to parse version of running buildkit daemon (%q): %v", bkInfo.BuildkitVersion.Version, err)
-		}
-		if foundVer.Compare(minVer) < 0 {
-			sylog.Infof("Running buildkitd daemon version is older than minimal version required (%s)", bkMinVersion)
-			return false
-		}
+	if err != nil {
+		return false, err
 	}
 
-	return found
+	if reqVersion == "" {
+		return true, nil
+	}
+
+	sylog.Infof("Found running buildkit, version: %s", bkInfo.BuildkitVersion.Version)
+	minVer, err := semver.Make(strings.TrimPrefix(bkMinVersion, "v"))
+	if err != nil {
+		return false, fmt.Errorf("while trying to parse minimal version cutoff for buildkit daemon (%q): %v", bkMinVersion, err)
+	}
+	foundVer, err := semver.Make(strings.TrimPrefix(bkInfo.BuildkitVersion.Version, "v"))
+	if err != nil {
+		return false, fmt.Errorf("while trying to parse version of running buildkit daemon (%q): %v", bkInfo.BuildkitVersion.Version, err)
+	}
+	if foundVer.Compare(minVer) < 0 {
+		return false, fmt.Errorf("running buildkitd daemon version is older than minimum version required (%s)", bkMinVersion)
+	}
+
+	return true, nil
 }
 
 func buildImage(ctx context.Context, opts *Opts, tarFile *os.File, listenSocket, spec string, clientsideFrontend bool) error {
@@ -272,7 +336,7 @@ func newSolveOpt(_ context.Context, opts *Opts, w io.WriteCloser, buildDir, spec
 		frontendAttrs["no-cache"] = ""
 	}
 
-	attachable := []session.Attachable{bkdaemon.NewAuthProvider(opts.AuthConf, ociauth.ChooseAuthFile(opts.ReqAuthFile))}
+	attachable := []session.Attachable{bkauth.NewAuthProvider(opts.AuthConf, ociauth.ChooseAuthFile(opts.ReqAuthFile))}
 
 	buildArgsMap, err := args.ReadBuildArgs(opts.BuildVarArgs, opts.BuildVarArgFile)
 	if err != nil {
@@ -305,4 +369,17 @@ func writeDockerTar(r io.Reader, outputFile *os.File) error {
 	_, err := io.Copy(outputFile, r)
 
 	return err
+}
+
+func generateSocketAddress() string {
+	socketPath := "/run/singularity-buildkitd"
+
+	//  pam_systemd sets XDG_RUNTIME_DIR but not other dirs.
+	xdgRuntimeDir := os.Getenv("XDG_RUNTIME_DIR")
+	if xdgRuntimeDir != "" {
+		dirs := strings.Split(xdgRuntimeDir, ":")
+		socketPath = filepath.Join(dirs[0], "singularity-buildkitd")
+	}
+
+	return "unix://" + filepath.Join(socketPath, fmt.Sprintf("singularity-buildkitd-%d.sock", os.Getpid()))
 }

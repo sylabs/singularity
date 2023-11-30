@@ -864,6 +864,9 @@ fi
 drawline $makeit_fragsdir/build_scripts.mk
 cat $makeit_fragsdir/build_scripts.mk >> $makeit_makefile
 
+drawline $makeit_fragsdir/build_singularity-buildkitd.mk
+cat $makeit_fragsdir/build_singularity-buildkitd.mk >> $makeit_makefile
+
 drawline $makeit_fragsdir/Makefile.stub
 # here, `depends' need to happen after all other rules; at the very end
 final_all=`cat $makeit_interdir/all.mk | awk 'BEGIN { FS="all: " } { print $2 }'`

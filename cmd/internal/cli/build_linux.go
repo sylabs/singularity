@@ -225,7 +225,9 @@ func runBuild(cmd *cobra.Command, args []string) {
 			ContextDir:      wd,
 			DisableCache:    disableCache,
 		}
-		bkclient.Run(cmd.Context(), bkOpts, dest, spec)
+		if err := bkclient.Run(cmd.Context(), bkOpts, dest, spec); err != nil {
+			sylog.Fatalf("%v", err)
+		}
 	} else {
 		runBuildLocal(cmd.Context(), authConf, cmd, dest, spec)
 	}
