@@ -172,39 +172,62 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 		return fmt.Errorf("failed to generate OCI bundle/config: %s", err)
 	}
 
-	// Initial image mount onto rootfs dir
-	sylog.Debugf("Mounting squashfs rootfs from %q to %q", imgFile, tools.RootFs(b.bundlePath).Path())
-	if err := b.mountRootfs(ctx, img, imgFile); err != nil {
+	// Mount layers from image
+	sylog.Debugf("Mounting squashfs layers from %q to %q", imgFile, b.bundlePath)
+	if err := b.mountLayers(ctx, img, imgFile); err != nil {
 		if errCleanup := b.Delete(ctx); errCleanup != nil {
 			sylog.Errorf("While removing temporary bundle: %v", errCleanup)
 		}
-		return UnavailableError{Underlying: fmt.Errorf("while mounting squashfs layer: %w", err)}
+		return UnavailableError{Underlying: fmt.Errorf("while mounting squashfs layers: %w", err)}
+	}
+
+	// Assemble rootfs overlay mount
+	sylog.Debugf("Mounting rootfs overlay to %q", tools.RootFs(b.bundlePath).Path())
+	if err := b.mountRootfs(ctx); err != nil {
+		if errCleanup := b.Delete(ctx); errCleanup != nil {
+			sylog.Errorf("While removing temporary bundle: %v", errCleanup)
+		}
+		return fmt.Errorf("while mounting rootfs overlay: %w", err)
 	}
 
 	return b.writeConfig(g)
 }
 
-func (b *Bundle) mountRootfs(ctx context.Context, img v1.Image, imgFile string) error {
-	imageManifest, err := img.Manifest()
+func (b *Bundle) mountLayers(ctx context.Context, img v1.Image, imgFile string) error {
+	layers, err := img.Layers()
 	if err != nil {
-		return fmt.Errorf("while obtaining manifest: %s", err)
+		return fmt.Errorf("while obtaining layers: %s", err)
 	}
 
-	for i, l := range imageManifest.Layers {
-		if l.MediaType != ociclient.SquashfsLayerMediaType {
-			return fmt.Errorf("unsupported layer mediaType %q", l.MediaType)
+	for i, l := range layers {
+		mt, err := l.MediaType()
+		if err != nil {
+			return fmt.Errorf("while checking layer: %w", err)
 		}
+		if mt != ociclient.SquashfsLayerMediaType {
+			return fmt.Errorf("unsupported layer mediaType %q", mt)
+		}
+
+		offset, err := l.(*ocisif.Layer).Offset()
+		if err != nil {
+			return fmt.Errorf("while finding layer offset: %w", err)
+		}
+
 		layerPath := filepath.Join(tools.Layers(b.bundlePath).Path(), strconv.Itoa(i))
 		sylog.Debugf("Mounting layer %d fs from %q to %q", i, imgFile, layerPath)
 		if err := os.Mkdir(layerPath, 0o755); err != nil {
 			return fmt.Errorf("while creating layer directory: %w", err)
 		}
-		if err := mount(ctx, imgFile, layerPath, l.Digest); err != nil {
+
+		if _, err := squashfs.FUSEMount(ctx, uint64(offset), imgFile, layerPath); err != nil {
 			return UnavailableError{Underlying: fmt.Errorf("while mounting squashfs layer: %w", err)}
 		}
 		b.mountedLayers = append(b.mountedLayers, layerPath)
 	}
+	return nil
+}
 
+func (b *Bundle) mountRootfs(ctx context.Context) error {
 	for i := len(b.mountedLayers) - 1; i >= 0; i-- {
 		item, err := overlay.NewItemFromString(b.mountedLayers[i])
 		if err != nil {
@@ -259,21 +282,4 @@ func (b *Bundle) imageFile() (path string, err error) {
 	}
 
 	return parts[1], nil
-}
-
-func mount(ctx context.Context, path, mountPath string, digest v1.Hash) error {
-	f, err := sif.LoadContainerFromPath(path, sif.OptLoadWithFlag(os.O_RDONLY))
-	if err != nil {
-		return fmt.Errorf("failed to load image: %w", err)
-	}
-	defer func() { _ = f.UnloadContainer() }()
-
-	d, err := f.GetDescriptor(sif.WithOCIBlobDigest(digest))
-	if err != nil {
-		return fmt.Errorf("failed to get partition descriptor: %w", err)
-	}
-
-	_, err = squashfs.FUSEMount(ctx, uint64(d.Offset()), path, mountPath)
-
-	return err
 }

@@ -15,7 +15,6 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/name"
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
@@ -26,12 +25,12 @@ import (
 // reference. If the reference points to a multi-arch repository with an image
 // index (manifest list), it will traverse this to retrieve the digest of the
 // image manifest for the requested architecture specified in tOpts.
-func ImageDigest(ctx context.Context, tOpts *TransportOptions, imgCache *cache.Handle, uri string) (v1.Hash, error) {
+func ImageDigest(ctx context.Context, tOpts *TransportOptions, imgCache *cache.Handle, uri string) (ggcrv1.Hash, error) {
 	// oci-archive - Perform a tar extraction first, and handle as an oci layout.
 	if strings.HasPrefix(uri, "oci-archive:") {
 		layoutURI, cleanup, err := extractOCIArchive(uri, tOpts.TmpDir)
 		if err != nil {
-			return v1.Hash{}, err
+			return ggcrv1.Hash{}, err
 		}
 		defer cleanup()
 		uri = layoutURI
@@ -39,7 +38,7 @@ func ImageDigest(ctx context.Context, tOpts *TransportOptions, imgCache *cache.H
 
 	srcType, srcRef, err := URItoSourceSinkRef(uri)
 	if err != nil {
-		return v1.Hash{}, err
+		return ggcrv1.Hash{}, err
 	}
 
 	// For OCI registries (docker://) attempt to use HEAD operation and cached
@@ -55,10 +54,10 @@ func ImageDigest(ctx context.Context, tOpts *TransportOptions, imgCache *cache.H
 // with an image index (manifest list), it will traverse this to retrieve the
 // digest of the image manifest for the requested architecture specified in
 // tOpts.
-func directDigest(ctx context.Context, tOpts *TransportOptions, srcType SourceSink, srcRef string) (v1.Hash, error) {
+func directDigest(ctx context.Context, tOpts *TransportOptions, srcType SourceSink, srcRef string) (ggcrv1.Hash, error) {
 	img, err := srcType.Image(ctx, srcRef, tOpts, nil)
 	if err != nil {
-		return v1.Hash{}, err
+		return ggcrv1.Hash{}, err
 	}
 	return img.Digest()
 }
@@ -67,14 +66,14 @@ func directDigest(ctx context.Context, tOpts *TransportOptions, srcType SourceSi
 // (docker://) image source, attempting to use a HEAD against the registry and a
 // locally cached image index / manifest, to avoid unnecessary GET operations
 // that count against Docker Hub API limits.
-func cachedRegistryDigest(ctx context.Context, tOpts *TransportOptions, imgCache cache.Handle, srcRef string) (v1.Hash, error) {
+func cachedRegistryDigest(ctx context.Context, tOpts *TransportOptions, imgCache cache.Handle, srcRef string) (ggcrv1.Hash, error) {
 	var nameOpts []name.Option
 	if tOpts != nil && tOpts.Insecure {
 		nameOpts = append(nameOpts, name.Insecure)
 	}
 	remoteRef, err := name.ParseReference(srcRef, nameOpts...)
 	if err != nil {
-		return v1.Hash{}, err
+		return ggcrv1.Hash{}, err
 	}
 	remoteOpts := []remote.Option{
 		remote.WithContext(ctx),
@@ -124,7 +123,7 @@ func cachedRegistryDigest(ctx context.Context, tOpts *TransportOptions, imgCache
 	return digestFromManifestOrIndex(tOpts, getDesc.Manifest)
 }
 
-func registryDigestFallback(ctx context.Context, tOpts *TransportOptions, srcRef string, cause error) (v1.Hash, error) {
+func registryDigestFallback(ctx context.Context, tOpts *TransportOptions, srcRef string, cause error) (ggcrv1.Hash, error) {
 	sylog.Warningf("Couldn't use cached digest for registry: %v", cause)
 	sylog.Warningf("Falling back to direct digest.")
 	return directDigest(ctx, tOpts, RegistrySourceSink, srcRef)
@@ -133,9 +132,9 @@ func registryDigestFallback(ctx context.Context, tOpts *TransportOptions, srcRef
 // digestFromManifestOrIndex returns the digest of the provided manifest, or the
 // digest of the manifest of an image satisfying sysCtx platform requirements if
 // an image index is supplied.
-func digestFromManifestOrIndex(tOpts *TransportOptions, manifestOrIndex []byte) (v1.Hash, error) {
+func digestFromManifestOrIndex(tOpts *TransportOptions, manifestOrIndex []byte) (ggcrv1.Hash, error) {
 	if tOpts == nil {
-		return v1.Hash{}, fmt.Errorf("internal error: nil TransportOptions")
+		return ggcrv1.Hash{}, fmt.Errorf("internal error: nil TransportOptions")
 	}
 
 	// mediaType is only a SHOULD for manifests and image indexes,so we can't
@@ -147,17 +146,17 @@ func digestFromManifestOrIndex(tOpts *TransportOptions, manifestOrIndex []byte) 
 	mf, err := ggcrv1.ParseManifest(bytes.NewBuffer(manifestOrIndex))
 	if err == nil && mf.Config.Digest.Hex != "" {
 		sylog.Debugf("Content is an image manifest, returning digest.")
-		digest, _, err := v1.SHA256(bytes.NewBuffer(manifestOrIndex))
+		digest, _, err := ggcrv1.SHA256(bytes.NewBuffer(manifestOrIndex))
 		return digest, err
 	}
 
 	// If we don't have a manifest, try to parse as an image index, and check for at least one manifest.
 	ix, err := ggcrv1.ParseIndexManifest(bytes.NewBuffer(manifestOrIndex))
 	if err != nil {
-		return v1.Hash{}, fmt.Errorf("error parsing IndexManifest: %w", err)
+		return ggcrv1.Hash{}, fmt.Errorf("error parsing IndexManifest: %w", err)
 	}
 	if len(ix.Manifests) == 0 {
-		return v1.Hash{}, fmt.Errorf("not a valid image manifest or image index")
+		return ggcrv1.Hash{}, fmt.Errorf("not a valid image manifest or image index")
 	}
 
 	requiredPlatform := tOpts.Platform
@@ -171,5 +170,5 @@ func digestFromManifestOrIndex(tOpts *TransportOptions, manifestOrIndex []byte) 
 			return mf.Digest, nil
 		}
 	}
-	return v1.Hash{}, fmt.Errorf("no image satisfies requested platform: %s", requiredPlatform.String())
+	return ggcrv1.Hash{}, fmt.Errorf("no image satisfies requested platform: %s", requiredPlatform.String())
 }

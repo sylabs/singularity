@@ -627,18 +627,22 @@ func checkOCISIF(t *testing.T, imgFile string, expectLayers int) {
 		t.Fatalf("while initializing image: %v", err)
 	}
 
-	imgManifest, err := img.Manifest()
+	layers, err := img.Layers()
 	if err != nil {
-		t.Fatalf("while fetching image manifest: %v", err)
+		t.Fatalf("while fetching image layers: %v", err)
 	}
 
-	if len(imgManifest.Layers) != expectLayers {
-		t.Errorf("expected %d layers, found %d", expectLayers, len(imgManifest.Layers))
+	if len(layers) != expectLayers {
+		t.Errorf("expected %d layers, found %d", expectLayers, len(layers))
 	}
 
-	for i, l := range imgManifest.Layers {
-		if l.MediaType != "application/vnd.sylabs.image.layer.v1.squashfs" {
-			t.Errorf("layer %d: unsupported layer mediaType %q", i, l.MediaType)
+	for i, l := range layers {
+		mt, err := l.MediaType()
+		if err != nil {
+			t.Fatalf("while examining layer: %v", err)
+		}
+		if mt != "application/vnd.sylabs.image.layer.v1.squashfs" {
+			t.Errorf("layer %d: unsupported layer mediaType %q", i, mt)
 		}
 	}
 }

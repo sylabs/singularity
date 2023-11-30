@@ -17,7 +17,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	ggcrmutate "github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
@@ -176,7 +175,7 @@ func createOciSif(ctx context.Context, tOpts *ociimage.TransportOptions, imgCach
 
 // writeImageToOCISif will write an image to an oci-sif without applying any
 // mutations.
-func writeImageToOCISif(img v1.Image, imageDest string) error {
+func writeImageToOCISif(img ggcrv1.Image, imageDest string) error {
 	ii := ggcrmutate.AppendManifests(empty.Index, ggcrmutate.IndexAddendum{
 		Add: img,
 	})
@@ -185,7 +184,7 @@ func writeImageToOCISif(img v1.Image, imageDest string) error {
 
 // convertImageToOciSif will convert an image to an oci-sif with squashfs layer
 // format.
-func convertImageToOciSif(img v1.Image, digest v1.Hash, imageDest, workDir string, keepLayers bool) error {
+func convertImageToOciSif(img ggcrv1.Image, digest ggcrv1.Hash, imageDest, workDir string, keepLayers bool) error {
 	var err error
 	if !keepLayers {
 		sylog.Infof("Squashing image to single layer")
