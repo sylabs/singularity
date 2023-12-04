@@ -135,6 +135,7 @@ make DESTDIR=$RPM_BUILD_ROOT install -C builddir V=
 %dir %{_libexecdir}/singularity
 %dir %{_libexecdir}/singularity/bin
 %{_libexecdir}/singularity/bin/conmon
+%{_libexecdir}/singularity/bin/singularity-buildkitd
 %{_libexecdir}/singularity/bin/squashfuse_ll
 %{_libexecdir}/singularity/bin/starter
 %dir %{_libexecdir}/singularity/cni
