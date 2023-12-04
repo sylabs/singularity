@@ -19,7 +19,7 @@
 // This file contains modified code originally taken from:
 // github.com/moby/buildkit/tree/v0.12.3/session/auth/authprovider
 
-package daemon
+package auth
 
 import (
 	"context"

@@ -23,17 +23,15 @@ package daemon
 
 import (
 	"context"
-	"crypto/rand"
 	"crypto/tls"
 	"fmt"
-	"math/big"
 	"net"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
-	"github.com/containerd/containerd/pkg/userns"
 	"github.com/containerd/containerd/platforms"
 	"github.com/containerd/containerd/remotes/docker"
 	ctdsnapshot "github.com/containerd/containerd/snapshots"
@@ -65,7 +63,6 @@ import (
 	"github.com/moby/buildkit/worker/base"
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
-	"github.com/samber/lo"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/oci"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
@@ -76,6 +73,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
+
+const DaemonName = "singularity-buildkitd"
 
 type Opts struct {
 	// Requested build architecture
@@ -112,21 +111,57 @@ func init() {
 	)
 }
 
-// Run runs a new buildkitd daemon. Once the server is ready, the path of the
-// unix socket will be sent over the provided channel. Make sure this is a
-// buffered channel with sufficient room to avoid deadlocks.
-func Run(ctx context.Context, opts *Opts, socketChan chan<- string) error {
+func waitLock(ctx context.Context, lockPath string) (*flock.Flock, error) {
+	lock := flock.New(lockPath)
+
+	// Try to lock immediately
+	locked, err := lock.TryLock()
+	if err != nil {
+		return nil, fmt.Errorf("could not create/lock lockfile: %v", err)
+	}
+	if locked && err == nil {
+		return lock, nil
+	}
+
+	// Locked? Retry every second
+	sylog.Infof("%s: another instance is running, waiting for it to finish. Ctrl-C aborts.", DaemonName)
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			locked, err := lock.TryLock()
+			if err != nil {
+				return nil, fmt.Errorf("could not create/lock lockfile: %v", err)
+			}
+			if locked && err == nil {
+				return lock, nil
+			}
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+}
+
+// Run runs a new buildkitd daemon, which will listen on socketPath
+func Run(ctx context.Context, opts *Opts, socketPath string) error {
+	// If we need to, enter a new cgroup now, to workaround an issue with crun container cgroup creation (#1538).
+	if err := oci.CrunNestCgroup(); err != nil {
+		sylog.Fatalf("%s: while applying crun cgroup workaround: %v", DaemonName, err)
+	}
+
 	cfg, err := config.LoadFile(defaultConfigPath())
 	if err != nil {
 		return err
 	}
+	setDefaultConfig(&cfg)
+
+	cfg.GRPC.Address = []string{socketPath}
 
 	if opts.ReqArch != "" {
 		cfg.Workers.OCI.Platforms = []string{opts.ReqArch}
 	}
-	setDefaultConfig(&cfg)
-
-	sylog.Infof("cfg.Root for buildkitd: %s", cfg.Root)
 
 	server := grpc.NewServer()
 
@@ -141,16 +176,11 @@ func Run(ctx context.Context, opts *Opts, socketChan chan<- string) error {
 		return errors.Wrapf(err, "failed to create %s", root)
 	}
 
-	lockFilename := strings.TrimSuffix(filepath.Base(cfg.GRPC.Address[0]), ".sock")
-	lockPath := filepath.Join(root, lockFilename+".lock")
-	sylog.Debugf("path for buildkitd lock file: %s", lockPath)
-	lock := flock.New(lockPath)
-	locked, err := lock.TryLock()
+	lockPath := filepath.Join(root, DaemonName+".lock")
+	sylog.Debugf("%s: path for buildkitd lock file: %s", DaemonName, lockPath)
+	lock, err := waitLock(ctx, lockPath)
 	if err != nil {
-		return errors.Wrapf(err, "could not lock %s", lockPath)
-	}
-	if !locked {
-		return errors.Errorf("could not lock %s, another instance running?", lockPath)
+		sylog.Fatalf("%s: while creating lock file: %v", DaemonName, err)
 	}
 	defer func() {
 		lock.Unlock()
@@ -171,9 +201,6 @@ func Run(ctx context.Context, opts *Opts, socketChan chan<- string) error {
 		return err
 	}
 
-	// Send the address we're listening on back to our caller over socketChan
-	socketChan <- cfg.GRPC.Address[0]
-
 	select {
 	case serverErr := <-errCh:
 		err = serverErr
@@ -185,10 +212,10 @@ func Run(ctx context.Context, opts *Opts, socketChan chan<- string) error {
 		}
 	}
 
-	sylog.Infof("stopping buildkitd server")
+	sylog.Infof("%s: stopping server", DaemonName)
 	if os.Getenv("NOTIFY_SOCKET") != "" {
 		notified, notifyErr := sddaemon.SdNotify(false, sddaemon.SdNotifyStopping)
-		sylog.Debugf("SdNotifyStopping notified=%v, err=%v", notified, notifyErr)
+		sylog.Debugf("%s: SdNotifyStopping notified=%v, err=%v", DaemonName, notified, notifyErr)
 	}
 	server.GracefulStop()
 
@@ -196,16 +223,9 @@ func Run(ctx context.Context, opts *Opts, socketChan chan<- string) error {
 }
 
 func setDefaultConfig(cfg *config.Config) {
-	orig := *cfg
-
-	// If we need to, enter a new cgroup now, to workaround an issue with crun container cgroup creation (#1538).
-	if err := oci.CrunNestCgroup(); err != nil {
-		sylog.Fatalf("while applying crun cgroup workaround: %v", err)
-	}
-
 	rlUID, err := rootless.Getuid()
 	if err != nil {
-		sylog.Fatalf("While trying to determine uid: %v", err)
+		sylog.Fatalf("%s: While trying to determine uid: %v", DaemonName, err)
 	}
 	if rlUID != 0 {
 		cfg.Workers.OCI.Rootless = true
@@ -226,7 +246,7 @@ func setDefaultConfig(cfg *config.Config) {
 	cfg.Workers.OCI.Enabled = &enabled
 
 	if cfg.Root == "" {
-		cfg.Root = appdefaults.Root + "-singularity-ephemeral"
+		cfg.Root = filepath.Join(syfs.ConfigDir(), DaemonName)
 	}
 
 	cfg.Workers.OCI.Snapshotter = "overlayfs"
@@ -235,25 +255,10 @@ func setDefaultConfig(cfg *config.Config) {
 		cfg.Workers.OCI.Platforms = formatPlatforms(archutil.SupportedPlatforms(false))
 	}
 
-	sylog.Debugf("cfg.Workers.OCI.Platforms: %#v", cfg.Workers.OCI.Platforms)
+	sylog.Debugf("%s: cfg.Workers.OCI.Platforms: %#v", DaemonName, cfg.Workers.OCI.Platforms)
 
 	cfg.Workers.OCI.NetworkConfig = setDefaultNetworkConfig(cfg.Workers.OCI.NetworkConfig)
 
-	if userns.RunningInUserNS() {
-		// if buildkitd is being executed as the mapped-root (not only EUID==0 but also $USER==root)
-		// in a user namespace, we need to enable the rootless mode but
-		// we don't want to honor $HOME for setting up default paths.
-		uid, err := rootless.Getuid()
-		if err != nil {
-			sylog.Fatalf("While trying to ascertain rootless uid: %v", err)
-		}
-		u := os.Getenv("USER")
-		if ((u != "" && u != "root") || (uid != 0)) && (orig.Root) == "" {
-			cfg.Root = appdefaults.UserRoot()
-		}
-	}
-
-	cfg.GRPC.Address = []string{generateSocketAddress()}
 	appdefaults.EnsureUserAddressDir()
 }
 
@@ -280,13 +285,13 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 	common.config.Workers.OCI.NetworkConfig.Mode = "host"
 
 	if cfg.Rootless {
-		sylog.Debugf("running in rootless mode")
+		sylog.Debugf("%s: running in rootless mode", DaemonName)
 	}
 
 	processMode := bkoci.ProcessSandbox
 	if cfg.NoProcessSandbox {
 		if !rootless.InNS() {
-			sylog.Fatalf("Trying to run with NoProcessSandbox enabled without being in a user namespace; this is insecure, and therefore blocked.")
+			sylog.Fatalf("%s: trying to run with NoProcessSandbox enabled without being in a user namespace; this is insecure, and therefore blocked.", DaemonName)
 		}
 		if !cfg.Rootless {
 			return nil, errors.New("can't enable NoProcessSandbox without Rootless")
@@ -317,7 +322,7 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 		return nil, err
 	}
 	cfg.Binary = r
-	sylog.Infof("Using %q runtime for buildkitd daemon.", filepath.Base(r))
+	sylog.Debugf("%s: using %q runtime for buildkitd daemon.", DaemonName, filepath.Base(r))
 
 	opt, err := NewWorkerOpt(ctx, common.config.Root, snFactory, cfg.Rootless, processMode, cfg.Labels, idmapping, nc, dns, cfg.Binary, cfg.ApparmorProfile, cfg.SELinux, parallelismSem, "", cfg.DefaultCgroupParent)
 	if err != nil {
@@ -370,7 +375,7 @@ func parseIdentityMapping(str string) (*idtools.IdentityMapping, error) {
 
 	username := idparts[0]
 
-	sylog.Debugf("user namespaces: ID ranges will be mapped to subuid ranges of: %s", username)
+	sylog.Debugf("%s: user namespaces: ID ranges will be mapped to subuid ranges of: %s", DaemonName, username)
 
 	mappings, err := idtools.LoadIdentityMapping(username)
 	if err != nil {
@@ -399,13 +404,13 @@ func serveGRPC(cfg config.GRPCConfig, server *grpc.Server, errCh chan error) err
 
 	if os.Getenv("NOTIFY_SOCKET") != "" {
 		notified, notifyErr := sddaemon.SdNotify(false, sddaemon.SdNotifyReady)
-		sylog.Debugf("SdNotifyReady notified=%v, err=%v", notified, notifyErr)
+		sylog.Debugf("%s: SdNotifyReady notified=%v, err=%v", DaemonName, notified, notifyErr)
 	}
 	for _, l := range listeners {
 		func(l net.Listener) {
 			eg.Go(func() error {
 				defer l.Close()
-				sylog.Infof("running buildkitd server on %s", l.Addr())
+				sylog.Infof("%s: running server on %s", DaemonName, l.Addr())
 				return server.Serve(l)
 			})
 		}(l)
@@ -427,33 +432,6 @@ func setDefaultNetworkConfig(nc config.NetworkConfig) config.NetworkConfig {
 	return nc
 }
 
-func generateSocketAddress() string {
-	socketFilename := fmt.Sprintf("buildkitd-%s.sock", randomSixteen())
-
-	//  pam_systemd sets XDG_RUNTIME_DIR but not other dirs.
-	xdgRuntimeDir := os.Getenv("XDG_RUNTIME_DIR")
-	if xdgRuntimeDir != "" {
-		dirs := strings.Split(xdgRuntimeDir, ":")
-		return "unix://" + filepath.Join(dirs[0], "buildkit", socketFilename)
-	}
-
-	return "unix://" + filepath.Join("/run/buildkit", socketFilename)
-}
-
-func randomSixteen() string {
-	maxVal := big.NewInt(10)
-	randStr := strings.Join(lo.Map(lo.Range(16), func(_, _ int) string {
-		val, err := rand.Int(rand.Reader, maxVal)
-		if err != nil {
-			sylog.Fatalf("While trying to generate random string for socket name: %v", err)
-		}
-
-		return val.String()
-	}), "")
-
-	return randStr
-}
-
 func getListener(addr string, uid, gid int, tlsConfig *tls.Config) (net.Listener, error) {
 	addrSlice := strings.SplitN(addr, "://", 2)
 	if len(addrSlice) < 2 {
@@ -465,7 +443,7 @@ func getListener(addr string, uid, gid int, tlsConfig *tls.Config) (net.Listener
 	switch proto {
 	case "unix":
 		if tlsConfig != nil {
-			sylog.Warningf("TLS is disabled for %s", addr)
+			sylog.Warningf("%s: TLS is disabled for %s", DaemonName, addr)
 		}
 		return sys.GetLocalListener(listenAddr, uid, gid)
 	default:
