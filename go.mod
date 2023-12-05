@@ -16,7 +16,7 @@ require (
 	github.com/containerd/continuity v0.4.3
 	github.com/containerd/go-runc v1.1.0
 	github.com/containernetworking/cni v1.1.2
-	github.com/containernetworking/plugins v1.3.0
+	github.com/containernetworking/plugins v1.4.0
 	github.com/containers/common v0.57.0
 	github.com/containers/image/v5 v5.29.0
 	github.com/coreos/go-systemd/v22 v22.5.0
@@ -97,7 +97,7 @@ require (
 	github.com/containerd/ttrpc v1.2.2 // indirect
 	github.com/containerd/typeurl/v2 v2.1.1 // indirect
 	github.com/containers/storage v1.51.0 // indirect
-	github.com/coreos/go-iptables v0.6.0 // indirect
+	github.com/coreos/go-iptables v0.7.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.3 // indirect
 	github.com/creack/pty v1.1.18 // indirect
 	github.com/d2g/dhcp4 v0.0.0-20170904100407-a1d1b6c41b1c // indirect
@@ -150,7 +150,7 @@ require (
 	github.com/moby/sys/signal v0.7.0 // indirect
 	github.com/moby/sys/user v0.1.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/networkplumbing/go-nft v0.3.0 // indirect
+	github.com/networkplumbing/go-nft v0.4.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/package-url/packageurl-go v0.1.1-0.20220428063043-89078438f170 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
