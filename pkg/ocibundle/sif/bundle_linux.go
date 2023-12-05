@@ -124,7 +124,7 @@ func (s *sifBundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	}
 
 	rootFs := tools.RootFs(s.bundlePath).Path()
-	if _, err := squashfs.FUSEMount(ctx, offset, s.image, rootFs); err != nil {
+	if _, err := squashfs.FUSEMount(ctx, offset, s.image, rootFs, false); err != nil {
 		tools.DeleteBundle(s.bundlePath)
 		return fmt.Errorf("failed to mount SIF partition: %s", err)
 	}

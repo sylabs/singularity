@@ -64,6 +64,7 @@ struct starterConfig *sconfig;
 /* Socket process communication */
 int rpc_socket[2] = {-1, -1};
 int master_socket[2] = {-1, -1};
+int post_start_socket[2] = {-1, -1};
 int cleanup_socket[2] = {-1, -1};
 
 /* set Go execution call after init function returns */
@@ -1294,19 +1295,45 @@ __attribute__((constructor)) static void init(void) {
     /* retrieve engine configuration from environment variables */
     read_engine_config(&sconfig->engine);
 
+    // Unpriv host post-start in calling namespaces for SIF FUSE mount
+    if ( getenv("POST_START_HOST") != NULL ) {
+        debugf("Create socketpair for post start communication channel\n");
+            if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, post_start_socket) < 0 ) {
+                fatalf("Failed to create communication socket: %s\n", strerror(errno));
+            }
+        process = fork();
+        if ( process == 0 ) {
+            // Permanently drop privs in host post start process
+            if ( sconfig->starter.isSuid ) {
+                priv_drop(true);
+            }
+            // Close master end of post start socket
+            close(post_start_socket[0]);
+        
+            set_parent_death_signal(SIGTERM);
+            verbosef("Spawn PostStartHost\n");
+            goexecute = POST_START_HOST;
+            return;
+        } else {
+            // In master - Close child end of post start socket
+            close(post_start_socket[1]);
+        }
+    } else {
+        debugf("PostStartHost not requested\n");
+    }
+
     // Unpriv host cleanup in calling namespaces for SIF FUSE mount
     if ( getenv("CLEANUP_HOST") != NULL ) {
-        // FUSE SIF mount isn't supported in setuid flow at present.
-        // We should never have a CleanupHost process in setuid mode - enforce this.
-        if ( sconfig->starter.isSuid ) {
-           fatalf("CleanupHost process requested in setuid mode. Not permitted.\n");
-        }
         debugf("Create socketpair for cleanup communication channel\n");
             if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, cleanup_socket) < 0 ) {
                 fatalf("Failed to create communication socket: %s\n", strerror(errno));
             }
         process = fork();
         if ( process == 0 ) {
+            // Permanently drop privs in host cleanup process
+            if ( sconfig->starter.isSuid ) {
+                priv_drop(true);
+            }
             // Close master end of cleanup socket
             close(cleanup_socket[0]);
         

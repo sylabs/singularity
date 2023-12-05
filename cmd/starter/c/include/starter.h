@@ -42,7 +42,8 @@ enum goexec {
     STAGE2             = 2,
     MASTER             = 3,
     RPC_SERVER         = 4,
-    CLEANUP_HOST       = 5
+    POST_START_HOST    = 5,
+    CLEANUP_HOST       = 6
 };
 
 #ifndef NS_CLONE_NEWPID

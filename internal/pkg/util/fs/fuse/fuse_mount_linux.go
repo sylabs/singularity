@@ -77,7 +77,7 @@ func (i *ImageMount) Mount(ctx context.Context) (err error) {
 	execCmd.Stderr = os.Stderr
 	_, err = execCmd.Output()
 	if err != nil {
-		return fmt.Errorf("encountered error while trying to mount image %q as overlay at %s: %w", i.SourcePath, i.mountpoint, err)
+		return fmt.Errorf("encountered error while trying to mount image %q with FUSE at %s: %w", i.SourcePath, i.mountpoint, err)
 	}
 
 	exitCode := execCmd.ProcessState.ExitCode()
@@ -259,6 +259,22 @@ func UnmountWithFuse(ctx context.Context, dir string) error {
 	}
 	sylog.Debugf("Executing FUSE unmount command: %s -u %s", fusermountCmd, dir)
 	execCmd := exec.CommandContext(ctx, fusermountCmd, "-u", dir)
+	execCmd.Stderr = os.Stderr
+	_, err = execCmd.Output()
+	return err
+}
+
+// UnmountWithFuseLazy performs an unmount on the specified directory using
+// fusermount -z.
+func UnmountWithFuseLazy(ctx context.Context, dir string) error {
+	fusermountCmd, err := bin.FindBin("fusermount")
+	if err != nil {
+		// We should not be creating FUSE-based mounts in the first place
+		// without checking that fusermount is available.
+		return fmt.Errorf("fusermount not available while trying to perform unmount: %w", err)
+	}
+	sylog.Debugf("Executing FUSE unmount command: %s -z -u %s", fusermountCmd, dir)
+	execCmd := exec.CommandContext(ctx, fusermountCmd, "-z", "-u", dir)
 	execCmd.Stderr = os.Stderr
 	_, err = execCmd.Output()
 	return err

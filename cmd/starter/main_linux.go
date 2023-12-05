@@ -79,7 +79,7 @@ func startup() {
 			sylog.Fatalf("%s", err)
 		}
 
-		starter.Master(int(C.rpc_socket[0]), int(C.master_socket[0]), int(C.cleanup_socket[0]), pid, imageFd, e)
+		starter.Master(int(C.rpc_socket[0]), int(C.master_socket[0]), int(C.post_start_socket[0]), int(C.cleanup_socket[0]), pid, imageFd, e)
 	case C.RPC_SERVER:
 		sylog.Verbosef("Serve RPC requests\n")
 
@@ -88,11 +88,21 @@ func startup() {
 		}
 
 		starter.RPCServer(int(C.rpc_socket[1]), e)
-	case C.CLEANUP_HOST:
-		sylog.Verbosef("Execute Cleanup Host Process")
+	case C.POST_START_HOST:
+		sylog.Verbosef("Execute Post Start Host Process")
+
 		if err := sconfig.Release(); err != nil {
 			sylog.Fatalf("%s", err)
 		}
+
+		starter.PostStartHost(int(C.post_start_socket[1]), e)
+	case C.CLEANUP_HOST:
+		sylog.Verbosef("Execute Cleanup Host Process")
+
+		if err := sconfig.Release(); err != nil {
+			sylog.Fatalf("%s", err)
+		}
+
 		starter.CleanupHost(int(C.cleanup_socket[1]), e)
 	}
 

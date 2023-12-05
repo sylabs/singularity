@@ -27,6 +27,10 @@
   executable, then the `run` / `exec` / `shell` commands in `--oci` mode can be
   given the `--app <appname>` flag, and will automatically invoke the relevant
   SCIF command.
+- SIF/SquashFS container images can now be mounted using FUSE in all native mode
+  flows, including setuid mode. To enable, use the `--sif-fuse` flag, or set
+  `sif fuse = yes` in `singularity.conf`. Overlay partitions and extfs images
+  are not yet supported.
 
 ### Bug Fixes
 

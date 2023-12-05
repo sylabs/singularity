@@ -20,7 +20,6 @@ import (
 // cover case with bad socket file descriptors or non socket
 // file descriptor (stderr).
 
-//nolint:dupl
 func TestCreateContainer(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
@@ -68,7 +67,6 @@ func TestCreateContainer(t *testing.T) {
 	}
 }
 
-//nolint:dupl
 func TestStartContainer(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
@@ -77,31 +75,34 @@ func TestStartContainer(t *testing.T) {
 	fatalChan := make(chan error, 1)
 
 	tests := []struct {
-		name         string
-		masterSocket int
-		containerPid int
-		engine       *engine.Engine
-		shallPass    bool
+		name            string
+		masterSocket    int
+		postStartSocket int
+		containerPid    int
+		engine          *engine.Engine
+		shallPass       bool
 	}{
 		{
-			name:         "nil engine; bad masterSocket",
-			masterSocket: -1,
-			containerPid: -1,
-			engine:       nil,
-			shallPass:    false,
+			name:            "nil engine; bad sockets",
+			masterSocket:    -1,
+			postStartSocket: -1,
+			containerPid:    -1,
+			engine:          nil,
+			shallPass:       false,
 		},
 		{
-			name:         "nil engine; wrong socket",
-			masterSocket: 2,
-			containerPid: -1,
-			engine:       nil,
-			shallPass:    false,
+			name:            "nil engine; wrong sockets",
+			masterSocket:    2,
+			postStartSocket: 2,
+			containerPid:    -1,
+			engine:          nil,
+			shallPass:       false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			go startContainer(context.Background(), tt.masterSocket, tt.containerPid, tt.engine, fatalChan)
+			go startContainer(context.Background(), tt.masterSocket, tt.postStartSocket, tt.containerPid, tt.engine, fatalChan)
 			fatal = <-fatalChan
 			if tt.shallPass && fatal != nil {
 				t.Fatalf("test %s expected to succeed but failed: %s", tt.name, fatal)

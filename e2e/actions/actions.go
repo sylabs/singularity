@@ -2507,7 +2507,7 @@ func (c actionTests) actionCompat(t *testing.T) {
 	}
 }
 
-// actionSquashfuse tests that experimental unpriv squashfuse SIF mount works.
+// actionSquashfuse tests that squashfuse SIF mount works.
 func (c actionTests) actionSIFFUSE(t *testing.T) {
 	require.Command(t, "squashfuse")
 	require.Command(t, "fusermount")
@@ -2515,21 +2515,24 @@ func (c actionTests) actionSIFFUSE(t *testing.T) {
 
 	beforeCount := countSquashfuseMounts(t)
 
-	c.env.RunSingularity(
-		t,
-		e2e.WithProfile(e2e.UserNamespaceProfile),
-		e2e.WithCommand("exec"),
-		e2e.WithArgs("--sif-fuse", c.env.ImagePath, "/bin/true"),
-		e2e.ExpectExit(
-			0,
-			e2e.ExpectError(e2e.ContainMatch, "Mounting SIF with FUSE"),
-			e2e.ExpectError(e2e.ContainMatch, "Unmounting SIF with FUSE"),
-		),
-	)
+	for _, p := range e2e.NativeProfiles {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(p.String()),
+			e2e.WithProfile(e2e.UserNamespaceProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs("--sif-fuse", c.env.ImagePath, "ps"),
+			e2e.ExpectExit(
+				0,
+				e2e.ExpectOutput(e2e.ContainMatch, "squashfuse"),
+				e2e.ExpectError(e2e.ContainMatch, "Mounting image with FUSE"),
+			),
+		)
 
-	afterCount := countSquashfuseMounts(t)
-	if afterCount != beforeCount {
-		t.Errorf("found %d squashfuse mounts before execution, and %d remaining after", beforeCount, afterCount)
+		afterCount := countSquashfuseMounts(t)
+		if afterCount != beforeCount {
+			t.Errorf("found %d squashfuse mounts before execution, and %d remaining after", beforeCount, afterCount)
+		}
 	}
 }
 
@@ -2538,9 +2541,7 @@ func (c actionTests) actionSIFFUSE(t *testing.T) {
 func (c actionTests) actionNoSIFFUSE(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	profiles := []e2e.Profile{e2e.UserProfile, e2e.RootProfile, e2e.FakerootProfile, e2e.UserNamespaceProfile}
-
-	for _, p := range profiles {
+	for _, p := range e2e.NativeProfiles {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(p.String()),

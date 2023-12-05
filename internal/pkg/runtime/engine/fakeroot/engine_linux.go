@@ -375,13 +375,18 @@ func (e *EngineOperations) CleanupContainer(context.Context, error, syscall.Wait
 	return nil
 }
 
-// CleanupHost does nothing for the fakeroot engine.
-func (e *EngineOperations) CleanupHost(context.Context) error {
+// PostStartProcess does nothing for the fakeroot engine.
+func (e *EngineOperations) PostStartProcess(context.Context, int) error {
 	return nil
 }
 
-// PostStartProcess does nothing for the fakeroot engine.
-func (e *EngineOperations) PostStartProcess(context.Context, int) error {
+// PostStartHost does nothing for the fakeroot engine.
+func (e *EngineOperations) PostStartHost(context.Context) error {
+	return nil
+}
+
+// CleanupHost does nothing for the fakeroot engine.
+func (e *EngineOperations) CleanupHost(context.Context) error {
 	return nil
 }
 

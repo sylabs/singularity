@@ -525,12 +525,16 @@ func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err
 		sylog.Debugf("Remounting %s\n", dest)
 	} else {
 		sylog.Debugf("Mounting %s to %s\n", source, dest)
-
-		// in stage 1 we changed current working directory to
-		// sandbox image directory, just pass "." as source argument to
-		// be sure RPC mount the right sandbox image
 		if tag == mount.RootfsTag && dest == c.session.RootFsPath() {
+			// If this mount is for the container rootfs, as a sandbox, then we
+			// chdir-ed to it in stage 1. Make the bind operate on the cwd.
 			source = "."
+			// If the rootfs sandbox is a FUSE mount from an image then
+			// we chdir-ed to the
+			// parent dir in stage 1. Make the bind operate on cwd/root.
+			if c.engine.EngineConfig.GetImageFuse() {
+				source = "./root/"
+			}
 		}
 	}
 
