@@ -1296,17 +1296,16 @@ __attribute__((constructor)) static void init(void) {
 
     // Unpriv host cleanup in calling namespaces for SIF FUSE mount
     if ( getenv("CLEANUP_HOST") != NULL ) {
-        // FUSE SIF mount isn't supported in setuid flow at present.
-        // We should never have a CleanupHost process in setuid mode - enforce this.
-        if ( sconfig->starter.isSuid ) {
-           fatalf("CleanupHost process requested in setuid mode. Not permitted.\n");
-        }
         debugf("Create socketpair for cleanup communication channel\n");
             if ( socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, cleanup_socket) < 0 ) {
                 fatalf("Failed to create communication socket: %s\n", strerror(errno));
             }
         process = fork();
         if ( process == 0 ) {
+            // Permanently drop privs in host cleanup process
+            if ( sconfig->starter.isSuid ) {
+                priv_drop(true);
+            }
             // Close master end of cleanup socket
             close(cleanup_socket[0]);
         

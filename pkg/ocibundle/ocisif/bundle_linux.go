@@ -219,7 +219,7 @@ func (b *Bundle) mountLayers(ctx context.Context, img v1.Image, imgFile string) 
 			return fmt.Errorf("while creating layer directory: %w", err)
 		}
 
-		if _, err := squashfs.FUSEMount(ctx, uint64(offset), imgFile, layerPath); err != nil {
+		if _, err := squashfs.FUSEMount(ctx, uint64(offset), imgFile, layerPath, false); err != nil {
 			return UnavailableError{Underlying: fmt.Errorf("while mounting squashfs layer: %w", err)}
 		}
 		b.mountedLayers = append(b.mountedLayers, layerPath)

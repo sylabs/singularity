@@ -77,7 +77,7 @@ func (i *ImageMount) Mount(ctx context.Context) (err error) {
 	execCmd.Stderr = os.Stderr
 	_, err = execCmd.Output()
 	if err != nil {
-		return fmt.Errorf("encountered error while trying to mount image %q as overlay at %s: %w", i.SourcePath, i.mountpoint, err)
+		return fmt.Errorf("encountered error while trying to mount image %q with FUSE at %s: %w", i.SourcePath, i.mountpoint, err)
 	}
 
 	exitCode := execCmd.ProcessState.ExitCode()

@@ -32,7 +32,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/security"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
-	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/fuse"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/squashfs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/gpu"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/starter"
@@ -983,105 +983,130 @@ func (l *Launcher) setCgroups(instanceName string) error {
 // and activating any image driver plugins that might handle the image mount.
 func (l *Launcher) prepareImage(c context.Context, image string) error {
 	insideUserNs, _ := namespaces.IsInsideUserNamespace(os.Getpid())
+	isUserNs := insideUserNs || l.cfg.Namespaces.User
 
-	if l.cfg.SIFFUSE && !(l.cfg.Namespaces.User || insideUserNs) {
-		sylog.Warningf("--sif-fuse is not supported without user namespace, ignoring.")
-	}
-
-	// convert image file to sandbox if we are using user
-	// namespace or if we are currently running inside a
-	// user namespace
-	if (l.cfg.Namespaces.User || insideUserNs) && fs.IsFile(image) {
-		// Honor 'tmp sandbox' in singularity.conf, and allow negation with
-		// `--no-tmp-sandbox`.
-		canUseTmpSandbox := l.engineConfig.File.TmpSandboxAllowed
-		if l.cfg.NoTmpSandbox {
-			canUseTmpSandbox = false
-		}
-
-		tryFUSE := l.cfg.SIFFUSE || l.engineConfig.File.SIFFUSE
-		if tryFUSE && l.cfg.Fakeroot {
-			return fmt.Errorf("fakeroot is not currently supported with FUSE SIF mounts")
-		}
-
-		fuse, tempDir, imageDir, err := handleImage(c, image, tryFUSE, canUseTmpSandbox)
-		if err != nil {
-			return fmt.Errorf("while handling %s: %w", image, err)
-		}
-		l.engineConfig.SetImage(imageDir)
-		l.engineConfig.SetImageFuse(fuse)
-		l.engineConfig.SetDeleteTempDir(tempDir)
-		l.generator.AddProcessEnv("SINGULARITY_CONTAINER", imageDir)
-		// if '--disable-cache' flag, then remove original SIF after converting to sandbox
-		if l.cfg.CacheDisabled {
-			sylog.Debugf("Removing tmp image: %s", image)
-			err := os.Remove(image)
-			if err != nil {
-				return fmt.Errorf("unable to remove tmp image: %s: %w", image, err)
-			}
-		}
-	}
-
-	return nil
-}
-
-// handleImage makes the image at filename available at directory dir within a
-// temporary directory tempDir, by extraction or squashfuse mount. It is the
-// caller's responsibility to remove tempDir when no longer needed. If isFUSE is
-// returned true, then the imageDir is a FUSE mount, and must be unmounted
-// during cleanup.
-func handleImage(ctx context.Context, filename string, tryFUSE, canUseTmpSandbox bool) (isFUSE bool, tempDir, imageDir string, err error) {
-	img, err := imgutil.Init(filename, false)
+	img, err := imgutil.Init(image, false)
 	if err != nil {
-		return false, "", "", fmt.Errorf("could not open image %s: %s", filename, err)
+		return fmt.Errorf("could not open image %s: %s", image, err)
 	}
 	defer img.File.Close()
-
 	part, err := img.GetRootFsPartition()
 	if err != nil {
-		return false, "", "", fmt.Errorf("while getting root filesystem in %s: %s", filename, err)
+		return fmt.Errorf("while getting root filesystem in %s: %s", image, err)
 	}
 
-	// Nice message if we have been given an older ext3 image, which cannot be extracted due to lack of privilege
-	// to loopback mount.
-	if part.Type == imgutil.EXT3 {
-		sylog.Errorf("File %q is an ext3 format container image.", filename)
-		sylog.Errorf("Only SIF and squashfs images can be extracted in unprivileged mode.")
-		sylog.Errorf("Use `singularity build` to convert this image to a SIF file using a setuid install of Singularity.")
-	}
-
-	// Only squashfs can be extracted
-	if part.Type != imgutil.SQUASHFS {
-		return false, "", "", fmt.Errorf("not a squashfs root filesystem")
-	}
-
-	tempDir, imageDir, err = mkContainerDirs()
-	if err != nil {
-		return false, "", "", err
-	}
-
-	// Attempt squashfuse mount
-	if tryFUSE {
-		err := squashfuseMount(ctx, img, imageDir)
-		if err == nil {
-			return true, tempDir, imageDir, nil
+	switch part.Type {
+	case imgutil.SANDBOX:
+		return nil
+	case imgutil.SQUASHFS:
+		if isUserNs || !l.engineConfig.File.AllowKernelSquashfs || l.cfg.SIFFUSE {
+			return l.prepareSquashfs(c, img, isUserNs)
 		}
-		sylog.Warningf("SIF squashfuse mount failed, falling back to extraction: %v", err)
+		// setuid, kernel squashfs permitted, fuse not requested - no action needed
+		return nil
+	case imgutil.ENCRYPTSQUASHFS:
+		if isUserNs || !l.engineConfig.File.AllowKernelSquashfs || l.cfg.SIFFUSE {
+			return fmt.Errorf("encrypted SIF files are only supported in setuid mode, with kernel squashfs mounts enabled")
+		}
+		// setuid, kernel squashfs permitted, fuse not requested - no action needed
+		return nil
+	case imgutil.EXT3:
+		if isUserNs || !l.engineConfig.File.AllowKernelExtfs || l.cfg.SIFFUSE {
+			return l.prepareExtfs(c, img, isUserNs)
+		}
+		// setuid, kernel extfs permitted, fuse not requested - no action needed
+		return nil
 	}
 
-	// Fall back to extraction to directory
-	if !canUseTmpSandbox {
-		return false, "", "", fmt.Errorf("unpacking image to temporary sandbox dir required, but is prohibited by 'tmp sandbox = no' in singularity.conf or --no-tmp-sandbox command-line flag")
+	return fmt.Errorf("unsupported image rootfs type: %d", part.Type)
+}
+
+func (l *Launcher) prepareSquashfs(ctx context.Context, img *imgutil.Image, isUserNs bool) error {
+	tempDir, imageDir, err := mkContainerDirs()
+	if err != nil {
+		return err
+	}
+
+	// If we are setuid root, we need `allow_other` on the FUSE mount. The mount
+	// will be performed by the user, but the container setup runs as root and
+	// must be able to access it.
+	allowOther := !isUserNs
+	// In fakeroot mode, the users is able to assume a subuid/subgid, so allow
+	// others to access the FUSE mount.
+	if l.cfg.Fakeroot {
+		allowOther = true
+	}
+
+	sylog.Infof("Kernel squashfs mount unavailable / disabled. Attempting squashfuse mount.")
+	err = squashfuseMount(ctx, img, imageDir, allowOther)
+	if err == nil {
+		l.engineConfig.SetImage(imageDir)
+		l.engineConfig.SetImageFuse(true)
+		l.engineConfig.SetDeleteTempDir(tempDir)
+		l.generator.AddProcessEnv("SINGULARITY_CONTAINER", imageDir)
+		return nil
+	}
+
+	sylog.Warningf("SIF squashfuse mount failed, falling back to extraction: %v", err)
+
+	if l.engineConfig.File.TmpSandboxAllowed || l.cfg.NoTmpSandbox {
+		return fmt.Errorf("unpacking image to temporary sandbox dir required, but is prohibited by 'tmp sandbox = no' in singularity.conf or --no-tmp-sandbox command-line flag")
 	}
 	err = extractImage(img, imageDir)
 	if err == nil {
-		return false, tempDir, imageDir, nil
+		l.engineConfig.SetImage(imageDir)
+		l.engineConfig.SetDeleteTempDir(tempDir)
+		l.generator.AddProcessEnv("SINGULARITY_CONTAINER", imageDir)
+		return nil
 	}
 
 	if err2 := os.RemoveAll(tempDir); err2 != nil {
 		sylog.Errorf("Couldn't remove temporary directory %s: %s", tempDir, err2)
 	}
-	return false, "", "", fmt.Errorf("while extracting image: %v", err)
+
+	return fmt.Errorf("extraction failed: %v", err)
+}
+
+func (l *Launcher) prepareExtfs(ctx context.Context, img *imgutil.Image, isUserNs bool) error {
+	tempDir, imageDir, err := mkContainerDirs()
+	if err != nil {
+		return err
+	}
+
+	// If we are setuid root, we need `allow_other` on the FUSE mount. The mount
+	// will be performed by the user, but the container setup runs as root and
+	// must be able to access it.
+	allowOther := !isUserNs
+	// In fakeroot mode, the users is able to assume a subuid/subgid, so allow
+	// others to access the FUSE mount.
+	if l.cfg.Fakeroot {
+		allowOther = true
+	}
+
+	sylog.Infof("Kernel extfs mount unavailable / disabled. Attempting squashfuse mount.")
+
+	im := fuse.ImageMount{
+		Type:       image.EXT3,
+		UID:        os.Getuid(),
+		GID:        os.Getgid(),
+		Readonly:   true,
+		SourcePath: filepath.Clean(img.Name),
+		AllowOther: allowOther,
+	}
+	im.SetMountPoint(filepath.Clean(imageDir))
+
+	if err := im.Mount(ctx); err != nil {
+		if err2 := os.RemoveAll(tempDir); err2 != nil {
+			sylog.Errorf("Couldn't remove temporary directory %s: %s", tempDir, err2)
+		}
+		return err
+	}
+
+	l.engineConfig.SetImage(imageDir)
+	l.engineConfig.SetImageFuse(true)
+	l.engineConfig.SetDeleteTempDir(tempDir)
+	l.generator.AddProcessEnv("SINGULARITY_CONTAINER", imageDir)
+	return nil
 }
 
 // mkContainerDirs creates a tempDir, with a nested 'root' imageDir that an image can be placed into.
@@ -1147,15 +1172,14 @@ func extractImage(img *imgutil.Image, imageDir string) error {
 
 // squashfuseMount mounts img using squashfuse to directory imageDir. It is the
 // caller's responsibility to umount imageDir when no longer needed.
-func squashfuseMount(ctx context.Context, img *imgutil.Image, imageDir string) (err error) {
+func squashfuseMount(ctx context.Context, img *imgutil.Image, imageDir string, allowOther bool) (err error) {
 	part, err := img.GetRootFsPartition()
 	if err != nil {
 		return fmt.Errorf("while getting root filesystem : %s", err)
 	}
 	if img.Type != imgutil.SIF && part.Type != imgutil.SQUASHFS {
-		return fmt.Errorf("only SIF images are supported")
+		return fmt.Errorf("only SIF images with a squashfs rootfs are supported")
 	}
-	sylog.Infof("Mounting SIF with FUSE...")
 
 	f, err := sif.LoadContainerFromPath(img.Path, sif.OptLoadWithFlag(os.O_RDONLY))
 	if err != nil {
@@ -1167,7 +1191,7 @@ func squashfuseMount(ctx context.Context, img *imgutil.Image, imageDir string) (
 		return fmt.Errorf("failed to get partition descriptor: %w", err)
 	}
 
-	_, err = squashfs.FUSEMount(ctx, uint64(d.Offset()), img.Path, imageDir)
+	_, err = squashfs.FUSEMount(ctx, uint64(d.Offset()), img.Path, imageDir, allowOther)
 
 	return err
 }
