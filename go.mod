@@ -35,7 +35,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/seccomp/libseccomp-golang v0.10.0
 	github.com/shopspring/decimal v1.3.1
-	github.com/sigstore/sigstore v1.7.5
+	github.com/sigstore/sigstore v1.7.6
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
