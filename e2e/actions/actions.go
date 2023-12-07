@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2024, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -2956,6 +2956,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"issue 5690":                   c.issue5690,                      // https://github.com/sylabs/singularity/issues/5690
 		"issue 1950":                   c.issue1950,                      // https://github.com/sylabs/singularity/issues/1950
 		"issue 2690":                   c.issue2690,                      // https://github.com/sylabs/singularity/issues/2690
+		"issue 1848":                   c.issue1848,                      // https://github.com/apptainer/apptainer/issues/1848
 		"network":                      c.actionNetwork,                  // test basic networking
 		"netns-path":                   c.actionNetnsPath,                // test netns joining
 		"binds":                        c.actionBinds,                    // test various binds with --bind and --mount
