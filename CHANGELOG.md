@@ -2,6 +2,10 @@
 
 ## Changes Since Last Release
 
+### Bug Fixes
+
+- Fix regression that led to an empty shell field in the `/etc/passwd` file.
+
 ## 4.2.0 \[2024-09-04\]
 
 ### New Features & Functionality
