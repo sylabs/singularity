@@ -29,7 +29,7 @@ require (
 	github.com/go-log/log v0.2.0
 	github.com/gofrs/flock v0.8.1
 	github.com/google/go-containerregistry v0.17.0
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.5.0
 	github.com/gosimple/slug v1.13.1
 	github.com/moby/buildkit v0.12.4
 	github.com/moby/term v0.5.0
