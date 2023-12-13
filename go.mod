@@ -23,7 +23,7 @@ require (
 	github.com/fatih/color v1.16.0
 	github.com/go-log/log v0.2.0
 	github.com/google/go-containerregistry v0.17.0
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.5.0
 	github.com/gosimple/slug v1.13.1
 	github.com/moby/term v0.5.0
 	github.com/opencontainers/go-digest v1.0.0
