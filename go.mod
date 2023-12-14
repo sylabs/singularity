@@ -10,7 +10,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buger/goterm v1.0.4
 	github.com/buger/jsonparser v1.1.1
-	github.com/containerd/containerd v1.7.10
+	github.com/containerd/containerd v1.7.11
 	github.com/containernetworking/cni v1.1.2
 	github.com/containernetworking/plugins v1.4.0
 	github.com/containers/common v0.57.1
@@ -173,6 +173,7 @@ require (
 	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	go.mongodb.org/mongo-driver v1.11.3 // indirect
 	go.mozilla.org/pkcs7 v0.0.0-20210826202110-33d05740a352 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.45.0 // indirect
 	go.opentelemetry.io/otel v1.20.0 // indirect
 	go.opentelemetry.io/otel/metric v1.20.0 // indirect
 	go.opentelemetry.io/otel/trace v1.20.0 // indirect
