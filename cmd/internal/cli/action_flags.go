@@ -764,7 +764,7 @@ var actionSIFFUSEFlag = cmdline.Flag{
 	Value:        &sifFUSE,
 	DefaultValue: false,
 	Name:         "sif-fuse",
-	Usage:        "attempt FUSE mount of SIF (unprivileged / user namespace only) (experimental)",
+	Usage:        "attempt FUSE mount of SIF",
 	EnvKeys:      []string{"SIF_FUSE"},
 }
 

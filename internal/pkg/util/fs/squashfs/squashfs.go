@@ -15,13 +15,14 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/image"
 )
 
-func FUSEMount(ctx context.Context, offset uint64, path, mountPath string) (*fuse.ImageMount, error) {
+func FUSEMount(ctx context.Context, offset uint64, path, mountPath string, allowOther bool) (*fuse.ImageMount, error) {
 	im := fuse.ImageMount{
 		Type:       image.SQUASHFS,
 		UID:        os.Getuid(),
 		GID:        os.Getgid(),
 		Readonly:   true,
 		SourcePath: filepath.Clean(path),
+		AllowOther: allowOther,
 		ExtraOpts: []string{
 			fmt.Sprintf("offset=%d", offset),
 		},

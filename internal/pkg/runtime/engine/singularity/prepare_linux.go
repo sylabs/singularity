@@ -178,22 +178,18 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	// that the user running singularity has access to /dev/fuse
 	// (typically it's 0666, or 0660 belonging to a group that
 	// allows the user to read and write to it).
-	sendFd, err := openDevFuse(e, starterConfig)
+	_, err = openDevFuse(e, starterConfig)
 	if err != nil {
 		return err
 	}
 
-	if sendFd {
-		fds, err := unix.Socketpair(unix.AF_UNIX, unix.SOCK_STREAM|unix.SOCK_CLOEXEC, 0)
-		if err != nil {
-			return fmt.Errorf("failed to create socketpair to pass file descriptor: %s", err)
-		}
-		e.EngineConfig.SetUnixSocketPair(fds)
-		starterConfig.KeepFileDescriptor(fds[0])
-		starterConfig.KeepFileDescriptor(fds[1])
-	} else {
-		e.EngineConfig.SetUnixSocketPair([2]int{-1, -1})
+	fds, err := unix.Socketpair(unix.AF_UNIX, unix.SOCK_STREAM|unix.SOCK_CLOEXEC, 0)
+	if err != nil {
+		return fmt.Errorf("failed to create socketpair to pass file descriptor: %s", err)
 	}
+	e.EngineConfig.SetUnixSocketPair(fds)
+	starterConfig.KeepFileDescriptor(fds[0])
+	starterConfig.KeepFileDescriptor(fds[1])
 
 	// nvidia-container-cli requires additional caps in the starter bounding set.
 	// These are within the capability set for the starter process itself, *not* the capabilities
@@ -1162,8 +1158,22 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		// C starter code will position current working directory
 		starterConfig.SetWorkingDirectoryFd(int(img.Fd))
 
-		// If our image is FUSE mounted, we need the fd to close on cleanup
+		// In some flows we need to bed able to close the image Fd for successful cleanup
 		starterConfig.SetImageFd(int(img.Fd))
+
+		// If the sandbox is actually a FUSE mounted image, we won't be able to
+		// enter it as root (in the setuid starter), so use the parent dir as
+		// the initial working directory.
+		if e.EngineConfig.GetImageFuse() {
+			fParent, err := os.Open(filepath.Dir(img.Path))
+			if err != nil {
+				return fmt.Errorf("couldn't open FUSE mounted image parent directory: %w", err)
+			}
+			if err := starterConfig.KeepFileDescriptor(int(fParent.Fd())); err != nil {
+				return err
+			}
+			starterConfig.SetWorkingDirectoryFd(int(fParent.Fd()))
+		}
 
 		if e.EngineConfig.GetSessionLayer() == singularityConfig.OverlayLayer {
 			if err := overlay.CheckLower(img.Path); overlay.IsIncompatible(err) {

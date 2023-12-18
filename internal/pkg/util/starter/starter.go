@@ -74,8 +74,18 @@ func LoadOverlayModule(load bool) CommandOp {
 	}
 }
 
+// PostStartHost sets POST_START_HOST environment variable
+// which tells starter to spawn the unprivileged host post start process.
+func PostStartHost(spawn bool) CommandOp {
+	return func(c *Command) {
+		if spawn {
+			c.env = append(c.env, "POST_START_HOST=1")
+		}
+	}
+}
+
 // CleanupHost sets CLEANUP_HOST environment variable
-// which telsl starter to spawn the unprivileged host cleanup process.
+// which tells starter to spawn the unprivileged host cleanup process.
 func CleanupHost(spawn bool) CommandOp {
 	return func(c *Command) {
 		if spawn {
