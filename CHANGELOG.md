@@ -2,6 +2,14 @@
 
 ## Changes Since Last Release
 
+### Changed defaults / behaviours
+
+- In native mode, SIF/SquashFS container images will now be mounted with
+  squashfuse when kernel mounts are disabled in `singularity.conf`, or cannot be
+  used (non-setuid / user namespace workflow). If the FUSE mount fails,
+  Singularity will fall back to extracting the container to a temporary sandbox
+  in order to run it.
+
 ### New Features & Functionality
 
 - The `registry login` and `registry logout` commands now support a `--authfile
@@ -27,10 +35,18 @@
   executable, then the `run` / `exec` / `shell` commands in `--oci` mode can be
   given the `--app <appname>` flag, and will automatically invoke the relevant
   SCIF command.
-- SIF/SquashFS container images can now be mounted using FUSE in all native mode
-  flows, including setuid mode. To enable, use the `--sif-fuse` flag, or set
-  `sif fuse = yes` in `singularity.conf`. Overlay partitions and extfs images
-  are not yet supported.
+- A new `--tmp-sandbox` flag has been added to the `run / shell / exec /
+  instance start` commands. This will force Singularity to extract a container
+  to a temporary sandbox before running it, when it would otherwise perform a
+  kernel or FUSE mount.
+
+### Deprecated Functionality
+
+- The experimental `--sif-fuse` flag, and `sif fuse` directive in
+  `singularity.conf` are deprecated. The flag and directive were used to enable
+  experimental mounting of SIF/SquashFS container images with FUSE in prior
+  versions of Singularity. From 4.1, FUSE mounts are used automatically when
+  kernel mounts are disabled / not available.
 
 ### Bug Fixes
 

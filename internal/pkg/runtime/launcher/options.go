@@ -149,6 +149,10 @@ type Options struct {
 	// This will be used by a launcher handling OCI images directly.
 	TransportOptions *ociimage.TransportOptions
 
+	// TmpSandbox forces unpacking of images into temporary sandbox dirs when a
+	// kernel or FUSE mount would otherwise be used.
+	TmpSandbox bool
+
 	// NoTmpSandbox prohibits unpacking of images into temporary sandbox dirs.
 	NoTmpSandbox bool
 
@@ -508,6 +512,15 @@ func OptKeyInfo(ki *cryptkey.KeyInfo) Option {
 func OptSIFFuse(b bool) Option {
 	return func(lo *Options) error {
 		lo.SIFFUSE = b
+		return nil
+	}
+}
+
+// TmpSandbox forces unpacking of images into temporary sandbox dirs when a
+// kernel or FUSE mount would otherwise be used.
+func OptTmpSandbox(b bool) Option {
+	return func(lo *Options) error {
+		lo.TmpSandbox = b
 		return nil
 	}
 }

@@ -329,7 +329,8 @@ allow container dir = {{ if eq .AllowContainerDir true }}yes{{ else }}no{{ end }
 # ALLOW KERNEL SQUASHFS: [BOOL]
 # DEFAULT: yes
 # If set to no, Singularity will not perform any kernel mounts of squashfs filesystems.
-# This affects both stand-alone image files and filesystems embedded in a SIF file.
+# Instead, for SIF / SquashFS containers, a squashfuse mount will be attempted, with
+# extraction to a temporary sandbox directory if this fails.
 # Applicable to setuid mode only.
 allow kernel squashfs = {{ if eq .AllowKernelSquashfs true }}yes{{ else }}no{{ end }}
 
@@ -523,7 +524,7 @@ systemd cgroups = {{ if eq .SystemdCgroups true }}yes{{ else }}no{{ end }}
 
 # SIF FUSE: [BOOL]
 # DEFAULT: no
-# EXPERIMENTAL
+# DEPRECATED - FUSE mounts are now used automatically when kernel mounts are disabled / unavailable.
 # Whether to try mounting SIF images with Squashfuse by default.
 # Applies only to unprivileged / user namespace flows. Requires squashfuse and
 # fusermount on PATH. Will fall back to extracting the SIF on failure.

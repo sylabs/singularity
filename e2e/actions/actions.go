@@ -2507,8 +2507,10 @@ func (c actionTests) actionCompat(t *testing.T) {
 	}
 }
 
-// actionSquashfuse tests that squashfuse SIF mount works.
-func (c actionTests) actionSIFFUSE(t *testing.T) {
+// actionFUSEImage tests that squashfuse SIF mount works. Currently forced here
+// via deprecated `--sif-fuse` flag as this is convenient to include non-userns
+// profiles without changing global config.
+func (c actionTests) actionFUSEImage(t *testing.T) {
 	require.Command(t, "squashfuse")
 	require.Command(t, "fusermount")
 	e2e.EnsureImage(t, c.env)
@@ -2521,11 +2523,14 @@ func (c actionTests) actionSIFFUSE(t *testing.T) {
 			e2e.AsSubtest(p.String()),
 			e2e.WithProfile(e2e.UserNamespaceProfile),
 			e2e.WithCommand("exec"),
+			e2e.WithGlobalOptions("-d"),
 			e2e.WithArgs("--sif-fuse", c.env.ImagePath, "ps"),
 			e2e.ExpectExit(
 				0,
 				e2e.ExpectOutput(e2e.ContainMatch, "squashfuse"),
 				e2e.ExpectError(e2e.ContainMatch, "Mounting image with FUSE"),
+				e2e.ExpectError(e2e.ContainMatch, "PostStartHost()"),
+				e2e.ExpectError(e2e.ContainMatch, "CleanupHost()"),
 			),
 		)
 
@@ -2536,45 +2541,59 @@ func (c actionTests) actionSIFFUSE(t *testing.T) {
 	}
 }
 
-// Verify that the FUSE mounts, and the CleanupHost() process are not seen when
-// --sif-fuse should not be in effect.
-func (c actionTests) actionNoSIFFUSE(t *testing.T) {
+// Verify that the FUSE mounts, and the PostStartHost/CleanupHost() processes are not seen when
+// FUSE mounts of a SIF image should not be in effect.
+func (c actionTests) actionNoFUSEImage(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	for _, p := range e2e.NativeProfiles {
+	for _, p := range []e2e.Profile{e2e.RootProfile, e2e.UserProfile} {
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(p.String()),
 			e2e.WithProfile(p),
 			e2e.WithCommand("exec"),
 			e2e.WithGlobalOptions("-d"),
-			e2e.WithArgs(c.env.ImagePath, "mount"),
+			e2e.WithArgs(c.env.ImagePath, "ps"),
 			e2e.ExpectExit(
 				0,
 				e2e.ExpectError(e2e.UnwantedContainMatch, "squashfuse"),
+				e2e.ExpectError(e2e.UnwantedContainMatch, "PostStartHost()"),
 				e2e.ExpectError(e2e.UnwantedContainMatch, "CleanupHost()"),
 			),
 		)
 	}
 }
 
-// actionTmpSandboxFlag tests the command-line option prohibiting unpacking of image
+// actionTmpSandboxFlag tests the command-line options forcing / prohibiting unpacking of image
 // files into temporary sandbox dirs.
 func (c actionTests) actionTmpSandboxFlag(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	profiles := []e2e.Profile{e2e.UserProfile, e2e.RootProfile, e2e.FakerootProfile, e2e.UserNamespaceProfile}
-
-	for _, p := range profiles {
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(p.String()),
-			e2e.WithProfile(p),
-			e2e.WithCommand("exec"),
-			e2e.WithArgs("--sif-fuse=false", "--no-tmp-sandbox", "-u", c.env.ImagePath, "/bin/true"),
-			e2e.ExpectExit(255),
-		)
+	// --tmp-sandbox should override kernel mount (setuid profiles) and squashfuse mount (userns profiles).
+	for _, p := range e2e.NativeProfiles {
+		t.Run(p.String(), func(t *testing.T) {
+			c.env.RunSingularity(
+				t,
+				e2e.AsSubtest("tmp-sandbox"),
+				e2e.WithProfile(p),
+				e2e.WithCommand("exec"),
+				e2e.WithArgs("--tmp-sandbox", c.env.ImagePath, "/bin/sh", "-c", "echo $SINGULARITY_CONTAINER"),
+				e2e.ExpectExit(0,
+					e2e.ExpectOutput(e2e.RegexMatch, `/rootfs-(\d+)/root`), // <tmpdir>/rootfs-xxxxxxxxx/root
+					e2e.ExpectError(e2e.ContainMatch, "Converting SIF file to temporary sandbox"),
+				),
+			)
+		})
 	}
+
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("no-tmp-sandbox"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--tmp-sandbox", "--no-tmp-sandbox", c.env.ImagePath, "/bin/sh", "-c", "echo $SINGULARITY_CONTAINER"),
+		e2e.ExpectExit(255),
+	)
 }
 
 // Make sure --workdir and --scratch work together nicely even when workdir is a
@@ -2831,9 +2850,9 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"compat":                       np(c.actionCompat),               // test --compat
 		"umask":                        np(c.actionUmask),                // test umask propagation
 		"invalidRemote":                np(c.invalidRemote),              // GHSA-5mv9-q7fq-9394
-		"SIFFUSE":                      np(c.actionSIFFUSE),              // test --sif-fuse
-		"NoSIFFUSE":                    np(c.actionNoSIFFUSE),            // test absence of squashfs and CleanupHost()
-		"TmpSandboxFlag":               c.actionTmpSandboxFlag,           // test --no-tmp-sandbox flag
+		"FUSEImage":                    np(c.actionFUSEImage),            // test explicit FUSE image mount
+		"NoFUSEImage":                  np(c.actionNoFUSEImage),          // test absence of squashfuse and CleanupHost()
+		"TmpSandboxFlag":               c.actionTmpSandboxFlag,           // test --tmp-sandbox / --no-tmp-sandbox flag
 		"relWorkdirScratch":            np(c.relWorkdirScratch),          // test relative --workdir with --scratch
 		"ociRelWorkdirScratch":         np(c.actionOciRelWorkdirScratch), // test relative --workdir with --scratch in OCI mode
 		"auth":                         np(c.actionAuth),                 // tests action cmds w/authenticated pulls from OCI registries
