@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
-	github.com/ProtonMail/go-crypto v0.0.0-20230717121422-5aa5874ade95
+	github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c
 	github.com/adigunhammedolalekan/registry-auth v0.0.0-20200730122110-8cde180a3a60
 	github.com/apex/log v1.9.0
 	github.com/astromechza/etcpwdparse v0.0.0-20170319193008-f0e5f0779716
@@ -53,7 +53,7 @@ require (
 	github.com/sylabs/scs-build-client v0.9.2
 	github.com/sylabs/scs-key-client v0.7.3
 	github.com/sylabs/scs-library-client v1.4.6
-	github.com/sylabs/sif/v2 v2.15.0
+	github.com/sylabs/sif/v2 v2.15.1
 	github.com/vbauerster/mpb/v8 v8.7.1
 	go.etcd.io/bbolt v1.3.8
 	golang.org/x/crypto v0.17.0
@@ -162,7 +162,7 @@ require (
 	github.com/rootless-containers/proto v0.1.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/safchain/ethtool v0.3.0 // indirect
-	github.com/secure-systems-lab/go-securesystemslib v0.7.0 // indirect
+	github.com/secure-systems-lab/go-securesystemslib v0.8.0 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/spdx/tools-golang v0.5.1 // indirect
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 // indirect
