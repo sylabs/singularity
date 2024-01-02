@@ -9,6 +9,9 @@
   used (non-setuid / user namespace workflow). If the FUSE mount fails,
   Singularity will fall back to extracting the container to a temporary sandbox
   in order to run it.
+- In native mode, bare extfs container images will now be mounted with
+  fuse2fs when kernel mounts are disabled in `singularity.conf`, or cannot be
+  used (non-setuid / user namespace workflow).
 
 ### New Features & Functionality
 

@@ -90,6 +90,7 @@ commands:
               automake \
               build-essential \
               cryptsetup \
+              fuse2fs \
               git \
               libfuse-dev \
               libglib2.0-dev \
@@ -272,7 +273,7 @@ jobs:
             systemctl --user daemon-reload
             systemctl --user start dbus
             export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$UID/bus
-            
+
             # CircleCI agent starts our command in a cgroup with resource files
             # owned by root. For rootless cgroup tests, we must be in a cgroup
             # owned by ourselves.
