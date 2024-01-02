@@ -387,6 +387,7 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 		launcher.OptDevice(device),
 		launcher.OptCdiDirs(cdiDirs),
 		launcher.OptNoCompat(noCompat),
+		launcher.OptTmpSandbox(tmpSandbox),
 		launcher.OptNoTmpSandbox(noTmpSandbox),
 	}
 

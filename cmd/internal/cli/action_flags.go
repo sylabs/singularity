@@ -766,6 +766,7 @@ var actionSIFFUSEFlag = cmdline.Flag{
 	Name:         "sif-fuse",
 	Usage:        "attempt FUSE mount of SIF",
 	EnvKeys:      []string{"SIF_FUSE"},
+	Deprecated:   "FUSE mounts are now used automatically when kernel mounts are disabled / unavailable.",
 }
 
 // --proot (hidden)
@@ -891,6 +892,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&commonOCIFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&commonNoOCIFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&commonKeepLayersFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionTmpSandbox, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoTmpSandbox, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&commonAuthFileFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionDevice, actionsCmd...)

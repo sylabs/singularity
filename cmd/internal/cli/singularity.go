@@ -84,6 +84,7 @@ var (
 
 	// Options controlling the unpacking of images to temporary sandboxes
 	canUseTmpSandbox bool
+	tmpSandbox       bool
 	noTmpSandbox     bool
 
 	// Use OCI runtime and OCI SIF?
@@ -303,6 +304,16 @@ var commonKeepLayersFlag = cmdline.Flag{
 	Name:         "keep-layers",
 	Usage:        "Keep layers when creating an OCI-SIF. Do not squash to a single layer.",
 	EnvKeys:      []string{"KEEP_LAYERS"},
+}
+
+// --tmp-sandbox
+var actionTmpSandbox = cmdline.Flag{
+	ID:           "actionTmpSandbox",
+	Value:        &tmpSandbox,
+	DefaultValue: false,
+	Name:         "tmp-sandbox",
+	Usage:        "Forces unpacking of images into temporary sandbox dirs when a kernel or FUSE mount would otherwise be used.",
+	EnvKeys:      []string{"TMP_SANDBOX"},
 }
 
 // --no-tmp-sandbox
