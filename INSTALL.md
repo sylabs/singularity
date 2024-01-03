@@ -125,26 +125,29 @@ necessary.
 
 ### RHEL / Alma Linux / Rocky Linux / CentOS
 
-On RHEL and derivatives a COPR is available at:
+On RHEL and derivatives, the `squashfs-tools-ng` package is now
+available in the EPEL repositories.
 
-<https://copr.fedorainfracloud.org/coprs/dctrud/squashfs-tools-ng/>
+If you previously used the `dctrud/squashfs-tools-ng` COPR, you should
+disable it:
 
-This provides `squashfs-tools-ng`, which will not replace any standard EL or
-EPEL packages. To use it:
+```sh
+sudo dnf copr remove dctrud/squashfs-tools-ng
+```
+
+Follow the [EPEL Quickstart](https://docs.fedoraproject.org/en-US/epel/#_quickstart)
+for you distribution to enable the EPEL repository. Install `squashfs-tools-ng` with
+`dnf` or `yum`.
 
 #### EL 8 / 9
 
 ```sh
-sudo dnf install dnf-plugins-core
-sudo dnf copr enable dctrud/squashfs-tools-ng 
 sudo dnf install squashfs-tools-ng
 ```
 
 #### EL 7
 
 ```sh
-sudo yum install yum-plugin-copr 
-sudo yum copr enable dctrud/squashfs-tools-ng 
 sudo yum install squashfs-tools-ng
 ```
 
