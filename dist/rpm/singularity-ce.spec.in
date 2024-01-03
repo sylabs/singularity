@@ -73,6 +73,7 @@ Requires: runc
 Requires: crun
 %endif
 %if "%{_target_vendor}" == "suse"
+Requires: fuse2fs
 Requires: squashfs
 %else
 Requires: shadow-utils
@@ -82,6 +83,9 @@ Requires: cryptsetup
 %if "%{_target_vendor}" == "suse" && 0%{?suse_version} < 1500
 Requires: fuse
 %else
+# FUSE 2 for fuse2fs
+Requires: fuse
+# FUSE 3 for squashfuse
 Requires: fuse3
 %endif
 
