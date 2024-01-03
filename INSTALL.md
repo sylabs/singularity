@@ -20,6 +20,7 @@ sudo apt-get install -y \
     autoconf \
     automake \
     cryptsetup \
+    fuse2fs \
     git \
     libfuse-dev \
     libglib2.0-dev \
@@ -45,6 +46,7 @@ sudo yum install -y \
     automake \
     crun \
     cryptsetup \
+    fuse \
     fuse3-devel \
     git \
     glib2-devel \
@@ -65,6 +67,7 @@ sudo yum install -y \
     autoconf \
     automake \
     cryptsetup \
+    fuse \
     fuse3-devel \
     git \
     glib2-devel \
@@ -83,6 +86,7 @@ sudo zypper in \
     autoconf \
     automake \
     cryptsetup \
+    fuse2fs \
     fuse3-devel \
     gcc \
     gcc-c++ \
