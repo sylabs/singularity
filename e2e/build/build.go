@@ -2035,9 +2035,9 @@ func (c imgBuildTests) buildUseExistingBuildkitd(t *testing.T) {
 	t.Setenv("BUILDKIT_HOST", sockAddr)
 	c.env.RunSingularity(
 		t,
-		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithProfile(e2e.OCIUserProfile),
 		e2e.WithCommand("build"),
-		e2e.WithArgs("--oci", outputImgPath, dockerfileSimple),
+		e2e.WithArgs(outputImgPath, dockerfileSimple),
 		e2e.ExpectExit(0, e2e.ExpectError(e2e.RegexMatch, "buildkitd already running.+will use that daemon")),
 	)
 
@@ -2055,7 +2055,7 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 	defer os.Chdir(prevWd)
 
 	imageNoPrefix := strings.TrimPrefix(c.env.TestRegistryImage, "docker://")
-	profiles := []e2e.Profile{e2e.UserProfile, e2e.RootProfile}
+	profiles := []e2e.Profile{e2e.OCIUserProfile, e2e.OCIRootProfile}
 	for _, profile := range profiles {
 		t.Run(profile.String(), func(t *testing.T) {
 			tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, "", "build_dockerfile_e2e_", "dir")
@@ -2257,7 +2257,7 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
 					if tt.dockerfile != "" {
-						buildArgs := []string{"-F", "--oci"}
+						buildArgs := []string{"-F"}
 						buildArgs = append(buildArgs, tt.buildArgs...)
 						buildArgs = append(buildArgs, tt.imgPath, tt.dockerfile)
 						c.env.RunSingularity(
@@ -2270,7 +2270,7 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 						)
 					}
 					if tt.actCmd != "" {
-						actArgs := append([]string{"--oci", tt.imgPath}, tt.actArgs...)
+						actArgs := append([]string{tt.imgPath}, tt.actArgs...)
 						c.env.RunSingularity(
 							t,
 							e2e.AsSubtest("act"),

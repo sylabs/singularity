@@ -136,7 +136,7 @@ var OCIProfiles = map[string]Profile{
 		defaultCwd:        "",
 		requirementsFn:    ociRequirements,
 		singularityOption: "--oci",
-		optionForCommands: []string{"shell", "exec", "run", "test", "instance start", "pull"},
+		optionForCommands: []string{"shell", "exec", "run", "test", "instance start", "pull", "build"},
 		oci:               true,
 	},
 	ociRootProfile: {
@@ -147,7 +147,7 @@ var OCIProfiles = map[string]Profile{
 		defaultCwd:        "",
 		requirementsFn:    ociRequirements,
 		singularityOption: "--oci",
-		optionForCommands: []string{"shell", "exec", "run", "test", "instance start", "pull"},
+		optionForCommands: []string{"shell", "exec", "run", "test", "instance start", "pull", "build"},
 		oci:               true,
 	},
 	ociFakerootProfile: {
@@ -158,7 +158,7 @@ var OCIProfiles = map[string]Profile{
 		defaultCwd:        "",
 		requirementsFn:    ociRequirements,
 		singularityOption: "--oci --fakeroot",
-		optionForCommands: []string{"shell", "exec", "run", "test", "instance start", "pull"},
+		optionForCommands: []string{"shell", "exec", "run", "test", "instance start", "pull", "build"},
 		oci:               true,
 	},
 }
@@ -275,6 +275,7 @@ func fakerootRequirements(t *testing.T) {
 // ociRequirements ensures requirements are satisfied to correctly execute
 // commands with the OCI runtime / profile.
 func ociRequirements(t *testing.T) {
+	require.Kernel(t, 4, 18) // FUSE in userns
 	require.UserNamespace(t)
 	require.Command(t, "runc")
 

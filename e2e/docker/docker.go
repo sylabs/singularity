@@ -240,21 +240,21 @@ func (c ctx) testDockerHost(t *testing.T) {
 					c.env.RunSingularity(t, cmdOps...)
 				}
 			})
+		})
 
-			t.Run("build", func(t *testing.T) {
-				for _, tt := range tests {
-					cmdOps := []e2e.SingularityCmdOp{
-						e2e.WithProfile(profile),
-						e2e.AsSubtest(tt.name),
-						e2e.WithCommand("build"),
-						e2e.WithArgs("--force", "--disable-cache", "test.sif", dockerURI),
-						e2e.WithEnv(append(os.Environ(), tt.envarName+"="+tt.envarValue)),
-						e2e.WithDir(tmpPath),
-						e2e.ExpectExit(tt.exit),
-					}
-					c.env.RunSingularity(t, cmdOps...)
+		t.Run("build", func(t *testing.T) {
+			for _, tt := range tests {
+				cmdOps := []e2e.SingularityCmdOp{
+					e2e.WithProfile(e2e.RootProfile),
+					e2e.AsSubtest(tt.name),
+					e2e.WithCommand("build"),
+					e2e.WithArgs("--force", "--disable-cache", "test.sif", dockerURI),
+					e2e.WithEnv(append(os.Environ(), tt.envarName+"="+tt.envarValue)),
+					e2e.WithDir(tmpPath),
+					e2e.ExpectExit(tt.exit),
 				}
-			})
+				c.env.RunSingularity(t, cmdOps...)
+			}
 		})
 	}
 
@@ -324,11 +324,20 @@ CMD /bin/true
 			t.Run("cstm exec", func(t *testing.T) {
 				c.dockerCredsPriorityTester(t, true, p, "exec", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage, "true")
 			})
+		})
+	}
+	profiles = []e2e.Profile{
+		e2e.OCIUserProfile,
+		e2e.OCIRootProfile,
+	}
+
+	for _, p := range profiles {
+		t.Run(p.String(), func(t *testing.T) {
 			t.Run("def df build", func(t *testing.T) {
-				c.dockerCredsPriorityTester(t, false, p, "build", "--oci", "-F", ocisifPath, dockerfile)
+				c.dockerCredsPriorityTester(t, false, p, "build", "-F", ocisifPath, dockerfile)
 			})
 			t.Run("cstm df build", func(t *testing.T) {
-				c.dockerCredsPriorityTester(t, true, p, "build", "--oci", "-F", ocisifPath, dockerfile)
+				c.dockerCredsPriorityTester(t, true, p, "build", "-F", ocisifPath, dockerfile)
 			})
 		})
 	}
@@ -1208,18 +1217,18 @@ func (c ctx) testDockerUSER(t *testing.T) {
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("user df build"),
-		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithProfile(e2e.OCIUserProfile),
 		e2e.WithCommand("build"),
-		e2e.WithArgs("--oci", userBuiltOCISIF, dockerfile),
+		e2e.WithArgs(userBuiltOCISIF, dockerfile),
 		e2e.ExpectExit(0),
 	)
 	rootBuiltOCISIF := filepath.Join(tmpdir, "rootbuilt-docker-user.oci.sif")
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("root df build"),
-		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithProfile(e2e.OCIRootProfile),
 		e2e.WithCommand("build"),
-		e2e.WithArgs("--oci", rootBuiltOCISIF, dockerfile),
+		e2e.WithArgs(rootBuiltOCISIF, dockerfile),
 		e2e.ExpectExit(0),
 	)
 
@@ -1514,7 +1523,7 @@ CMD /bin/true
 	}
 
 	arch := getNonNativeArch()
-	profiles := []e2e.Profile{e2e.UserProfile, e2e.RootProfile}
+	profiles := []e2e.Profile{e2e.OCIUserProfile, e2e.OCIRootProfile}
 	for _, profile := range profiles {
 		imgPath := filepath.Join(tmpdir, "image."+profile.String()+".oci.sif")
 		c.env.RunSingularity(
@@ -1522,10 +1531,12 @@ CMD /bin/true
 			e2e.AsSubtest(profile.String()),
 			e2e.WithProfile(profile),
 			e2e.WithCommand("build"),
-			e2e.WithArgs("--oci", "--arch", arch, imgPath, dockerfile),
+			e2e.WithArgs("--arch", arch, imgPath, dockerfile),
 			e2e.ExpectExit(0),
+			e2e.PostRun(func(t *testing.T) {
+				verifyImgArch(t, imgPath, arch)
+			}),
 		)
-		verifyImgArch(t, imgPath, arch)
 	}
 }
 
@@ -1620,7 +1631,7 @@ func (c ctx) testDockerSCIF(t *testing.T) {
 		e2e.WithProfile(e2e.OCIUserProfile),
 		e2e.WithCommand("build"),
 		e2e.WithDir(tmpdir),
-		e2e.WithArgs("--oci", scifImageFilename, scifDockerfile),
+		e2e.WithArgs(scifImageFilename, scifDockerfile),
 		e2e.ExpectExit(0),
 	)
 
