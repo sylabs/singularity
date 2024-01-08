@@ -93,10 +93,8 @@ func NewWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFacto
 
 	// Check if user has specified OCI worker binary; if they have, append it to cmds
 	var cmds []string
-	isRunc := true
 	if binary != "" {
 		cmds = append(cmds, binary)
-		isRunc = false
 	}
 
 	rm, err := resources.NewMonitor()
@@ -120,7 +118,6 @@ func NewWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFacto
 		TracingSocket:       traceSocket,
 		DefaultCgroupParent: defaultCgroupParent,
 		ResourceMonitor:     rm,
-		isRunc:              isRunc,
 	}, np)
 	if err != nil {
 		return opt, err
@@ -233,8 +230,6 @@ type WorkerOpt struct {
 	SELinux         bool
 	TracingSocket   string
 	ResourceMonitor *resources.Monitor
-	// isRunc is true if we're using runc, false if we're using crun
-	isRunc bool
 }
 
 var defaultCommandCandidates = []string{"buildkit-runc", "runc"}
@@ -256,7 +251,6 @@ type buildExecutor struct {
 	selinux          bool
 	tracingSocket    string
 	resmon           *resources.Monitor
-	isRunc           bool
 }
 
 func NewBuildExecutor(opt WorkerOpt, networkProviders map[pb.NetMode]bknet.Provider) (executor.Executor, error) {
@@ -493,25 +487,14 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 		}
 	}
 
-	err = w.run(ctx, id, bundle, process, func() {
-		startedOnce.Do(func() {
-			if rec != nil {
-				rec.Start()
-			}
-		})
-	}, true)
+	err = w.run(ctx, id, bundle, process, nil)
 
 	releaseContainer := func(ctx context.Context) error {
 		if w.processMode == bkoci.NoProcessSandbox {
 			return nil
 		}
 
-		err := w.runc.Delete(ctx, id, &runc.DeleteOpts{})
-		err1 := namespace.Close()
-		if err == nil {
-			err = err1
-		}
-		return err
+		return namespace.Close()
 	}
 	doReleaseNetwork = false
 
@@ -821,18 +804,13 @@ func updateRuncFieldsForHostOS(runtime *runc.Runc) {
 	runtime.PdeathSignal = syscall.SIGKILL // this can still leak the process
 }
 
-func (w *buildExecutor) run(ctx context.Context, id, bundle string, process executor.ProcessInfo, started func(), keep bool) error {
+func (w *buildExecutor) run(ctx context.Context, id, bundle string, process executor.ProcessInfo, started func()) error {
 	killer := newRunProcKiller(w.runc, id)
 	return w.callWithIO(ctx, id, bundle, process, started, killer, func(ctx context.Context, started chan<- int, io runc.IO, pidfile string) error {
-		extraArgs := []string{}
-		if w.isRunc && keep {
-			extraArgs = append(extraArgs, "--keep")
-		}
 		_, err := w.runc.Run(ctx, id, bundle, &runc.CreateOpts{
-			NoPivot:   w.noPivot,
-			Started:   started,
-			IO:        io,
-			ExtraArgs: extraArgs,
+			NoPivot: w.noPivot,
+			Started: started,
+			IO:      io,
 		})
 		return err
 	})
