@@ -54,6 +54,8 @@
 ### Bug Fixes
 
 - Execute correct `%appstart` script when using `instance start` with `--app`.
+- Use kernel overlayfs instead of `fuse-overlayfs` when running as root user,
+  regardless of unprivileged kernel overlay support.
 
 ## 4.0.2 \[2023-11-16\]
 
