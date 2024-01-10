@@ -203,7 +203,13 @@ test)
     sylog info "No test script found in container, exiting"
     exit 0 ;;
 start)
-    if test -x "/.singularity.d/startscript"; then
+    if test -n "${SINGULARITY_APPNAME:-}"; then
+        if test -x "/scif/apps/${SINGULARITY_APPNAME:-}/scif/startscript"; then
+            exec "/scif/apps/${SINGULARITY_APPNAME:-}/scif/startscript" "$@"
+        fi
+        sylog error "No startscript for contained app: ${SINGULARITY_APPNAME:-}"
+        exit 1
+    elif test -x "/.singularity.d/startscript"; then
         exec "/.singularity.d/startscript" "$@"
     fi
 
