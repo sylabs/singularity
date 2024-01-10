@@ -1,5 +1,10 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+- Use kernel overlayfs instead of `fuse-overlayfs` when running as root user,
+  regardless of unprivileged kernel overlay support.
+
 ## 4.0.2 \[2023-11-16\]
 
 ### Changed defaults / behaviours
