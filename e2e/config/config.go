@@ -91,7 +91,11 @@ func (c *configTests) prepImages(t *testing.T) (cleanup func(t *testing.T)) {
 	// A bare squashfs image
 	t.Run("PrepareSquashfs", func(t *testing.T) {
 		c.squashfsImage = filepath.Join(tmpDir, "squashfs.img")
-		cmd := exec.Command("mksquashfs", c.sandboxImage, c.squashfsImage)
+		mksquashfsCmd, err := bin.FindBin("mksquashfs")
+		if err != nil {
+			t.Fatalf("Unable to find 'mksquashfs' binary even though require.Command() was called: %v", err)
+		}
+		cmd := exec.Command(mksquashfsCmd, c.sandboxImage, c.squashfsImage)
 		if out, err := cmd.CombinedOutput(); err != nil {
 			defer cleanup(t)
 			t.Fatalf("Error creating squashfs image: %v: %s", err, out)

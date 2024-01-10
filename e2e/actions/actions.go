@@ -774,7 +774,11 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 	}
 
 	// create the squashfs overlay image
-	cmd := exec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root")
+	mksquashfsCmd, err := bin.FindBin("mksquashfs")
+	if err != nil {
+		t.Fatalf("Unable to find 'mksquashfs' binary even though require.Command() was called: %v", err)
+	}
+	cmd := exec.Command(mksquashfsCmd, squashDir, squashfsImage, "-noappend", "-all-root")
 	if res := cmd.Run(t); res.Error != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
@@ -1934,7 +1938,11 @@ func (c actionTests) bindImage(t *testing.T) {
 	}
 
 	// create the squashfs overlay image
-	cmd := exec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root")
+	mksquashfsCmd, err := bin.FindBin("mksquashfs")
+	if err != nil {
+		t.Fatalf("Unable to find 'mksquashfs' binary even though require.Command() was called: %v", err)
+	}
+	cmd := exec.Command(mksquashfsCmd, squashDir, squashfsImage, "-noappend", "-all-root")
 	if res := cmd.Run(t); res.Error != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
