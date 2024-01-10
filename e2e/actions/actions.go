@@ -1766,10 +1766,11 @@ func (c actionTests) fuseMount(t *testing.T) {
 	}
 
 	basicTests := []struct {
-		name    string
-		spec    string
-		key     string
-		profile e2e.Profile
+		name         string
+		spec         string
+		key          string
+		profile      e2e.Profile
+		requirements func(t *testing.T)
 	}{
 		{
 			name:    "HostDaemonAsRoot",
@@ -1824,48 +1825,72 @@ func (c actionTests) fuseMount(t *testing.T) {
 			spec:    "host-daemon",
 			key:     userPrivKey,
 			profile: e2e.UserNamespaceProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 		{
 			name:    "HostAsUserNamespace",
 			spec:    "host",
 			key:     userPrivKey,
 			profile: e2e.UserNamespaceProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 		{
 			name:    "ContainerDaemonAsUserNamespace",
 			spec:    "container-daemon",
 			key:     userPrivKey,
 			profile: e2e.UserNamespaceProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 		{
 			name:    "ContainerAsUserNamespace",
 			spec:    "container",
 			key:     userPrivKey,
 			profile: e2e.UserNamespaceProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 		{
 			name:    "HostDaemonAsFakeroot",
 			spec:    "host-daemon",
 			key:     userPrivKey,
 			profile: e2e.FakerootProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 		{
 			name:    "HostAsFakeroot",
 			spec:    "host",
 			key:     userPrivKey,
 			profile: e2e.FakerootProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 		{
 			name:    "ContainerDaemonAsFakeroot",
 			spec:    "container-daemon",
 			key:     userPrivKey,
 			profile: e2e.FakerootProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 		{
 			name:    "ContainerAsFakeroot",
 			spec:    "container",
 			key:     userPrivKey,
 			profile: e2e.FakerootProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 	}
 
