@@ -1612,7 +1612,11 @@ func (c actionTests) actionOciBindImage(t *testing.T) {
 	}
 
 	// create the squashfs overlay image
-	cmd := testExec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root")
+	mksquashfsCmd, err := bin.FindBin("mksquashfs")
+	if err != nil {
+		t.Fatalf("Unable to find 'mksquashfs' binary even though require.Command() was called: %v", err)
+	}
+	cmd := testExec.Command(mksquashfsCmd, squashDir, squashfsImage, "-noappend", "-all-root")
 	if res := cmd.Run(t); res.Error != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}

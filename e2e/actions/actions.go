@@ -774,7 +774,11 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 	}
 
 	// create the squashfs overlay image
-	cmd := exec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root")
+	mksquashfsCmd, err := bin.FindBin("mksquashfs")
+	if err != nil {
+		t.Fatalf("Unable to find 'mksquashfs' binary even though require.Command() was called: %v", err)
+	}
+	cmd := exec.Command(mksquashfsCmd, squashDir, squashfsImage, "-noappend", "-all-root")
 	if res := cmd.Run(t); res.Error != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}
@@ -1762,10 +1766,11 @@ func (c actionTests) fuseMount(t *testing.T) {
 	}
 
 	basicTests := []struct {
-		name    string
-		spec    string
-		key     string
-		profile e2e.Profile
+		name         string
+		spec         string
+		key          string
+		profile      e2e.Profile
+		requirements func(t *testing.T)
 	}{
 		{
 			name:    "HostDaemonAsRoot",
@@ -1820,48 +1825,72 @@ func (c actionTests) fuseMount(t *testing.T) {
 			spec:    "host-daemon",
 			key:     userPrivKey,
 			profile: e2e.UserNamespaceProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 		{
 			name:    "HostAsUserNamespace",
 			spec:    "host",
 			key:     userPrivKey,
 			profile: e2e.UserNamespaceProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 		{
 			name:    "ContainerDaemonAsUserNamespace",
 			spec:    "container-daemon",
 			key:     userPrivKey,
 			profile: e2e.UserNamespaceProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 		{
 			name:    "ContainerAsUserNamespace",
 			spec:    "container",
 			key:     userPrivKey,
 			profile: e2e.UserNamespaceProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 		{
 			name:    "HostDaemonAsFakeroot",
 			spec:    "host-daemon",
 			key:     userPrivKey,
 			profile: e2e.FakerootProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 		{
 			name:    "HostAsFakeroot",
 			spec:    "host",
 			key:     userPrivKey,
 			profile: e2e.FakerootProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 		{
 			name:    "ContainerDaemonAsFakeroot",
 			spec:    "container-daemon",
 			key:     userPrivKey,
 			profile: e2e.FakerootProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 		{
 			name:    "ContainerAsFakeroot",
 			spec:    "container",
 			key:     userPrivKey,
 			profile: e2e.FakerootProfile,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 	}
 
@@ -1871,6 +1900,7 @@ func (c actionTests) fuseMount(t *testing.T) {
 	for _, tt := range basicTests {
 		c.env.RunSingularity(
 			t,
+			e2e.PreRun(tt.requirements),
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(tt.profile),
 			e2e.WithCommand("exec"),
@@ -1934,7 +1964,11 @@ func (c actionTests) bindImage(t *testing.T) {
 	}
 
 	// create the squashfs overlay image
-	cmd := exec.Command("mksquashfs", squashDir, squashfsImage, "-noappend", "-all-root")
+	mksquashfsCmd, err := bin.FindBin("mksquashfs")
+	if err != nil {
+		t.Fatalf("Unable to find 'mksquashfs' binary even though require.Command() was called: %v", err)
+	}
+	cmd := exec.Command(mksquashfsCmd, squashDir, squashfsImage, "-noappend", "-all-root")
 	if res := cmd.Run(t); res.Error != nil {
 		t.Fatalf("Unexpected error while running command.\n%s", res)
 	}

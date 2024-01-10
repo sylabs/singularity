@@ -33,9 +33,10 @@ func (c *ctx) verify(t *testing.T) {
 
 	ocspOk := false
 	t.Run("startOCSPResponder", func(t *testing.T) {
-		// Skip kernel < 3.11, which is a proxy for EL7 (3.10 kernel) where
-		// algorithms in OCSP chain are not all supported.
-		require.Kernel(t, 3, 11)
+		// Skip kernel < 4.18, which is a proxy for EL7 (3.10 kernel) and SLES12
+		// (4.15 kernel) where some algorithms in OCSP chain are not all
+		// supported.
+		require.Kernel(t, 4, 18)
 
 		if err := c.startOCSPResponder(priKeyPath, rootPath); err != nil {
 			t.Errorf("OCSP responder could not start: %s", err)
