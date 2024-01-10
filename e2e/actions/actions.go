@@ -1900,6 +1900,7 @@ func (c actionTests) fuseMount(t *testing.T) {
 	for _, tt := range basicTests {
 		c.env.RunSingularity(
 			t,
+			e2e.PreRun(tt.requirements),
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(tt.profile),
 			e2e.WithCommand("exec"),
