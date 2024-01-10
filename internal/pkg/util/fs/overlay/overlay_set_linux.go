@@ -17,6 +17,7 @@ import (
 	"github.com/samber/lo"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	fsfuse "github.com/sylabs/singularity/v4/internal/pkg/util/fs/fuse"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
@@ -65,12 +66,18 @@ func (s Set) Mount(rootFsDir string) error {
 
 // UnmountOverlay ummounts a Set from a specified rootfs directory.
 func (s Set) Unmount(rootFsDir string) error {
+	hostUser, err := user.CurrentOriginal()
+	if err != nil {
+		return fmt.Errorf("while checking for host user: %w", err)
+	}
+	hostRoot := hostUser.UID == 0
+
 	unprivOls, err := UnprivOverlaysSupported()
 	if err != nil {
 		return fmt.Errorf("while checking for unprivileged overlay support in kernel: %w", err)
 	}
 
-	useKernelMount := unprivOls && !s.hasWritableExtfsImg()
+	useKernelMount := (hostRoot || unprivOls) && !s.hasWritableExtfsImg()
 	if useKernelMount {
 		err = DetachMount(rootFsDir)
 	} else {
@@ -108,12 +115,19 @@ func (s Set) performIndividualMounts() error {
 func (s Set) performFinalMount(rootFsDir string) error {
 	// Try to perform actual mount
 	options := s.options(rootFsDir)
+
+	hostUser, err := user.CurrentOriginal()
+	if err != nil {
+		return fmt.Errorf("while checking for host user: %w", err)
+	}
+	hostRoot := hostUser.UID == 0
+
 	unprivOls, err := UnprivOverlaysSupported()
 	if err != nil {
 		return fmt.Errorf("while checking for unprivileged overlay support in kernel: %w", err)
 	}
 
-	useKernelMount := unprivOls && !s.hasWritableExtfsImg()
+	useKernelMount := (hostRoot || unprivOls) && !s.hasWritableExtfsImg()
 
 	if useKernelMount {
 		flags := uintptr(syscall.MS_NODEV)
