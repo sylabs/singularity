@@ -345,11 +345,6 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 		launcher.OptOverlayPaths(overlayPath),
 		launcher.OptScratchDirs(scratchPath),
 		launcher.OptWorkDir(workdirPath),
-		launcher.OptHome(
-			homePath,
-			cmd.Flag(actionHomeFlag.Name).Changed,
-			noHome,
-		),
 		launcher.OptMounts(bindPaths, mounts, fuseMount),
 		launcher.OptNoMount(noMount),
 		launcher.OptNvidia(nvidia, nvCCLI),
@@ -389,6 +384,13 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 		launcher.OptNoCompat(noCompat),
 		launcher.OptTmpSandbox(tmpSandbox),
 		launcher.OptNoTmpSandbox(noTmpSandbox),
+	}
+	if cmd.Flag(actionHomeFlag.Name) != nil {
+		opts = append(opts, launcher.OptHome(
+			homePath,
+			cmd.Flag(actionHomeFlag.Name).Changed,
+			noHome,
+		))
 	}
 
 	// Explicitly use the interface type here, as we will add alternative launchers later...

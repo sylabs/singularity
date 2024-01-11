@@ -23,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/docs"
+	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
 	"github.com/sylabs/singularity/v4/pkg/cmdline"
 	"github.com/sylabs/singularity/v4/pkg/image"
@@ -171,6 +172,8 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&inspectTestFlag, InspectCmd)
 		cmdManager.RegisterFlagForCmd(&inspectAppsListFlag, InspectCmd)
 		cmdManager.RegisterFlagForCmd(&inspectAllFlag, InspectCmd)
+
+		cmdManager.RegisterFlagForCmd(&commonOCIFlag, InspectCmd)
 	})
 }
 
@@ -639,6 +642,20 @@ var InspectCmd = &cobra.Command{
 	Example: docs.InspectExample,
 
 	Run: func(cmd *cobra.Command, args []string) {
+		if isOCI {
+			actionPreRun(cmd, args)
+			// singularity inspect <image> [args...]
+			ep := launcher.ExecParams{
+				Image:  args[0],
+				Action: "inspect",
+				Args:   args[1:],
+			}
+			if err := launchContainer(cmd, ep); err != nil {
+				sylog.Fatalf("%s", err)
+			}
+			return
+		}
+
 		img, err := image.Init(args[0], false)
 		if err != nil {
 			sylog.Fatalf("Failed to open image %s: %s", args[0], err)

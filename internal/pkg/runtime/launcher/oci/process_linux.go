@@ -91,7 +91,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 			return nil, nil, fmt.Errorf("while getting ProcessArgs: %w", err)
 		}
 		sylog.Debugf("Native SIF container process/args: %v", args)
-	case l.cfg.AppName != "":
+	case (l.cfg.AppName != "") || (ep.Action == "inspect"):
 		sylog.Debugf("SCIF app %q requested", l.cfg.AppName)
 		specArgs := getSpecArgs(imgSpec)
 		if len(specArgs) < 1 {
@@ -128,8 +128,11 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 
 func (l *Launcher) argsForSCIF(specArgs []string, ep launcher.ExecParams) ([]string, error) {
 	switch ep.Action {
-	case "run", "exec", "shell":
-		args := []string{specArgs[0], ep.Action, l.cfg.AppName}
+	case "run", "exec", "shell", "inspect":
+		args := []string{specArgs[0], ep.Action}
+		if l.cfg.AppName != "" {
+			args = append(args, l.cfg.AppName)
+		}
 		args = append(args, specArgs[1:]...)
 		if ep.Process != "" {
 			args = append(args, ep.Process)
