@@ -51,11 +51,13 @@
   versions of Singularity. From 4.1, FUSE mounts are used automatically when
   kernel mounts are disabled / not available.
 
+## 4.0.3 \[2024-01-11\]
+
 ### Bug Fixes
 
-- Execute correct `%appstart` script when using `instance start` with `--app`.
 - Use kernel overlayfs instead of `fuse-overlayfs` when running as root user,
   regardless of unprivileged kernel overlay support.
+- Execute correct `%appstart` script when using `instance start` with `--app`.
 
 ## 4.0.2 \[2023-11-16\]
 
