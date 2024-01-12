@@ -22,6 +22,7 @@ sudo apt-get install -y \
     cryptsetup \
     fuse2fs \
     git \
+    fuse \
     libfuse-dev \
     libglib2.0-dev \
     libseccomp-dev \
@@ -47,6 +48,7 @@ sudo yum install -y \
     crun \
     cryptsetup \
     fuse \
+    fuse3 \
     fuse3-devel \
     git \
     glib2-devel \
@@ -68,6 +70,7 @@ sudo yum install -y \
     automake \
     cryptsetup \
     fuse \
+    fuse3 \
     fuse3-devel \
     git \
     glib2-devel \
@@ -87,6 +90,7 @@ sudo zypper in \
     automake \
     cryptsetup \
     fuse2fs \
+    fuse3 \
     fuse3-devel \
     gcc \
     gcc-c++ \
@@ -228,11 +232,11 @@ cd singularity
 By default your clone will be on the `main` branch which is where development
 of SingularityCE happens. To build a specific version of SingularityCE, check
 out a [release tag](https://github.com/sylabs/singularity/tags) before
-compiling. E.g. to build the 4.0.3 release, checkout the
-`v4.0.3` tag:
+compiling. E.g. to build the 4.1.0-rc.1 release candidate, checkout the
+`v4.1.0-rc.1` tag:
 
 ```sh
-git checkout --recurse-submodules v4.0.3
+git checkout --recurse-submodules v4.1.0-rc.1
 ```
 
 ## Compiling SingularityCE
@@ -283,7 +287,7 @@ build and install the RPM like this:
 <!-- markdownlint-disable MD013 -->
 
 ```sh
-export VERSION=4.0.3 # this is the singularity version, change as you need
+export VERSION=4.1.0-rc.1 # this is the singularity version, change as you need
 
 # Fetch the source
 wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-ce-${VERSION}.tar.gz
