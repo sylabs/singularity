@@ -13,7 +13,7 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/containernetworking/cni v1.1.2
 	github.com/containernetworking/plugins v1.4.0
-	github.com/containers/common v0.57.1
+	github.com/containers/common v0.57.2
 	github.com/containers/image/v5 v5.29.1
 	github.com/cyphar/filepath-securejoin v0.2.4
 	github.com/docker/cli v24.0.7+incompatible
