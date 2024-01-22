@@ -17,7 +17,7 @@ reserved.
 
 Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 
-Copyright (c) 2018-2023, Sylabs, Inc. All rights reserved.
+Copyright (c) 2018-2024, Sylabs, Inc. All rights reserved.
 
 Copyright (c) Contributors to the Apptainer project, established as Apptainer a
 Series of LF Projects LLC.
