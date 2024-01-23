@@ -13,6 +13,10 @@
   The container / instance will be started in the current cgroup, and information
   about the configuration issue displayed to the user as warnings.
 
+### Bug Fixes
+
+- Added missing `tmp sandbox` directive to `singularity.conf` template.
+
 ## 4.0.1-rc.1 Release Candidate \[2024-01-12\]
 
 ### Changed defaults / behaviours

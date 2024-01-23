@@ -237,6 +237,14 @@ enable overlay = {{ .EnableOverlay }}
 # working.  If overlay is available, it will be tried first.
 enable underlay = {{ if eq .EnableUnderlay true }}yes{{ else }}no{{ end }}
 
+# TMP SANDBOX: [yes/no]
+# DEFAULT: yes
+# If set to yes, container images will automatically be extracted to a
+# temporary sandbox directory when mounting the image is not supported.
+# If set to no, images will not be extracted to a temporary sandbox
+# in action/instance flows. An explicit build to a sandbox will be required.
+tmp sandbox = {{ if eq .TmpSandboxAllowed true }}yes{{ else }}no{{ end }}
+
 # MOUNT SLAVE: [BOOL]
 # DEFAULT: yes
 # Should we automatically propagate file-system changes from the host?
