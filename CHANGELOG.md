@@ -1,5 +1,18 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Changed defaults / behaviours
+
+- `--oci` mode containers and native mode instances can now be successfully
+  started as a non-root user on cgroups v2 systems when both:
+  - The system configuration / environment does not provide the correct
+    information necessary to communicate with systemd via dbus.
+  - Resource limits (e.g. `--cpus`) have not been requested.
+
+  The container / instance will be started in the current cgroup, and information
+  about the configuration issue displayed to the user as warnings.
+
 ## 4.0.1-rc.1 Release Candidate \[2024-01-12\]
 
 ### Changed defaults / behaviours
