@@ -72,7 +72,8 @@ func CleanupHost(cleanupSocket int, e *engine.Engine) {
 		_, err := conn.Read(data)
 		// Clean shutdown - master should be notified after cleanup.
 		if err == nil {
-			tc <- syscall.SIGHUP
+			tc <- syscall.SIGUSR1
+			return
 		}
 		// Unclean shutdown - master not available to notify after cleanup.
 		tc <- syscall.SIGTERM
@@ -88,7 +89,7 @@ func CleanupHost(cleanupSocket int, e *engine.Engine) {
 	err = e.CleanupHost(context.TODO())
 
 	// If we are in a clean (master initiated) shutdown, notify master of any cleanup failure.
-	if err != nil && sig == syscall.SIGHUP {
+	if err != nil && sig == syscall.SIGUSR1 {
 		if _, err := conn.Write([]byte{'f'}); err != nil {
 			sylog.Debugf("Could not write to master: %s", err)
 		}
@@ -101,7 +102,7 @@ func CleanupHost(cleanupSocket int, e *engine.Engine) {
 	}
 
 	// If we are in a clean (master initiated) shutdown, notify master of the cleanup success.
-	if sig == syscall.SIGHUP {
+	if sig == syscall.SIGUSR1 {
 		if _, err := conn.Write([]byte{'c'}); err != nil {
 			sylog.Debugf("Could not write to master: %s", err)
 			sylog.Debugf("Exiting CleanupHost - Master socket write failure")

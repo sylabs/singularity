@@ -6,6 +6,7 @@
 package starter
 
 import (
+	"context"
 	"net"
 	"os"
 
@@ -25,10 +26,16 @@ func StageOne(sconfig *starterConfig.Config, e *engine.Engine) {
 	sylog.Debugf("Entering stage 1\n")
 
 	if err := e.PrepareConfig(sconfig); err != nil {
+		if cleanErr := e.CleanupHost(context.TODO()); cleanErr != nil {
+			sylog.Errorf("While running host cleanup tasks: %s", cleanErr)
+		}
 		sylog.Fatalf("%s\n", err)
 	}
 
 	if err := sconfig.Write(e.Common); err != nil {
+		if cleanErr := e.CleanupHost(context.TODO()); cleanErr != nil {
+			sylog.Errorf("While running host cleanup tasks: %s", cleanErr)
+		}
 		sylog.Fatalf("%s", err)
 	}
 
