@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -18,7 +18,6 @@ import (
 	"syscall"
 	"time"
 
-	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
@@ -957,12 +956,7 @@ func (l *Launcher) setCgroups(instanceName string) error {
 	}
 
 	// If we are an instance, always use a cgroup if possible, to enable stats.
-	// root can always create a cgroup.
-	useCG := l.uid == 0
-	// non-root needs cgroups v2 unified mode + systemd as cgroups manager.
-	if l.uid != 0 && lccgroups.IsCgroup2UnifiedMode() && l.engineConfig.File.SystemdCgroups {
-		useCG = true
-	}
+	useCG := cgroups.CanUseCgroups(l.engineConfig.File.SystemdCgroups, false)
 
 	if useCG {
 		cg := cgroups.Config{}
@@ -974,7 +968,7 @@ func (l *Launcher) setCgroups(instanceName string) error {
 		return nil
 	}
 
-	sylog.Infof("Instance stats will not be available - requires cgroups v2 with systemd as manager.")
+	sylog.Infof("Instance stats will not be available - system configuration does not support cgroup management.")
 	return nil
 }
 
