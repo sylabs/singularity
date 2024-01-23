@@ -88,20 +88,24 @@ type Operations interface {
 	// a hybrid workflow (e.g. fakeroot), then there is no privileged saved uid
 	// and thus no additional privileges can be gained.
 	CleanupContainer(context.Context, error, syscall.WaitStatus) error
-	// PostStartHost is called after the container process has been executed. It is
-	// run in the process forked from starter before namespace setup etc. and
-	// will perform any cleanup in the host mount namespace at time of CLI
-	// execution.
+	// PostStartHost is called after the container process has been executed. It
+	// is run in the POST_START_HOST process forked from starter before
+	// namespace setup etc. and will perform any cleanup in the host mount
+	// namespace at time of CLI execution.
 	//
-	// No additional privileges can be gained during this call, as privileges
-	// are dropped permanently after forking in starter.
+	// No additional privileges can be gained during this call in the setuid
+	// flow as privileges are dropped permanently after forking in starter.
 	PostStartHost(context.Context) error
-	// CleanupHost is called after CleanupContainer, before master exits.
-	// It is run in the process forked from starter before namespace setup etc. and
-	// will perform any cleanup in the host mount namespace at time of CLI execution.
+	// CleanupHost is called on container exit or startup failure to perform any
+	// required cleanup in the host mount namespace at time of CLI execution.
 	//
-	// No additional privileges can be gained during this call, as privileges are
-	// dropped permanently after forking in starter.
+	// If container creation fails early, in STAGE 1, it will be called directly
+	// from STAGE 1. Otherwise it is run in the CLEANUP_HOST PROCESS, triggered
+	// by master, or the SIGKILL parent death signal.
+	//
+	// No additional privileges can be gained during this call in the setuid
+	// flow, as privileges are dropped permanently in both STAGE1 and
+	// CLEANUP_HOST after forking in starter.
 	CleanupHost(context.Context) error
 }
 
