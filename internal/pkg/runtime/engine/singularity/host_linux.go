@@ -26,8 +26,9 @@ func (e *EngineOperations) PostStartHost(ctx context.Context) (err error) {
 }
 
 // CleanupHost cleans up a SIF FUSE image mount and the temporary directory that
-// holds it, if it exists after container exit. It is called from a HOST_CLEANUP process that exists
-// in the original host namespaces.
+// holds it. If container creation fails early, in STAGE 1, it will be called
+// directly from STAGE 1. Otherwise, it will be called from a CLEANUP_HOST
+// process, when the container cleanly exits, or is killed.
 func (e *EngineOperations) CleanupHost(ctx context.Context) (err error) {
 	tmpDir := e.EngineConfig.GetDeleteTempDir()
 	if e.EngineConfig.GetImageFuse() && tmpDir != "" {
