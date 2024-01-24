@@ -1,6 +1,6 @@
 # SingularityCE Changelog
 
-## Changes Since Last Release
+## 4.1.0 \[2024-01-25\]
 
 ### Changed defaults / behaviours
 
@@ -12,15 +12,6 @@
 
   The container / instance will be started in the current cgroup, and information
   about the configuration issue displayed to the user as warnings.
-
-### Bug Fixes
-
-- Added missing `tmp sandbox` directive to `singularity.conf` template.
-
-## 4.0.1-rc.1 Release Candidate \[2024-01-12\]
-
-### Changed defaults / behaviours
-
 - In native mode, SIF/SquashFS container images will now be mounted with
   squashfuse when kernel mounts are disabled in `singularity.conf`, or cannot be
   used (non-setuid / user namespace workflow). If the FUSE mount fails,
@@ -59,6 +50,10 @@
   instance start` commands. This will force Singularity to extract a container
   to a temporary sandbox before running it, when it would otherwise perform a
   kernel or FUSE mount.
+
+### Bug Fixes
+
+- Added missing `tmp sandbox` directive to `singularity.conf` template.
 
 ### Deprecated Functionality
 
