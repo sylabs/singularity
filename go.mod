@@ -16,7 +16,7 @@ require (
 	github.com/containers/common v0.57.2
 	github.com/containers/image/v5 v5.29.1
 	github.com/cyphar/filepath-securejoin v0.2.4
-	github.com/docker/cli v25.0.0+incompatible
+	github.com/docker/cli v25.0.1+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/docker/docker v24.0.7+incompatible
 	github.com/docker/go-units v0.5.0
