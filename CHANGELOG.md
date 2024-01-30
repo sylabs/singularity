@@ -1,5 +1,12 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Workaround segfault in `crun` v1.11+ when no resource limits are specified.
+  <https://github.com/containers/crun/issues/1402>
+
 ## 4.1.0 \[2024-01-25\]
 
 ### Changed defaults / behaviours
