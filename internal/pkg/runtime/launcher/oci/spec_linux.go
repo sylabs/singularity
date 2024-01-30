@@ -26,6 +26,9 @@ var defaultNamespaces = []specs.LinuxNamespace{
 	},
 }
 
+// defaultResources - an empty set, no resource limits
+var defaultResources = specs.LinuxResources{}
+
 // minimalSpec returns an OCI runtime spec with a minimal OCI configuration that
 // is a starting point for compatibility with Singularity's native launcher in
 // `--compat` mode.
@@ -52,7 +55,12 @@ func minimalSpec() specs.Spec {
 	// All mounts are added by the launcher, as it must handle flags.
 	config.Mounts = []specs.Mount{}
 
-	config.Linux = &specs.Linux{Namespaces: defaultNamespaces}
+	config.Linux = &specs.Linux{
+		Namespaces: defaultNamespaces,
+		// Ensure this is not nil to work around crun bug.
+		// https://github.com/containers/crun/issues/1402
+		Resources: &defaultResources,
+	}
 	return config
 }
 
