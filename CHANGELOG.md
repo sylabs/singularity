@@ -1,6 +1,6 @@
 # SingularityCE Changelog
 
-## Changes Since Last Release
+## 4.1.1 \[2024-02-01\]
 
 ### Security Related Fixes
 
