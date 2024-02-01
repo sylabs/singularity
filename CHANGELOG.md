@@ -2,6 +2,25 @@
 
 ## Changes Since Last Release
 
+### Security Related Fixes
+
+- Update `github.com/moby/buildkit` dependency, used for `--oci` Dockerfile
+  builds, addressing the following upstream CVEs:
+  - [CVE-2024-23650](https://github.com/moby/buildkit/security/advisories/GHSA-9p26-698r-w4hx)
+    Possible panic when incorrect parameters sent from frontend
+  - [CVE-2024-23651](https://github.com/moby/buildkit/security/advisories/GHSA-m3r6-h7wv-7xxv)
+    Possible race condition with accessing subpaths from cache mounts.
+  - [CVE-2024-23652](https://github.com/moby/buildkit/security/advisories/GHSA-4v98-7qmw-rqr8)
+    Possible host system access from mount stub cleaner.
+  - [CVE-2024-23653](https://github.com/moby/buildkit/security/advisories/GHSA-wr6v-9f75-vh2g)
+    Interactive containers API does not validate entitlements check.
+
+Note also that in OCI-Mode, SingularityCE may call out to `runc` versions
+vulnerable to
+[CVE-2024-21626](https://github.com/opencontainers/runc/security/advisories/GHSA-xr7r-f8xq-vfvv).
+`runc` is not bundled with SingularityCE, and should be updated via your Linux
+distribution's package manager, or manually.
+
 ### Bug Fixes
 
 - Workaround segfault in `crun` v1.11+ when no resource limits are specified.
