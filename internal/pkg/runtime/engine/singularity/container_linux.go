@@ -1462,6 +1462,7 @@ func (c *container) addHostMount(system *mount.System) error {
 }
 
 func (c *container) addBindsMount(system *mount.System) error {
+	// These flags are only in effect *after* the remount
 	flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 
 	const (
@@ -1538,6 +1539,13 @@ func (c *container) addBindsMount(system *mount.System) error {
 		if err != nil {
 			return fmt.Errorf("unable to add %s to mount list: %s", src, err)
 		}
+		// If bind paths are trusted, do not remount. Host mount flags will remain.
+		// This results in nosuid / nodev not being forced
+		if c.engine.EngineConfig.File.TrustedBindPaths {
+			sylog.Debugf("Skipping remount for %s as trusted bind paths is enabled", bindpath)
+			continue
+		}
+
 		if err := system.Points.AddRemount(mount.BindsTag, dst, flags); err != nil {
 			return fmt.Errorf("unable to add %s for remount: %s", dst, err)
 		}
