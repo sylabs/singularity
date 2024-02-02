@@ -434,7 +434,7 @@ func handleConfDir(confDir string) error {
 	return nil
 }
 
-func persistentPreRun(*cobra.Command, []string) error {
+func persistentPreRun(cmd *cobra.Command, _ []string) error {
 	setSylogMessageLevel()
 	sylog.Debugf("Singularity version: %s", buildcfg.PACKAGE_VERSION)
 
@@ -444,9 +444,14 @@ func persistentPreRun(*cobra.Command, []string) error {
 		}
 	}
 
+	// Allow plugin compilation with a missing config file. This is required so
+	// that the package build can compile plugins during rpmbuild /
+	// dpkg-build, where Singularity is not fully installed yet.
+	isPluginCompile := cmd.CommandPath() == "singularity plugin compile"
+
 	sylog.Debugf("Parsing configuration file %s", configurationFile)
 	config, err := singularityconf.Parse(configurationFile)
-	if err != nil {
+	if err != nil && !isPluginCompile {
 		return fmt.Errorf("couldn't parse configuration file %s: %s", configurationFile, err)
 	}
 	singularityconf.SetCurrentConfig(config)
