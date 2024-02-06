@@ -11,7 +11,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buger/goterm v1.0.4
 	github.com/buger/jsonparser v1.1.1
-	github.com/containerd/console v1.0.3
+	github.com/containerd/console v1.0.4
 	github.com/containerd/containerd v1.7.13
 	github.com/containerd/continuity v0.4.3
 	github.com/containerd/go-runc v1.1.0
