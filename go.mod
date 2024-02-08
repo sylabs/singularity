@@ -58,8 +58,8 @@ require (
 	go.etcd.io/bbolt v1.3.8
 	golang.org/x/crypto v0.18.0
 	golang.org/x/sync v0.6.0
-	golang.org/x/sys v0.16.0
-	golang.org/x/term v0.16.0
+	golang.org/x/sys v0.17.0
+	golang.org/x/term v0.17.0
 	golang.org/x/text v0.14.0
 	google.golang.org/grpc v1.61.0
 	gopkg.in/yaml.v3 v3.0.1
