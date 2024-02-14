@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0",
+  "hook": {
+    "path": "/bin/sh",
+    "args": ["-c", "echo UNPRIV HOOK UID: $(id -u) && env"],
+    "env": [
+      "I_AM_A_HOOK=1"
+    ]
+  },
+  "when": {
+    "always": true
+  },
+  "stages": ["poststart"],
+  "privileged": false
+}
