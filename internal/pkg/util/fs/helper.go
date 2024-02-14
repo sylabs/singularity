@@ -207,6 +207,20 @@ func IsGroup(name string, gid uint32) bool {
 	return info.Sys().(*syscall.Stat_t).Gid == gid
 }
 
+// FileHasGroup checks if passed os.File is owned by group identified with gid.
+func FileHasGroup(f *os.File, gid uint32) bool {
+	if f == nil {
+		return false
+	}
+	info, err := f.Stat()
+	if err != nil {
+		return false
+	}
+
+	//nolint:forcetypeassert
+	return info.Sys().(*syscall.Stat_t).Gid == gid
+}
+
 // IsExec check if name component has executable bit permission set.
 func IsExec(name string) bool {
 	info, err := os.Stat(name)
