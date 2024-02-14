@@ -11,6 +11,7 @@ etc/singularity/*.json
 etc/singularity/*.yaml
 etc/singularity/global-pgp-public
 etc/singularity/cgroups/*
+etc/singularity/native-hooks.d/*
 etc/singularity/network/*
 etc/singularity/seccomp-profiles/*
 var/lib/singularity/mnt/session
