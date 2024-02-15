@@ -1348,6 +1348,37 @@ func (c ctx) testDockerUSERWorker(t *testing.T, container string) {
 			},
 			expectExit: 0,
 		},
+		// `--oci` modes: check correct ownership of the USER home
+		{
+			name:    "HomeOwnershipOCIUser",
+			cmd:     "exec",
+			profile: e2e.OCIUserProfile,
+			args:    []string{container, "stat", "-c", "%U(%u):%G(%g)", "/home/testuser"},
+			expectOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.ExactMatch, "testuser(2000):testgroup(2000)"),
+			},
+			expectExit: 0,
+		},
+		{
+			name:    "HomeOwnershipOCIFakeroot",
+			cmd:     "exec",
+			profile: e2e.OCIFakerootProfile,
+			args:    []string{container, "stat", "-c", "%U(%u):%G(%g)", "/home/testuser"},
+			expectOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.ExactMatch, "testuser(2000):testgroup(2000)"),
+			},
+			expectExit: 0,
+		},
+		{
+			name:    "HomeOwnershipOCIRoot",
+			cmd:     "exec",
+			profile: e2e.OCIRootProfile,
+			args:    []string{container, "stat", "-c", "%U(%u):%G(%g)", "/home/testuser"},
+			expectOutputs: []e2e.SingularityCmdResultOp{
+				e2e.ExpectOutput(e2e.ExactMatch, "testuser(2000):testgroup(2000)"),
+			},
+			expectExit: 0,
+		},
 	}
 
 	for _, tt := range tests {
