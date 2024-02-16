@@ -403,6 +403,10 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 
 	l.handleVarTmpToTmpSymlink(spec)
 
+	if err := addAnnotations(spec, imgSpec); err != nil {
+		return err
+	}
+
 	return b.Update(ctx, spec)
 }
 
