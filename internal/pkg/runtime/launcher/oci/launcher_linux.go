@@ -320,7 +320,7 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 	containerUser := false
 
 	// If the OCI image config specifies a USER we will:
-	//  * When unprivileged - run as that user, via nested subuid/gid mappings (host user -> userns root -> OCI USER)
+	//  * When unprivileged - run as that user, via nested subuid/gid mappings.
 	//  * When privileged - directly run as that user, as a host uid/gid.
 	if imgSpec.Config.User != "" {
 		imgUser, err := tools.BundleUser(b.Path(), imgSpec.Config.User)
@@ -348,7 +348,7 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 	}
 
 	if targetUID != 0 && currentUID != 0 {
-		uidMap, gidMap, err := getReverseUserMaps(currentUID, targetUID, targetGID)
+		uidMap, gidMap, err := getReverseUserMaps(currentUID, uint32(rootlessUID), uint32(rootlessGID))
 		if err != nil {
 			return err
 		}
