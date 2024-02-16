@@ -1,5 +1,12 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Set OCI runtime-spec annotations that are required by the documented
+  image-spec conversion process.
+
 ## 4.1.1 \[2024-02-01\]
 
 ### Security Related Fixes
