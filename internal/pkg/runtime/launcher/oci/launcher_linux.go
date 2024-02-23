@@ -302,6 +302,14 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 		return fmt.Errorf("bundle has no image spec")
 	}
 
+	if len(imgSpec.Config.Volumes) != 0 {
+		sylog.Warningf("Container specifies volume mounts, which are not supported by singularity. It may not operate as expected.")
+	}
+	if len(imgSpec.Config.ExposedPorts) != 0 && !l.cfg.Namespaces.Net {
+		sylog.Infof("Container specifies exposed ports.")
+		sylog.Infof("Unless started with --net, singularity uses the host network namespace and all ports are exposed subject to host firewall rules.")
+	}
+
 	// In the absence of a USER in the OCI image config, we will run the
 	// container process as our own user / group, i.e. the uid / gid outside of
 	// any initial id-mapped user namespace.
