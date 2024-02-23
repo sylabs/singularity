@@ -9,6 +9,8 @@
 - In `--oci` mode always set inner ID map based on host user, not `USER` in OCI
   container. Fixes incorrect permissions for files owned by `USER` in the
   container.
+- Provide warning / info message for OCI image-spec features (volumes, exposed
+  ports) that are not supported by singularity.
 
 ## 4.1.1 \[2024-02-01\]
 
