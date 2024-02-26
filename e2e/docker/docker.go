@@ -1203,8 +1203,8 @@ func (c ctx) testDockerCMDQuotes(t *testing.T) {
 	)
 }
 
-// Check that the USER in a docker container is honored under --oci mode
-func (c ctx) testDockerUSER(t *testing.T) {
+// Check that the USER & WORKDIR in a docker container are honored under --oci mode
+func (c ctx) testDockerUSERWORKDIR(t *testing.T) {
 	dockerURI := "docker://sylabsio/docker-user"
 	dockerfile := filepath.Join("..", "test", "defs", "Dockerfile.customuser")
 	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, "", "dockerfile-build-USER-", "temp dir for OCI-SIF images")
@@ -1264,136 +1264,118 @@ func (c ctx) testDockerUSERWorker(t *testing.T, container string) {
 		name          string
 		cmd           string
 		args          []string
+		wd            string
 		expectOutputs []e2e.SingularityCmdResultOp
-		profile       e2e.Profile
+		profiles      []e2e.Profile
 		expectExit    int
 	}{
-		// `--oci` modes (USER honored by default)
+		// `--oci` should honor container USER by default
 		{
-			name:    "OCIUser",
-			cmd:     "run",
-			profile: e2e.OCIUserProfile,
-			args:    []string{container},
+			name:     "OCIImageUser",
+			cmd:      "run",
+			profiles: []e2e.Profile{e2e.OCIUserProfile, e2e.OCIRootProfile},
+			args:     []string{container},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.ContainMatch, `uid=2000(testuser) gid=2000(testgroup)`),
 			},
 		},
+		// `--fakeroot` is an explicit request for root in the container
 		{
-			name:    "OCIFakeroot",
-			profile: e2e.OCIFakerootProfile,
-			args:    []string{container},
+			name:     "OCIFakerootUser",
+			profiles: []e2e.Profile{e2e.OCIFakerootProfile},
+			args:     []string{container},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.ContainMatch, `uid=0(root) gid=0(root)`),
 			},
 		},
-		{
-			name:    "OCIRoot",
-			cmd:     "run",
-			profile: e2e.OCIRootProfile,
-			args:    []string{container},
-			expectOutputs: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ContainMatch, `uid=2000(testuser) gid=2000(testgroup)`),
-			},
-		},
-		// `--oci` modes: check that we correctly error on conflict with `--home`
+
+		// At present, we don't support specifying `--home` when container declares a USER.
 		{
 			name:       "WithHomeOCIUser",
 			cmd:        "run",
-			profile:    e2e.OCIUserProfile,
+			profiles:   []e2e.Profile{e2e.OCIUserProfile, e2e.OCIRootProfile, e2e.OCIFakerootProfile},
 			args:       []string{"--home", "/tmp", container},
 			expectExit: 255,
 		},
+		// $HOME env var should match the container USER's home dir, by default.
 		{
-			name:       "WithHomeOCIFakeroot",
-			cmd:        "run",
-			profile:    e2e.OCIFakerootProfile,
-			args:       []string{"--home", "/tmp", container},
-			expectExit: 255,
-		},
-		{
-			name:       "WithHomeOCIRoot",
-			cmd:        "run",
-			profile:    e2e.OCIRootProfile,
-			args:       []string{"--home", "/tmp", container},
-			expectExit: 255,
-		},
-		// `--oci` modes: check that we don't override container-user's home directory
-		{
-			name:    "OrigHomeOCIUser",
-			cmd:     "exec",
-			profile: e2e.OCIUserProfile,
-			args:    []string{container, "env"},
+			name:     "OCIImageHomeEnv",
+			cmd:      "exec",
+			profiles: []e2e.Profile{e2e.OCIUserProfile, e2e.OCIRootProfile},
+			args:     []string{container, "env"},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.RegexMatch, `\bHOME=/home/testuser\b`),
 			},
 			expectExit: 0,
 		},
+		// `--fakeroot` is an explicit request for root in the container, so verify home dir.
 		{
-			name:    "OrigHomeOCIFakeroot",
-			cmd:     "exec",
-			profile: e2e.OCIFakerootProfile,
-			args:    []string{container, "env"},
+			name:     "OCIFakerootHomeEnv",
+			cmd:      "exec",
+			profiles: []e2e.Profile{e2e.OCIFakerootProfile},
+			args:     []string{container, "env"},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.RegexMatch, `\bHOME=/root\b`),
 			},
 			expectExit: 0,
 		},
+		// USER's home directory should always be owned by USER
 		{
-			name:    "OrigHomeOCIRoot",
-			cmd:     "exec",
-			profile: e2e.OCIRootProfile,
-			args:    []string{container, "env"},
-			expectOutputs: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.RegexMatch, `\bHOME=/home/testuser\b`),
-			},
-			expectExit: 0,
-		},
-		// `--oci` modes: check correct ownership of the USER home
-		{
-			name:    "HomeOwnershipOCIUser",
-			cmd:     "exec",
-			profile: e2e.OCIUserProfile,
-			args:    []string{container, "stat", "-c", "%U(%u):%G(%g)", "/home/testuser"},
+			name:     "OCIImageHomePerms",
+			cmd:      "exec",
+			profiles: []e2e.Profile{e2e.OCIUserProfile, e2e.OCIRootProfile, e2e.OCIFakerootProfile},
+			args:     []string{container, "stat", "-c", "%U(%u):%G(%g)", "/home/testuser"},
 			expectOutputs: []e2e.SingularityCmdResultOp{
 				e2e.ExpectOutput(e2e.ExactMatch, "testuser(2000):testgroup(2000)"),
 			},
 			expectExit: 0,
 		},
+		// WORKDIR should be honored, by default.
 		{
-			name:    "HomeOwnershipOCIFakeroot",
-			cmd:     "exec",
-			profile: e2e.OCIFakerootProfile,
-			args:    []string{container, "stat", "-c", "%U(%u):%G(%g)", "/home/testuser"},
+			name:     "OCIImageWorkdir",
+			cmd:      "exec",
+			profiles: []e2e.Profile{e2e.OCIUserProfile, e2e.OCIRootProfile, e2e.OCIFakerootProfile},
+			args:     []string{container, "pwd"},
 			expectOutputs: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ExactMatch, "testuser(2000):testgroup(2000)"),
+				e2e.ExpectOutput(e2e.ExactMatch, "/home/testuser"),
 			},
 			expectExit: 0,
 		},
+		// --no-compat emulates native mode, so WORKDIR is ignored and container is entered at host CWD.
 		{
-			name:    "HomeOwnershipOCIRoot",
-			cmd:     "exec",
-			profile: e2e.OCIRootProfile,
-			args:    []string{container, "stat", "-c", "%U(%u):%G(%g)", "/home/testuser"},
+			name:     "OCINoCompatWorkdir",
+			cmd:      "exec",
+			profiles: []e2e.Profile{e2e.OCIUserProfile, e2e.OCIRootProfile, e2e.OCIFakerootProfile},
+			args:     []string{"--no-compat", container, "pwd"},
+			wd:       "/tmp",
 			expectOutputs: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.ExactMatch, "testuser(2000):testgroup(2000)"),
+				e2e.ExpectOutput(e2e.ExactMatch, "/tmp"),
 			},
 			expectExit: 0,
 		},
 	}
 
 	for _, tt := range tests {
-		cmd := "run"
-		if tt.cmd != "" {
-			cmd = tt.cmd
+		for _, profile := range tt.profiles {
+			cmd := "run"
+			if tt.cmd != "" {
+				cmd = tt.cmd
+			}
+			cmdOps := []e2e.SingularityCmdOp{
+				e2e.AsSubtest(tt.name + "/" + profile.String()),
+				e2e.WithProfile(profile),
+				e2e.WithCommand(cmd),
+				e2e.WithArgs(tt.args...),
+				e2e.ExpectExit(tt.expectExit, tt.expectOutputs...),
+			}
+			if tt.wd != "" {
+				cmdOps = append(cmdOps, e2e.WithDir(tt.wd))
+			}
+			c.env.RunSingularity(
+				t,
+				cmdOps...,
+			)
 		}
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(tt.profile),
-			e2e.WithCommand(cmd),
-			e2e.WithArgs(tt.args...),
-			e2e.ExpectExit(tt.expectExit, tt.expectOutputs...),
-		)
 	}
 }
 
@@ -1790,7 +1772,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			t.Run("entrypoint", c.testDockerENTRYPOINT)
 			t.Run("cmdentrypoint", c.testDockerCMDENTRYPOINT)
 			t.Run("cmd quotes", c.testDockerCMDQuotes)
-			t.Run("user", c.testDockerUSER)
+			t.Run("user workdir", c.testDockerUSERWORKDIR)
 			t.Run("platform", c.testDockerPlatform)
 			t.Run("crossarch buildkit", c.testDockerCrossArchBk)
 			t.Run("scif", c.testDockerSCIF)
