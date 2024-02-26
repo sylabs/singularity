@@ -65,7 +65,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 		rtEnv["HOME"] = l.homeDest
 	}
 
-	cwd, err := l.getProcessCwd()
+	cwd, err := l.getProcessCwd(imgSpec)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -177,18 +177,22 @@ func getSpecArgs(imageSpec imgspecv1.Image) []string {
 }
 
 // getProcessCwd computes the Cwd that the container process should start in.
-// Default in OCI mode, like native --compat, is $HOME.
+// Default in OCI mode is the value in the image config, or $HOME.
 // In native emulation (--no-compat), we use the CWD.
 // Can be overridden with a custom value via --cwd/pwd.
 
 // Because this is called after mounts have already been computed, we can count on homeDest containing the right value, incorporating any custom home dir overrides (i.e., --home).
-func (l *Launcher) getProcessCwd() (dir string, err error) {
+func (l *Launcher) getProcessCwd(imgSpec imgspecv1.Image) (dir string, err error) {
 	if len(l.cfg.CwdPath) > 0 {
 		return l.cfg.CwdPath, nil
 	}
 
 	if l.cfg.NoCompat {
 		return os.Getwd()
+	}
+
+	if imgSpec.Config.WorkingDir != "" {
+		return imgSpec.Config.WorkingDir, nil
 	}
 
 	return l.homeDest, nil

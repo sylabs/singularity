@@ -11,6 +11,8 @@
   container.
 - Provide warning / info message for OCI image-spec features (volumes, exposed
   ports) that are not supported by singularity.
+- Honor `WORKDIR` by default for OCI images in `--oci` mode, as required by OCI
+  image-spec.
 
 ## 4.1.1 \[2024-02-01\]
 
