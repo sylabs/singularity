@@ -13,6 +13,10 @@
   ports) that are not supported by singularity.
 - Honor `WORKDIR` by default for OCI images in `--oci` mode, as required by OCI
   image-spec.
+- Restore previous `--writable` behaviour when running a container image from
+  SIF/SquashFS in user namepace mode. The image will be extracted to a temporary
+  sandbox, which is writable at runtime. Note that any changes are not made to
+  the original image.
 
 ## 4.1.1 \[2024-02-01\]
 
