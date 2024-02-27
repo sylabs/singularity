@@ -838,3 +838,24 @@ func (c actionTests) issue1950(t *testing.T) {
 		)
 	}
 }
+
+// Historically, when running an image file in userns mode, singularity creates
+// a temporary sandbox, and --writable can apply to this temporary sandbox.
+// Ensure that from 4.1, where FUSE mount is the default, we fall back to a
+// temporary sandbox to preserve this behavior.
+//
+// We may wish to change this in future as it's somewhat confusing because the
+// image the user specifies is *not* written to. However, that'd be a behavior
+// change that would need to be at a major release.
+// See: https://github.com/sylabs/singularity/issues/2690
+func (c actionTests) issue2690(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserNamespaceProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs("--writable", c.env.ImagePath, "touch", "/foo"),
+		e2e.ExpectExit(0),
+	)
+}
