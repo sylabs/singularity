@@ -345,7 +345,7 @@ func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 
 	l.generator.AddProcessEnv("SINGULARITY_APPNAME", l.cfg.AppName)
 
-	// Get image ready to run, if needed, via FUSE mount / extraction / image driver handling.
+	// Get image ready to run, if needed, via FUSE mount / extraction.
 	if err := l.prepareImage(ctx, ep.Image); err != nil {
 		return fmt.Errorf("while preparing image: %s", err)
 	}
@@ -972,17 +972,36 @@ func (l *Launcher) setCgroups(instanceName string) error {
 	return nil
 }
 
-// PrepareImage performs any image preparation required before execution.
-// This is currently limited to extraction or FUSE mount.
+// PrepareImage substitutes a provided SIF/SquashFS/extfs image with a directory
+// presenting the image rootfs, when it is not possible to directly mount the
+// image using a kernel mount. It has no effect when image is already a sandbox
+// directory, or can be mounted with a kernel mount.
+//
+// When a kernel mount of image is not supported, an image will be either:
+//   - Mounted with a FUSE binary onto a temporary directory.
+//   - Extracted with unsquashfs into a temporary directory.
+//
+// The resulting directory is then set as the container to be launched. The
+// engine is instructed to remove the temporary directory on container exit.
 func (l *Launcher) prepareImage(c context.Context, image string) error {
+	// Instance join doesn't involve an image.
 	if strings.HasPrefix(image, "instance://") {
 		return nil
 	}
 
 	insideUserNs, _ := namespaces.IsInsideUserNamespace(os.Getpid())
 	isUserNs := insideUserNs || l.cfg.Namespaces.User
+
+	// Kernel image mounts should not be used when either:
+	// - a --tmp-sandbox was explicitly requested -or-
+	// - we are inside a userns -or-
+	// - deprecated --sif-fuse flag was specified
 	noKernelMount := l.cfg.TmpSandbox || isUserNs || l.cfg.SIFFUSE
-	tryFuse := !l.cfg.TmpSandbox
+
+	// A FUSE image mount can be attempted when none of:
+	// - a --tmp-sandbox was explicitly requested -or-
+	// - the --writable flag was specified
+	tryFuse := !(l.cfg.TmpSandbox || l.cfg.Writable)
 
 	img, err := imgutil.Init(image, false)
 	if err != nil {
@@ -1050,6 +1069,11 @@ func (l *Launcher) prepareSquashfs(ctx context.Context, img *imgutil.Image, tryF
 	if l.cfg.NoTmpSandbox || !l.engineConfig.File.TmpSandboxAllowed {
 		return fmt.Errorf("unpacking image to temporary sandbox dir required, but is prohibited by 'tmp sandbox = no' in singularity.conf or --no-tmp-sandbox command-line flag")
 	}
+
+	if l.cfg.Writable {
+		sylog.Warningf("--writable applies to temporary sandbox only, changes will not be written to the original image.")
+	}
+
 	err = extractImage(img, imageDir)
 	if err == nil {
 		l.engineConfig.SetImage(imageDir)
