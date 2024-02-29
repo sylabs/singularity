@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
@@ -68,11 +69,12 @@ func TestEncrypt(t *testing.T) {
 	}
 
 	tests := []struct {
-		name        string
-		path        string
-		key         []byte
-		skipCleanup bool
-		shallPass   bool
+		name         string
+		path         string
+		key          []byte
+		skipCleanup  bool
+		shallPass    bool
+		requirements func(t *testing.T)
 	}{
 		{
 			name:      "empty path",
@@ -85,6 +87,9 @@ func TestEncrypt(t *testing.T) {
 			path:      emptyFile.Name(),
 			key:       []byte("dummyKey"),
 			shallPass: false,
+			requirements: func(t *testing.T) {
+				require.Kernel(t, 4, 18)
+			},
 		},
 		{
 			name:      "valid file",
@@ -96,6 +101,10 @@ func TestEncrypt(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if tt.requirements != nil {
+				tt.requirements(t)
+			}
+
 			devPath, err := dev.EncryptFilesystem(tt.path, tt.key)
 			if tt.shallPass && err != nil {
 				if err == ErrUnsupportedCryptsetupVersion {
