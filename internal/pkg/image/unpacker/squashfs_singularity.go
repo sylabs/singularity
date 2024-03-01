@@ -144,7 +144,7 @@ func parseLibraryBinds(buf io.Reader) ([]libBind, error) {
 
 // unsquashfsSandboxCmd is the command instance for executing unsquashfs command
 // in a sandboxed environment with singularity.
-func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, filter string, opts ...string) (*exec.Cmd, error) {
+func unsquashfsSandboxCmd(squashfs *Squashfs, dest string, filename string, filter string, opts ...string) (*exec.Cmd, error) {
 	const (
 		// will contain both dest and filename inside the sandbox
 		rootfsImageDir = "/image"
@@ -186,9 +186,6 @@ func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, filte
 		}
 	}
 
-	// the decision to use user namespace is left to singularity
-	// which will detect automatically depending of the configuration
-	// what workflow it could use
 	args := []string{
 		"exec",
 		"--no-home",
@@ -200,16 +197,20 @@ func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, filte
 		"-B", fmt.Sprintf("%s:%s", tmpdir, rootfsImageDir),
 	}
 
+	if squashfs.ForceUserns {
+		args = append(args, "--userns")
+	}
+
 	if filename != stdinFile {
 		filename = filepath.Join(rootfsImageDir, filepath.Base(filename))
 	}
 
 	roFiles := []string{
-		unsquashfs,
+		squashfs.UnsquashfsPath,
 	}
 
 	// get the library dependencies of unsquashfs
-	libs, err := getLibraryBinds(unsquashfs)
+	libs, err := getLibraryBinds(squashfs.UnsquashfsPath)
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +263,7 @@ func unsquashfsSandboxCmd(unsquashfs string, dest string, filename string, filte
 	args = append(args, rootfs)
 
 	// unsquashfs execution arguments
-	args = append(args, unsquashfs)
+	args = append(args, squashfs.UnsquashfsPath)
 	args = append(args, opts...)
 
 	if overwrite {
