@@ -1074,7 +1074,14 @@ func (l *Launcher) prepareSquashfs(ctx context.Context, img *imgutil.Image, tryF
 		sylog.Warningf("--writable applies to temporary sandbox only, changes will not be written to the original image.")
 	}
 
-	err = extractImage(img, imageDir)
+	// Due to path traversal issues in older unsquashfs versions, we run it
+	// wrapped under singularity. If the user has requested --userns/-u then
+	// that wrapping should also use a user namespace (to support
+	// container/namespace nesting). An exception is when running as root. As
+	// root, unsquashfs would attempt chown and fail with the single uid/gid
+	// mapping.
+	extractUserns := l.cfg.Namespaces.User && os.Getuid() != 0
+	err = extractImage(img, imageDir, extractUserns)
 	if err == nil {
 		l.engineConfig.SetImage(imageDir)
 		l.engineConfig.SetDeleteTempDir(tempDir)
@@ -1165,9 +1172,10 @@ func mkContainerDirs() (tempDir, imageDir string, err error) {
 }
 
 // extractImage extracts img to directory dir within a temporary directory
-// tempDir. It is the caller's responsibility to remove tempDir
-// when no longer needed.
-func extractImage(img *imgutil.Image, imageDir string) error {
+// tempDir. It is the caller's responsibility to remove tempDir when no longer
+// needed. If userns is true, then where unsquashfs is wrapped with singularity,
+// a user namespace will be used.
+func extractImage(img *imgutil.Image, imageDir string, userns bool) error {
 	sylog.Infof("Converting SIF file to temporary sandbox...")
 	unsquashfsPath, err := bin.FindBin("unsquashfs")
 	if err != nil {
@@ -1179,7 +1187,7 @@ func extractImage(img *imgutil.Image, imageDir string) error {
 	if err != nil {
 		return fmt.Errorf("could not extract root filesystem: %s", err)
 	}
-	s := unpacker.NewSquashfs()
+	s := unpacker.NewSquashfs(userns)
 	if !s.HasUnsquashfs() && unsquashfsPath != "" {
 		s.UnsquashfsPath = unsquashfsPath
 	}

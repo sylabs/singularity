@@ -17,6 +17,7 @@ import (
 	"github.com/opencontainers/umoci/pkg/idtools"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/namespaces"
 )
 
 // isExtractable checks if we have extractable layers in the image. Shouldn't be
@@ -69,7 +70,8 @@ func UnpackRootfs(_ context.Context, srcImage v1.Image, destDir string) (err err
 	}
 
 	// Allow unpacking as non-root
-	if os.Geteuid() != 0 {
+	insideUserNs, _ := namespaces.IsInsideUserNamespace(os.Getpid())
+	if os.Geteuid() != 0 || insideUserNs {
 		mapOptions.Rootless = true
 
 		uidMap, err := idtools.ParseMapping(fmt.Sprintf("0:%d:1", os.Geteuid()))
