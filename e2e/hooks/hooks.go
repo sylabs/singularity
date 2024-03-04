@@ -44,30 +44,24 @@ func (c ctx) testPoststart(t *testing.T) {
 		},
 		// Valid hook owned by root, run with setuid user profile
 		{
-			name:      "validSetuid",
-			hookFiles: []string{"hooks/testdata/valid.json"},
+			name:      "unprivilegedSetuid",
+			hookFiles: []string{"hooks/testdata/unprivileged.json"},
 			hookUID:   0,
 			hookGID:   0,
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectErrorf(e2e.ContainMatch, "UNPRIV HOOK UID: %d", e2e.UserProfile.HostUser(t).UID),
-				e2e.ExpectErrorf(e2e.ContainMatch, "SINGULARITY_CONTAINER=%s", c.env.ImagePath),
-				e2e.ExpectError(e2e.ContainMatch, "SINGULARITY_CONTAINER_PID="),
-				e2e.ExpectError(e2e.ContainMatch, "I_AM_A_HOOK=1"),
+				e2e.ExpectErrorf(e2e.ContainMatch, "uid=%d", e2e.UserProfile.HostUser(t).UID),
 			},
 			profile:    e2e.UserProfile,
 			expectExit: 0,
 		},
 		// Valid hook owned by root, run with user namespace profile
 		{
-			name:      "validUserNamespace",
-			hookFiles: []string{"hooks/testdata/valid.json"},
+			name:      "unprivilegedUserNamespace",
+			hookFiles: []string{"hooks/testdata/unprivileged.json"},
 			hookUID:   int(e2e.UserProfile.HostUser(t).UID),
 			hookGID:   int(e2e.UserProfile.HostUser(t).GID),
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectErrorf(e2e.ContainMatch, "UNPRIV HOOK UID: %d", e2e.UserProfile.HostUser(t).UID),
-				e2e.ExpectError(e2e.ContainMatch, "SINGULARITY_CONTAINER="),
-				e2e.ExpectError(e2e.ContainMatch, "SINGULARITY_CONTAINER_PID="),
-				e2e.ExpectError(e2e.ContainMatch, "I_AM_A_HOOK=1"),
+				e2e.ExpectErrorf(e2e.ContainMatch, "uid=%d", e2e.UserProfile.HostUser(t).UID),
 			},
 			profile:    e2e.UserNamespaceProfile,
 			expectExit: 0,
@@ -75,7 +69,7 @@ func (c ctx) testPoststart(t *testing.T) {
 		// Valid hook not owned by root, can't be run with setuid user profile
 		{
 			name:       "userOwnerSetuid",
-			hookFiles:  []string{"hooks/testdata/valid.json"},
+			hookFiles:  []string{"hooks/testdata/unprivileged.json"},
 			hookUID:    int(e2e.UserProfile.HostUser(t).UID),
 			hookGID:    int(e2e.UserProfile.HostUser(t).GID),
 			profile:    e2e.UserProfile,
@@ -84,16 +78,28 @@ func (c ctx) testPoststart(t *testing.T) {
 		// Valid hook not owned by root, can be run with user namespace profile
 		{
 			name:      "userOwnerUserNamespace",
-			hookFiles: []string{"hooks/testdata/valid.json"},
+			hookFiles: []string{"hooks/testdata/unprivileged.json"},
 			hookUID:   int(e2e.UserProfile.HostUser(t).UID),
 			hookGID:   int(e2e.UserProfile.HostUser(t).GID),
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectErrorf(e2e.ContainMatch, "UNPRIV HOOK UID: %d", e2e.UserProfile.HostUser(t).UID),
-				e2e.ExpectError(e2e.ContainMatch, "SINGULARITY_CONTAINER="),
-				e2e.ExpectError(e2e.ContainMatch, "SINGULARITY_CONTAINER_PID="),
-				e2e.ExpectError(e2e.ContainMatch, "I_AM_A_HOOK=1"),
+				e2e.ExpectErrorf(e2e.ContainMatch, "uid=%d", e2e.UserProfile.HostUser(t).UID),
 			},
 			profile:    e2e.UserNamespaceProfile,
+			expectExit: 0,
+		},
+		// Unprivileged environment
+		{
+			name:      "unprivilegedEnv",
+			hookFiles: []string{"hooks/testdata/unprivilegedEnv.json"},
+			hookUID:   0,
+			hookGID:   0,
+			expectOps: []e2e.SingularityCmdResultOp{
+				e2e.ExpectErrorf(e2e.ContainMatch, "SINGULARITY_CONTAINER=%s", c.env.ImagePath),
+				e2e.ExpectError(e2e.ContainMatch, "SINGULARITY_CONTAINER_PID="),
+				e2e.ExpectError(e2e.UnwantedContainMatch, "SINGULARITY_HOOK_PRIVILEGED=1"),
+				e2e.ExpectError(e2e.ContainMatch, "I_AM_A_HOOK=1"),
+			},
+			profile:    e2e.UserProfile,
 			expectExit: 0,
 		},
 		// Privileged hook run with setuid user profile
@@ -103,7 +109,18 @@ func (c ctx) testPoststart(t *testing.T) {
 			hookUID:   0,
 			hookGID:   0,
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectError(e2e.ContainMatch, "PRIV HOOK UID: 0"),
+				e2e.ExpectError(e2e.ContainMatch, "uid=0"),
+			},
+			profile:    e2e.UserProfile,
+			expectExit: 0,
+		},
+		// Privileged environment
+		{
+			name:      "privilegedEnv",
+			hookFiles: []string{"hooks/testdata/privilegedEnv.json"},
+			hookUID:   0,
+			hookGID:   0,
+			expectOps: []e2e.SingularityCmdResultOp{
 				e2e.ExpectErrorf(e2e.ContainMatch, "SINGULARITY_CONTAINER=%s", c.env.ImagePath),
 				e2e.ExpectError(e2e.ContainMatch, "SINGULARITY_CONTAINER_PID="),
 				e2e.ExpectError(e2e.ContainMatch, "SINGULARITY_HOOK_PRIVILEGED=1"),
@@ -115,12 +132,12 @@ func (c ctx) testPoststart(t *testing.T) {
 		// Privileged & unprivileged hook / setuid user profile - both should run.
 		{
 			name:      "privilegedAndUnprivileged",
-			hookFiles: []string{"hooks/testdata/privileged.json", "hooks/testdata/valid.json"},
+			hookFiles: []string{"hooks/testdata/privileged.json", "hooks/testdata/unprivileged.json"},
 			hookUID:   0,
 			hookGID:   0,
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectError(e2e.ContainMatch, "PRIV HOOK UID: 0"),
-				e2e.ExpectErrorf(e2e.ContainMatch, "UNPRIV HOOK UID: %d", e2e.UserProfile.HostUser(t).UID),
+				e2e.ExpectError(e2e.ContainMatch, "uid=0"),
+				e2e.ExpectErrorf(e2e.ContainMatch, "uid=%d", e2e.UserProfile.HostUser(t).UID),
 			},
 			profile:    e2e.UserProfile,
 			expectExit: 0,
@@ -128,12 +145,12 @@ func (c ctx) testPoststart(t *testing.T) {
 		// Privileged & unprivileged hook / user namespace profile - only unpriv hook should run.
 		{
 			name:      "unprivilegedOnly",
-			hookFiles: []string{"hooks/testdata/privileged.json", "hooks/testdata/valid.json"},
+			hookFiles: []string{"hooks/testdata/privileged.json", "hooks/testdata/unprivileged.json"},
 			hookUID:   0,
 			hookGID:   0,
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectError(e2e.UnwantedContainMatch, "PRIV HOOK UID: 0"),
-				e2e.ExpectErrorf(e2e.ContainMatch, "UNPRIV HOOK UID: %d", e2e.UserProfile.HostUser(t).UID),
+				e2e.ExpectError(e2e.UnwantedContainMatch, "uid=0"),
+				e2e.ExpectErrorf(e2e.ContainMatch, "uid=%d", e2e.UserProfile.HostUser(t).UID),
 			},
 			profile:    e2e.UserNamespaceProfile,
 			expectExit: 0,
@@ -176,7 +193,7 @@ func (c ctx) testPoststart(t *testing.T) {
 			e2e.WithProfile(tt.profile),
 			e2e.WithCommand("exec"),
 			e2e.WithGlobalOptions("--debug"),
-			e2e.WithArgs(c.env.ImagePath, "/bin/true"),
+			e2e.WithArgs(c.env.ImagePath, "/bin/sleep", "1"),
 			e2e.PreRun(preFn),
 			e2e.ExpectExit(tt.expectExit, tt.expectOps...),
 			e2e.PostRun(postFn),

@@ -8,5 +8,5 @@
     "always": true
   },
   "stages": ["poststart"],
-  "privileged": true
+  "privileged": false
 }
