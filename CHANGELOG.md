@@ -19,6 +19,11 @@
   the original image.
 - Fix `target: no such file or directory` error in native mode when extracting
   layers from certain OCI images that manipulate hard links across layers.
+- Fix extraction of OCI layers when run in a root mapped user namespace
+  (e.g.. `unshare -r`).
+- Use user namespace for wrapping of `unsquashfs` when singularity is run with
+  `--userns / -u` flag. Fixes temporary sandbox extraction of images in non-root
+  mapped user namespace (e.g. `unshare -c`).
 
 ## 4.1.1 \[2024-02-01\]
 
