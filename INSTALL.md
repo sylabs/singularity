@@ -174,7 +174,7 @@ _**NOTE:** if you are updating Go from a older version, make sure you remove
 `/usr/local/go` before reinstalling it._
 
 ```sh
-export VERSION=1.21.6 OS=linux ARCH=amd64  # change this as you need
+export VERSION=1.21.7 OS=linux ARCH=amd64  # change this as you need
 
 wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz \
   https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz
@@ -232,11 +232,11 @@ cd singularity
 By default your clone will be on the `main` branch which is where development
 of SingularityCE happens. To build a specific version of SingularityCE, check
 out a [release tag](https://github.com/sylabs/singularity/tags) before
-compiling. E.g. to build the 4.1.1 release, checkout the
-`v4.1.1` tag:
+compiling. E.g. to build the 4.1.2 release, checkout the
+`v4.1.2` tag:
 
 ```sh
-git checkout --recurse-submodules v4.1.1
+git checkout --recurse-submodules v4.1.2
 ```
 
 ## Compiling SingularityCE
@@ -287,7 +287,7 @@ build and install the RPM like this:
 <!-- markdownlint-disable MD013 -->
 
 ```sh
-export VERSION=4.1.1  # this is the singularity version, change as you need
+export VERSION=4.1.2  # this is the singularity version, change as you need
 
 # Fetch the source
 wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-ce-${VERSION}.tar.gz
