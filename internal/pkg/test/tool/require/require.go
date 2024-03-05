@@ -270,6 +270,23 @@ func Command(t *testing.T, command string) {
 	t.Skipf("%s command not found in $PATH", command)
 }
 
+// OneCommand checks if one of the provided commands is available (via
+// Singularity's internal bin.FindBin() facility, or else simply on the PATH).
+// If none are found, the current test is skipped with a message.
+func OneCommand(t *testing.T, commands []string) {
+	for _, c := range commands {
+		if _, err := bin.FindBin(c); err == nil {
+			return
+		}
+
+		if _, err := exec.LookPath(c); err == nil {
+			return
+		}
+	}
+
+	t.Skipf("%v commands not found in $PATH", commands)
+}
+
 // Seccomp checks that seccomp is enabled, if not the
 // current test is skipped with a message.
 func Seccomp(t *testing.T) {
