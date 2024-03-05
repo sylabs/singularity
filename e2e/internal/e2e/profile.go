@@ -278,6 +278,7 @@ func ociRequirements(t *testing.T) {
 	require.Kernel(t, 4, 18) // FUSE in userns
 	require.UserNamespace(t)
 	require.Command(t, "runc")
+	require.OneCommand(t, []string{"sqfstar", "tar2sqfs"})
 
 	uid := uint32(origUID)
 

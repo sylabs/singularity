@@ -53,6 +53,9 @@ func FindBin(name string) (path string, err error) {
 	// unprivileged overlays
 	case "fuse-overlayfs":
 		return findOnPath(name)
+	// tar to squashfs tools for OCI-mode image conversion
+	case "tar2sqfs", "sqfstar":
+		return findOnPath(name)
 	default:
 		return "", fmt.Errorf("executable name %q is not known to FindBin", name)
 	}
