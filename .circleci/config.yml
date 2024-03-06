@@ -98,6 +98,7 @@ commands:
               libtool \
               pkg-config \
               squashfs-tools \
+              squashfs-tools-ng \
               uidmap \
               zlib1g-dev
       - run:
