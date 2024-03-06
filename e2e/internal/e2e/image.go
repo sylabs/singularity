@@ -348,9 +348,9 @@ func EnsureOCISIF(t *testing.T, env TestEnv) {
 
 	env.RunSingularity(
 		t,
-		WithProfile(UserProfile),
+		WithProfile(OCIUserProfile),
 		WithCommand("pull"),
-		WithArgs("--oci", "--no-https", env.OCISIFPath, env.TestRegistryImage),
+		WithArgs("--no-https", env.OCISIFPath, env.TestRegistryImage),
 		ExpectExit(0),
 	)
 }
