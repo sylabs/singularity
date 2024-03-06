@@ -141,6 +141,8 @@ func TestGetProcessArgs(t *testing.T) {
 }
 
 func TestGetProcessEnvOCI(t *testing.T) {
+	defaultPathEnv := "PATH=" + env.DefaultPath
+
 	tests := []struct {
 		name     string
 		noCompat bool
@@ -155,7 +157,10 @@ func TestGetProcessEnvOCI(t *testing.T) {
 			imageEnv: []string{},
 			hostEnv:  []string{},
 			userEnv:  map[string]string{},
-			wantEnv:  []string{"LD_LIBRARY_PATH=/.singularity.d/libs"},
+			wantEnv: []string{
+				defaultPathEnv,
+				"LD_LIBRARY_PATH=/.singularity.d/libs",
+			},
 		},
 		{
 			name:     "PassTERM",
@@ -165,6 +170,7 @@ func TestGetProcessEnvOCI(t *testing.T) {
 			userEnv:  map[string]string{},
 			wantEnv: []string{
 				"TERM=xterm-256color",
+				defaultPathEnv,
 				"LD_LIBRARY_PATH=/.singularity.d/libs",
 			},
 		},
@@ -176,6 +182,7 @@ func TestGetProcessEnvOCI(t *testing.T) {
 			userEnv:  map[string]string{},
 			wantEnv: []string{
 				"HTTP_PROXY=proxy.example.com:3128",
+				defaultPathEnv,
 				"LD_LIBRARY_PATH=/.singularity.d/libs",
 			},
 		},
@@ -185,7 +192,10 @@ func TestGetProcessEnvOCI(t *testing.T) {
 			imageEnv: []string{},
 			hostEnv:  []string{"NOT_FOR_CONTAINER=true"},
 			userEnv:  map[string]string{},
-			wantEnv:  []string{"LD_LIBRARY_PATH=/.singularity.d/libs"},
+			wantEnv: []string{
+				defaultPathEnv,
+				"LD_LIBRARY_PATH=/.singularity.d/libs",
+			},
 		},
 		{
 			name:     "ImagePath",
@@ -239,6 +249,7 @@ func TestGetProcessEnvOCI(t *testing.T) {
 			userEnv:  map[string]string{},
 			wantEnv: []string{
 				"LD_LIBRARY_PATH=/foo:/.singularity.d/libs",
+				defaultPathEnv,
 			},
 		},
 		{
@@ -248,6 +259,7 @@ func TestGetProcessEnvOCI(t *testing.T) {
 			hostEnv:  []string{},
 			userEnv:  map[string]string{"LD_LIBRARY_PATH": "/foo"},
 			wantEnv: []string{
+				defaultPathEnv,
 				"LD_LIBRARY_PATH=/foo:/.singularity.d/libs",
 			},
 		},
@@ -259,6 +271,7 @@ func TestGetProcessEnvOCI(t *testing.T) {
 			userEnv:  map[string]string{"LD_LIBRARY_PATH": "/bar"},
 			wantEnv: []string{
 				"LD_LIBRARY_PATH=/bar:/.singularity.d/libs",
+				defaultPathEnv,
 			},
 		},
 		{
@@ -269,6 +282,7 @@ func TestGetProcessEnvOCI(t *testing.T) {
 			userEnv:  map[string]string{},
 			wantEnv: []string{
 				"FOO=bar",
+				defaultPathEnv,
 				"LD_LIBRARY_PATH=/.singularity.d/libs",
 			},
 		},
@@ -280,6 +294,7 @@ func TestGetProcessEnvOCI(t *testing.T) {
 			userEnv:  map[string]string{"FOO": "baz"},
 			wantEnv: []string{
 				"FOO=baz",
+				defaultPathEnv,
 				"LD_LIBRARY_PATH=/.singularity.d/libs",
 			},
 		},
@@ -292,6 +307,7 @@ func TestGetProcessEnvOCI(t *testing.T) {
 			wantEnv: []string{
 				"FOO=bar",
 				"ABC=123",
+				defaultPathEnv,
 				"LD_LIBRARY_PATH=/.singularity.d/libs",
 			},
 		},
@@ -303,6 +319,7 @@ func TestGetProcessEnvOCI(t *testing.T) {
 			userEnv:  map[string]string{},
 			wantEnv: []string{
 				"FOO=bar",
+				defaultPathEnv,
 				"LD_LIBRARY_PATH=/.singularity.d/libs",
 			},
 		},
@@ -314,6 +331,7 @@ func TestGetProcessEnvOCI(t *testing.T) {
 			userEnv:  map[string]string{},
 			wantEnv: []string{
 				"FOO=baz",
+				defaultPathEnv,
 				"LD_LIBRARY_PATH=/.singularity.d/libs",
 			},
 		},
@@ -325,6 +343,7 @@ func TestGetProcessEnvOCI(t *testing.T) {
 			userEnv:  map[string]string{"FOO": "baz"},
 			wantEnv: []string{
 				"FOO=baz",
+				defaultPathEnv,
 				"LD_LIBRARY_PATH=/.singularity.d/libs",
 			},
 		},
