@@ -376,6 +376,12 @@ func (l *Launcher) getProcessEnv(imageSpec imgspecv1.Image, hostEnv []string, us
 }
 
 func setOCIPath(g *generate.Generator, prependPath, path, appendPath string) {
+	// If we have no PATH at this point, then the image didn't define one, and
+	// the user didn't specify a full PATH override. We need to use a default,
+	// to find bare `CMD`s e.g. issue #2721.
+	if path == "" {
+		path = env.DefaultPath
+	}
 	// Compute and set optionally APPEND-ed / PREPEND-ed PATH.
 	if appendPath != "" {
 		path = strings.TrimSuffix(path, ":") + ":" + appendPath
@@ -383,9 +389,7 @@ func setOCIPath(g *generate.Generator, prependPath, path, appendPath string) {
 	if prependPath != "" {
 		path = prependPath + ":" + strings.TrimPrefix(path, ":")
 	}
-	if path != "" {
-		g.AddProcessEnv("PATH", path)
-	}
+	g.AddProcessEnv("PATH", path)
 }
 
 func setNativePath(g *generate.Generator, prependPath, path, appendPath string) {
