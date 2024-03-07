@@ -105,10 +105,6 @@ func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 		argv += "--library " + tt.library + " "
 	}
 
-	if tt.oci {
-		argv += "--oci "
-	}
-
 	if tt.keepLayers {
 		argv += "--keep-layers "
 	}
@@ -131,9 +127,14 @@ func (c *ctx) imagePull(t *testing.T, tt testStruct) {
 
 	argv += tt.srcURI
 
+	profile := e2e.UserProfile
+	if tt.oci {
+		profile = e2e.OCIUserProfile
+	}
+
 	c.env.RunSingularity(
 		t,
-		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithProfile(profile),
 		e2e.WithEnv(tt.envVars),
 		e2e.WithDir(tt.workDir),
 		e2e.WithCommand("pull"),
