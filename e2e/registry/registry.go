@@ -326,6 +326,7 @@ func (c ctx) registryAuthTester(t *testing.T, withCustomAuthFile bool) {
 		name          string
 		cmd           string
 		args          []string
+		oci           bool
 		whileLoggedIn bool
 		expectExit    int
 	}{
@@ -353,7 +354,8 @@ func (c ctx) registryAuthTester(t *testing.T, withCustomAuthFile bool) {
 		{
 			name:          "docker pull ocisif",
 			cmd:           "pull",
-			args:          []string{"-F", "--oci", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage},
+			args:          []string{"-F", "--disable-cache", "--no-https", c.env.TestRegistryPrivImage},
+			oci:           true,
 			whileLoggedIn: true,
 			expectExit:    0,
 		},
@@ -407,10 +409,16 @@ func (c ctx) registryAuthTester(t *testing.T, withCustomAuthFile bool) {
 		} else {
 			e2e.PrivateRepoLogout(t, c.env, e2e.UserProfile, localAuthFileName)
 		}
+
+		profile := e2e.UserProfile
+		if tt.oci {
+			profile = e2e.OCIUserProfile
+		}
+
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithProfile(profile),
 			e2e.WithCommand(tt.cmd),
 			e2e.WithArgs(append(authFileArgs, tt.args...)...),
 			e2e.ExpectExit(tt.expectExit),
