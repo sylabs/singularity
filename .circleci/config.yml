@@ -109,7 +109,7 @@ commands:
       - run:
           name: Install crun
           command: |-
-            <<# parameters.sudo >>sudo <</ parameters.sudo >>curl -L -o /usr/local/bin/crun https://github.com/containers/crun/releases/download/1.6/crun-1.6-linux-amd64
+            <<# parameters.sudo >>sudo <</ parameters.sudo >>curl -L -o /usr/local/bin/crun https://github.com/containers/crun/releases/download/1.14.4/crun-1.14.4-linux-amd64
             <<# parameters.sudo >>sudo <</ parameters.sudo >>chmod +x /usr/local/bin/crun
 
   cgroups-delegation:
