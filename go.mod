@@ -50,10 +50,10 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.9.2
 	github.com/sylabs/oci-tools v0.7.0
-	github.com/sylabs/scs-build-client v0.9.4
+	github.com/sylabs/scs-build-client v0.9.5
 	github.com/sylabs/scs-key-client v0.7.5
-	github.com/sylabs/scs-library-client v1.4.7
-	github.com/sylabs/sif/v2 v2.15.1
+	github.com/sylabs/scs-library-client v1.4.8
+	github.com/sylabs/sif/v2 v2.15.2
 	github.com/vbauerster/mpb/v8 v8.7.2
 	go.etcd.io/bbolt v1.3.9
 	golang.org/x/crypto v0.21.0
