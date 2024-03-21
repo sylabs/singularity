@@ -1,5 +1,5 @@
 #!/bin/sh -
-# Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+# Copyright (c) 2019-2024, Sylabs Inc. All rights reserved.
 # Copyright (c) 2015-2018, Yannick Cote <yhcote@gmail.com>. All rights reserved.
 # Copyright (c) Contributors to the Apptainer project, established as
 #   Apptainer a Series of LF Projects LLC.
@@ -22,7 +22,7 @@ hstld=
 hstranlib=
 hstobjcopy=
 hstgo=
-hstgo_version="1.20"
+hstgo_version="1.21"
 hstgo_opts="go"
 
 tgtcc=
