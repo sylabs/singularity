@@ -23,7 +23,7 @@ require (
 	github.com/cyphar/filepath-securejoin v0.2.4
 	github.com/docker/cli v26.0.0+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
-	github.com/docker/docker v25.0.4+incompatible
+	github.com/docker/docker v26.0.0+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/fatih/color v1.16.0
 	github.com/go-log/log v0.2.0
@@ -143,6 +143,7 @@ require (
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/hashstructure/v2 v2.0.2 // indirect
+	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect
 	github.com/moby/sys/mount v0.3.3 // indirect
