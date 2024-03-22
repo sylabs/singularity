@@ -53,7 +53,7 @@ require (
 	github.com/sylabs/scs-build-client v0.9.5
 	github.com/sylabs/scs-key-client v0.7.5
 	github.com/sylabs/scs-library-client v1.4.8
-	github.com/sylabs/sif/v2 v2.15.2
+	github.com/sylabs/sif/v2 v2.16.0
 	github.com/vbauerster/mpb/v8 v8.7.2
 	go.etcd.io/bbolt v1.3.9
 	golang.org/x/crypto v0.21.0
@@ -205,3 +205,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
+
+replace github.com/sylabs/oci-tools => github.com/tri-adam/oci-tools v0.0.0-20240321201811-7bcc4c713504

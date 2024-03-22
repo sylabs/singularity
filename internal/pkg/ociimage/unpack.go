@@ -13,9 +13,9 @@ import (
 
 	apexlog "github.com/apex/log"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	umocilayer "github.com/opencontainers/umoci/oci/layer"
 	"github.com/opencontainers/umoci/pkg/idtools"
+	"github.com/sylabs/oci-tools/pkg/mutate"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/namespaces"
@@ -51,7 +51,20 @@ func UnpackRootfs(_ context.Context, srcImage v1.Image, destDir string) (err err
 		return fmt.Errorf("no extractable OCI/Docker tar layers found in this image")
 	}
 
-	flatTar := mutate.Extract(srcImage)
+	flatImage, err := mutate.Squash(srcImage)
+	if err != nil {
+		return err
+	}
+
+	flatLayers, err := flatImage.Layers()
+	if err != nil {
+		return err
+	}
+
+	flatTar, err := flatLayers[0].Uncompressed()
+	if err != nil {
+		return err
+	}
 
 	var mapOptions umocilayer.MapOptions
 
