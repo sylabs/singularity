@@ -46,7 +46,7 @@ func manDocs(rootCmd *cobra.Command, outDir string) {
 func rstDocs(rootCmd *cobra.Command, outDir string) {
 	assertAccess(outDir)
 	sylog.Infof("Creating Singularity RST docs at %s\n", outDir)
-	if err := doc.GenReSTTreeCustom(rootCmd, outDir, func(a string) string {
+	if err := doc.GenReSTTreeCustom(rootCmd, outDir, func(_ string) string {
 		return ""
 	}, func(name, ref string) string {
 		return fmt.Sprintf(":ref:`%s <%s>`", name, ref)
@@ -62,7 +62,7 @@ func main() {
 		Args:      cobra.ExactArgs(1),
 		Use:       "makeDocs {markdown | man | rst}",
 		Short:     "Generates Singularity documentation",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, args []string) {
 			// We must Init() as loading commands etc. is deferred until this is called.
 			// Using true here will result in local docs including any content for installed
 			// plugins.

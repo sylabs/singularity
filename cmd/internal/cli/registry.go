@@ -89,7 +89,7 @@ var RegistryCmd = &cobra.Command{
 // RegistryLoginCmd singularity registry login [option] <registry_url>
 var RegistryLoginCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		if err := singularity.RegistryLogin(remoteConfig, ObtainLoginArgs(args[0]), reqAuthFile); err != nil {
 			sylog.Fatalf("%s", err)
 		}
@@ -106,7 +106,7 @@ var RegistryLoginCmd = &cobra.Command{
 // RegistryLogoutCmd singularity remote logout [remoteName|serviceURI]
 var RegistryLogoutCmd = &cobra.Command{
 	Args: cobra.RangeArgs(0, 1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		// default to empty string to signal to registryLogin to use default remote
 		name := ""
 		if len(args) > 0 {
@@ -130,7 +130,7 @@ var RegistryLogoutCmd = &cobra.Command{
 // RegistryListCmd singularity remote list
 var RegistryListCmd = &cobra.Command{
 	Args: cobra.ExactArgs(0),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		if err := singularity.RegistryList(remoteConfig); err != nil {
 			sylog.Fatalf("%s", err)
 		}

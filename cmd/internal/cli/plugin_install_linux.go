@@ -18,7 +18,7 @@ import (
 // singularity plugin install <path>
 var PluginInstallCmd = &cobra.Command{
 	PreRun: CheckRootOrUnpriv,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		err := singularity.InstallPlugin(args[0])
 		if err != nil {
 			sylog.Fatalf("Failed to install plugin %q: %s.", args[0], err)

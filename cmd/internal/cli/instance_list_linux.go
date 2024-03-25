@@ -66,7 +66,7 @@ var instanceListLogsFlag = cmdline.Flag{
 // singularity instance list
 var instanceListCmd = &cobra.Command{
 	Args: cobra.RangeArgs(0, 1),
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		if isOCI {
 			sylog.Warningf("Instances are not supported in OCI mode. Showing non-OCI Singularity container instances.")
 		}

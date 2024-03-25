@@ -39,7 +39,7 @@ func init() {
 //
 // singularity plugin compile <path> [-o name]
 var PluginCompileCmd = &cobra.Command{
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		sourceDir, err := filepath.Abs(args[0])
 		if err != nil {
 			sylog.Fatalf("While sanitizing input path: %s", err)

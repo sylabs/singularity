@@ -1911,7 +1911,7 @@ func (c actionTests) ociSTDPipe(t *testing.T) {
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.argv...),
 			e2e.WithStdin(&input),
-			e2e.PreRun(func(t *testing.T) {
+			e2e.PreRun(func(_ *testing.T) {
 				input.WriteString(tt.input)
 			}),
 			e2e.ExpectExit(tt.exit),
