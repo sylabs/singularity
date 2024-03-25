@@ -133,7 +133,6 @@ func New(r io.Reader, name string, args []string, envs []string, runnerOptions .
 	}
 	opts = append(opts, runnerOptions...)
 	s.runner, err = interp.New(opts...)
-
 	if err != nil {
 		return nil, fmt.Errorf("while creating shell interpreter: %s", err)
 	}

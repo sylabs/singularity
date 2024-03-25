@@ -479,7 +479,6 @@ func ForceRemoveAll(path string) error {
 		}
 		return nil
 	})
-
 	// Catastrophic error during the permission walk
 	if err != nil {
 		sylog.Errorf("Unable to set permissions to remove %q: %s", path, err)
