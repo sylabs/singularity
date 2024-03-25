@@ -5,6 +5,8 @@
 ### Bug Fixes
 
 - Set default `PATH` in container run in OCI-Mode when image does not set `PATH`.
+- Fix storage of credentials for `docker.io` to behave the same as for
+  `index.docker.io`.
 
 ## 4.1.2 \[2024-03-05\]
 
