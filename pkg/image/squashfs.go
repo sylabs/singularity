@@ -37,7 +37,7 @@ type squashfsInfo struct {
 	Compression uint16
 	BlockLog    uint16
 	Flags       uint16
-	NoIds       uint16
+	NoIDs       uint16
 	Major       uint16
 	Minor       uint16
 }

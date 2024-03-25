@@ -22,7 +22,7 @@ func init() {
 // BuildConfigCmd outputs a list of the compile-time parameters with which
 // singularity was compiled
 var BuildConfigCmd = &cobra.Command{
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		name := ""
 		if len(args) > 0 {
 			name = args[0]

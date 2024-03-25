@@ -489,7 +489,7 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 
 	err = w.run(ctx, id, bundle, process, nil)
 
-	releaseContainer := func(ctx context.Context) error {
+	releaseContainer := func(_ context.Context) error {
 		if w.processMode == bkoci.NoProcessSandbox {
 			return nil
 		}
@@ -806,7 +806,7 @@ func updateRuncFieldsForHostOS(runtime *runc.Runc) {
 
 func (w *buildExecutor) run(ctx context.Context, id, bundle string, process executor.ProcessInfo, started func()) error {
 	killer := newRunProcKiller(w.runc, id)
-	return w.callWithIO(ctx, id, bundle, process, started, killer, func(ctx context.Context, started chan<- int, io runc.IO, pidfile string) error {
+	return w.callWithIO(ctx, id, bundle, process, started, killer, func(ctx context.Context, started chan<- int, io runc.IO, _ string) error {
 		_, err := w.runc.Run(ctx, id, bundle, &runc.CreateOpts{
 			NoPivot: w.noPivot,
 			Started: started,

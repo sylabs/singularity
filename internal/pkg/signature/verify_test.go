@@ -548,7 +548,7 @@ func TestVerify(t *testing.T) { //nolint:maintidx
 		t.Run(tt.name, func(t *testing.T) {
 			i := 0
 
-			cb := func(f *sif.FileImage, r integrity.VerifyResult) bool {
+			cb := func(_ *sif.FileImage, r integrity.VerifyResult) bool {
 				defer func() { i++ }()
 
 				if i >= len(tt.wantVerified) {
@@ -748,7 +748,7 @@ func TestVerifyFingerPrint(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			i := 0
 
-			cb := func(f *sif.FileImage, r integrity.VerifyResult) bool {
+			cb := func(_ *sif.FileImage, r integrity.VerifyResult) bool {
 				defer func() { i++ }()
 
 				if i >= len(tt.wantVerified) {

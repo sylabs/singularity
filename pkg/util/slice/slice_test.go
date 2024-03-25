@@ -261,7 +261,7 @@ func TestSubtract(t *testing.T) {
 		},
 	}
 
-	convertor := func(x int, index int) string {
+	convertor := func(x int, _ int) string {
 		return fmt.Sprintf("Have an int whose value is %#v, why don't you", x)
 	}
 

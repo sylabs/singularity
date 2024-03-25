@@ -678,7 +678,7 @@ func injectEnvHandler(senv map[string]string, noEval bool) interpreter.OpenHandl
 func runtimeVarsHandler() interpreter.OpenHandler {
 	var once sync.Once
 
-	return func(path string, _ int, _ os.FileMode) (io.ReadWriteCloser, error) {
+	return func(_ string, _ int, _ os.FileMode) (io.ReadWriteCloser, error) {
 		b := new(bufferCloser)
 
 		once.Do(func() {
@@ -711,7 +711,7 @@ func sylogBuiltin(_ context.Context, argv []string) error {
 
 // getAllEnvBuiltin display all exported variables in the form KEY=VALUE.
 func getAllEnvBuiltin() interpreter.ShellBuiltin {
-	return func(ctx context.Context, argv []string) error {
+	return func(ctx context.Context, _ []string) error {
 		hc := interp.HandlerCtx(ctx)
 
 		keyRe := regexp.MustCompile(`^[a-zA-Z_]+[a-zA-Z0-9_]*$`)
