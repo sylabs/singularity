@@ -53,7 +53,7 @@ require (
 	github.com/sylabs/scs-build-client v0.9.5
 	github.com/sylabs/scs-key-client v0.7.5
 	github.com/sylabs/scs-library-client v1.4.8
-	github.com/sylabs/sif/v2 v2.15.2
+	github.com/sylabs/sif/v2 v2.16.0
 	github.com/vbauerster/mpb/v8 v8.7.2
 	go.etcd.io/bbolt v1.3.9
 	golang.org/x/crypto v0.21.0
@@ -201,7 +201,7 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20240123012728-ef4313101c80 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80 // indirect
 	google.golang.org/protobuf v1.32.0 // indirect
-	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
+	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
