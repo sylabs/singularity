@@ -561,7 +561,7 @@ func Init(loadPlugins bool) {
 var singularityCmd = &cobra.Command{
 	TraverseChildren:      true,
 	DisableFlagsInUseLine: true,
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		return cmdline.CommandError("invalid command")
 	},
 
@@ -658,7 +658,7 @@ func TraverseParentsUses(cmd *cobra.Command) string {
 // VersionCmd displays installed singularity version
 var VersionCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, _ []string) {
 		fmt.Println(buildcfg.PACKAGE_VERSION)
 	},
 

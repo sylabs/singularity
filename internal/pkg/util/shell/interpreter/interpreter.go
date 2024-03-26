@@ -133,7 +133,6 @@ func New(r io.Reader, name string, args []string, envs []string, runnerOptions .
 	}
 	opts = append(opts, runnerOptions...)
 	s.runner, err = interp.New(opts...)
-
 	if err != nil {
 		return nil, fmt.Errorf("while creating shell interpreter: %s", err)
 	}
@@ -298,7 +297,7 @@ func EvaluateEnv(ctx context.Context, script []byte, args []string, envs []strin
 		c := strings.Join(args, " ")
 		return fmt.Errorf("could not execute %q: execution is disabled", c)
 	}
-	openHandler := func(ctx context.Context, path string, flag int, perm os.FileMode) (io.ReadWriteCloser, error) {
+	openHandler := func(_ context.Context, path string, _ int, _ os.FileMode) (io.ReadWriteCloser, error) {
 		return nil, fmt.Errorf("could not open/create/modify %q: file feature is disabled", path)
 	}
 

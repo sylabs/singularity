@@ -20,7 +20,7 @@ import (
 // singularity plugin uninstall <name>
 var PluginUninstallCmd = &cobra.Command{
 	PreRun: CheckRootOrUnpriv,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		name := args[0]
 		err := singularity.UninstallPlugin(name)
 		if err != nil {

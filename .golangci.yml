@@ -9,8 +9,6 @@ run:
     - selinux
     - singularity_engine
     - sylog
-  skip-files:
-    - "internal/pkg/util/user/cgo_lookup_unix.go"
 
 linters:
   disable-all: true
@@ -71,4 +69,6 @@ issues:
       # G204 disallows exec.Command() with a command/args stored in variables
       # G306 disallows creation of files with permissions greater than 0600
       text: "^(G107|G204|G306):"
+  exclude-files:
+    - "internal/pkg/util/user/cgo_lookup_unix.go"
 

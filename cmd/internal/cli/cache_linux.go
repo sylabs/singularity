@@ -23,7 +23,7 @@ func init() {
 
 // CacheCmd : aka, `singularity cache`
 var CacheCmd = &cobra.Command{
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, _ []string) error {
 		return errors.New("invalid command")
 	},
 	DisableFlagsInUseLine: true,
