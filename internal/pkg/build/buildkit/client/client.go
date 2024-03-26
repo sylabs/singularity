@@ -33,7 +33,6 @@ import (
 	"time"
 
 	"github.com/blang/semver/v4"
-	"github.com/containerd/console"
 	"github.com/google/go-containerregistry/pkg/authn"
 	moby_buildkit_v1 "github.com/moby/buildkit/api/services/control"
 	"github.com/moby/buildkit/client"
@@ -214,7 +213,7 @@ func startBuildkitd(ctx context.Context, opts *Opts) (bkSocket string, cleanup f
 // an already-running daemon. The reqVersion argument is an optional string
 // specifcying a minimum buildkitd version that must be satisfied.
 func isBuildkitdRunning(ctx context.Context, bkSocket, reqVersion string) (bool, error) {
-	c, err := client.New(ctx, bkSocket, client.WithFailFast())
+	c, err := client.New(ctx, bkSocket)
 	if err != nil {
 		return false, err
 	}
@@ -248,7 +247,7 @@ func isBuildkitdRunning(ctx context.Context, bkSocket, reqVersion string) (bool,
 }
 
 func buildImage(ctx context.Context, opts *Opts, tarFile *os.File, listenSocket, spec string, clientsideFrontend bool) error {
-	c, err := client.New(ctx, listenSocket, client.WithFailFast())
+	c, err := client.New(ctx, listenSocket)
 	if err != nil {
 		return err
 	}
@@ -284,18 +283,26 @@ func buildImage(ctx context.Context, opts *Opts, tarFile *os.File, listenSocket,
 		return err
 	})
 	eg.Go(func() error {
-		var c console.Console
-		progressWriter := io.Discard
+		var d progressui.Display
+		var err error
 		if sylog.GetLevel() >= 0 {
-			progressWriter = os.Stdout
-			if cn, err := console.ConsoleFromFile(os.Stderr); err == nil {
-				c = cn
+			d, err = progressui.NewDisplay(os.Stderr, progressui.TtyMode)
+			if err != nil {
+				// If an error occurs while attempting to create the tty display,
+				// fallback to using plain mode on stdout (in contrast to stderr).
+				d, err = progressui.NewDisplay(os.Stdout, progressui.PlainMode)
+				if err != nil {
+					sylog.Errorf("while initializing progress display: %v", err)
+				}
 			}
 		} else {
+			d, err = progressui.NewDisplay(io.Discard, progressui.PlainMode)
+			if err != nil {
+				sylog.Errorf("while initializing dummy progress display:%v", err)
+			}
 			logrus.SetLevel(logrus.ErrorLevel)
 		}
-		// not using shared context to not disrupt display but let is finish reporting errors
-		_, err := progressui.DisplaySolveStatus(context.Background(), c, progressWriter, ch)
+		_, err = d.UpdateFrom(context.TODO(), ch)
 		if err != nil {
 			pipeR.Close()
 		}
