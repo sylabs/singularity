@@ -362,7 +362,7 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 		sylog.Infof("enabling HostNetworking")
 	}
 
-	resolvConf, err := bkoci.GetResolvConf(ctx, w.root, w.idmap, w.dns)
+	resolvConf, err := bkoci.GetResolvConf(ctx, w.root, w.idmap, w.dns, meta.NetMode)
 	if err != nil {
 		return nil, err
 	}
