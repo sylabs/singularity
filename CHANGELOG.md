@@ -2,6 +2,10 @@
 
 ## Change Since Last Release
 
+### Requirements
+
+- Requires a minimum of Go 1.21 to build. Go 1.20 is end-of-life.
+
 ### Bug Fixes
 
 - Set default `PATH` in container run in OCI-Mode when image does not set `PATH`.
