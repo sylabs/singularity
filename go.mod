@@ -66,7 +66,7 @@ require (
 	gotest.tools/v3 v3.5.1
 	mvdan.cc/sh/v3 v3.7.1-0.20231014181306-8b673862efc6
 	tags.cncf.io/container-device-interface v0.6.2
-	tags.cncf.io/container-device-interface/specs-go v0.6.0
+	tags.cncf.io/container-device-interface/specs-go v0.7.0
 )
 
 require (
