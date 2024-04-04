@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,32 +10,24 @@ package oci
 
 import (
 	"fmt"
-	"sync"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"tags.cncf.io/container-device-interface/pkg/cdi"
 	"tags.cncf.io/container-device-interface/pkg/parser"
 )
 
-// A container to hold the CDI registry, plus a sync.Once object to ensure we only have to ask for it once
-var regSyncContainer struct {
-	reg      cdi.Registry
-	initOnce sync.Once
-	err      error
-}
-
-// addCDIDevices adds an array of CDI devices to an existing spec.
-// Accepts optional, variable number of cdi.Option arguments (to which cdi.WithAutoRefresh(false) will be prepended). Note that due to the use of a sync.Once initialization strategy, these options will only have an effect if this is the first call made to addCDIDevices().
+// addCDIDevices adds an array of CDI devices to an existing spec. Accepts optional, variable
+// number of cdi.Option arguments (to which cdi.WithAutoRefresh(false) will be prepended).
 func addCDIDevices(spec *specs.Spec, cdiDevices []string, cdiRegOptions ...cdi.Option) error {
-	regSyncContainer.initOnce.Do(func() {
-		// Get the CDI registry, passing a cdi.WithAutoRefresh(false) option so that CDI registry files are not scanned asynchronously. (We are about to call a manual refresh, below.)
-		realCDIOptions := append([]cdi.Option{cdi.WithAutoRefresh(false)}, cdiRegOptions...)
-		regSyncContainer.reg = cdi.GetRegistry(realCDIOptions...)
-		regSyncContainer.err = regSyncContainer.reg.Refresh()
-	})
+	// Configure the CDI cache, passing a cdi.WithAutoRefresh(false) option so that CDI cache files
+	// are not scanned asynchronously. (We are about to call a manual refresh, below.)
+	cdiRegOptions = append([]cdi.Option{cdi.WithAutoRefresh(false)}, cdiRegOptions...)
+	if err := cdi.Configure(cdiRegOptions...); err != nil {
+		return fmt.Errorf("error configuring CDI cache: %w", err)
+	}
 
-	if regSyncContainer.err != nil {
-		return fmt.Errorf("Error encountered refreshing the CDI registry during initialization: %v", regSyncContainer.err)
+	if err := cdi.Refresh(); err != nil {
+		return fmt.Errorf("error refreshing CDI cache: %w", err)
 	}
 
 	for _, cdiDevice := range cdiDevices {
@@ -44,7 +36,7 @@ func addCDIDevices(spec *specs.Spec, cdiDevices []string, cdiRegOptions ...cdi.O
 		}
 	}
 
-	if _, err := regSyncContainer.reg.InjectDevices(spec, cdiDevices...); err != nil {
+	if _, err := cdi.InjectDevices(spec, cdiDevices...); err != nil {
 		return fmt.Errorf("Error encountered setting up CDI devices: %w", err)
 	}
 
