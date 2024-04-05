@@ -55,10 +55,10 @@ require (
 	github.com/sylabs/sif/v2 v2.16.0
 	github.com/vbauerster/mpb/v8 v8.7.2
 	go.etcd.io/bbolt v1.3.9
-	golang.org/x/crypto v0.21.0
+	golang.org/x/crypto v0.22.0
 	golang.org/x/sync v0.7.0
-	golang.org/x/sys v0.18.0
-	golang.org/x/term v0.18.0
+	golang.org/x/sys v0.19.0
+	golang.org/x/term v0.19.0
 	golang.org/x/text v0.14.0
 	google.golang.org/grpc v1.63.0
 	gopkg.in/yaml.v3 v3.0.1
