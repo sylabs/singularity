@@ -53,7 +53,7 @@ require (
 	github.com/sylabs/scs-key-client v0.7.5
 	github.com/sylabs/scs-library-client v1.4.8
 	github.com/sylabs/sif/v2 v2.16.0
-	github.com/vbauerster/mpb/v8 v8.7.2
+	github.com/vbauerster/mpb/v8 v8.7.3
 	go.etcd.io/bbolt v1.3.9
 	golang.org/x/crypto v0.22.0
 	golang.org/x/sync v0.7.0
@@ -161,7 +161,7 @@ require (
 	github.com/prometheus/client_model v0.5.0 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
-	github.com/rivo/uniseg v0.4.4 // indirect
+	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rootless-containers/proto v0.1.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/safchain/ethtool v0.3.0 // indirect
