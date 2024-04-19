@@ -607,3 +607,31 @@ Contain code from the docker cli project, under the Apache License, Version 2.0.
    limitations under the License.
 */
 ```
+
+## github.com/containers/runc
+
+The source file:
+
+* `cmd/starter/c/starter.c`
+
+Contains code from the runc project, under the Apache License, Version 2.0.
+
+``` text
+runc
+
+Copyright 2012-2015 Docker, Inc.
+
+This product includes software developed at Docker, Inc. (http://www.docker.com).
+
+The following is courtesy of our legal counsel:
+
+
+Use and transfer of Docker may be subject to certain restrictions by the
+United States and other governments.
+It is your responsibility to ensure that your use and/or transfer does not
+violate applicable laws.
+
+For more information, please see http://www.bis.doc.gov
+
+See also http://www.apache.org/dev/crypto.html and/or seek legal counsel.
+```
