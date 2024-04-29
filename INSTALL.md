@@ -266,6 +266,45 @@ install prefix to a different path:
 
 See the output of `./mconfig -h` for available options.
 
+## Apparmor Profile (Ubuntu 24.04+)
+
+Beginning with the 24.04 LTS release, Ubuntu does not permit applications to
+create unprivileged user namespaces by default.
+
+If you install SingularityCE from a GitHub release `.deb` package then an
+apparmor profile will be installed that permits SingularityCE to create
+unprivileged user namespaces.
+
+If you install SingularityCE from source you must configure apparmor.
+Create an apparmor profile file at `/etc/apparmor.d/singularity-ce`:
+
+```sh
+sudo tee /etc/apparmor.d/singularity-ce << 'EOF'
+# Permit unprivileged user namespace creation for SingularityCE starter
+abi <abi/4.0>,
+include <tunables/global>
+
+profile singularity-ce /usr/local/libexec/singularity/bin/starter flags=(unconfined) {
+  userns,
+
+  # Site-specific additions and overrides. See local/README for details.
+  include if exists <local/singularity-ce>
+}
+EOF
+```
+
+Modify the path beginning `/usr/local` if you specified a non-default `--prefix`
+when configuring and installing SingularityCE.
+
+Reload the system apparmor profiles after you have created the file:
+
+```
+sudo systemctl reload apparmor
+```
+
+SingularityCE will now be able to create unprivileged user namespaces on your
+system.
+
 ## Building & Installing from an RPM
 
 On a RHEL / CentOS / Fedora machine you can build a SingularityCE into an RPM
