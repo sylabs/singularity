@@ -7,6 +7,7 @@ Uploaders:
 Build-Depends:
  autoconf,
  cryptsetup,
+ dh-apparmor,
  git,
  libfuse-dev,
  libglib2.0-dev,

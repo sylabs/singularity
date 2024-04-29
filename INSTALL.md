@@ -298,7 +298,7 @@ when configuring and installing SingularityCE.
 
 Reload the system apparmor profiles after you have created the file:
 
-```
+```sh
 sudo systemctl reload apparmor
 ```
 
