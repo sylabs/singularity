@@ -17,3 +17,4 @@ etc/singularity/seccomp-profiles/*
 var/lib/singularity/mnt/session
 usr/share/bash-completion/completions/singularity
 usr/share/man/man1/singularity*
+etc/apparmor.d/singularity-ce

@@ -36,6 +36,9 @@ executors:
   ubuntu2204:
     docker:
       - image: ubuntu:22.04
+  ubuntu2404:
+    docker:
+      - image: ubuntu:24.04
   golangci-lint:
     docker:
       - image: golangci/golangci-lint:v1.55.1
@@ -341,6 +344,7 @@ jobs:
               build-essential \
               cryptsetup \
               devscripts \
+              dh-apparmor \
               dh-golang \
               fakeroot \
               git \
@@ -399,7 +403,7 @@ workflows:
       - build-deb:
           matrix:
             parameters:
-              e: ["ubuntu2004", "ubuntu2204"]
+              e: ["ubuntu2004", "ubuntu2204", "ubuntu2404"]
           filters:
             branches:
               only:
@@ -421,7 +425,7 @@ workflows:
       - build-deb:
           matrix:
             parameters:
-              e: ["ubuntu2004", "ubuntu2204"]
+              e: ["ubuntu2004", "ubuntu2204", "ubuntu2404"]
           filters:
             branches:
               ignore: /.*/
