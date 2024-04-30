@@ -9,6 +9,8 @@
 srcver = $(shell scripts/get-version | sed -e 's,\(^[^+]\+\)-,\1~,; s,-,.,g')
 dist   = $(shell lsb_release -s -c)
 
+OS_MAJOR := $(shell grep ^VERSION_ID /etc/os-release | cut -d'=' -f2 | sed 's/\"//gI' | cut -d'.' -f1)
+
 DH_VERBOSE=1
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
@@ -73,6 +75,15 @@ override_dh_auto_install:
 # install standard build
 	cd $(SRCDIR)/$(DH_GOPKG) && \
 	make -C builddir install
+# Apparmor userns profile needed on Ubuntu 24.04, or unconfined placeholder for older versions.
+	if [ $(OS_MAJOR) -gt 23 ] ; then \
+		echo "Ubuntu 24.04 or newer - installing apparmor userns profile"; \
+		install -D -m 644 debian/apparmor-userns $(DESTDIR)/etc/apparmor.d/singularity-ce; \
+	else \
+		echo "Ubuntu 23.10 or older - installing apparmor placeholder profile"; \
+		install -D -m 644 debian/apparmor-placeholder $(DESTDIR)/etc/apparmor.d/singularity-ce; \
+	fi;
+	dh_apparmor --profile-name=singularity-ce
 
 override_dh_fixperms:
 # dh_install copies from debian/tmp into debian/<package name> in the multi-package

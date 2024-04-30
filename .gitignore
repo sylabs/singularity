@@ -109,6 +109,8 @@ pkg/library/client/test[0-9]*
 _build
 debian/.debhelper/
 debian/files
+debian/singularity-ce.postinst.debhelper
+debian/singularity-ce.postrm.debhelper
 debian/singularity-ce*.debhelper.log
 debian/singularity-ce*.substvars
 debian/singularity-ce*/
