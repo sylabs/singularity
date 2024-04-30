@@ -875,27 +875,30 @@ func (l *Launcher) setNamespaces() {
 
 // setEnv sets the environment for the container, from the host environment, glads, env-file.
 func (l *Launcher) setEnv(ctx context.Context, args []string) error {
-	if l.cfg.EnvFile != "" {
+	if len(l.cfg.EnvFiles) > 0 {
 		currentEnv := append(
 			os.Environ(),
 			"SINGULARITY_IMAGE="+l.engineConfig.GetImage(),
 		)
 
-		env, err := env.FileMap(ctx, l.cfg.EnvFile, args, currentEnv)
-		if err != nil {
-			return fmt.Errorf("while processing %s: %w", l.cfg.EnvFile, err)
-		}
-		// --env variables will take precedence over variables
-		// defined by the environment file
-		sylog.Debugf("Setting environment variables from file %s", l.cfg.EnvFile)
+		for _, envFile := range l.cfg.EnvFiles {
+			tempEnvMap, err := env.FileMap(ctx, envFile, args, currentEnv)
+			if err != nil {
+				return fmt.Errorf("while processing %s: %w", envFile, err)
+			}
 
-		// Update Env with those from file
-		for k, v := range env {
-			// Ensure we don't overwrite --env variables with environment file
-			if _, ok := l.cfg.Env[k]; ok {
-				sylog.Warningf("Ignored environment variable %s from %s: override from --env", k, l.cfg.EnvFile)
-			} else {
-				l.cfg.Env[k] = v
+			// --env variables will take precedence over variables
+			// defined by the environment files
+			sylog.Debugf("Setting environment variables from file %s", envFile)
+
+			// Update Env with those from file
+			for k, v := range tempEnvMap {
+				// Ensure we don't overwrite --env variables with environment file
+				if _, ok := l.cfg.Env[k]; ok {
+					sylog.Warningf("Ignored environment variable %s from %s: override from --env", k, envFile)
+				} else {
+					l.cfg.Env[k] = v
+				}
 			}
 		}
 	}

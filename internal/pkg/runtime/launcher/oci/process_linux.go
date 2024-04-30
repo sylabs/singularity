@@ -45,16 +45,19 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 	// SINGULARITYENV_ has lowest priority
 	rtEnv = env.MergeMap(rtEnv, env.SingularityEnvMap(os.Environ()))
 	// --env-file can override SINGULARITYENV_
-	if l.cfg.EnvFile != "" {
+	if len(l.cfg.EnvFiles) > 0 {
 		currentEnv := append(
 			os.Environ(),
 			"SINGULARITY_IMAGE="+l.image,
 		)
-		e, err := env.FileMap(ctx, l.cfg.EnvFile, []string{}, currentEnv)
-		if err != nil {
-			return nil, nil, err
+
+		for _, envFile := range l.cfg.EnvFiles {
+			e, err := env.FileMap(ctx, envFile, []string{}, currentEnv)
+			if err != nil {
+				return nil, nil, err
+			}
+			rtEnv = env.MergeMap(rtEnv, e)
 		}
-		rtEnv = env.MergeMap(rtEnv, e)
 	}
 
 	// --env flag can override --env-file and SINGULARITYENV_
