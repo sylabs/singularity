@@ -284,7 +284,7 @@ sudo tee /etc/apparmor.d/singularity-ce << 'EOF'
 abi <abi/4.0>,
 include <tunables/global>
 
-profile singularity-ce /usr/local/libexec/singularity/bin/starter flags=(unconfined) {
+profile singularity-ce /usr/local/libexec/singularity/bin/starter{,-suid} flags=(unconfined) {
   userns,
 
   # Site-specific additions and overrides. See local/README for details.
