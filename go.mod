@@ -54,7 +54,7 @@ require (
 	github.com/sylabs/scs-library-client v1.4.8
 	github.com/sylabs/sif/v2 v2.16.0
 	github.com/vbauerster/mpb/v8 v8.7.3
-	go.etcd.io/bbolt v1.3.9
+	go.etcd.io/bbolt v1.3.10
 	golang.org/x/crypto v0.22.0
 	golang.org/x/sync v0.7.0
 	golang.org/x/sys v0.19.0
