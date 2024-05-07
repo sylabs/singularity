@@ -882,7 +882,7 @@ func (l *Launcher) setEnv(ctx context.Context, args []string) error {
 		)
 
 		// Read all environment files and put the variables into envFilesMap,
-		// environment variables in latter files will take precedence.
+		// environment variables in later files will take precedence.
 		envFilesMap := map[string]string{}
 		for _, envFile := range l.cfg.EnvFiles {
 			tempEnvMap, err := env.FileMap(ctx, envFile, args, currentEnv)
