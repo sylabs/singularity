@@ -875,25 +875,30 @@ func (l *Launcher) setNamespaces() {
 
 // setEnv sets the environment for the container, from the host environment, glads, env-file.
 func (l *Launcher) setEnv(ctx context.Context, args []string) error {
-	if l.cfg.EnvFile != "" {
+	if len(l.cfg.EnvFiles) > 0 {
 		currentEnv := append(
 			os.Environ(),
 			"SINGULARITY_IMAGE="+l.engineConfig.GetImage(),
 		)
 
-		env, err := env.FileMap(ctx, l.cfg.EnvFile, args, currentEnv)
-		if err != nil {
-			return fmt.Errorf("while processing %s: %w", l.cfg.EnvFile, err)
+		// Read all environment files and put the variables into envFilesMap,
+		// environment variables in later files will take precedence.
+		envFilesMap := map[string]string{}
+		for _, envFile := range l.cfg.EnvFiles {
+			tempEnvMap, err := env.FileMap(ctx, envFile, args, currentEnv)
+			if err != nil {
+				return fmt.Errorf("while processing %s: %w", envFile, err)
+			}
+			sylog.Debugf("Setting environment variables from file %s", envFile)
+			envFilesMap = env.MergeMap(envFilesMap, tempEnvMap)
 		}
-		// --env variables will take precedence over variables
-		// defined by the environment file
-		sylog.Debugf("Setting environment variables from file %s", l.cfg.EnvFile)
 
+		// --env variables will take precedence over variables defined by the environment files
 		// Update Env with those from file
-		for k, v := range env {
+		for k, v := range envFilesMap {
 			// Ensure we don't overwrite --env variables with environment file
 			if _, ok := l.cfg.Env[k]; ok {
-				sylog.Warningf("Ignored environment variable %s from %s: override from --env", k, l.cfg.EnvFile)
+				sylog.Warningf("Ignored environment file variable %s: override from --env", k)
 			} else {
 				l.cfg.Env[k] = v
 			}

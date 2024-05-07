@@ -358,7 +358,7 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 		launcher.OptNoRocm(noRocm),
 		launcher.OptContainLibs(containLibsPath),
 		launcher.OptProot(proot),
-		launcher.OptEnv(singularityEnv, singularityEnvFile, isCleanEnv),
+		launcher.OptEnv(singularityEnv, singularityEnvFiles, isCleanEnv),
 		launcher.OptNoEval(noEval),
 		launcher.OptNamespaces(ns),
 		launcher.OptNetwork(network, networkArgs),

@@ -15,29 +15,29 @@ import (
 
 // actionflags.go contains flag variables for action-like commands to draw from
 var (
-	appName            string
-	bindPaths          []string
-	mounts             []string
-	homePath           string
-	overlayPath        []string
-	scratchPath        []string
-	workdirPath        string
-	cwdPath            string
-	shellPath          string
-	hostname           string
-	network            string
-	networkArgs        []string
-	dns                string
-	security           []string
-	cgroupsTOMLFile    string
-	containLibsPath    []string
-	fuseMount          []string
-	singularityEnv     map[string]string
-	singularityEnvFile string
-	noMount            []string
-	proot              string
-	device             []string
-	cdiDirs            []string
+	appName             string
+	bindPaths           []string
+	mounts              []string
+	homePath            string
+	overlayPath         []string
+	scratchPath         []string
+	workdirPath         string
+	cwdPath             string
+	shellPath           string
+	hostname            string
+	network             string
+	networkArgs         []string
+	dns                 string
+	security            []string
+	cgroupsTOMLFile     string
+	containLibsPath     []string
+	fuseMount           []string
+	singularityEnv      map[string]string
+	singularityEnvFiles []string
+	noMount             []string
+	proot               string
+	device              []string
+	cdiDirs             []string
 
 	isBoot          bool
 	isFakeroot      bool
@@ -621,8 +621,8 @@ var actionEnvFlag = cmdline.Flag{
 // --env-file
 var actionEnvFileFlag = cmdline.Flag{
 	ID:           "actionEnvFileFlag",
-	Value:        &singularityEnvFile,
-	DefaultValue: "",
+	Value:        &singularityEnvFiles,
+	DefaultValue: []string{},
 	Name:         "env-file",
 	Usage:        "pass environment variables from file to contained process",
 	EnvKeys:      []string{"ENV_FILE"},
