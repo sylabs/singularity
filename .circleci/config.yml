@@ -21,9 +21,6 @@ executors:
     docker:
       # Resolves to golang:<go-version> or golang:<go-version>-<variant> (if variant supplied)
       - image: golang:<< pipeline.parameters.go-version >><<# parameters.variant >>-<< parameters.variant >><</ parameters.variant >>
-  centos7:
-    docker:
-      - image: centos:7
   almalinux8:
     docker:
       - image: almalinux:8
@@ -393,7 +390,7 @@ workflows:
       - build-rpm:
           matrix:
             parameters:
-              e: ["centos7", "almalinux8", "almalinux9"]
+              e: ["almalinux8", "almalinux9"]
           filters:
             branches:
               only:
@@ -415,7 +412,7 @@ workflows:
       - build-rpm:
           matrix:
             parameters:
-              e: ["centos7", "almalinux8", "almalinux9"]
+              e: ["almalinux8", "almalinux9"]
           filters:
             branches:
               ignore: /.*/
