@@ -881,24 +881,25 @@ func (l *Launcher) setEnv(ctx context.Context, args []string) error {
 			"SINGULARITY_IMAGE="+l.engineConfig.GetImage(),
 		)
 
+		// Read all environment files and put the variables into envFilesMap,
+		// environment variables in latter files will take precedence.
+		envFilesMap := map[string]string{}
 		for _, envFile := range l.cfg.EnvFiles {
 			tempEnvMap, err := env.FileMap(ctx, envFile, args, currentEnv)
 			if err != nil {
 				return fmt.Errorf("while processing %s: %w", envFile, err)
 			}
+			envFilesMap = env.MergeEnvFileMap(envFilesMap, tempEnvMap, envFile)
+		}
 
-			// --env variables will take precedence over variables
-			// defined by the environment files
-			sylog.Debugf("Setting environment variables from file %s", envFile)
-
-			// Update Env with those from file
-			for k, v := range tempEnvMap {
-				// Ensure we don't overwrite --env variables with environment file
-				if _, ok := l.cfg.Env[k]; ok {
-					sylog.Warningf("Ignored environment variable %s from %s: override from --env", k, envFile)
-				} else {
-					l.cfg.Env[k] = v
-				}
+		// --env variables will take precedence over variables defined by the environment files
+		// Update Env with those from file
+		for k, v := range envFilesMap {
+			// Ensure we don't overwrite --env variables with environment file
+			if _, ok := l.cfg.Env[k]; ok {
+				sylog.Warningf("Ignored environment file variable %s: override from --env", k)
+			} else {
+				l.cfg.Env[k] = v
 			}
 		}
 	}

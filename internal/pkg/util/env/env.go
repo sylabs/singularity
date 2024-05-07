@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/util/shell/interpreter"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 var readonlyVars = map[string]bool{
@@ -97,6 +98,20 @@ func FileMap(ctx context.Context, f string, args []string, hostEnv []string) (ma
 // values also set in a.
 func MergeMap(a map[string]string, b map[string]string) map[string]string {
 	for k, v := range b {
+		a[k] = v
+	}
+	return a
+}
+
+// MergeEnvFileMap merges two maps of environment variables coming from files, with values in b replacing
+// values also set in a. filename is related to b.
+func MergeEnvFileMap(a map[string]string, b map[string]string, filename string) map[string]string {
+	sylog.Debugf("Setting environment variables from file %s", filename)
+
+	for k, v := range b {
+		if _, ok := a[k]; ok {
+			sylog.Warningf("Environment variable %s overwritten: using new value from file %s", k, filename)
+		}
 		a[k] = v
 	}
 	return a
