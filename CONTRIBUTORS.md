@@ -117,4 +117,5 @@ The following have contributed code and/or documentation to this repository.
 - Nicholas Yue <yue.nicholas@gmail.com>
 - Benedikt Riedel <benedikt.riedel@gmail.com>
 - Evan Lezar <elezar@nvidia.com>, <evanlezar@gmail.com>
+- Carlos Yáñez <carlos.yanez@sylabs.io>
 ```
