@@ -6,6 +6,7 @@
 package singularityenv
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -322,7 +323,7 @@ func (c ctx) ociEnvFile(t *testing.T) {
 	tests := []struct {
 		name     string
 		images   []string
-		envFile  string
+		envFiles []string
 		envOpt   []string
 		hostEnv  []string
 		matchEnv string
@@ -331,7 +332,7 @@ func (c ctx) ociEnvFile(t *testing.T) {
 		{
 			name:     "DefaultPathOverride",
 			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
-			envFile:  "PATH=/",
+			envFiles: []string{"PATH=/"},
 			matchEnv: "PATH",
 			matchVal: "/",
 		},
@@ -339,29 +340,36 @@ func (c ctx) ociEnvFile(t *testing.T) {
 			name:     "DefaultPathOverrideEnvOptionPrecedence",
 			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
 			envOpt:   []string{"PATH=/etc"},
-			envFile:  "PATH=/",
+			envFiles: []string{"PATH=/"},
 			matchEnv: "PATH",
 			matchVal: "/etc",
 		},
 		{
-			name:     "DefaultPathOverrideEnvOptionPrecedence",
+			name:     "DefaultPathOverrideEnvFileOptionPrecedence",
+			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
+			envFiles: []string{"PATH=/", "PATH=/etc"},
+			matchEnv: "PATH",
+			matchVal: "/etc",
+		},
+		{
+			name:     "DefaultPathOverrideEnvAndEnvFileOptionPrecedence",
 			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
 			envOpt:   []string{"PATH=/etc"},
-			envFile:  "PATH=/",
+			envFiles: []string{"PATH=/", "PATH=/foo"},
 			matchEnv: "PATH",
 			matchVal: "/etc",
 		},
 		{
 			name:     "AppendDefaultPath",
 			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
-			envFile:  "APPEND_PATH=/",
+			envFiles: []string{"APPEND_PATH=/"},
 			matchEnv: "PATH",
 			matchVal: defaultPath + ":/",
 		},
 		{
 			name:     "PrependDefaultPath",
 			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
-			envFile:  "PREPEND_PATH=/",
+			envFiles: []string{"PREPEND_PATH=/"},
 			matchEnv: "PATH",
 			matchVal: "/:" + defaultPath,
 		},
@@ -374,28 +382,28 @@ func (c ctx) ociEnvFile(t *testing.T) {
 		{
 			name:     "CustomLdLibraryPath",
 			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
-			envFile:  "LD_LIBRARY_PATH=/foo",
+			envFiles: []string{"LD_LIBRARY_PATH=/foo"},
 			matchEnv: "LD_LIBRARY_PATH",
 			matchVal: "/foo:" + singularityLibs,
 		},
 		{
 			name:     "CustomTrailingCommaPath",
 			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
-			envFile:  "LD_LIBRARY_PATH=/foo,",
+			envFiles: []string{"LD_LIBRARY_PATH=/foo,"},
 			matchEnv: "LD_LIBRARY_PATH",
 			matchVal: "/foo,:" + singularityLibs,
 		},
 		{
 			name:     "HostEnvUnset",
 			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
-			envFile:  "HELLO=$YOU",
+			envFiles: []string{"HELLO=$YOU"},
 			matchEnv: "HELLO",
 			matchVal: "",
 		},
 		{
 			name:     "HostEnvSet",
 			images:   []string{ociSIFDefaultPath, nativeSIFDefaultPath},
-			envFile:  "HELLO=$YOU",
+			envFiles: []string{"HELLO=$YOU"},
 			hostEnv:  []string{"YOU=YOU"},
 			matchEnv: "HELLO",
 			matchVal: "YOU",
@@ -409,9 +417,12 @@ func (c ctx) ociEnvFile(t *testing.T) {
 			if tt.envOpt != nil {
 				args = append(args, "--env", strings.Join(tt.envOpt, ","))
 			}
-			if tt.envFile != "" {
-				os.WriteFile(p, []byte(tt.envFile), 0o644)
-				args = append(args, "--env-file", p)
+			if len(tt.envFiles) > 0 {
+				for i, envFile := range tt.envFiles {
+					filename := fmt.Sprint(p, i)
+					os.WriteFile(filename, []byte(envFile), 0o644)
+					args = append(args, "--env-file", filename)
+				}
 			}
 			args = append(args, img, "/bin/sh", "-c", "echo $"+tt.matchEnv)
 

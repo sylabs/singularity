@@ -9,6 +9,7 @@
 package singularityenv
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -337,7 +338,7 @@ func (c ctx) singularityEnvFile(t *testing.T) {
 	tests := []struct {
 		name     string
 		image    string
-		envFile  string
+		envFiles []string
 		envOpt   []string
 		hostEnv  []string
 		matchEnv string
@@ -346,7 +347,7 @@ func (c ctx) singularityEnvFile(t *testing.T) {
 		{
 			name:     "DefaultPathOverride",
 			image:    c.env.ImagePath,
-			envFile:  "PATH=/",
+			envFiles: []string{"PATH=/"},
 			matchEnv: "PATH",
 			matchVal: "/",
 		},
@@ -354,43 +355,50 @@ func (c ctx) singularityEnvFile(t *testing.T) {
 			name:     "DefaultPathOverrideEnvOptionPrecedence",
 			image:    c.env.ImagePath,
 			envOpt:   []string{"PATH=/etc"},
-			envFile:  "PATH=/",
+			envFiles: []string{"PATH=/"},
 			matchEnv: "PATH",
 			matchVal: "/etc",
 		},
 		{
-			name:     "DefaultPathOverrideEnvOptionPrecedence",
+			name:     "DefaultPathOverrideEnvFileOptionPrecedence",
+			image:    c.env.ImagePath,
+			envFiles: []string{"PATH=/", "PATH=/etc"},
+			matchEnv: "PATH",
+			matchVal: "/etc",
+		},
+		{
+			name:     "DefaultPathOverrideEnvAndEnvFileOptionPrecedence",
 			image:    c.env.ImagePath,
 			envOpt:   []string{"PATH=/etc"},
-			envFile:  "PATH=/",
+			envFiles: []string{"PATH=/", "PATH=/foo"},
 			matchEnv: "PATH",
 			matchVal: "/etc",
 		},
 		{
 			name:     "AppendDefaultPath",
 			image:    c.env.ImagePath,
-			envFile:  "APPEND_PATH=/",
+			envFiles: []string{"APPEND_PATH=/"},
 			matchEnv: "PATH",
 			matchVal: imageDefaultPath + ":/",
 		},
 		{
 			name:     "AppendLiteralDefaultPath",
 			image:    c.env.ImagePath,
-			envFile:  `PATH="\$PATH:/"`,
+			envFiles: []string{`PATH="\$PATH:/"`},
 			matchEnv: "PATH",
 			matchVal: imageDefaultPath + ":/",
 		},
 		{
 			name:     "PrependLiteralDefaultPath",
 			image:    c.env.ImagePath,
-			envFile:  `PATH="/:\$PATH"`,
+			envFiles: []string{`PATH="/:\$PATH"`},
 			matchEnv: "PATH",
 			matchVal: "/:" + imageDefaultPath,
 		},
 		{
 			name:     "PrependDefaultPath",
 			image:    c.env.ImagePath,
-			envFile:  "PREPEND_PATH=/",
+			envFiles: []string{"PREPEND_PATH=/"},
 			matchEnv: "PATH",
 			matchVal: "/:" + imageDefaultPath,
 		},
@@ -403,14 +411,14 @@ func (c ctx) singularityEnvFile(t *testing.T) {
 		{
 			name:     "CustomLdLibraryPath",
 			image:    c.env.ImagePath,
-			envFile:  "LD_LIBRARY_PATH=/foo",
+			envFiles: []string{"LD_LIBRARY_PATH=/foo"},
 			matchEnv: "LD_LIBRARY_PATH",
 			matchVal: "/foo:" + singularityLibs,
 		},
 		{
 			name:     "CustomTrailingCommaPath",
 			image:    c.env.ImagePath,
-			envFile:  "LD_LIBRARY_PATH=/foo,",
+			envFiles: []string{"LD_LIBRARY_PATH=/foo,"},
 			matchEnv: "LD_LIBRARY_PATH",
 			matchVal: "/foo,:" + singularityLibs,
 		},
@@ -421,9 +429,12 @@ func (c ctx) singularityEnvFile(t *testing.T) {
 		if tt.envOpt != nil {
 			args = append(args, "--env", strings.Join(tt.envOpt, ","))
 		}
-		if tt.envFile != "" {
-			os.WriteFile(p, []byte(tt.envFile), 0o644)
-			args = append(args, "--env-file", p)
+		if len(tt.envFiles) > 0 {
+			for i, envFile := range tt.envFiles {
+				filename := fmt.Sprint(p, i)
+				os.WriteFile(filename, []byte(envFile), 0o644)
+				args = append(args, "--env-file", filename)
+			}
 		}
 		args = append(args, tt.image, "/bin/sh", "-c", "echo $"+tt.matchEnv)
 
