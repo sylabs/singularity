@@ -889,7 +889,8 @@ func (l *Launcher) setEnv(ctx context.Context, args []string) error {
 			if err != nil {
 				return fmt.Errorf("while processing %s: %w", envFile, err)
 			}
-			envFilesMap = env.MergeEnvFileMap(envFilesMap, tempEnvMap, envFile)
+			sylog.Debugf("Setting environment variables from file %s", envFile)
+			envFilesMap = env.MergeMap(envFilesMap, tempEnvMap)
 		}
 
 		// --env variables will take precedence over variables defined by the environment files
