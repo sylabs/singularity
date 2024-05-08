@@ -12,6 +12,10 @@
 - Fix storage of credentials for `docker.io` to behave the same as for
   `index.docker.io`.
 - Improve documentation for `remote list` command.
+- Don't fail with lack of descriptor capacity when writing OCI images with many
+  layers to OCI-SIF.
+- Ensure a fixed number of spare descriptors is present in the OCI-SIF when
+  pulling an OCI image.
 
 ## 4.1.2 \[2024-03-05\]
 
