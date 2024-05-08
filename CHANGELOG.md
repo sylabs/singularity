@@ -2,16 +2,18 @@
 
 ## Changes Since Last Release
 
-### Requirements
-
-- Requires a minimum of Go 1.21 to build. Go 1.20 is end-of-life.
-
 ### New Features & Functionality
 
 - It is now possible to use multiple environment variable files using the
   `--env-file` flag, files can be specified as a comma-separated list or
   by using the flag multiple times. Variables defined in later files take
   precedence.
+
+## 4.1.3 \[2024-05-08\]
+
+### Requirements
+
+- Requires a minimum of Go 1.21 to build. Go 1.20 is end-of-life.
 
 ### Bug Fixes
 
