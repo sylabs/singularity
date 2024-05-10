@@ -111,10 +111,10 @@ github.com/containernetworking/cni v1.2.0 h1:fEjhlfWwWAXEvlcMQu/i6z8DA0Kbu7EcmR5
 github.com/containernetworking/cni v1.2.0/go.mod h1:/r+vA/7vrynNfbvSP9g8tIKEoy6win7sALJAw4ZiJks=
 github.com/containernetworking/plugins v1.4.1 h1:+sJRRv8PKhLkXIl6tH1D7RMi+CbbHutDGU+ErLBORWA=
 github.com/containernetworking/plugins v1.4.1/go.mod h1:n6FFGKcaY4o2o5msgu/UImtoC+fpQXM3076VHfHbj60=
-github.com/containers/common v0.58.2 h1:5nu9lQz4QNSgovNk7NRk33SkqkVNKYoXh7L6gXmACow=
-github.com/containers/common v0.58.2/go.mod h1:l3vMqanJGj7tZ3W/i76gEJ128VXgFUO1tLaohJXPvdk=
-github.com/containers/image/v5 v5.30.0 h1:CmHeSwI6W2kTRWnUsxATDFY5TEX4b58gPkaQcEyrLIA=
-github.com/containers/image/v5 v5.30.0/go.mod h1:gSD8MVOyqBspc0ynLsuiMR9qmt8UQ4jpVImjmK0uXfk=
+github.com/containers/common v0.58.3 h1:Iy/CdYjluEK926QT+ejonz7YvoRHazeW7BAiLIkmUQ4=
+github.com/containers/common v0.58.3/go.mod h1:p4V1SNk+WOISgp01m+axuqCUxaDP3WSZPPzvnJnS/cQ=
+github.com/containers/image/v5 v5.30.1 h1:AKrQMgOKI1oKx5FW5eoU2xoNyzACajHGx1O3qxobvFM=
+github.com/containers/image/v5 v5.30.1/go.mod h1:gSD8MVOyqBspc0ynLsuiMR9qmt8UQ4jpVImjmK0uXfk=
 github.com/containers/storage v1.53.0 h1:VSES3C/u1pxjTJIXvLrSmyP7OBtDky04oGu07UvdTEA=
 github.com/containers/storage v1.53.0/go.mod h1:pujcoOSc+upx15Jirdkebhtd8uJiLwbSd/mYT6zDJK8=
 github.com/coreos/go-iptables v0.7.0 h1:XWM3V+MPRr5/q51NuWSgU0fqMad64Zyxs8ZUoMsamr8=
