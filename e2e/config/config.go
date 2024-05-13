@@ -221,7 +221,7 @@ func (c configTests) configGlobal(t *testing.T) {
 		},
 		{
 			name:           "AllowUtsNsNo",
-			argv:           []string{"--uts", "--hostname=foo", c.env.ImagePath, "hostname"},
+			argv:           []string{"--uts", "--hostname", "foo", c.env.ImagePath, "hostname"},
 			profile:        e2e.UserProfile,
 			directive:      "allow uts ns",
 			directiveValue: "no",
@@ -230,7 +230,7 @@ func (c configTests) configGlobal(t *testing.T) {
 		},
 		{
 			name:           "AllowUtsNsYes",
-			argv:           []string{"--uts", "--hostname=foo", c.env.ImagePath, "hostname"},
+			argv:           []string{"--uts", "--hostname", "foo", c.env.ImagePath, "hostname"},
 			profile:        e2e.UserProfile,
 			directive:      "allow uts ns",
 			directiveValue: "yes",

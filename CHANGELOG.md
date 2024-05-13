@@ -9,7 +9,7 @@
   by using the flag multiple times. Variables defined in later files take
   precedence.
 - `singularity.conf` now accepts setting the `allow uts ns` option, and can
-invalidate the use of the `--uts` and `--hostname` flags.
+  invalidate the use of the `--uts` and `--hostname` flags.
 
 ## 4.1.3 \[2024-05-08\]
 

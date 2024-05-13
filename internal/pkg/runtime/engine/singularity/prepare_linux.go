@@ -536,7 +536,7 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 		namespaces := e.EngineConfig.OciConfig.Linux.Namespaces
 		for i, ns := range namespaces {
 			if ns.Type == specs.UTSNamespace {
-				sylog.Debugf("Not virtualizing UTS namespace by configuration")
+				sylog.Warningf("UTS namespace disabled in singularity.conf. Container hostname cannot be set.")
 				e.EngineConfig.OciConfig.Linux.Namespaces = append(namespaces[:i], namespaces[i+1:]...)
 				break
 			}
