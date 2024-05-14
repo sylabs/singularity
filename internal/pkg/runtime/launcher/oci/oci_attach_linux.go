@@ -16,7 +16,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/containers/common/pkg/config"
 	"github.com/moby/term"
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -51,6 +50,9 @@ const (
 	AttachPipeStderr = 3
 )
 
+// DetachKeys is the key sequence for detaching a container.
+const DetachKeys = "ctrl-p,ctrl-q"
+
 // Attach attaches the console to a running container
 func Attach(containerID string) error {
 	streams := attachStreams{
@@ -77,7 +79,7 @@ func Attach(containerID string) error {
 		}
 	}()
 
-	detachKeys, err := processDetachKeys(config.DefaultDetachKeys)
+	detachKeys, err := processDetachKeys(DetachKeys)
 	if err != nil {
 		return fmt.Errorf("invalid detach key sequence: %w", err)
 	}
