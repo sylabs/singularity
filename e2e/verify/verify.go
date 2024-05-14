@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/v4/e2e/verify/ocspresponder"
-	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
@@ -33,11 +32,6 @@ func (c *ctx) verify(t *testing.T) {
 
 	ocspOk := false
 	t.Run("startOCSPResponder", func(t *testing.T) {
-		// Skip kernel < 4.18, which is a proxy for EL7 (3.10 kernel) and SLES12
-		// (4.15 kernel) where some algorithms in OCSP chain are not all
-		// supported.
-		require.Kernel(t, 4, 18)
-
 		if err := c.startOCSPResponder(priKeyPath, rootPath); err != nil {
 			t.Errorf("OCSP responder could not start: %s", err)
 		} else {
