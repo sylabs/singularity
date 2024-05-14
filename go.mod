@@ -24,7 +24,7 @@ require (
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/docker/docker v26.1.2+incompatible
 	github.com/docker/go-units v0.5.0
-	github.com/fatih/color v1.16.0
+	github.com/fatih/color v1.17.0
 	github.com/go-log/log v0.2.0
 	github.com/gofrs/flock v0.8.1
 	github.com/google/go-containerregistry v0.19.1
