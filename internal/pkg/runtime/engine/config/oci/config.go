@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	cseccomp "github.com/containers/common/pkg/seccomp"
+	dseccomp "github.com/docker/docker/profiles/seccomp"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci/generate"
@@ -174,7 +174,7 @@ func DefaultConfigV1() (*generate.Generator, error) {
 	}
 
 	if seccomp.Enabled() {
-		config.Linux.Seccomp, err = cseccomp.GetDefaultProfile(&config)
+		config.Linux.Seccomp, err = dseccomp.GetDefaultProfile(&config)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get seccomp default profile: %s", err)
 		}
