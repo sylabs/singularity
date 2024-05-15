@@ -635,3 +635,22 @@ from: %s
 		})
 	}
 }
+
+// When a symlink at /foo/bar targets ../bar then it should copy correctly when
+// /foo is copied between stages.
+func (c *imgBuildTests) issue2607(t *testing.T) {
+	image := filepath.Join(c.env.TestDir, "issue_2607.sif")
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(image, "testdata/regressions/issue_2607.def"),
+		e2e.PostRun(func(_ *testing.T) {
+			os.Remove(image)
+		}),
+		e2e.ExpectExit(
+			0,
+		),
+	)
+}
