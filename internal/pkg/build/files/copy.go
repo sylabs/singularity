@@ -160,9 +160,9 @@ func CopyFromStage(src, dst, srcRootfs, dstRootfs string, disableIDMapping bool)
 			dstResolved = path.Join(dstResolved, srcName)
 		}
 
-		err = archive.CopyWithTar(srcResolved, dstResolved, disableIDMapping)
+		err = archive.CopyWithTarWithRoot(srcResolved, dstResolved, dstRootfs, disableIDMapping)
 		if err != nil {
-			return fmt.Errorf("while copying %s to %s: %s", paths, dstResolved, err)
+			return fmt.Errorf("while copying %s to %s: %s", srcGlobbed, dstResolved, err)
 		}
 	}
 	return nil

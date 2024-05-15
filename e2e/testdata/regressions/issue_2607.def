@@ -1,0 +1,15 @@
+Bootstrap: library
+From: alpine:3.11.5
+Stage: one
+
+%post
+touch /bar
+mkdir -p /foo
+ln -s ../bar /foo/bar
+
+Bootstrap: library
+From: alpine:3.11.5
+Stage: two
+
+%files from one
+/foo
