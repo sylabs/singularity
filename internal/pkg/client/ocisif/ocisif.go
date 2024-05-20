@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Sylabs Inc. All rights reserved.
+// Copyright (c) 2023-2024 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -133,7 +133,7 @@ func createOciSif(ctx context.Context, tOpts *ociimage.TransportOptions, imgCach
 		return err
 	}
 
-	img, err := ociimage.FetchToLayout(ctx, tOpts, imgCache, imageSrc, tmpDir)
+	img, err := ociimage.LocalImage(ctx, tOpts, imgCache, imageSrc, tmpDir)
 	if err != nil {
 		return fmt.Errorf("while fetching OCI image: %w", err)
 	}
