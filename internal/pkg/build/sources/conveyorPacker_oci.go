@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -159,8 +159,9 @@ func (cp *OCIConveyorPacker) Get(ctx context.Context, b *sytypes.Bundle) (err er
 		imgCache = cp.b.Opts.ImgCache
 	}
 
-	// Fetch the image into a temporary containers/image oci layout dir.
-	cp.srcImg, err = ociimage.FetchToLayout(ctx, cp.transportOptions, imgCache, ref, b.TmpDir)
+	// If the image is not a local file or OCI layout, fetch into cache or
+	// temporary layout.
+	cp.srcImg, err = ociimage.LocalImage(ctx, cp.transportOptions, imgCache, ref, b.TmpDir)
 	if err != nil {
 		return err
 	}
