@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -49,20 +49,47 @@ func cachedImage(ctx context.Context, imgCache *cache.Handle, srcImg ggcrv1.Imag
 	return OCISourceSink.Image(ctx, cachedRef, nil, nil)
 }
 
-// FetchToLayout will fetch the OCI image specified by imageRef to an OCI layout
-// and return a v1.Image referencing it. If imgCache is non-nil, and enabled,
-// the image will be fetched into Singularity's cache - which is a multi-image
-// OCI layout. If the cache is disabled, the image will be fetched into a
-// subdirectory of the provided tmpDir. The caller is responsible for cleaning
-// up tmpDir.
-func FetchToLayout(ctx context.Context, tOpts *TransportOptions, imgCache *cache.Handle, imageURI, tmpDir string) (ggcrv1.Image, error) {
-	// oci-archive - Perform a tar extraction first, and handle as an oci layout.
+// LocalImage returns a ggrcv1.Image for imageURI that is guaranteed to be
+// backed by a local file or directory. If the image is an OCI layout or docker
+// tarball then it can be accessed directly. If the image is a tarball of an OCI
+// layout then it is extracted to tmpDir. If the image is remote, or in the
+// docker daemon, it will be pulled into the local cache - which is a
+// multi-image OCI layout. If the cache is disabled, the image will be fetched
+// into a subdirectory of the provided tmpDir. The caller is responsible for
+// cleaning up tmpDir.
+func LocalImage(ctx context.Context, tOpts *TransportOptions, imgCache *cache.Handle, imageURI, tmpDir string) (ggcrv1.Image, error) {
+	// oci-archive tarball is a local file, but current ggcr cannot read
+	// directly. Must always extract to a layoutdir .
 	if strings.HasPrefix(imageURI, "oci-archive:") {
-		layoutURI, cleanup, err := extractOCIArchive(imageURI, tmpDir)
+		return LocalImageLayout(ctx, tOpts, imgCache, imageURI, tmpDir)
+	}
+
+	srcType, srcRef, err := URItoSourceSinkRef(imageURI)
+	if err != nil {
+		return nil, err
+	}
+	// Docker tarballs and OCI layouts are already local
+	if srcType == TarballSourceSink || srcType == OCISourceSink {
+		return srcType.Image(ctx, srcRef, tOpts, nil)
+	}
+
+	return LocalImageLayout(ctx, tOpts, imgCache, imageURI, tmpDir)
+}
+
+// LocalImage returns a ggrcv1.Image for imageURI that is guaranteed to be
+// backed by a local OCI layout directory. If the image is a tarball of an OCI
+// layout then it is extracted to tmpDir. If the image is remote, or in the
+// docker daemon, it will be pulled into the local cache - which is a
+// multi-image OCI layout. If the cache is disabled, the image will be fetched
+// into a subdirectory of the provided tmpDir. The caller is responsible for
+// cleaning up tmpDir.
+func LocalImageLayout(ctx context.Context, tOpts *TransportOptions, imgCache *cache.Handle, imageURI, tmpDir string) (ggcrv1.Image, error) {
+	if strings.HasPrefix(imageURI, "oci-archive:") {
+		// oci-archive is a straight tar of an OCI layout, so extract to a tempDir
+		layoutURI, _, err := extractOCIArchive(imageURI, tmpDir)
 		if err != nil {
 			return nil, err
 		}
-		defer cleanup()
 		imageURI = layoutURI
 	}
 
@@ -71,8 +98,13 @@ func FetchToLayout(ctx context.Context, tOpts *TransportOptions, imgCache *cache
 		return nil, err
 	}
 
-	rt := progress.NewRoundTripper(ctx, nil)
+	// We might already have an OCI layout at this point
+	if srcType == OCISourceSink {
+		return srcType.Image(ctx, srcRef, tOpts, nil)
+	}
 
+	// Registry / Docker Daemon images need to be fetched
+	rt := progress.NewRoundTripper(ctx, nil)
 	srcImg, err := srcType.Image(ctx, srcRef, tOpts, rt)
 	if err != nil {
 		rt.ProgressShutdown()
@@ -108,8 +140,8 @@ func FetchToLayout(ctx context.Context, tOpts *TransportOptions, imgCache *cache
 }
 
 // extractOCIArchive will extract a tar `oci-archive:` image into a temporary
-// layout dir. The caller is responsible for calling cleanup() to remove the
-// temporary layout.
+// layout that will be a subdirectory of tmpDir. The caller is responsible for
+// calling cleanup to remove the layout, or otherwise cleaning up tmpDir.
 func extractOCIArchive(archiveURI, tmpDir string) (layoutURI string, cleanup func(), err error) {
 	layoutDir, err := os.MkdirTemp(tmpDir, "temp-oci-")
 	if err != nil {

@@ -11,6 +11,12 @@
 - `singularity.conf` now accepts setting the `allow uts ns` option, and can
   invalidate the use of the `--uts` and `--hostname` flags.
 
+### Bug Fixes
+
+- Avoid unnecessary copying / extraction of OCI images and Docker tarballs into
+  a layout directory when they are directly accessible as a local file /
+  directory.
+
 ## 4.1.3 \[2024-05-08\]
 
 ### Requirements
