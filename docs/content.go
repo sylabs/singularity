@@ -1127,11 +1127,11 @@ Enterprise Performance Computing (EPC)`
   a file or directory into a convenient format that can be distributed alongside
   application container images, and mounted into a container at runtime.`
 	DataPackageExample string = `
-  To create a data container that packages the contents of mydir/:
-  $ singularity data package mydir/ data.oci.sif
+  To create a data container that packages the contents of mydir:
+  $ singularity data package mydir data.oci.sif
 
-  To create a data container that packages a single file:
-  $ singularity data package myfile data.oci.sif`
+  To create a data container that package a single file:
+  $ singularity data package mydir/myfile data.oci.sif`
 )
 
 // Documentation for sif/siftool command.

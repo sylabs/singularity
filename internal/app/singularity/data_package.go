@@ -6,11 +6,29 @@
 package singularity
 
 import (
+	"fmt"
+	"os"
+
+	"github.com/sylabs/singularity/v4/internal/pkg/datacontainer"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 // DataPackage packages src into a data container at dst.
 func DataPackage(src, dst string) error {
-	sylog.Fatalf("package %s -> %s: not implemented", src, dst)
-	return nil
+	if _, err := os.Stat(dst); !os.IsNotExist(err) {
+		return fmt.Errorf("%s already exists - will not overwrite", dst)
+	}
+
+	tmpEnv := os.Getenv("SINGULARITY_TMPDIR")
+	tmpDir, err := os.MkdirTemp(tmpEnv, "data-package-")
+	if err != nil {
+		return fmt.Errorf("while creating temporary directory: %w", err)
+	}
+	defer func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			sylog.Errorf("while removing temporary directory: %v", err)
+		}
+	}()
+
+	return datacontainer.WriteOCISIFFromPath(src, dst, tmpDir)
 }

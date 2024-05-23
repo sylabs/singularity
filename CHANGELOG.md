@@ -10,6 +10,8 @@
   precedence.
 - `singularity.conf` now accepts setting the `allow uts ns` option, and can
   invalidate the use of the `--uts` and `--hostname` flags.
+- A new `singularity data package` command allows files and directories to
+  be packaged into an OCI-SIF data container.
 
 ### Bug Fixes
 
