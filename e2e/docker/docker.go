@@ -815,7 +815,7 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 			exit: 0,
 			dfd: e2e.DefFileDetails{
 				Bootstrap: "docker",
-				From:      c.env.TestRegistry + "/my-alpine",
+				From:      c.env.TestRegistry + "/my-alpine:3.18",
 			},
 		},
 		{
@@ -823,7 +823,7 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 			exit: 0,
 			dfd: e2e.DefFileDetails{
 				Bootstrap: "docker",
-				From:      "my-alpine",
+				From:      "my-alpine:3.18",
 				Registry:  c.env.TestRegistry,
 			},
 		},
@@ -832,7 +832,7 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 			exit: 255,
 			dfd: e2e.DefFileDetails{
 				Bootstrap: "docker",
-				From:      "my-alpine",
+				From:      "my-alpine:3.18",
 				Registry:  c.env.TestRegistry,
 				Namespace: "not-a-namespace",
 			},
