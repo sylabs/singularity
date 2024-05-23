@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2024, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -1109,6 +1109,29 @@ Enterprise Performance Computing (EPC)`
 
   To create a sparse overlay when creating a new ext3 file system image:
   $ singularity overlay create --size 1024 --sparse /tmp/ext3_overlay.img`
+
+	DataUse   string = `data`
+	DataShort string = `Manage an OCI-SIF data container`
+	DataLong  string = `
+  The data command allows management of OCI-SIF data containers.`
+	DataExample string = `
+  All data commands have their own help output:
+
+  $ singularity help data package
+  $ singularity data package --help`
+
+	DataPackageUse   string = `package <source file/dir> <data container>`
+	DataPackageShort string = `Package a file or directory into a data container`
+	DataPackageLong  string = `
+  The data package command creates an OCI-SIF data container, which packages
+  a file or directory into a convenient format that can be distributed alongside
+  application container images, and mounted into a container at runtime.`
+	DataPackageExample string = `
+  To create a data container that packages the contents of mydir:
+  $ singularity data package mydir data.oci.sif
+
+  To create a data container that package a single file:
+  $ singularity data package mydir/myfile data.oci.sif`
 )
 
 // Documentation for sif/siftool command.
