@@ -199,13 +199,13 @@ func Run(t *testing.T) {
 
 	// Provision local registry
 	testenv.TestRegistry = e2e.StartRegistry(t, testenv)
-	testenv.TestRegistryImage = fmt.Sprintf("docker://%s/my-alpine:latest", testenv.TestRegistry)
+	testenv.TestRegistryImage = fmt.Sprintf("docker://%s/my-alpine:3.18", testenv.TestRegistry)
 	testenv.TestRegistryLayeredImage = fmt.Sprintf("docker://%s/aufs-sanity:latest", testenv.TestRegistry)
 	testenv.TestRegistryPrivURI = fmt.Sprintf("docker://%s", testenv.TestRegistry)
 	testenv.TestRegistryPrivPath = fmt.Sprintf("%s/private/e2eprivrepo", testenv.TestRegistry)
-	testenv.TestRegistryPrivImage = fmt.Sprintf("docker://%s/my-alpine:latest", testenv.TestRegistryPrivPath)
+	testenv.TestRegistryPrivImage = fmt.Sprintf("docker://%s/my-alpine:3.18", testenv.TestRegistryPrivPath)
 
-	// Copy small test image (alpine:latest) into local registry from DockerHub
+	// Copy small test image (alpine:3.18) into local registry from DockerHub
 	insecureSource := false
 	insecureValue := os.Getenv("E2E_DOCKER_MIRROR_INSECURE")
 	if insecureValue != "" {
@@ -214,7 +214,7 @@ func Run(t *testing.T) {
 			t.Fatalf("could not convert E2E_DOCKER_MIRROR_INSECURE=%s: %s", insecureValue, err)
 		}
 	}
-	e2e.CopyOCIImage(t, "docker://alpine:latest", testenv.TestRegistryImage, insecureSource, true)
+	e2e.CopyOCIImage(t, "docker://alpine:3.18", testenv.TestRegistryImage, insecureSource, true)
 
 	// This image has many (8) small layers, constructed to test overlay behavior.
 	// https://github.com/sylabs/singularity-test-containers/tree/master/docker-aufs-sanity
@@ -222,7 +222,7 @@ func Run(t *testing.T) {
 
 	// Copy same test image into private location in test registry
 	e2e.PrivateRepoLogin(t, testenv, e2e.UserProfile, "")
-	e2e.CopyOCIImage(t, "docker://alpine:latest", testenv.TestRegistryPrivImage, insecureSource, true)
+	e2e.CopyOCIImage(t, "docker://alpine:3.18", testenv.TestRegistryPrivImage, insecureSource, true)
 	e2e.PrivateRepoLogout(t, testenv, e2e.UserProfile, "")
 
 	// SIF base test path, built on demand by e2e.EnsureImage
