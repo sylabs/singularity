@@ -19,10 +19,10 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/client/library"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/net"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oci"
-	ocisifclient "github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/shub"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/native"
@@ -200,7 +200,7 @@ func replaceURIWithImage(ctx context.Context, cmd *cobra.Command, args []string)
 	// bundle if tar->squashfs conversion in OCI-SIF creation fails. This
 	// fallback is important while sqfstar/tar2sqfs are not bundled, and not
 	// available in common distros.
-	if errors.Is(err, ocisifclient.ErrFailedSquashfsConversion) {
+	if errors.Is(err, ocisif.ErrFailedSquashfsConversion) {
 		if !canUseTmpSandbox {
 			sylog.Errorf("%v", err)
 			sylog.Fatalf("OCI-SIF could not be created, and fallback to temporary sandbox dir disallowed")

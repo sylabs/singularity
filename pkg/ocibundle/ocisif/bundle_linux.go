@@ -17,9 +17,9 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
-	ocisif "github.com/sylabs/oci-tools/pkg/sif"
+	ocitsif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
-	ociclient "github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/overlay"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/squashfs"
@@ -133,7 +133,7 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	if err != nil {
 		return fmt.Errorf("while loading SIF: %w", err)
 	}
-	ix, err := ocisif.ImageIndexFromFileImage(fi)
+	ix, err := ocitsif.ImageIndexFromFileImage(fi)
 	if err != nil {
 		return fmt.Errorf("while obtaining image index: %w", err)
 	}
@@ -204,11 +204,11 @@ func (b *Bundle) mountLayers(ctx context.Context, img v1.Image, imgFile string) 
 		if err != nil {
 			return fmt.Errorf("while checking layer: %w", err)
 		}
-		if mt != ociclient.SquashfsLayerMediaType {
+		if mt != ocisif.SquashfsLayerMediaType {
 			return fmt.Errorf("unsupported layer mediaType %q", mt)
 		}
 
-		offset, err := l.(*ocisif.Layer).Offset()
+		offset, err := l.(*ocitsif.Layer).Offset()
 		if err != nil {
 			return fmt.Errorf("while finding layer offset: %w", err)
 		}

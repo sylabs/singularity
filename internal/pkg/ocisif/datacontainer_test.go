@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package datacontainer
+package ocisif
 
 import (
 	"io/fs"
@@ -14,7 +14,7 @@ import (
 	"github.com/sylabs/squashfs"
 )
 
-func Test_newImageFromFSPath(t *testing.T) {
+func Test_newDataContainerFromFSPath(t *testing.T) {
 	tests := []struct {
 		name string
 		fsys fs.FS
@@ -44,7 +44,7 @@ func Test_newImageFromFSPath(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			img, err := newImageFromFSPath(tt.fsys, tt.path, Config{}, t.TempDir())
+			img, err := newDataContainerFromFSPath(tt.fsys, tt.path, DataContainerConfig{}, t.TempDir())
 			if err != nil {
 				t.Fatal(err)
 			}

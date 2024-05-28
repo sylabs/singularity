@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sylabs/singularity/v4/internal/pkg/datacontainer"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocisif"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
@@ -30,5 +30,5 @@ func DataPackage(src, dst string) error {
 		}
 	}()
 
-	return datacontainer.WriteOCISIFFromPath(src, dst, tmpDir)
+	return ocisif.WriteDataContainerFromPath(src, dst, tmpDir)
 }
