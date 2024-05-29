@@ -7,27 +7,22 @@ package ocisif
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/empty"
-	ggcrmutate "github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/google/go-containerregistry/pkg/v1/types"
-	"github.com/sylabs/oci-tools/pkg/mutate"
-	ocisif "github.com/sylabs/oci-tools/pkg/sif"
+	ocitsif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -35,22 +30,9 @@ import (
 	"golang.org/x/term"
 )
 
-const (
-	// TODO - Replace when exported from SIF / oci-tools
-	SquashfsLayerMediaType types.MediaType = "application/vnd.sylabs.image.layer.v1.squashfs"
-
-	// cacheSuffixMultiLayer is appended to the cached filename of OCI-SIF
-	// images that have multiple layers. Single layer images have no suffix.
-	cacheSuffixMultiLayer = ".ml"
-
-	// spareDescrptiorCapacity is the number of spare descriptors to allocate
-	// when writing an image to an OCI-SIF file. This is to provide additional
-	// descriptors, beyond those needed for the OCI image, to add e.g.
-	// overlay(s) / signatures without re-writing the OCI-SIF.
-	spareDescriptorCapacity = 8
-)
-
-var ErrFailedSquashfsConversion = errors.New("could not convert layer to squashfs")
+// cacheSuffixMultiLayer is appended to the cached filename of OCI-SIF
+// images that have multiple layers. Single layer images have no suffix.
+const cacheSuffixMultiLayer = ".ml"
 
 type PullOptions struct {
 	TmpDir      string
@@ -115,7 +97,7 @@ func PullOCISIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom 
 	return imagePath, nil
 }
 
-// createOciSif will convert an OCI source into an OCI-SIF using sylabs/oci-tools
+// createOciSif will convert an OCI source into an OCI-SIF image with squashfs layers.
 func createOciSif(ctx context.Context, tOpts *ociimage.TransportOptions, imgCache *cache.Handle, imageSrc, imageDest string, opts PullOptions) error {
 	tmpDir, err := os.MkdirTemp(opts.TmpDir, "oci-sif-tmp-")
 	if err != nil {
@@ -142,113 +124,10 @@ func createOciSif(ctx context.Context, tOpts *ociimage.TransportOptions, imgCach
 		return fmt.Errorf("while checking OCI image: %w", err)
 	}
 
-	digest, err := img.Digest()
-	if err != nil {
-		return err
-	}
-	mf, err := img.Manifest()
-	if err != nil {
-		return err
-	}
-
-	// If the image has a single squashfs layer, then we can always write it
-	// directly to OCI-SIF.
-	if (len(mf.Layers)) == 1 && (mf.Layers[0].MediaType == SquashfsLayerMediaType) {
-		sylog.Infof("Writing OCI-SIF image")
-		return writeImageToOCISif(img, imageDest)
-	}
-
-	// If the image multiple layers, all are squashfs, and KeepLayers is in effect,
-	// then we can write it directly to OCI-SIF.
 	if opts.KeepLayers {
-		allSquash := true
-		for _, l := range mf.Layers {
-			if l.MediaType != SquashfsLayerMediaType {
-				allSquash = false
-				break
-			}
-		}
-		if allSquash {
-			sylog.Infof("Writing OCI-SIF image")
-			return writeImageToOCISif(img, imageDest)
-		}
+		return ocisif.WriteImageSquashfs(img, imageDest, tmpDir)
 	}
-
-	// Otherwise, conversion and optional squashing are required.
-	sylog.Infof("Converting OCI image to OCI-SIF format")
-	return convertImageToOciSif(img, digest, imageDest, workDir, opts.KeepLayers)
-}
-
-// writeImageToOCISif will write an image to an oci-sif without applying any
-// mutations.
-func writeImageToOCISif(img ggcrv1.Image, imageDest string) error {
-	ii := ggcrmutate.AppendManifests(empty.Index, ggcrmutate.IndexAddendum{
-		Add: img,
-	})
-	return ocisif.Write(imageDest, ii, ocisif.OptWriteWithSpareDescriptorCapacity(spareDescriptorCapacity))
-}
-
-// convertImageToOciSif will convert an image to an oci-sif with squashfs layer
-// format.
-func convertImageToOciSif(img ggcrv1.Image, digest ggcrv1.Hash, imageDest, workDir string, keepLayers bool) error {
-	var err error
-	if !keepLayers {
-		sylog.Infof("Squashing image to single layer")
-		img, err = mutate.Squash(img)
-		if err != nil {
-			return fmt.Errorf("while squashing image: %w", err)
-		}
-	}
-
-	img, err = imgLayersToSquashfs(img, digest, workDir)
-	if err != nil {
-		return fmt.Errorf("%w: %v", ErrFailedSquashfsConversion, err)
-	}
-
-	sylog.Infof("Writing OCI-SIF image")
-	ii := ggcrmutate.AppendManifests(empty.Index, ggcrmutate.IndexAddendum{
-		Add: img,
-	})
-	return ocisif.Write(imageDest, ii, ocisif.OptWriteWithSpareDescriptorCapacity(spareDescriptorCapacity))
-}
-
-func imgLayersToSquashfs(img ggcrv1.Image, digest ggcrv1.Hash, workDir string) (sqfsImage ggcrv1.Image, err error) {
-	ms := []mutate.Mutation{}
-
-	layers, err := img.Layers()
-	if err != nil {
-		return nil, fmt.Errorf("while retrieving layers: %w", err)
-	}
-
-	var sqOpts []mutate.SquashfsConverterOpt
-	if len(layers) == 1 {
-		sqOpts = []mutate.SquashfsConverterOpt{
-			mutate.OptSquashfsSkipWhiteoutConversion(true),
-		}
-	}
-
-	for i, l := range layers {
-		squashfsLayer, err := mutate.SquashfsLayer(l, workDir, sqOpts...)
-		if err != nil {
-			return nil, fmt.Errorf("%w: %v", ErrFailedSquashfsConversion, err)
-		}
-		ms = append(ms, mutate.SetLayer(i, squashfsLayer))
-	}
-
-	ms = append(ms,
-		mutate.SetHistory(ggcrv1.History{
-			Created:    ggcrv1.Time{Time: time.Now()},
-			CreatedBy:  useragent.Value(),
-			Comment:    "oci-sif created from " + digest.Hex,
-			EmptyLayer: false,
-		}))
-
-	sqfsImage, err = mutate.Apply(img, ms...)
-	if err != nil {
-		return nil, fmt.Errorf("while replacing layers: %w", err)
-	}
-
-	return sqfsImage, nil
+	return ocisif.WriteImageSquashedSquashfs(img, imageDest, tmpDir)
 }
 
 // PushOCISIF pushes a single image from sourceFile to the OCI registry destRef.
@@ -266,7 +145,7 @@ func PushOCISIF(ctx context.Context, sourceFile, destRef string, ociAuth *authn.
 	}
 	defer fi.UnloadContainer()
 
-	ix, err := ocisif.ImageIndexFromFileImage(fi)
+	ix, err := ocitsif.ImageIndexFromFileImage(fi)
 	if err != nil {
 		return fmt.Errorf("only OCI-SIF files can be pushed to docker/OCI registries")
 	}

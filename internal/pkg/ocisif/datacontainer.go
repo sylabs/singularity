@@ -3,7 +3,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package datacontainer
+package ocisif
 
 import (
 	"fmt"
@@ -19,35 +19,29 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/sylabs/oci-tools/pkg/mutate"
-	ocisif "github.com/sylabs/oci-tools/pkg/sif"
 )
 
 // ConfigMediaType custom media type.
 const (
-	ConfigMediaType types.MediaType = "application/vnd.sylabs.data-container.config.v1+json"
+	DataContainerConfigMediaType types.MediaType = "application/vnd.sylabs.data-container.config.v1+json"
 )
 
 // Placeholder config - will become empty JSON in written image
-type Config struct{}
+type DataContainerConfig struct{}
 
-// WriteSIFFromPath takes a path to a directory or regular file, and writes
+// WriteDataContainerFromPath takes a path to a directory or regular file, and writes
 // a data container image populated with the directory/file to dest, as an OCI-SIF.
-func WriteOCISIFFromPath(path string, dst string, workDir string) error {
-	img, err := newImageFromFSPath(os.DirFS(filepath.Dir(path)), filepath.Base(path), Config{}, workDir)
+func WriteDataContainerFromPath(path string, dst string, workDir string) error {
+	img, err := newDataContainerFromFSPath(os.DirFS(filepath.Dir(path)), filepath.Base(path), DataContainerConfig{}, workDir)
 	if err != nil {
 		return err
 	}
-
-	ii := ocimutate.AppendManifests(empty.Index,
-		ocimutate.IndexAddendum{
-			Add: img,
-		})
-	return ocisif.Write(dst, ii)
+	return WriteImage(img, dst)
 }
 
-// newImageFromFSPath takes a path to a directory or regular file within fsys, and returns
+// newDataContainerFromFSPath takes a path to a directory or regular file within fsys, and returns
 // a data container image populated with the directory/file.
-func newImageFromFSPath(fsys fs.FS, path string, cfg Config, workDir string) (v1.Image, error) {
+func newDataContainerFromFSPath(fsys fs.FS, path string, cfg DataContainerConfig, workDir string) (v1.Image, error) {
 	fi, err := fs.Stat(fsys, path)
 	if err != nil {
 		return nil, err
@@ -104,7 +98,7 @@ func tarOpener(fn tarWriterFunc) tarball.Opener {
 }
 
 // createDataContainerFromLayer create OCI datacontainer from the supplied v1.Layer.
-func createDataContainerFromLayer(layer v1.Layer, cfg Config) (v1.Image, error) {
+func createDataContainerFromLayer(layer v1.Layer, cfg DataContainerConfig) (v1.Image, error) {
 	img := ocimutate.MediaType(empty.Image, types.OCIManifestSchema1)
 
 	img, err := ocimutate.AppendLayers(img, layer)
@@ -113,6 +107,6 @@ func createDataContainerFromLayer(layer v1.Layer, cfg Config) (v1.Image, error) 
 	}
 
 	return mutate.Apply(img,
-		mutate.SetConfig(cfg, ConfigMediaType),
+		mutate.SetConfig(cfg, DataContainerConfigMediaType),
 	)
 }
