@@ -18,6 +18,7 @@ import (
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/samber/lo"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/fuse"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/gpu"
@@ -699,6 +700,11 @@ func (l *Launcher) addBindMount(mounts *[]specs.Mount, b bind.Path, allowSUID bo
 }
 
 func (l *Launcher) prepareImageBindMount(bindPath bind.Path) (*fuse.ImageMount, error) {
+	// We don't support mounting from native style SIF images with a descriptor ID in OCI-Mode.
+	if bindPath.ID() != "" {
+		return nil, fmt.Errorf("image bind id values are not supported, but one was supplied (%v %v)", bindPath.ImageSrc(), bindPath.ID())
+	}
+
 	imagePath := bindPath.Source
 	img, err := image.Init(imagePath, false)
 	if err != nil {
@@ -707,17 +713,21 @@ func (l *Launcher) prepareImageBindMount(bindPath bind.Path) (*fuse.ImageMount, 
 
 	resolvedPath := img.Path
 	readonly := bindPath.Readonly()
-
-	sylog.Debugf("img is: %#v", img)
+	opts := []string{}
 
 	switch img.Type {
+	case image.EXT3:
 	case image.SQUASHFS:
 		readonly = true
-		fallthrough
-	case image.EXT3:
-		if bindPath.ID() != "" {
-			return nil, fmt.Errorf("image %q does not support id values, but one was supplied (%q)", bindPath.ImageSrc(), bindPath.ID())
+	case image.OCISIF:
+		readonly = true
+		offset, err := ocisif.DataContainerLayerOffset(img.File)
+		if err != nil {
+			return nil, err
 		}
+		opts = append(opts, fmt.Sprintf("offset=%d", offset))
+	default:
+		return nil, fmt.Errorf("unsupported image type %v for image bind", img.Type)
 	}
 
 	enclosingDir, err := os.MkdirTemp(buildcfg.SESSIONDIR, "fusemount-enclosure")
@@ -732,6 +742,7 @@ func (l *Launcher) prepareImageBindMount(bindPath bind.Path) (*fuse.ImageMount, 
 		EnclosingDir: enclosingDir,
 		AllowSetuid:  l.cfg.AllowSUID,
 		AllowOther:   true,
+		ExtraOpts:    opts,
 	}
 
 	mountpoint := filepath.Join(enclosingDir, fmt.Sprintf("fusemount-%d", len(l.imageMountsByMountpoint)))

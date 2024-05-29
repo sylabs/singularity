@@ -13,12 +13,14 @@ import (
 	"path/filepath"
 	"sync"
 
-	v1 "github.com/google/go-containerregistry/pkg/v1"
+	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	ocimutate "github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/sylabs/oci-tools/pkg/mutate"
+	ocitsif "github.com/sylabs/oci-tools/pkg/sif"
+	"github.com/sylabs/sif/v2/pkg/sif"
 )
 
 // ConfigMediaType custom media type.
@@ -45,7 +47,7 @@ func WriteDataContainerFromPath(path string, dst string, workDir string) error {
 
 // newDataContainerFromFSPath takes a path to a directory or regular file within fsys, and returns
 // a data container image populated with the directory/file.
-func newDataContainerFromFSPath(fsys fs.FS, path string, cfg DataContainerConfig) (v1.Image, error) {
+func newDataContainerFromFSPath(fsys fs.FS, path string, cfg DataContainerConfig) (ggcrv1.Image, error) {
 	fi, err := fs.Stat(fsys, path)
 	if err != nil {
 		return nil, err
@@ -94,7 +96,7 @@ func tarOpener(fn tarWriterFunc) tarball.Opener {
 }
 
 // createDataContainerFromLayer create OCI datacontainer from the supplied v1.Layer.
-func createDataContainerFromLayer(layer v1.Layer, cfg DataContainerConfig) (v1.Image, error) {
+func createDataContainerFromLayer(layer ggcrv1.Layer, cfg DataContainerConfig) (ggcrv1.Image, error) {
 	img := ocimutate.MediaType(empty.Image, types.OCIManifestSchema1)
 
 	img, err := ocimutate.AppendLayers(img, layer)
@@ -105,4 +107,54 @@ func createDataContainerFromLayer(layer v1.Layer, cfg DataContainerConfig) (v1.I
 	return mutate.Apply(img,
 		mutate.SetConfig(cfg, DataContainerConfigMediaType),
 	)
+}
+
+func DataContainerLayerOffset(f *os.File) (int64, error) {
+	fimg, err := sif.LoadContainer(f,
+		sif.OptLoadWithFlag(os.O_RDONLY),
+		sif.OptLoadWithCloseOnUnload(false),
+	)
+	if err != nil {
+		return 0, err
+	}
+	defer fimg.UnloadContainer()
+
+	ix, err := ocitsif.ImageIndexFromFileImage(fimg)
+	if err != nil {
+		return 0, fmt.Errorf("while obtaining image index: %w", err)
+	}
+	idxManifest, err := ix.IndexManifest()
+	if err != nil {
+		return 0, fmt.Errorf("while obtaining index manifest: %w", err)
+	}
+
+	// One image only.
+	if len(idxManifest.Manifests) != 1 {
+		return 0, fmt.Errorf("only single image data containers are supported, found %d images", len(idxManifest.Manifests))
+	}
+	imageDigest := idxManifest.Manifests[0].Digest
+
+	img, err := ix.Image(imageDigest)
+	if err != nil {
+		return 0, fmt.Errorf("while initializing image: %w", err)
+	}
+
+	// One SquashFS layer only.
+	layers, err := img.Layers()
+	if err != nil {
+		return 0, fmt.Errorf("while getting image layers: %w", err)
+	}
+	if len(layers) != 1 {
+		return 0, fmt.Errorf("only single layer data containers are supported, found %d layers", len(layers))
+	}
+	mt, err := layers[0].MediaType()
+	if err != nil {
+		return 0, fmt.Errorf("while getting layer mediatype: %w", err)
+	}
+	if mt != SquashfsLayerMediaType {
+		return 0, fmt.Errorf("unsupported layer mediaType: %v", mt)
+	}
+
+	offset, err := layers[0].(*ocitsif.Layer).Offset()
+	return offset, err
 }
