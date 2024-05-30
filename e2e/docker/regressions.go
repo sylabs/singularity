@@ -83,7 +83,7 @@ func (c ctx) issue5172(t *testing.T) {
 	u := e2e.UserProfile.HostUser(t)
 
 	// create $HOME/.config/containers/registries.conf
-	regImage := "docker://" + c.env.TestRegistry + "/my-alpine"
+	regImage := c.env.TestRegistryImage
 	regDir := filepath.Join(u.Dir, ".config", "containers")
 	regFile := filepath.Join(regDir, "registries.conf")
 	imagePath := filepath.Join(c.env.TestDir, "issue-5172")
