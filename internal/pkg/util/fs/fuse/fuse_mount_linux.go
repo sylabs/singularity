@@ -91,7 +91,7 @@ func (i *ImageMount) Mount(ctx context.Context) (err error) {
 func (i *ImageMount) determineMountCmd() (string, error) {
 	var fuseMountTool string
 	switch i.Type {
-	case image.SQUASHFS:
+	case image.SQUASHFS, image.OCISIF:
 		fuseMountTool = "squashfuse"
 	case image.EXT3:
 		fuseMountTool = "fuse2fs"

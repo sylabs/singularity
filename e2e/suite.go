@@ -29,6 +29,7 @@ import (
 	"github.com/sylabs/singularity/v4/e2e/cgroups"
 	"github.com/sylabs/singularity/v4/e2e/cmdenvvars"
 	"github.com/sylabs/singularity/v4/e2e/config"
+	"github.com/sylabs/singularity/v4/e2e/data"
 	"github.com/sylabs/singularity/v4/e2e/delete"
 	"github.com/sylabs/singularity/v4/e2e/docker"
 	"github.com/sylabs/singularity/v4/e2e/ecl"
@@ -73,6 +74,7 @@ var e2eGroups = map[string]testhelper.Group{
 	"CGROUPS":        cgroups.E2ETests,
 	"CMDENVVARS":     cmdenvvars.E2ETests,
 	"CONFIG":         config.E2ETests,
+	"DATA":           data.E2ETests,
 	"DELETE":         delete.E2ETests,
 	"DOCKER":         docker.E2ETests,
 	"E2EBUILDCFG":    e2ebuildcfg.E2ETests,
