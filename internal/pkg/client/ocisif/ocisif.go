@@ -124,10 +124,15 @@ func createOciSif(ctx context.Context, tOpts *ociimage.TransportOptions, imgCach
 		return fmt.Errorf("while checking OCI image: %w", err)
 	}
 
-	if opts.KeepLayers {
-		return ocisif.WriteImageSquashfs(img, imageDest, tmpDir)
+	iwOpts := []ocisif.ImageWriterOpt{ocisif.WithSquashFSLayers(true)}
+	if !opts.KeepLayers {
+		iwOpts = append(iwOpts, ocisif.WithSquash(true))
 	}
-	return ocisif.WriteImageSquashedSquashfs(img, imageDest, tmpDir)
+	w, err := ocisif.NewImageWriter(img, imageDest, tmpDir, iwOpts...)
+	if err != nil {
+		return err
+	}
+	return w.Write()
 }
 
 // PushOCISIF pushes a single image from sourceFile to the OCI registry destRef.
