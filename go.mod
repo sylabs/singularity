@@ -16,7 +16,7 @@ require (
 	github.com/containerd/go-runc v1.1.0
 	github.com/containernetworking/cni v1.2.0
 	github.com/containernetworking/plugins v1.5.0
-	github.com/containers/common v0.58.3
+	github.com/containers/common v0.59.0
 	github.com/containers/image/v5 v5.31.0
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/cyphar/filepath-securejoin v0.2.5
