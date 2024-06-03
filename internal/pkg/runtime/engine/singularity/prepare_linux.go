@@ -519,6 +519,18 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	// always set mount namespace
 	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
 
+	// if IPC namespace is not allowed remove it from namespaces
+	if !e.EngineConfig.File.AllowIpcNs && e.EngineConfig.OciConfig.Linux != nil {
+		namespaces := e.EngineConfig.OciConfig.Linux.Namespaces
+		for i, ns := range namespaces {
+			if ns.Type == specs.IPCNamespace {
+				sylog.Debugf("Not virtualizing IPC namespace by configuration")
+				e.EngineConfig.OciConfig.Linux.Namespaces = append(namespaces[:i], namespaces[i+1:]...)
+				break
+			}
+		}
+	}
+
 	// if PID namespace is not allowed remove it from namespaces
 	if !e.EngineConfig.File.AllowPidNs && e.EngineConfig.OciConfig.Linux != nil {
 		namespaces := e.EngineConfig.OciConfig.Linux.Namespaces
