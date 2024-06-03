@@ -11,17 +11,17 @@ you may use a subset of them.
 
 The dependencies and their licenses are as follows:
 
+## github.com
+
+**License:** Apache-2.0
+
+**Project URL:** <https://github.com>
+
 ## github.com/Netflix/go-expect
 
 **License:** Apache-2.0
 
 **License URL:** <https://github.com/Netflix/go-expect/blob/master/LICENSE>
-
-## github.com/container-orchestrated-devices/container-device-interface/pkg/parser
-
-**License:** Apache-2.0
-
-**License URL:** <https://github.com/container-orchestrated-devices/container-device-interface/blob/master/pkg/parser/LICENSE>
 
 ## github.com/containerd/containerd
 
@@ -94,6 +94,12 @@ The dependencies and their licenses are as follows:
 **License:** Apache-2.0
 
 **License URL:** <https://github.com/cyberphone/json-canonicalization/blob/master/go/src/webpki.org/jsoncanonicalizer/LICENSE>
+
+## github.com/distribution/reference
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/distribution/reference/blob/master/LICENSE>
 
 ## github.com/docker/cli/cli/config
 
@@ -233,11 +239,11 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/klauspost/compress/blob/master/LICENSE>
 
-## github.com/matttproud/golang_protobuf_extensions/pbutil
+## github.com/moby/docker-image-spec/specs-go/v1
 
 **License:** Apache-2.0
 
-**License URL:** <https://github.com/matttproud/golang_protobuf_extensions/blob/master/pbutil/LICENSE>
+**License URL:** <https://github.com/moby/docker-image-spec/blob/master/specs-go/v1/LICENSE>
 
 ## github.com/moby/locker
 
@@ -262,6 +268,12 @@ The dependencies and their licenses are as follows:
 **License:** Apache-2.0
 
 **License URL:** <https://github.com/moby/sys/blob/master/sequential/LICENSE>
+
+## github.com/moby/sys/user
+
+**License:** Apache-2.0
+
+**License URL:** <https://github.com/moby/sys/blob/master/user/LICENSE>
 
 ## github.com/moby/term
 
@@ -419,6 +431,12 @@ The dependencies and their licenses are as follows:
 
 **Project URL:** <https://go.mongodb.org/mongo-driver>
 
+## go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp
+
+**License:** Apache-2.0
+
+**Project URL:** <https://go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp>
+
 ## go.opentelemetry.io/otel
 
 **License:** Apache-2.0
@@ -473,6 +491,12 @@ The dependencies and their licenses are as follows:
 
 **Project URL:** <https://oras.land/oras-go/pkg>
 
+## tags.cncf.io/container-device-interface/pkg/parser
+
+**License:** Apache-2.0
+
+**Project URL:** <https://tags.cncf.io/container-device-interface/pkg/parser>
+
 ## github.com/godbus/dbus/v5
 
 **License:** BSD-2-Clause
@@ -484,6 +508,12 @@ The dependencies and their licenses are as follows:
 **License:** BSD-2-Clause
 
 **License URL:** <https://github.com/gorilla/handlers/blob/master/LICENSE>
+
+## github.com/gorilla/websocket
+
+**License:** BSD-2-Clause
+
+**License URL:** <https://github.com/gorilla/websocket/blob/master/LICENSE>
 
 ## github.com/pkg/errors
 
@@ -521,12 +551,6 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/cyphar/filepath-securejoin/blob/master/LICENSE>
 
-## github.com/fsnotify/fsnotify
-
-**License:** BSD-3-Clause
-
-**License URL:** <https://github.com/fsnotify/fsnotify/blob/master/LICENSE>
-
 ## github.com/go-jose/go-jose/v3/json
 
 **License:** BSD-3-Clause
@@ -539,11 +563,11 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/gogo/protobuf/blob/master/proto/LICENSE>
 
-## github.com/golang/protobuf
+## github.com/golang/protobuf/proto
 
 **License:** BSD-3-Clause
 
-**License URL:** <https://github.com/golang/protobuf/blob/master/LICENSE>
+**License URL:** <https://github.com/golang/protobuf/blob/master/proto/LICENSE>
 
 ## github.com/google/go-cmp/cmp
 
@@ -562,12 +586,6 @@ The dependencies and their licenses are as follows:
 **License:** BSD-3-Clause
 
 **License URL:** <https://github.com/gorilla/mux/blob/master/LICENSE>
-
-## github.com/gorilla/websocket
-
-**License:** BSD-3-Clause
-
-**License URL:** <https://github.com/gorilla/websocket/blob/master/LICENSE>
 
 ## github.com/klauspost/compress/internal/snapref
 
@@ -887,12 +905,6 @@ The dependencies and their licenses are as follows:
 
 **License URL:** <https://github.com/mitchellh/mapstructure/blob/master/LICENSE>
 
-## github.com/morikuni/aec
-
-**License:** MIT
-
-**License URL:** <https://github.com/morikuni/aec/blob/master/LICENSE>
-
 ## github.com/pelletier/go-toml/v2
 
 **License:** MIT
@@ -970,18 +982,6 @@ The dependencies and their licenses are as follows:
 **License:** MPL-2.0
 
 **License URL:** <https://github.com/letsencrypt/boulder/blob/master/LICENSE.txt>
-
-## github.com/garyburd/redigo/internal
-
-**License:** Unknown
-
-**Project URL:** <https://github.com/garyburd/redigo/internal>
-
-## github.com/garyburd/redigo/redis
-
-**License:** Unknown
-
-**Project URL:** <https://github.com/garyburd/redigo/redis>
 
 ## github.com/vbauerster/mpb
 
