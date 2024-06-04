@@ -32,6 +32,9 @@ var (
 
 	// pushDescription holds a description to be set against a library container
 	pushDescription string
+
+	// pushLayerFormat sets the layer format to be used when pushing OCI images.
+	pushLayerFormat string
 )
 
 // --library
@@ -65,6 +68,16 @@ var pushDescriptionFlag = cmdline.Flag{
 	Usage:        "description for container image (library:// only)",
 }
 
+// --layer-format
+var pushLayerFormatFlag = cmdline.Flag{
+	ID:           "pushLayerFormatFlag",
+	Value:        &pushLayerFormat,
+	DefaultValue: "",
+	Name:         "layer-format",
+	Usage:        "layer format when pushing OCI-SIF images - squashfs (default) or tar",
+	EnvKeys:      []string{"LAYER_FORMAT"},
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(PushCmd)
@@ -78,6 +91,9 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&dockerPasswordFlag, PushCmd)
 
 		cmdManager.RegisterFlagForCmd(&commonAuthFileFlag, PushCmd)
+		cmdManager.RegisterFlagForCmd(&commonTmpDirFlag, PushCmd)
+
+		cmdManager.RegisterFlagForCmd(&pushLayerFormatFlag, PushCmd)
 	})
 }
 
@@ -132,6 +148,7 @@ var PushCmd = &cobra.Command{
 				Description:   pushDescription,
 				Endpoint:      currentRemoteEndpoint,
 				LibraryConfig: lc,
+				LayerFormat:   pushLayerFormat,
 			}
 
 			resp, err := library.Push(cmd.Context(), file, destRef, pushCfg)
@@ -184,7 +201,12 @@ var PushCmd = &cobra.Command{
 			if err != nil {
 				sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 			}
-			if err := oci.Push(cmd.Context(), file, ref, ociAuth, reqAuthFile); err != nil {
+			opts := oci.PushOptions{
+				Auth:        ociAuth,
+				AuthFile:    reqAuthFile,
+				LayerFormat: pushLayerFormat,
+			}
+			if err := oci.Push(cmd.Context(), file, ref, opts); err != nil {
 				sylog.Fatalf("Unable to push image to oci registry: %v", err)
 			}
 			sylog.Infof("Upload complete")

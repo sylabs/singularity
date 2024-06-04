@@ -34,6 +34,11 @@ type PushOptions struct {
 	// LibraryConfig configures operations against the library using its native
 	// API, via sylabs/scs-library-client.
 	LibraryConfig *scslibrary.Config
+	// LayerFormat sets the layer format to use when pushing OCI(-SIF) images only.
+	LayerFormat string
+	// TmpDir is a temporary directory to be used for an temporary files created
+	// during the push.
+	TmpDir string
 }
 
 // Push will upload an image file to the library.
@@ -49,7 +54,6 @@ func Push(ctx context.Context, sourceFile string, destRef *scslibrary.Ref, opts 
 	if _, err := f.GetDescriptor(sif.WithDataType(sif.DataOCIRootIndex)); err == nil {
 		return nil, pushOCI(ctx, sourceFile, destRef, opts)
 	}
-
 	return pushNative(ctx, sourceFile, destRef, opts)
 }
 
@@ -127,5 +131,11 @@ func pushOCI(ctx context.Context, sourceFile string, destRef *scslibrary.Ref, op
 	}
 
 	sylog.Debugf("Pushing to OCI registry at: %s", pushRef)
-	return ocisif.PushOCISIF(ctx, sourceFile, pushRef, lr.authConfig(), "")
+	ocisifOpts := ocisif.PushOptions{
+		Auth:        lr.authConfig(),
+		AuthFile:    "",
+		LayerFormat: opts.LayerFormat,
+		TmpDir:      opts.TmpDir,
+	}
+	return ocisif.PushOCISIF(ctx, sourceFile, pushRef, ocisifOpts)
 }
