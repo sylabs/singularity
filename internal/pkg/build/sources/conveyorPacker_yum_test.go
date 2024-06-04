@@ -19,7 +19,7 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/build/types/parser"
 )
 
-const yumDef = "../../../../examples/centos/Singularity"
+const yumDef = "../../../../examples/almalinux/Singularity"
 
 func TestYumConveyor(t *testing.T) {
 	// TODO - Centos puts non-amd64 at a different mirror location
