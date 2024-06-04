@@ -108,27 +108,6 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 			buildSpec: c.env.OrasTestImage,
 		},
 		{
-			name:      "Yum CentOS7",
-			buildSpec: "../examples/centos/Singularity",
-			requirements: func(t *testing.T) {
-				require.Command(t, "yum")
-				require.RPMMacro(t, "_db_backend", "bdb")
-				require.RPMMacro(t, "_dbpath", "/var/lib/rpm")
-				require.Arch(t, "amd64")
-			},
-		},
-		{
-			name:       "YumArm64 CentOS 7",
-			dependency: "yum",
-			buildSpec:  "../examples/centos-arm64/Singularity",
-			requirements: func(t *testing.T) {
-				require.Command(t, "yum")
-				require.RPMMacro(t, "_db_backend", "bdb")
-				require.RPMMacro(t, "_dbpath", "/var/lib/rpm")
-				require.Arch(t, "arm64")
-			},
-		},
-		{
 			name:      "Dnf AlmaLinux 9",
 			buildSpec: "../examples/almalinux/Singularity",
 			requirements: func(t *testing.T) {
@@ -1628,10 +1607,6 @@ func (c imgBuildTests) buildProot(t *testing.T) {
 		{
 			name:      "Alpine",
 			buildSpec: "testdata/proot_alpine.def",
-		},
-		{
-			name:      "CentOS",
-			buildSpec: "testdata/proot_centos.def",
 		},
 		{
 			name:      "Ubuntu",
