@@ -196,3 +196,28 @@ func newBindPath(bind string) (Path, error) {
 
 	return bp, nil
 }
+
+var dataBindOptions = map[string]*Option{"image-src": {"/"}}
+
+// ParseDataBindPath parses a single data container bind spec in
+// <src_sif>:<dest> format into an image bind specification, with image-src=/
+func ParseDataBindPath(dataBind string) (Path, error) {
+	var bp Path
+	splitted := strings.Split(dataBind, ":")
+	if len(splitted) != 2 {
+		return bp, fmt.Errorf("data container bind %q not in <src sif>:<dest> format", dataBind)
+	}
+
+	bp.Source = splitted[0]
+	if bp.Source == "" {
+		return bp, fmt.Errorf("empty source for data container bind %q", dataBind)
+	}
+
+	bp.Destination = splitted[1]
+	if bp.Destination == "" {
+		return bp, fmt.Errorf("empty destination for data container bind %q", dataBind)
+	}
+
+	bp.Options = dataBindOptions
+	return bp, nil
+}

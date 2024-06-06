@@ -77,6 +77,10 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 		return nil, fmt.Errorf("CDI device mappings unsupported in native launcher")
 	}
 
+	if len(lo.DataBinds) > 0 {
+		return nil, fmt.Errorf("data container binds unsupported in native launcher")
+	}
+
 	if lo.NoCompat {
 		sylog.Warningf("--no-compat applies to --oci mode only, ignoring")
 	}

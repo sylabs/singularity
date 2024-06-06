@@ -93,12 +93,24 @@ func (c ctx) testDataPackage(t *testing.T) {
 			e2e.ExpectExit(0,
 				e2e.ExpectOutput(e2e.ExactMatch, string(content)),
 			),
-			e2e.PostRun(func(t *testing.T) {
-				if err := os.Remove(dcPath); err != nil {
-					t.Error(err)
-				}
-			}),
 		)
+
+		// Verify that the file is at the expected location, when data container used with `--data`
+		dataSpec := fmt.Sprintf("%s:/data", dcPath)
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name+"/data"),
+			e2e.WithProfile(e2e.OCIUserProfile),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs("--data", dataSpec, c.env.OCISIFPath, "/bin/cat", tt.boundFile),
+			e2e.ExpectExit(0,
+				e2e.ExpectOutput(e2e.ExactMatch, string(content)),
+			),
+		)
+
+		if err := os.Remove(dcPath); err != nil {
+			t.Error(err)
+		}
 	}
 }
 

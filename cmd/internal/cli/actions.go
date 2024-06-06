@@ -350,7 +350,14 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 			cmd.Flag(actionHomeFlag.Name).Changed,
 			noHome,
 		),
-		launcher.OptMounts(bindPaths, mounts, fuseMount),
+		launcher.OptMounts(
+			launcher.MountSpecs{
+				Binds:      bindPaths,
+				DataBinds:  dataPaths,
+				Mounts:     mounts,
+				FuseMounts: fuseMount,
+			},
+		),
 		launcher.OptNoMount(noMount),
 		launcher.OptNvidia(nvidia, nvCCLI),
 		launcher.OptNoNvidia(noNvidia),

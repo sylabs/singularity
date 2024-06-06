@@ -572,6 +572,14 @@ func (l *Launcher) addUserBindMounts(mounts *[]specs.Mount) error {
 	if err != nil {
 		return fmt.Errorf("while parsing bind path: %w", err)
 	}
+	// A --data bind is an image-src=/ bind from an OCI-SIF data container image.
+	for _, d := range l.cfg.DataBinds {
+		bp, err := bind.ParseDataBindPath(d)
+		if err != nil {
+			return err
+		}
+		binds = append(binds, bp)
+	}
 	// Now add binds from one or more --mount and env var.
 	for _, m := range l.cfg.Mounts {
 		bps, err := bind.ParseMountString(m)
