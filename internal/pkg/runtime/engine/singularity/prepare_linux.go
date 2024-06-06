@@ -516,6 +516,10 @@ func (e *EngineOperations) prepareAutofs(starterConfig *starter.Config) error {
 // removeNamespace is used to remove a namespace from the slice of namespaces.
 // It is used mainly within prepareContainerConfig(...)
 func (e *EngineOperations) removeNamespace(namespaceType specs.LinuxNamespaceType) {
+	if e.EngineConfig.OciConfig.Linux == nil {
+		return
+	}
+
 	namespaces := e.EngineConfig.OciConfig.Linux.Namespaces
 	for i, ns := range namespaces {
 		if ns.Type == namespaceType {
@@ -532,18 +536,14 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	// always set mount namespace
 	e.EngineConfig.OciConfig.AddOrReplaceLinuxNamespace(specs.MountNamespace, "")
 
-	// if IPC namespace is not allowed remove it from namespaces
-	if !e.EngineConfig.File.AllowIpcNs && e.EngineConfig.OciConfig.Linux != nil {
+	// If any namespace is not allowed remove it from namespaces
+	if !e.EngineConfig.File.AllowIpcNs {
 		e.removeNamespace(specs.IPCNamespace)
 	}
-
-	// if PID namespace is not allowed remove it from namespaces
-	if !e.EngineConfig.File.AllowPidNs && e.EngineConfig.OciConfig.Linux != nil {
+	if !e.EngineConfig.File.AllowPidNs {
 		e.removeNamespace(specs.PIDNamespace)
 	}
-
-	// if UTS namespace is not allowed remove it from namespaces
-	if !e.EngineConfig.File.AllowUtsNs && e.EngineConfig.OciConfig.Linux != nil {
+	if !e.EngineConfig.File.AllowUtsNs {
 		e.removeNamespace(specs.UTSNamespace)
 		if e.EngineConfig.OciConfig.Hostname != "" {
 			sylog.Warningf("Container hostname cannot be set.")
