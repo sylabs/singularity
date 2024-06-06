@@ -302,7 +302,7 @@ func buildImage(ctx context.Context, opts *Opts, tarFile *os.File, listenSocket,
 			}
 			logrus.SetLevel(logrus.ErrorLevel)
 		}
-		_, err = d.UpdateFrom(context.TODO(), ch)
+		_, err = d.UpdateFrom(ctx, ch)
 		if err != nil {
 			pipeR.Close()
 		}
