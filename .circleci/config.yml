@@ -6,7 +6,7 @@ orbs:
 parameters:
   go-version:
     type: string
-    default: '1.21.10'
+    default: '1.22.4'
 
 executors:
   node:
@@ -38,13 +38,13 @@ executors:
       - image: ubuntu:24.04
   golangci-lint:
     docker:
-      - image: golangci/golangci-lint:v1.57.1
+      - image: golangci/golangci-lint:v1.59.0
   ubuntu-machine:
     machine:
-      image: ubuntu-2204:2022.10.2
+      image: ubuntu-2204:2024.04.4
   ubuntu-machine-large:
     machine:
-      image: ubuntu-2204:2022.10.2
+      image: ubuntu-2204:2024.04.4
     resource_class: large
 
 commands:
