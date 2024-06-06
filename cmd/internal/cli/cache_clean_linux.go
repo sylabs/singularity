@@ -77,7 +77,7 @@ var (
 	// cacheCleanCmd is 'singularity cache clean' and will clear your local singularity cache
 	cacheCleanCmd = &cobra.Command{
 		DisableFlagsInUseLine: true,
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, _ []string) {
 			if err := cleanCache(); err != nil {
 				sylog.Fatalf("Handle clean failed: %v", err)
 			}

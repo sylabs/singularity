@@ -47,7 +47,7 @@ var overlayCreateDirFlag = cmdline.Flag{
 // OverlayCreateCmd is the 'overlay create' command that allows to create writable overlay.
 var OverlayCreateCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
+	RunE: func(_ *cobra.Command, args []string) error {
 		if err := singularity.OverlayCreate(overlaySize, args[0], overlaySparse, overlayDirs...); err != nil {
 			sylog.Fatalf(err.Error())
 		}

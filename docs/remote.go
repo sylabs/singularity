@@ -40,10 +40,10 @@ const (
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote get-login-password
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RemoteGetLoginPasswordUse     string = `get-login-password`
+	RemoteGetLoginPasswordUse     string = `get-login-password` //nolint:gosec
 	RemoteGetLoginPasswordShort   string = `Retrieves the cli secret for the currently logged in user`
 	RemoteGetLoginPasswordLong    string = `The 'remote get-login-password' command allows you to retrieve the cli secret for the currently user.`
-	RemoteGetLoginPasswordExample string = `$ singularity remote get-login-password | docker login -u user --password-stdin https://harbor.sylabs.io`
+	RemoteGetLoginPasswordExample string = `$ singularity remote get-login-password | docker login -u user --password-stdin https://harbor.sylabs.io` //nolint:gosec
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote add command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

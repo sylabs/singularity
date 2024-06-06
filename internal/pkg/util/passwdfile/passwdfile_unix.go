@@ -46,7 +46,6 @@ func readColonFile(r io.Reader, fn lineFunc, readCols int) (v any, err error) {
 		for {
 			var line []byte
 			line, isPrefix, err = rd.ReadLine()
-
 			if err != nil {
 				// We should return (nil, nil) if EOF is reached
 				// without a match.

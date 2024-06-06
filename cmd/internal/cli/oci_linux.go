@@ -136,7 +136,7 @@ var OciCreateCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		if err := singularity.OciCreate(args[0], &ociArgs); err != nil {
 			sylog.Fatalf("%s", err)
 		}
@@ -172,7 +172,7 @@ var OciStartCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		if err := singularity.OciStart(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
@@ -204,7 +204,7 @@ var OciKillCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		killSignal := ""
 		if len(args) > 1 && args[1] != "" {
 			killSignal = args[1]
@@ -229,7 +229,7 @@ var OciStateCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		if err := singularity.OciState(args[0], &ociArgs); err != nil {
 			sylog.Fatalf("%s", err)
 		}
@@ -245,7 +245,7 @@ var OciAttachCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		if err := oci.Attach(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
@@ -261,7 +261,7 @@ var OciExecCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		if err := singularity.OciExec(args[0], args[1:]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
@@ -277,7 +277,7 @@ var OciUpdateCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		if err := singularity.OciUpdate(args[0], &ociArgs); err != nil {
 			sylog.Fatalf("%s", err)
 		}
@@ -293,7 +293,7 @@ var OciPauseCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		if err := singularity.OciPause(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}
@@ -309,7 +309,7 @@ var OciResumeCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	PreRun:                CheckRoot,
-	Run: func(cmd *cobra.Command, args []string) {
+	Run: func(_ *cobra.Command, args []string) {
 		if err := singularity.OciResume(args[0]); err != nil {
 			sylog.Fatalf("%s", err)
 		}

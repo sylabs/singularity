@@ -176,7 +176,7 @@ func TestCheckLowerUpper(t *testing.T) {
 
 		// mock statfs
 		if tt.fsType > 0 {
-			statfs = func(path string, st *unix.Statfs_t) error {
+			statfs = func(_ string, st *unix.Statfs_t) error {
 				st.Type = tt.fsType
 				return nil
 			}
