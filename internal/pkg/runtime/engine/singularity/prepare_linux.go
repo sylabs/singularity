@@ -523,7 +523,7 @@ func (e *EngineOperations) removeNamespace(namespaceType specs.LinuxNamespaceTyp
 	namespaces := e.EngineConfig.OciConfig.Linux.Namespaces
 	for i, ns := range namespaces {
 		if ns.Type == namespaceType {
-			sylog.Debugf("Not virtualizing %s namespace by configuration", namespaceType)
+			sylog.Warningf("Not virtualizing %s namespace by configuration", namespaceType)
 			e.EngineConfig.OciConfig.Linux.Namespaces = append(namespaces[:i], namespaces[i+1:]...)
 			break
 		}

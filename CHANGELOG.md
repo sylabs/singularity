@@ -8,8 +8,9 @@
   `--env-file` flag, files can be specified as a comma-separated list or
   by using the flag multiple times. Variables defined in later files take
   precedence.
-- `singularity.conf` now accepts setting the `allow uts ns` option, and can
-  invalidate the use of the `--uts` and `--hostname` flags.
+- `singularity.conf` now accepts setting new options regarding namespaces:
+  - `allow ipc ns` : disable the use of the `--ipc` flag.
+  - `allow uts ns` : invalidate the use of the `--uts` and `--hostname` flags.
 - A new `singularity data package` command allows files and directories to
   be packaged into an OCI-SIF data container.
 
