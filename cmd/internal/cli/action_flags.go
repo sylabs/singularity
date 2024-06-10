@@ -16,6 +16,7 @@ import (
 // actionflags.go contains flag variables for action-like commands to draw from
 var (
 	appName             string
+	dataPaths           []string
 	bindPaths           []string
 	mounts              []string
 	homePath            string
@@ -108,6 +109,16 @@ var actionBindFlag = cmdline.Flag{
 	EnvKeys:      []string{"BIND", "BINDPATH"},
 	Tag:          "<spec>",
 	EnvHandler:   cmdline.EnvAppendValue,
+}
+
+// --data
+var actionDataFlag = cmdline.Flag{
+	ID:           "actionDataFlag",
+	Value:        &dataPaths,
+	DefaultValue: []string{},
+	Name:         "data",
+	Usage:        "a data-container bind specification src:dest, where src is the path to the data container, and dest is the destination path in the container. Multiple data container binds can be given as a comma separated list.",
+	Tag:          "<spec>",
 }
 
 // --mount
@@ -820,6 +831,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionAllowSetuidFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionAppFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionApplyCgroupsFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionDataFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionBindFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionCleanEnvFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionCompatFlag, actionsInstanceCmd...)

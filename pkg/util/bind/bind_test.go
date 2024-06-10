@@ -200,3 +200,49 @@ func TestParseBindPath(t *testing.T) {
 		})
 	}
 }
+
+func TestParseDataBindPath(t *testing.T) {
+	tests := []struct {
+		name      string
+		bindpaths string
+		want      Path
+		wantErr   bool
+	}{
+		{
+			name:      "valid",
+			bindpaths: "data.oci.sif:/data",
+			want: Path{
+				Source:      "data.oci.sif",
+				Destination: "/data",
+				Options:     map[string]*Option{"image-src": {"/"}},
+			},
+		},
+		{
+			name:      "srcOnly",
+			bindpaths: "data.oci.sif",
+			wantErr:   true,
+		},
+		{
+			name:      "emptySrc",
+			bindpaths: ":/data",
+			wantErr:   true,
+		},
+		{
+			name:      "emptyDest",
+			bindpaths: "data.oci.sif:",
+			wantErr:   true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParseDataBindPath(tt.bindpaths)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ParseDataBindPath() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ParseDataBindPath() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

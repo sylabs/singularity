@@ -49,6 +49,8 @@ type Options struct {
 
 	// BindPaths lists paths to bind from host to container, which may be <src>:<dest> pairs.
 	BindPaths []string
+	// DataBinds lists data container binds, as <src sif>:<dest> pairs.
+	DataBinds []string
 	// FuseMount lists paths to be mounted into the container using a FUSE binary, and their options.
 	FuseMount []string
 	// Mounts lists paths to bind from host to container, from the docker compatible `--mount` flag (CSV format).
@@ -232,16 +234,30 @@ func OptHome(homeDir string, custom bool, disable bool) Option {
 	}
 }
 
+// MountSpecs holds the various kinds of mount specifications that can be a
+// applied to a container.
+type MountSpecs struct {
+	// Binds holds <src>[:<dst>[:<opts>]] bind mount specifications from the CLI
+	// --bind flag
+	Binds []string
+	// DataBinds holds <src sif>:<dst> data container bind specifications from
+	// the CLI --data flag.
+	DataBinds []string
+	// Mounts holds Docker csv style mount specifications from the CLI --mount
+	// flag.
+	Mounts []string
+	// FuseMounts holds <type>:<fuse command> <mountpoint> FUSE mount
+	// specifications from the CLI --fusemount flag.
+	FuseMounts []string
+}
+
 // OptMounts sets user-requested mounts to propagate into the container.
-//
-// binds lists bind mount specifications in Singularity's <src>:<dst>[:<opts>] format.
-// mounts lists bind mount specifications in Docker CSV processed format.
-// fuseMounts list FUSE mounts in <type>:<fuse command> <mountpoint> format.
-func OptMounts(binds []string, mounts []string, fuseMounts []string) Option {
+func OptMounts(ms MountSpecs) Option {
 	return func(lo *Options) error {
-		lo.BindPaths = binds
-		lo.Mounts = mounts
-		lo.FuseMount = fuseMounts
+		lo.BindPaths = ms.Binds
+		lo.DataBinds = ms.DataBinds
+		lo.Mounts = ms.Mounts
+		lo.FuseMount = ms.FuseMounts
 		return nil
 	}
 }
