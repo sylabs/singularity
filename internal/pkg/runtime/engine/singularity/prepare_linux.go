@@ -543,6 +543,9 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	if !e.EngineConfig.File.AllowPidNs {
 		e.removeNamespace(specs.PIDNamespace)
 	}
+	if !e.EngineConfig.File.AllowUserNs {
+		e.removeNamespace(specs.UserNamespace)
+	}
 	if !e.EngineConfig.File.AllowUtsNs {
 		e.removeNamespace(specs.UTSNamespace)
 		if e.EngineConfig.OciConfig.Hostname != "" {
