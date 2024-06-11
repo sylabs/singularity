@@ -17,6 +17,7 @@ import (
 
 	"github.com/sylabs/singularity/v4/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	testCache "github.com/sylabs/singularity/v4/internal/pkg/test/tool/cache"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
@@ -66,7 +67,11 @@ func TestOCIConveyorDocker(t *testing.T) {
 	}
 
 	b.Opts.ImgCache = imgCache
-
+	p, err := ociplatform.DefaultPlatform()
+	if err != nil {
+		t.Fatalf("failed to get DefaultPlatform: %v", err)
+	}
+	b.Opts.Platform = *p
 	cp := &sources.OCIConveyorPacker{}
 
 	err = cp.Get(context.Background(), b)
@@ -264,6 +269,11 @@ func TestOCIPacker(t *testing.T) {
 	imgCache, cleanup := setupCache(t)
 	defer cleanup()
 	b.Opts.ImgCache = imgCache
+	p, err := ociplatform.DefaultPlatform()
+	if err != nil {
+		t.Fatalf("failed to get DefaultPlatform: %v", err)
+	}
+	b.Opts.Platform = *p
 
 	err = ocp.Get(context.Background(), b)
 	// clean up tmpfs since assembler isn't called
