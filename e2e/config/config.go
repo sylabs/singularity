@@ -239,7 +239,7 @@ func (c configTests) configGlobal(t *testing.T) {
 		},
 		{
 			name:           "AllowUserNsNo",
-			argv:           []string{"--userns", c.env.ImagePath, "readlink", "/proc/self/ns/user"},
+			argv:           []string{"--userns", c.env.ImagePath, "true"},
 			profile:        e2e.UserProfile,
 			directive:      "allow user ns",
 			directiveValue: "no",
@@ -247,7 +247,7 @@ func (c configTests) configGlobal(t *testing.T) {
 		},
 		{
 			name:           "AllowUserNsNoFakeroot",
-			argv:           []string{"--fakeroot", c.env.ImagePath, "readlink", "/proc/self/ns/user"},
+			argv:           []string{"--fakeroot", c.env.ImagePath, "true"},
 			profile:        e2e.UserProfile,
 			directive:      "allow user ns",
 			directiveValue: "no",
