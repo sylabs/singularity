@@ -13,6 +13,7 @@ import (
 
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/machine"
 )
 
 const testSquash = "./testdata/squashfs.v4"
@@ -123,12 +124,17 @@ func TestSIFInitializer(t *testing.T) {
 			expectedSections:   0,
 		},
 		{
-			name:               "PrimaryPartitionOtherArchSIF",
-			path:               createSIF(t, false, primPartOtherArch),
-			writable:           false,
-			expectedSuccess:    false,
-			expectedPartitions: 0,
-			expectedSections:   0,
+			name:            "PrimaryPartitionOtherArchSIF",
+			path:            createSIF(t, false, primPartOtherArch),
+			writable:        false,
+			expectedSuccess: machine.CompatibleWith("s390x"),
+			expectedPartitions: func() int {
+				if machine.CompatibleWith("s390x") {
+					return 1
+				}
+				return 0
+			}(),
+			expectedSections: 0,
 		},
 		{
 			name:               "PrimaryPartitionSIF",
