@@ -7,77 +7,44 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
-	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/build/types/parser"
 )
 
-const yumDef = "../../../../examples/almalinux/Singularity"
-
-func TestYumConveyor(t *testing.T) {
-	// TODO - Centos puts non-amd64 at a different mirror location
-	// need multiple def files to test on other archs
-	require.Arch(t, "amd64")
-	require.RPMMacro(t, "_db_backend", "bdb")
-	require.RPMMacro(t, "_dbpath", "/var/lib/rpm")
-
+func TestYumEL(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
+	// EL9 uses newer sqlite DB, but older /var/lib/rpm DB path.
+	require.RPMMacro(t, "_db_backend", "sqlite")
+	require.RPMMacro(t, "_dbpath", "/var/lib/rpm")
+	require.ArchIn(t, []string{"amd64", "arm64"})
 
-	_, dnfErr := bin.FindBin("dnf")
-	_, yumErr := bin.FindBin("yum")
-	if dnfErr != nil && yumErr != nil {
-		t.Skip("skipping test, neither dnf nor yum found")
-	}
-
-	test.EnsurePrivilege(t)
-
-	defFile, err := os.Open(yumDef)
-	if err != nil {
-		t.Fatalf("unable to open file %s: %v\n", yumDef, err)
-	}
-	defer defFile.Close()
-
-	// create bundle to build into
-	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-yum"), os.TempDir())
-	if err != nil {
-		return
-	}
-
-	b.Recipe, err = parser.ParseDefinitionFile(defFile)
-	if err != nil {
-		t.Fatalf("failed to parse definition file %s: %v\n", yumDef, err)
-	}
-
-	yc := &YumConveyor{}
-
-	err = yc.Get(context.Background(), b)
-	// clean up bundle since assembler isn't called
-	defer yc.b.Remove()
-	if err != nil {
-		t.Fatalf("failed to Get from %s: %v\n", yumDef, err)
-	}
+	testYumConveyorPacker(t, fmt.Sprintf("../../../../examples/almalinux-%s/Singularity", runtime.GOARCH))
 }
 
-func TestYumPacker(t *testing.T) {
-	// TODO - Centos puts non-amd64 at a different mirror location
-	// need multiple def files to test on other archs
-	require.Arch(t, "amd64")
-	require.RPMMacro(t, "_db_backend", "bdb")
-	require.RPMMacro(t, "_dbpath", "/var/lib/rpm")
-
+func TestYumFedora(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
 	}
+	// Fedora 39+ uses newer sqlite DB, and newer /usr/lib/sysimage/rpmDB path.
+	require.RPMMacro(t, "_db_backend", "sqlite")
+	require.RPMMacro(t, "_dbpath", "/usr/lib/sysimage/rpm")
+	require.ArchIn(t, []string{"amd64", "arm64"})
 
+	testYumConveyorPacker(t, fmt.Sprintf("../../../../examples/fedora-%s/Singularity", runtime.GOARCH))
+}
+
+func testYumConveyorPacker(t *testing.T, yumDef string) {
 	_, dnfErr := exec.LookPath("dnf")
 	_, yumErr := exec.LookPath("yum")
 	if dnfErr != nil && yumErr != nil {
@@ -93,7 +60,8 @@ func TestYumPacker(t *testing.T) {
 	defer defFile.Close()
 
 	// create bundle to build into
-	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-yum"), os.TempDir())
+	tmpDir := t.TempDir()
+	b, err := types.NewBundle(filepath.Join(tmpDir, "sbuild-yum"), tmpDir)
 	if err != nil {
 		return
 	}

@@ -65,7 +65,6 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 	// see https://github.com/sylabs/singularity/issues/4407
 	tt := []struct {
 		name         string
-		dependency   string
 		buildSpec    string
 		requirements func(t *testing.T)
 	}{
@@ -109,7 +108,7 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 		},
 		{
 			name:      "Dnf AlmaLinux 9",
-			buildSpec: "../examples/almalinux/Singularity",
+			buildSpec: "../examples/almalinux-amd64/Singularity",
 			requirements: func(t *testing.T) {
 				require.Command(t, "dnf")
 				require.RPMMacro(t, "_db_backend", "sqlite")
@@ -118,9 +117,8 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 			},
 		},
 		{
-			name:       "DnfArm64 AlmaLinux 9",
-			dependency: "yum",
-			buildSpec:  "../examples/almalinux-arm64/Singularity",
+			name:      "DnfArm64 AlmaLinux 9",
+			buildSpec: "../examples/almalinux-arm64/Singularity",
 			requirements: func(t *testing.T) {
 				require.Command(t, "dnf")
 				require.RPMMacro(t, "_db_backend", "sqlite")
@@ -129,8 +127,8 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 			},
 		},
 		{
-			name:      "Dnf Fedora 37",
-			buildSpec: "../examples/fedora/Singularity",
+			name:      "Dnf Fedora",
+			buildSpec: "../examples/fedora-amd64/Singularity",
 			requirements: func(t *testing.T) {
 				require.Command(t, "dnf")
 				require.RPMMacro(t, "_db_backend", "sqlite")
@@ -139,9 +137,8 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 			},
 		},
 		{
-			name:       "DnfArm64 Fedora 37",
-			dependency: "yum",
-			buildSpec:  "../examples/fedora-arm64/Singularity",
+			name:      "DnfArm64 Fedora",
+			buildSpec: "../examples/fedora-arm64/Singularity",
 			requirements: func(t *testing.T) {
 				require.Command(t, "dnf")
 				require.RPMMacro(t, "_db_backend", "sqlite")
@@ -151,7 +148,7 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 		},
 		{
 			name:      "Zypper",
-			buildSpec: "../examples/opensuse/Singularity",
+			buildSpec: "../examples/opensuse-amd64/Singularity",
 			requirements: func(t *testing.T) {
 				require.Command(t, "zypper")
 				require.Arch(t, "amd64")
