@@ -15,6 +15,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/build/assemblers"
 	"github.com/sylabs/singularity/v4/internal/pkg/build/sources"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	testCache "github.com/sylabs/singularity/v4/internal/pkg/test/tool/cache"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
@@ -63,6 +64,11 @@ func TestSIFAssemblerDocker(t *testing.T) {
 		t.Fatalf("failed to create an image cache handle: %s", err)
 	}
 	b.Opts.ImgCache = imgCache
+	p, err := ociplatform.DefaultPlatform()
+	if err != nil {
+		t.Fatalf("failed to get DefaultPlatform: %v", err)
+	}
+	b.Opts.Platform = *p
 
 	ocp := &sources.OCIConveyorPacker{}
 
