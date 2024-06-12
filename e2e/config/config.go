@@ -247,8 +247,8 @@ func (c configTests) configGlobal(t *testing.T) {
 		},
 		{
 			name:           "AllowUserNsNoFakeroot",
-			argv:           []string{"--fakeroot", c.env.ImagePath, "true"},
-			profile:        e2e.UserProfile,
+			argv:           []string{c.env.ImagePath, "true"},
+			profile:        e2e.FakerootProfile,
 			directive:      "allow user ns",
 			directiveValue: "no",
 			exit:           255,
