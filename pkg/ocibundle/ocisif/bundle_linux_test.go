@@ -49,7 +49,7 @@ func TestFromImageRef(t *testing.T) {
 			}
 
 			if err := b.Create(context.Background(), nil); err != nil {
-				t.Errorf("While creating bundle: %s", err)
+				t.Fatalf("While creating bundle: %s", err)
 			}
 
 			ocitest.ValidateBundle(t, bundleDir)
