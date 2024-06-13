@@ -1,5 +1,11 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Use ABI 3 for Apparmor profile on Ubuntu <23.10.
+
 ## 4.1.3 \[2024-05-08\]
 
 ### Requirements
