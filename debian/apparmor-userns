@@ -1,4 +1,5 @@
-# Permit unprivileged user namespace creation for SingularityCE starter
+# Permit unprivileged user namespace creation for SingularityCE starter.
+# Uses AppArmor 4 ABI on Ubuntu >=23.10
 abi <abi/4.0>,
 include <tunables/global>
 

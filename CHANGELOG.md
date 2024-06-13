@@ -21,12 +21,10 @@
   directory.
 - Avoid unnecessary intermediate temporary image layout when building from
   Dockerfile to OCI-SIF.
-
-## Bug Fixes
-
 - `%files from` in a definition file will now correctly copy symlinks that point
   to a target above the destination directory, but inside the destination stage
   rootfs.
+- Use ABI 3 for Apparmor profile on Ubuntu <23.10.
 
 ## 4.1.3 \[2024-05-08\]
 
