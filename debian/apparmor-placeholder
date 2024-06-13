@@ -1,4 +1,6 @@
-abi <abi/4.0>,
+# Placeholder unconfined policy for Singularity starter binaries.
+# Uses AppArmor 3 ABI on Ubuntu <23.10
+abi <abi/3.0>,
 include <tunables/global>
  
 profile singularity-ce /usr/lib/@{multiarch}/singularity/bin/starter{,-suid} flags=(unconfined) {
