@@ -9,6 +9,7 @@ package push
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -16,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 )
 
 type ctx struct {
@@ -165,6 +167,47 @@ func (c ctx) testPushCmd(t *testing.T) {
 	}
 }
 
+func (c ctx) testPushOCITarLayers(t *testing.T) {
+	e2e.EnsureOCISIF(t, c.env)
+
+	imgRef := fmt.Sprintf("docker://%s/docker_oci-tar-layers:test", c.env.TestRegistry)
+
+	// Push OCI-SIF to registry with tar layer format.
+	args := []string{
+		"--layer-format",
+		"tar",
+		c.env.OCISIFPath,
+		imgRef,
+	}
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("push"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("push"),
+		e2e.WithArgs(args...),
+		e2e.ExpectExit(0),
+	)
+
+	// If docker is available, ensure image that was pushed can be run with docker.
+	t.Run("docker", func(t *testing.T) {
+		require.Command(t, "docker")
+		// Temporary homedir for docker commands, so invoking docker doesn't create
+		// a ~/.docker that may interfere elsewhere.
+		tmpHome, cleanupHome := e2e.MakeTempDir(t, c.env.TestDir, "docker-", "")
+		t.Cleanup(func() { e2e.Privileged(cleanupHome)(t) })
+		// Privileged so we can access docker socket.
+		e2e.Privileged(func(t *testing.T) {
+			dockerRef := strings.TrimPrefix(imgRef, "docker://")
+			cmd := exec.Command("docker", "run", "-i", "--rm", dockerRef, "/bin/true")
+			cmd.Env = append(cmd.Env, "HOME="+tmpHome)
+			out, err := cmd.CombinedOutput()
+			if err != nil {
+				t.Fatalf("Unexpected error while running command.\n%s: %s", err, string(out))
+			}
+		})(t)
+	})
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -174,5 +217,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	return testhelper.Tests{
 		"invalid transport": c.testInvalidTransport,
 		"oras":              c.testPushCmd,
+		"oci tar layers":    c.testPushOCITarLayers,
 	}
 }

@@ -13,6 +13,10 @@
   - `allow uts ns` : invalidate the use of the `--uts` and `--hostname` flags.
 - A new `singularity data package` command allows files and directories to
   be packaged into an OCI-SIF data container.
+- A new `--layer-format` flag for `singularity push` allows layers in an OCI-SIF
+  image to be pushed to `library://` and `docker://` registries in `squashfs`
+  (default) or `tar` format. Images pushed with `--layer-format tar` can be
+  pulled and run by other OCI runtimes.
 
 ### Bug Fixes
 

@@ -121,7 +121,6 @@ func (w *ImageWriter) Write() error {
 	}
 
 	if w.squashFSLayers {
-		sylog.Infof("Converting layers to SquashFS")
 		img, err = imgLayersToSquashfs(img, w.srcDigest, w.workDir)
 		if err != nil {
 			return fmt.Errorf("while converting layers: %w", err)
@@ -158,6 +157,7 @@ func imgLayersToSquashfs(img ggcrv1.Image, digest ggcrv1.Hash, workDir string) (
 		return img, err
 	}
 
+	sylog.Infof("Converting layers to SquashFS")
 	var sqOpts []mutate.SquashfsConverterOpt
 	if len(layers) == 1 {
 		sqOpts = []mutate.SquashfsConverterOpt{

@@ -14,9 +14,25 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/image"
 )
 
+// PushOptions provides options/configuration that determine the behavior of a
+// push to an OCI registry.
+type PushOptions struct {
+	// Auth provides optional explicit credentials for OCI registry authentication.
+	Auth *authn.AuthConfig
+	// AuthFile provides a path to a file containing OCI registry credentials.
+	AuthFile string
+	// LayerFormat sets an explicit layer format to use when pushing an OCI
+	// image. Either 'squashfs' or 'tar'. If unset, layers are pushed as
+	// squashfs.
+	LayerFormat string
+	// TmpDir is a temporary directory to be used for an temporary files created
+	// during the push.
+	TmpDir string
+}
+
 // Push pushes an image into an OCI registry, as an OCI image (not an ORAS artifact).
 // At present, only OCI-SIF images can be pushed in this manner.
-func Push(ctx context.Context, sourceFile string, destRef string, ociAuth *authn.AuthConfig, reqAuthFile string) error {
+func Push(ctx context.Context, sourceFile string, destRef string, opts PushOptions) error {
 	img, err := image.Init(sourceFile, false)
 	if err != nil {
 		return err
@@ -25,7 +41,13 @@ func Push(ctx context.Context, sourceFile string, destRef string, ociAuth *authn
 
 	switch img.Type {
 	case image.OCISIF:
-		return ocisif.PushOCISIF(ctx, sourceFile, destRef, ociAuth, reqAuthFile)
+		ocisifOpts := ocisif.PushOptions{
+			Auth:        opts.Auth,
+			AuthFile:    opts.AuthFile,
+			LayerFormat: opts.LayerFormat,
+			TmpDir:      opts.TmpDir,
+		}
+		return ocisif.PushOCISIF(ctx, sourceFile, destRef, ocisifOpts)
 	case image.SIF:
 		return fmt.Errorf("non OCI SIF images can only be pushed to OCI registries via oras://")
 	}

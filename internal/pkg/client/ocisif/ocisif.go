@@ -15,7 +15,10 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/tarball"
+	ocimutate "github.com/sylabs/oci-tools/pkg/mutate"
 	ocitsif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
@@ -135,8 +138,30 @@ func createOciSif(ctx context.Context, tOpts *ociimage.TransportOptions, imgCach
 	return w.Write()
 }
 
+const (
+	defaultLayerFormat  = ""
+	squashfsLayerFormat = "squashfs"
+	tarLayerFormat      = "tar"
+)
+
+// PushOptions provides options/configuration that determine the behavior of a
+// push to an OCI registry.
+type PushOptions struct {
+	// Auth provides optional explicit credentials for OCI registry authentication.
+	Auth *authn.AuthConfig
+	// AuthFile provides a path to a file containing OCI registry credentials.
+	AuthFile string
+	// LayerFormat sets an explicit layer format to use when pushing an OCI
+	// image. Either 'squashfs' or 'tar'. If unset, layers are pushed as
+	// squashfs.
+	LayerFormat string
+	// TmpDir is a temporary directory to be used for an temporary files created
+	// during the push.
+	TmpDir string
+}
+
 // PushOCISIF pushes a single image from sourceFile to the OCI registry destRef.
-func PushOCISIF(ctx context.Context, sourceFile, destRef string, ociAuth *authn.AuthConfig, reqAuthFile string) error {
+func PushOCISIF(ctx context.Context, sourceFile, destRef string, opts PushOptions) error {
 	destRef = strings.TrimPrefix(destRef, "docker://")
 	destRef = strings.TrimPrefix(destRef, "//")
 	ir, err := name.ParseReference(destRef)
@@ -168,8 +193,13 @@ func PushOCISIF(ctx context.Context, sourceFile, destRef string, ociAuth *authn.
 		return fmt.Errorf("while obtaining image: %w", err)
 	}
 
+	image, err = transformLayers(image, opts.LayerFormat, opts.TmpDir)
+	if err != nil {
+		return err
+	}
+
 	remoteOpts := []remote.Option{
-		ociauth.AuthOptn(ociAuth, reqAuthFile),
+		ociauth.AuthOptn(opts.Auth, opts.AuthFile),
 		remote.WithUserAgent(useragent.Value()),
 		remote.WithContext(ctx),
 	}
@@ -203,4 +233,43 @@ func PushOCISIF(ctx context.Context, sourceFile, destRef string, ociAuth *authn.
 	}
 
 	return remote.Write(ir, image, remoteOpts...)
+}
+
+func transformLayers(base v1.Image, layerFormat, tmpDir string) (v1.Image, error) {
+	ls, err := base.Layers()
+	if err != nil {
+		return nil, err
+	}
+
+	ms := []ocimutate.Mutation{}
+
+	for i, l := range ls {
+		// We always expect an OCI-SIF to contain squashfs layers, at present.
+		mt, err := l.MediaType()
+		if err != nil {
+			return nil, err
+		}
+		if mt != ocisif.SquashfsLayerMediaType {
+			return nil, fmt.Errorf("unexpected layer mediaType: %v", mt)
+		}
+
+		switch layerFormat {
+		case defaultLayerFormat, squashfsLayerFormat:
+			continue
+		case tarLayerFormat:
+			opener, err := ocimutate.TarFromSquashfsLayer(l, ocimutate.OptTarTempDir(tmpDir))
+			if err != nil {
+				return nil, err
+			}
+			tarLayer, err := tarball.LayerFromOpener(opener)
+			if err != nil {
+				return nil, err
+			}
+			ms = append(ms, ocimutate.SetLayer(i, tarLayer))
+		default:
+			return nil, fmt.Errorf("unsupported layer format: %v", layerFormat)
+		}
+	}
+
+	return ocimutate.Apply(base, ms...)
 }
