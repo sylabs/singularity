@@ -10,9 +10,7 @@ assignees: ''
 **Before you request a feature...**
 
 - [ ] Have you searched open issues for a duplicate feature request?
-- [ ] Have you checked the [latest
-  release](https://github.com/sylabs/singularity/releases) and [latest
-  documentation](https://sylabs.io/docs/), to see if it is already implemented?
+- [ ] Have you checked the [latest release](https://github.com/sylabs/singularity/releases) and [latest documentation](https://sylabs.io/docs/), to see if it is already implemented?
 
 **Is your feature request related to a problem? Please describe.**
 

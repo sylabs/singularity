@@ -7,9 +7,7 @@ assignees: ''
 
 ---
 
-*Note*: We encourage questions about usage of SingularityCE to be asked using
-GitHub Discussions, our Google Group or Slack channels. GitHub issues are
-intended for bug reports, feature requests, and other development purposes.
+*Note*: We encourage questions about usage of SingularityCE to be asked using GitHub Discussions, our Google Group or Slack channels. GitHub issues are intended for bug reports, feature requests, and other development purposes.
 
 See: https://sylabs.io/singularity#community for links.
 

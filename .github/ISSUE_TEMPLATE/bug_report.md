@@ -10,16 +10,11 @@ assignees: ''
 **Before you report an issue...**
 
 - [ ] Have you searched for a duplicate report?
-- [ ] Have you replicated the problem [on the latest
-  release](https://github.com/sylabs/singularity/releases)?
+- [ ] Have you replicated the problem [on the latest release](https://github.com/sylabs/singularity/releases)?
 - [ ] Have you checked the [latest documentation](https://sylabs.io/docs/)?
 - [ ] Are you using an up-to-date system?
 
-Only issues that can be replicated on the latest release, or development branch,
-of SingularityCE will be investigated and fixed. The open source project does
-not maintain long-term stable branches or fix bugs in prior versions. If you
-require LTS support then please see [the Sylabs
-website](https://sylabs.io/singularity-pro/).
+Only issues that can be replicated on the latest release, or development branch, of SingularityCE will be investigated and fixed. The open source project does not maintain long-term stable branches or fix bugs in prior versions. If you require LTS support then please see [the Sylabs website](https://sylabs.io/singularity-pro/).
 
 
 **Version of Singularity**
