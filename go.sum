@@ -256,8 +256,8 @@ github.com/gorilla/handlers v1.5.1/go.mod h1:t8XrUpc4KVXb7HGyJ4/cEnwQiaxrX/hz1Zv
 github.com/gorilla/mux v1.7.4/go.mod h1:DVbg23sWSpFRCP0SfiEN6jmj59UnW/n46BH5rLB71So=
 github.com/gorilla/mux v1.8.1 h1:TuBL49tXwgrFYWhqrNgrUNEY92u81SPhu7sTdzQEiWY=
 github.com/gorilla/mux v1.8.1/go.mod h1:AKf9I4AEqPTmMytcMc0KkNouC66V3BtZ4qD5fmWSiMQ=
-github.com/gorilla/websocket v1.5.1 h1:gmztn0JnHVt9JZquRuzLw3g4wouNVzKL15iLr/zn/QY=
-github.com/gorilla/websocket v1.5.1/go.mod h1:x3kM2JMyaluk02fnUJpQuwD2dCS5NDG2ZHL0uE0tcaY=
+github.com/gorilla/websocket v1.5.3 h1:saDtZ6Pbx/0u+bgYQ3q96pZgCzfhKXGPqt7kZ72aNNg=
+github.com/gorilla/websocket v1.5.3/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/gosimple/slug v1.14.0 h1:RtTL/71mJNDfpUbCOmnf/XFkzKRtD6wL6Uy+3akm4Es=
 github.com/gosimple/slug v1.14.0/go.mod h1:UiRaFH+GEilHstLUmcBgWcI42viBN7mAb818JrYOeFQ=
 github.com/gosimple/unidecode v1.0.1 h1:hZzFTMMqSswvf0LBJZCZgThIZrpDHFXux9KeGmn6T/o=
@@ -491,12 +491,12 @@ github.com/sylabs/json-resp v0.9.3 h1:9GuEmBb1ZHNhVlUEI1wzQSE4ol5avakmRnmeyXfmIk
 github.com/sylabs/json-resp v0.9.3/go.mod h1:Q9X4wRlZNPv3x76KaL8vTCBO4aC/DP2gh13xdtEqd1g=
 github.com/sylabs/oci-tools v0.10.0 h1:af2NUFdGoQnjd9U9fCRmWO65QOrVDsosttIj6mrjAP0=
 github.com/sylabs/oci-tools v0.10.0/go.mod h1:cZPg0FwNmUkrMUVDI7KMaociyDwR/pYyEqKb1PJlEk4=
-github.com/sylabs/scs-build-client v0.9.5 h1:hF0k0qEcFz6XLq1/IOUIKBXb3qH5VDQC6TRukN4RbzY=
-github.com/sylabs/scs-build-client v0.9.5/go.mod h1:BkYyKkVcgLf801U4tL0CHlw6dZhM4FhkJLDWc6Pg7Nw=
+github.com/sylabs/scs-build-client v0.9.6 h1:aUZtiixIjsfv0KvctbgV5uEP2ZwdrYCjt3tFx1nm/Zo=
+github.com/sylabs/scs-build-client v0.9.6/go.mod h1:l75uhZgPAWdwrUTAbhaEcKKF3AM9D15pbRk0u1I4fwE=
 github.com/sylabs/scs-key-client v0.7.6 h1:4PbySN/0UQpMVoXbhQjcxgZqdFZ6pRbMnCAB35u8ekk=
 github.com/sylabs/scs-key-client v0.7.6/go.mod h1:HZ0D/vqs4+HpVrbqStqH6cCTbI0nx2yeJ79o/84Fuf8=
-github.com/sylabs/scs-library-client v1.4.8 h1:i6gll7RvawSldUWDbuVAPbs/QcUknr/z1Zbbowpgq/k=
-github.com/sylabs/scs-library-client v1.4.8/go.mod h1:0h00NpRcJCRM7Vo1fZXAe3EVeFW2z/OhJwiIKSSLCMU=
+github.com/sylabs/scs-library-client v1.4.9 h1:pPuP5ADk+HvYxWPhBOa9iS9A5FGdfEMQBeXMa/u0k0M=
+github.com/sylabs/scs-library-client v1.4.9/go.mod h1:k7RyoTxHCbRPPZ0CmBOzOY3NuFyLhrfTQoNd9hmKcqQ=
 github.com/sylabs/sif/v2 v2.16.0 h1:2eqaBaQQsn5DZTzm3QZm0HupZQEjNXfxRnCmtyCihEU=
 github.com/sylabs/sif/v2 v2.16.0/go.mod h1:d5TxgD/mhMUU3kWLmZmWJQ99Wg0asaTP0bq3ezR1xpg=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 h1:kdXcSzyDtseVEc4yCz2qF8ZrQvIDBJLl4S1c3GCXmoI=
