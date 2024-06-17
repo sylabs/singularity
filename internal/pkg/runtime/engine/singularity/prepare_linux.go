@@ -530,7 +530,7 @@ func (e *EngineOperations) removeNamespace(namespaceType specs.LinuxNamespaceTyp
 	}
 }
 
-// isInNamespaces checks for existence of a specific namespace in the namespaces slice.
+// hasNamespaces checks for existence of a specific namespace in the namespaces slice.
 func (e *EngineOperations) hasNamespace(namespaceType specs.LinuxNamespaceType) bool {
 	namespaces := e.EngineConfig.OciConfig.Linux.Namespaces
 	for _, ns := range namespaces {
