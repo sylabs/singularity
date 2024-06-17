@@ -27,7 +27,7 @@ require (
 	github.com/fatih/color v1.17.0
 	github.com/go-log/log v0.2.0
 	github.com/gofrs/flock v0.8.1
-	github.com/google/go-containerregistry v0.19.1
+	github.com/google/go-containerregistry v0.19.2
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.14.0
 	github.com/moby/buildkit v0.14.0
