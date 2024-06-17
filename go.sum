@@ -493,8 +493,8 @@ github.com/sylabs/oci-tools v0.10.0 h1:af2NUFdGoQnjd9U9fCRmWO65QOrVDsosttIj6mrjA
 github.com/sylabs/oci-tools v0.10.0/go.mod h1:cZPg0FwNmUkrMUVDI7KMaociyDwR/pYyEqKb1PJlEk4=
 github.com/sylabs/scs-build-client v0.9.5 h1:hF0k0qEcFz6XLq1/IOUIKBXb3qH5VDQC6TRukN4RbzY=
 github.com/sylabs/scs-build-client v0.9.5/go.mod h1:BkYyKkVcgLf801U4tL0CHlw6dZhM4FhkJLDWc6Pg7Nw=
-github.com/sylabs/scs-key-client v0.7.5 h1:XNION7hpmZs7kWqQqCdlqqAFcY/QT0Hl0SFNPda5sp4=
-github.com/sylabs/scs-key-client v0.7.5/go.mod h1:HZ0D/vqs4+HpVrbqStqH6cCTbI0nx2yeJ79o/84Fuf8=
+github.com/sylabs/scs-key-client v0.7.6 h1:4PbySN/0UQpMVoXbhQjcxgZqdFZ6pRbMnCAB35u8ekk=
+github.com/sylabs/scs-key-client v0.7.6/go.mod h1:HZ0D/vqs4+HpVrbqStqH6cCTbI0nx2yeJ79o/84Fuf8=
 github.com/sylabs/scs-library-client v1.4.8 h1:i6gll7RvawSldUWDbuVAPbs/QcUknr/z1Zbbowpgq/k=
 github.com/sylabs/scs-library-client v1.4.8/go.mod h1:0h00NpRcJCRM7Vo1fZXAe3EVeFW2z/OhJwiIKSSLCMU=
 github.com/sylabs/sif/v2 v2.16.0 h1:2eqaBaQQsn5DZTzm3QZm0HupZQEjNXfxRnCmtyCihEU=
