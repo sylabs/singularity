@@ -243,7 +243,7 @@ func (c configTests) configGlobal(t *testing.T) {
 			profile:        e2e.UserProfile,
 			directive:      "allow user ns",
 			directiveValue: "no",
-			exit:           1,
+			exit:           255,
 		},
 		{
 			name:           "AllowUserNsNoFakeroot",
