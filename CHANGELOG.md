@@ -10,6 +10,9 @@
   precedence.
 - `singularity.conf` now accepts setting new options regarding namespaces:
   - `allow ipc ns` : disable the use of the `--ipc` flag.
+  - `allow user ns` : disable creation of user namespaces. This will prevent
+    execution of containers with the `--userns` or `--fakeroot` flags, and
+    unprivileged installations of SingularityCE.
   - `allow uts ns` : invalidate the use of the `--uts` and `--hostname` flags.
 - A new `singularity data package` command allows files and directories to
   be packaged into an OCI-SIF data container.
