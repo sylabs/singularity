@@ -531,7 +531,7 @@ func (e *EngineOperations) removeNamespace(namespaceType specs.LinuxNamespaceTyp
 }
 
 // isInNamespaces checks for existence of a specific namespace in the namespaces slice.
-func (e *EngineOperations) isInNamespaces(namespaceType specs.LinuxNamespaceType) bool {
+func (e *EngineOperations) hasNamespace(namespaceType specs.LinuxNamespaceType) bool {
 	namespaces := e.EngineConfig.OciConfig.Linux.Namespaces
 	for _, ns := range namespaces {
 		if namespaceType == ns.Type {
@@ -558,7 +558,7 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 		if buildcfg.SINGULARITY_SUID_INSTALL == 0 {
 			sylog.Fatalf("Unprivileged installation found, user namepace needed but not allowed by configuration.")
 		}
-		if e.isInNamespaces(specs.UserNamespace) {
+		if e.hasNamespace(specs.UserNamespace) {
 			sylog.Fatalf("User namespace required but not allowed by configuration.")
 		}
 	}

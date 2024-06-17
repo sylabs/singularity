@@ -239,8 +239,8 @@ func (c configTests) configGlobal(t *testing.T) {
 		},
 		{
 			name:           "AllowUserNsNo",
-			argv:           []string{"--userns", c.env.ImagePath, "true"},
-			profile:        e2e.UserProfile,
+			argv:           []string{c.env.ImagePath, "true"},
+			profile:        e2e.UserNamespaceProfile,
 			directive:      "allow user ns",
 			directiveValue: "no",
 			exit:           255,
@@ -255,8 +255,8 @@ func (c configTests) configGlobal(t *testing.T) {
 		},
 		{
 			name:           "AllowUserNsYes",
-			argv:           []string{"--userns", c.env.ImagePath, "readlink", "/proc/self/ns/user"},
-			profile:        e2e.UserProfile,
+			argv:           []string{c.env.ImagePath, "readlink", "/proc/self/ns/user"},
+			profile:        e2e.UserNamespaceProfile,
 			directive:      "allow user ns",
 			directiveValue: "yes",
 			exit:           0,
