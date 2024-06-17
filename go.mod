@@ -50,7 +50,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.9.3
 	github.com/sylabs/oci-tools v0.10.0
-	github.com/sylabs/scs-build-client v0.9.5
+	github.com/sylabs/scs-build-client v0.9.6
 	github.com/sylabs/scs-key-client v0.7.6
 	github.com/sylabs/scs-library-client v1.4.9
 	github.com/sylabs/sif/v2 v2.16.0
@@ -124,7 +124,7 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/gorilla/handlers v1.5.1 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
-	github.com/gorilla/websocket v1.5.1 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.18.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
