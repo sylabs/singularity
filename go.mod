@@ -52,7 +52,7 @@ require (
 	github.com/sylabs/oci-tools v0.10.0
 	github.com/sylabs/scs-build-client v0.9.5
 	github.com/sylabs/scs-key-client v0.7.5
-	github.com/sylabs/scs-library-client v1.4.8
+	github.com/sylabs/scs-library-client v1.4.9
 	github.com/sylabs/sif/v2 v2.16.0
 	github.com/sylabs/squashfs v0.6.1
 	github.com/vbauerster/mpb/v8 v8.7.3
