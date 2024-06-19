@@ -14,7 +14,7 @@ require (
 	github.com/containerd/containerd v1.7.18
 	github.com/containerd/continuity v0.4.3
 	github.com/containerd/go-runc v1.1.0
-	github.com/containernetworking/cni v1.2.0
+	github.com/containernetworking/cni v1.2.1
 	github.com/containernetworking/plugins v1.5.1
 	github.com/containers/common v0.59.1
 	github.com/containers/image/v5 v5.31.0
