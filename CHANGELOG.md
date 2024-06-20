@@ -11,6 +11,8 @@
 - Avoid unnecessary copying / extraction of OCI images and Docker tarballs into
   a layout directory when they are directly accessible as a local file /
   directory.
+- Avoid unnecessary intermediate temporary image layout when building from
+  Dockerfile to OCI-SIF.
 
 ## 4.1.3 \[2024-05-08\]
 

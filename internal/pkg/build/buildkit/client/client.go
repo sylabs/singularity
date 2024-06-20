@@ -123,7 +123,7 @@ func Run(ctx context.Context, opts *Opts, dest, spec string) error {
 		}
 		pullOpts.Platform = *platform
 	}
-	if _, err := ocisif.PullOCISIF(ctx, nil, dest, "oci-archive:"+tarFile.Name(), pullOpts); err != nil {
+	if _, err := ocisif.PullOCISIF(ctx, nil, dest, "docker-archive:"+tarFile.Name(), pullOpts); err != nil {
 		return fmt.Errorf("while converting OCI tar image to OCI-SIF: %w", err)
 	}
 
