@@ -6,6 +6,12 @@
 
 - Use ABI 3 for Apparmor profile on Ubuntu <23.10.
 
+### Bug Fixes
+
+- Avoid unnecessary copying / extraction of OCI images and Docker tarballs into
+  a layout directory when they are directly accessible as a local file /
+  directory.
+
 ## 4.1.3 \[2024-05-08\]
 
 ### Requirements

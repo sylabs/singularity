@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -162,20 +162,19 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 		return fmt.Errorf("failed to generate OCI bundle/config: %s", err)
 	}
 
-	// Get a reference to an OCI layout source for the image, fetching the image
-	// through the cache if it is enabled.
+	// Ensure we have a reference to the image as a local file / layout,
+	// fetching the image through the cache / tmpdir if necessary.
 	tmpLayout, err := os.MkdirTemp(b.tmpDir, "oci-tmp-layout")
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(tmpLayout)
-
-	layoutImg, err := ociimage.FetchToLayout(ctx, b.transportOptions, b.imgCache, b.imageRef, tmpLayout)
+	localImg, err := ociimage.LocalImage(ctx, b.transportOptions, b.imgCache, b.imageRef, tmpLayout)
 	if err != nil {
 		return err
 	}
 
-	manifestData, err := layoutImg.RawManifest()
+	manifestData, err := localImg.RawManifest()
 	if err != nil {
 		return fmt.Errorf("error obtaining manifest source: %s", err)
 	}
@@ -184,7 +183,7 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 		return fmt.Errorf("error parsing manifest: %w", err)
 	}
 
-	configData, err := layoutImg.RawConfigFile()
+	configData, err := localImg.RawConfigFile()
 	if err != nil {
 		return fmt.Errorf("error obtaining image config source: %s", err)
 	}
@@ -202,7 +201,7 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	}
 	pristineRootfs := filepath.Join(b.rootfsParentDir, "rootfs")
 
-	if err := ociimage.UnpackRootfs(ctx, layoutImg, pristineRootfs); err != nil {
+	if err := ociimage.UnpackRootfs(ctx, localImg, pristineRootfs); err != nil {
 		return err
 	}
 
