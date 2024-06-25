@@ -14,7 +14,7 @@ require (
 	github.com/containerd/containerd v1.7.18
 	github.com/containerd/continuity v0.4.3
 	github.com/containerd/go-runc v1.1.0
-	github.com/containernetworking/cni v1.2.0
+	github.com/containernetworking/cni v1.2.2
 	github.com/containernetworking/plugins v1.5.1
 	github.com/containers/image/v5 v5.31.1
 	github.com/coreos/go-systemd/v22 v22.5.0
@@ -75,7 +75,6 @@ require (
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
 	github.com/AdamKorcz/go-fuzz-headers v0.0.0-20210319161527-f761c2329661 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
-	github.com/Masterminds/semver/v3 v3.2.1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Microsoft/hcsshim v0.12.3 // indirect
 	github.com/VividCortex/ewma v1.2.0 // indirect
