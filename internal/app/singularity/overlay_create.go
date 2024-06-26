@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.package singularity
@@ -7,6 +7,7 @@ package singularity
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -17,6 +18,7 @@ import (
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/pkg/image"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/sys/unix"
 )
 
@@ -26,8 +28,16 @@ const (
 	truncateBinary = "truncate"
 )
 
-// isSigned returns true if the SIF in rw contains one or more signature objects.
-func isSigned(rw sif.ReadWriter) (bool, error) {
+var (
+	errOverlayEncrypted = errors.New("cannot add overlay to an encrypted image")
+	errOverlaySigned    = errors.New("cannot add overlay to a signed image")
+	errOverlayExists    = errors.New("writable overlay already exists in image")
+	errOverlayEXT3      = errors.New("image is an EXT3 filesystem that can be used as an overlay directly")
+	errOverlayNotSIF    = errors.New("cannot add an overlay to a non-SIF image")
+)
+
+// sifIsSigned returns true if the SIF in rw contains one or more signature objects.
+func sifIsSigned(rw sif.ReadWriter) (bool, error) {
 	f, err := sif.LoadContainer(rw,
 		sif.OptLoadWithFlag(os.O_RDONLY),
 		sif.OptLoadWithCloseOnUnload(false),
@@ -41,8 +51,48 @@ func isSigned(rw sif.ReadWriter) (bool, error) {
 	return len(sigs) > 0, err
 }
 
-// addOverlayToImage adds the EXT3 overlay at overlayPath to the SIF image at imagePath.
-func addOverlayToImage(imagePath, overlayPath string) error {
+// canAddOverlay checks whether img supports having an overlay added. Err is set
+// where it cannot.
+func canAddOverlay(img *image.Image) (bool, error) {
+	switch img.Type {
+	case image.SIF:
+		e, err := img.HasEncryptedRootFs()
+		if err != nil {
+			return false, fmt.Errorf("while checking for encryption: %s", err)
+		}
+		if e {
+			return false, errOverlayEncrypted
+		}
+
+		signed, err := sifIsSigned(img.File)
+		if err != nil {
+			return false, fmt.Errorf("while checking for signatures: %s", err)
+		} else if signed {
+			return false, errOverlaySigned
+		}
+
+		overlays, err := img.GetOverlayPartitions()
+		if err != nil {
+			return false, fmt.Errorf("while getting SIF overlay partitions: %s", err)
+		}
+		for _, overlay := range overlays {
+			if overlay.Type != image.EXT3 {
+				continue
+			}
+			sylog.Infof("Existing overlay partition can be deleted with: singularity sif del %d %s", overlay.ID, img.Path)
+			return false, errOverlayExists
+		}
+	case image.EXT3:
+		return false, errOverlayEXT3
+	default:
+		return false, errOverlayNotSIF
+	}
+
+	return true, nil
+}
+
+// addOverlayToSIF adds the EXT3 overlay at overlayPath to the SIF image at imagePath.
+func addOverlayToSIF(imagePath, overlayPath string) error {
 	f, err := sif.LoadContainerFromPath(imagePath)
 	if err != nil {
 		return err
@@ -94,26 +144,10 @@ func findConvertCommand(overlaySparse bool) (string, error) {
 	return command, nil
 }
 
-// OverlayCreate creates the overlay with an optional size, image path, dirs, and sparse option.
-func OverlayCreate(size int, imgPath string, overlaySparse bool, overlayDirs ...string) error {
-	if size < 64 {
-		return fmt.Errorf("image size must be equal or greater than 64 MiB")
-	}
-
-	mkfs, err := bin.FindBin(mkfsBinary)
-	if err != nil {
-		return err
-	}
-
-	// This can be dd or truncate (if supported and --sparse is true)
-	convertCommand, err := findConvertCommand(overlaySparse)
-	if err != nil {
-		return err
-	}
-
-	buf := new(bytes.Buffer)
-
+// checkMkfsSupport checks if the mkfs binary support features required for overlay creation.
+func checkMkfsSupport(mkfs string) error {
 	// check if -d option is available
+	buf := new(bytes.Buffer)
 	cmd := exec.Command(mkfs, "--help")
 	cmd.Stderr = buf
 	// ignore error because the command always returns with exit code 1
@@ -123,73 +157,43 @@ func OverlayCreate(size int, imgPath string, overlaySparse bool, overlayDirs ...
 		return fmt.Errorf("%s seems too old as it doesn't support -d, this is required to create the overlay layout", mkfsBinary)
 	}
 
-	sifImage := false
+	return nil
+}
 
-	if err := unix.Access(imgPath, unix.W_OK); err == nil {
-		img, err := image.Init(imgPath, false)
-		if err != nil {
-			return fmt.Errorf("while opening image file %s: %s", imgPath, err)
-		}
-		switch img.Type {
-		case image.SIF:
-			sysPart, err := img.GetRootFsPartition()
-			if err != nil {
-				return fmt.Errorf("while getting root FS partition: %s", err)
-			} else if sysPart.Type == image.ENCRYPTSQUASHFS {
-				return fmt.Errorf("encrypted root FS partition in %s: could not add writable overlay", imgPath)
-			}
-
-			overlays, err := img.GetOverlayPartitions()
-			if err != nil {
-				return fmt.Errorf("while getting SIF overlay partitions: %s", err)
-			}
-			signed, err := isSigned(img.File)
-			if err != nil {
-				return fmt.Errorf("while getting SIF info: %s", err)
-			} else if signed {
-				return fmt.Errorf("SIF image %s is signed: could not add writable overlay", imgPath)
-			}
-
-			img.File.Close()
-
-			for _, overlay := range overlays {
-				if overlay.Type != image.EXT3 {
-					continue
-				}
-				delCmd := fmt.Sprintf("singularity sif del %d %s", overlay.ID, imgPath)
-				return fmt.Errorf("a writable overlay partition already exists in %s (ID: %d), delete it first with %q", imgPath, overlay.ID, delCmd)
-			}
-
-			sifImage = true
-		case image.EXT3:
-			return fmt.Errorf("EXT3 overlay image %s already exists", imgPath)
-		default:
-			return fmt.Errorf("destination image must be SIF image")
-		}
+// createOverlayFile creates a file holding an ext3 fs of specified size (MiB)
+// and sparseness, suitable for use as a writable overlay. The file is created
+// at path. Any directories listed in overlayDirs will be created in the overlay
+// filesystem.
+func createOverlayFile(path string, size int, sparse bool, overlayDirs ...string) error {
+	mkfs, err := bin.FindBin(mkfsBinary)
+	if err != nil {
+		return err
+	}
+	if err := checkMkfsSupport(mkfs); err != nil {
+		return err
 	}
 
-	tmpFile := imgPath + ".ext3"
-	defer func() {
-		_ = os.Remove(tmpFile)
-	}()
+	// This can be dd or truncate (if supported and --sparse is true)
+	convertCommand, err := findConvertCommand(sparse)
+	if err != nil {
+		return err
+	}
+	var cmd *exec.Cmd
+	if strings.Contains(convertCommand, "truncate") {
+		cmd = exec.Command(convertCommand, fmt.Sprintf("--size=%dM", size), path)
+	} else {
+		cmd = exec.Command(convertCommand, "if=/dev/zero", "of="+path, "bs=1M", fmt.Sprintf("count=%d", size))
+	}
 
 	errBuf := new(bytes.Buffer)
-
-	// truncate has a different interaction than dd
-	if strings.Contains(convertCommand, "truncate") {
-		cmd = exec.Command(convertCommand, fmt.Sprintf("--size=%dM", size), tmpFile)
-	} else {
-		cmd = exec.Command(convertCommand, "if=/dev/zero", "of="+tmpFile, "bs=1M", fmt.Sprintf("count=%d", size))
-	}
-
 	cmd.Stderr = errBuf
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("while zero'ing overlay image %s: %s\nCommand error: %s", tmpFile, err, errBuf)
+		return fmt.Errorf("while zero'ing overlay image %s: %s\nCommand error: %s", path, err, errBuf)
 	}
 	errBuf.Reset()
 
-	if err := os.Chmod(tmpFile, 0o600); err != nil {
-		return fmt.Errorf("while setting 0600 permission on %s: %s", tmpFile, err)
+	if err := os.Chmod(path, 0o600); err != nil {
+		return fmt.Errorf("while setting 0600 permission on %s: %s", path, err)
 	}
 
 	tmpDir, err := os.MkdirTemp("", "overlay-")
@@ -229,15 +233,46 @@ func OverlayCreate(size int, imgPath string, overlaySparse bool, overlayDirs ...
 		}
 	}
 
-	cmd = exec.Command(mkfs, "-d", tmpDir, tmpFile)
+	cmd = exec.Command(mkfs, "-d", tmpDir, path)
 	cmd.Stderr = errBuf
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("while creating ext3 partition in %s: %s\nCommand error: %s", tmpFile, err, errBuf)
+		return fmt.Errorf("while creating ext3 partition in %s: %s\nCommand error: %s", path, err, errBuf)
 	}
 	errBuf.Reset()
+	return nil
+}
 
-	if sifImage {
-		if err := addOverlayToImage(imgPath, tmpFile); err != nil {
+// OverlayCreate creates an overlay at imgPath, or adds an overlay to imgPath if
+// it is a SIF file. The overlay will have specified size (MiB) and sparseness.
+// Any directories listed in overlayDirs will be created in the overlay fs.
+func OverlayCreate(imgPath string, size int, sparse bool, overlayDirs ...string) error {
+	if size < 64 {
+		return fmt.Errorf("image size must be equal or greater than 64 MiB")
+	}
+
+	// If the imgPath exists, verify it's a SIF that we can add an overlay to.
+	addToSIF := false
+	if err := unix.Access(imgPath, unix.W_OK); err == nil {
+		img, err := image.Init(imgPath, false)
+		if err != nil {
+			return fmt.Errorf("while opening image file %s: %s", imgPath, err)
+		}
+		addToSIF, err = canAddOverlay(img)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Create the overlay in a separate file.
+	tmpFile := imgPath + ".ext3"
+	defer os.Remove(tmpFile)
+	if err := createOverlayFile(tmpFile, size, sparse, overlayDirs...); err != nil {
+		return err
+	}
+
+	// Add overlay into the SIF, or move to specified location.
+	if addToSIF {
+		if err := addOverlayToSIF(imgPath, tmpFile); err != nil {
 			return fmt.Errorf("while adding ext3 overlay partition to %s: %w", imgPath, err)
 		}
 	} else {
