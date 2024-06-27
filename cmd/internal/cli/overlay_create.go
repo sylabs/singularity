@@ -48,7 +48,7 @@ var overlayCreateDirFlag = cmdline.Flag{
 var OverlayCreateCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	RunE: func(_ *cobra.Command, args []string) error {
-		if err := singularity.OverlayCreate(overlaySize, args[0], overlaySparse, overlayDirs...); err != nil {
+		if err := singularity.OverlayCreate(args[0], overlaySize, overlaySparse, overlayDirs...); err != nil {
 			sylog.Fatalf(err.Error())
 		}
 		return nil
