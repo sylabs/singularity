@@ -6955,6 +6955,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **License:** BSD-3-Clause
 
 ```
+Copyright (c) 2018-2024, The Gofrs
 Copyright (c) 2015-2020, Tim Heckman
 All rights reserved.
 
