@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/sylabs/sif/v2/pkg/sif"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -82,6 +83,22 @@ func canAddOverlay(img *image.Image) (bool, error) {
 			sylog.Infof("Existing overlay partition can be deleted with: singularity sif del %d %s", overlay.ID, img.Path)
 			return false, errOverlayExists
 		}
+
+	case image.OCISIF:
+		signed, err := sifIsSigned(img.File)
+		if err != nil {
+			return false, fmt.Errorf("while checking for signatures: %s", err)
+		} else if signed {
+			return false, errOverlaySigned
+		}
+
+		hasOverlay, err := ocisif.HasOverlay(img.Path)
+		if err != nil {
+			return false, fmt.Errorf("while checking for overlays: %s", err)
+		} else if hasOverlay {
+			return false, errOverlayExists
+		}
+
 	case image.EXT3:
 		return false, errOverlayEXT3
 	default:
@@ -251,13 +268,13 @@ func OverlayCreate(imgPath string, size int, sparse bool, overlayDirs ...string)
 	}
 
 	// If the imgPath exists, verify it's a SIF that we can add an overlay to.
-	addToSIF := false
+	var img *image.Image
 	if err := unix.Access(imgPath, unix.W_OK); err == nil {
-		img, err := image.Init(imgPath, false)
+		img, err = image.Init(imgPath, false)
 		if err != nil {
 			return fmt.Errorf("while opening image file %s: %s", imgPath, err)
 		}
-		addToSIF, err = canAddOverlay(img)
+		_, err = canAddOverlay(img)
 		if err != nil {
 			return err
 		}
@@ -270,16 +287,17 @@ func OverlayCreate(imgPath string, size int, sparse bool, overlayDirs ...string)
 		return err
 	}
 
-	// Add overlay into the SIF, or move to specified location.
-	if addToSIF {
-		if err := addOverlayToSIF(imgPath, tmpFile); err != nil {
-			return fmt.Errorf("while adding ext3 overlay partition to %s: %w", imgPath, err)
-		}
-	} else {
+	// No existing image - move overlay file to permanent location.
+	if img == nil {
 		if err := os.Rename(tmpFile, imgPath); err != nil {
 			return fmt.Errorf("while renaming %s to %s: %s", tmpFile, imgPath, err)
 		}
+		return nil
 	}
-
-	return nil
+	// Add to OCI-SIF
+	if img.Type == image.OCISIF {
+		return ocisif.AddOverlay(imgPath, tmpFile)
+	}
+	// Add to Native SIF
+	return addOverlayToSIF(imgPath, tmpFile)
 }
