@@ -71,4 +71,3 @@ issues:
       text: "^(G107|G204|G306):"
   exclude-files:
     - "internal/pkg/util/user/cgo_lookup_unix.go"
-
