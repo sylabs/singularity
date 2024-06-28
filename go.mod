@@ -214,4 +214,4 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace github.com/sylabs/oci-tools => ../oci-tools
+replace github.com/sylabs/oci-tools => github.com/dtrudg/oci-tools v0.0.0-20240625095656-fbf2ea4da11f

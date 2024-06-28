@@ -92,7 +92,7 @@ func canAddOverlay(img *image.Image) (bool, error) {
 			return false, errOverlaySigned
 		}
 
-		hasOverlay, err := ocisif.HasOverlay(img.File)
+		hasOverlay, err := ocisif.HasOverlay(img.Path)
 		if err != nil {
 			return false, fmt.Errorf("while checking for overlays: %s", err)
 		} else if hasOverlay {
@@ -293,18 +293,10 @@ func OverlayCreate(imgPath string, size int, sparse bool, overlayDirs ...string)
 			return fmt.Errorf("while renaming %s to %s: %s", tmpFile, imgPath, err)
 		}
 	}
-
-	// OCI-SIF
+	// Add to OCI-SIF
 	if img.Type == image.OCISIF {
-		if err := ocisif.AddOverlay(imgPath, tmpFile); err != nil {
-			return fmt.Errorf("while adding ext3 overlay partition to %s: %w", imgPath, err)
-		}
+		return ocisif.AddOverlay(imgPath, tmpFile)
 	}
-
-	// Native SIF
-	if err := addOverlayToSIF(imgPath, tmpFile); err != nil {
-		return fmt.Errorf("while adding ext3 overlay partition to %s: %w", imgPath, err)
-	}
-
-	return nil
+	// Add to Native SIF
+	return addOverlayToSIF(imgPath, tmpFile)
 }
