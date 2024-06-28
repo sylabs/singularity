@@ -21,8 +21,11 @@
   (default) or `tar` format. Images pushed with `--layer-format tar` can be
   pulled and run by other OCI runtimes.
 
+## 4.1.4 \[2024-06-28\]
+
 ### Bug Fixes
 
+- Use ABI 3 for Apparmor profile on Ubuntu <23.10.
 - Avoid unnecessary copying / extraction of OCI images and Docker tarballs into
   a layout directory when they are directly accessible as a local file /
   directory.
@@ -31,7 +34,6 @@
 - `%files from` in a definition file will now correctly copy symlinks that point
   to a target above the destination directory, but inside the destination stage
   rootfs.
-- Use ABI 3 for Apparmor profile on Ubuntu <23.10.
 
 ## 4.1.3 \[2024-05-08\]
 
