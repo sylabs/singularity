@@ -65,7 +65,6 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 	// see https://github.com/sylabs/singularity/issues/4407
 	tt := []struct {
 		name         string
-		dependency   string
 		buildSpec    string
 		requirements func(t *testing.T)
 	}{
@@ -108,29 +107,8 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 			buildSpec: c.env.OrasTestImage,
 		},
 		{
-			name:      "Yum CentOS7",
-			buildSpec: "../examples/centos/Singularity",
-			requirements: func(t *testing.T) {
-				require.Command(t, "yum")
-				require.RPMMacro(t, "_db_backend", "bdb")
-				require.RPMMacro(t, "_dbpath", "/var/lib/rpm")
-				require.Arch(t, "amd64")
-			},
-		},
-		{
-			name:       "YumArm64 CentOS 7",
-			dependency: "yum",
-			buildSpec:  "../examples/centos-arm64/Singularity",
-			requirements: func(t *testing.T) {
-				require.Command(t, "yum")
-				require.RPMMacro(t, "_db_backend", "bdb")
-				require.RPMMacro(t, "_dbpath", "/var/lib/rpm")
-				require.Arch(t, "arm64")
-			},
-		},
-		{
 			name:      "Dnf AlmaLinux 9",
-			buildSpec: "../examples/almalinux/Singularity",
+			buildSpec: "../examples/almalinux-amd64/Singularity",
 			requirements: func(t *testing.T) {
 				require.Command(t, "dnf")
 				require.RPMMacro(t, "_db_backend", "sqlite")
@@ -139,9 +117,8 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 			},
 		},
 		{
-			name:       "DnfArm64 AlmaLinux 9",
-			dependency: "yum",
-			buildSpec:  "../examples/almalinux-arm64/Singularity",
+			name:      "DnfArm64 AlmaLinux 9",
+			buildSpec: "../examples/almalinux-arm64/Singularity",
 			requirements: func(t *testing.T) {
 				require.Command(t, "dnf")
 				require.RPMMacro(t, "_db_backend", "sqlite")
@@ -150,8 +127,8 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 			},
 		},
 		{
-			name:      "Dnf Fedora 37",
-			buildSpec: "../examples/fedora/Singularity",
+			name:      "Dnf Fedora",
+			buildSpec: "../examples/fedora-amd64/Singularity",
 			requirements: func(t *testing.T) {
 				require.Command(t, "dnf")
 				require.RPMMacro(t, "_db_backend", "sqlite")
@@ -160,9 +137,8 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 			},
 		},
 		{
-			name:       "DnfArm64 Fedora 37",
-			dependency: "yum",
-			buildSpec:  "../examples/fedora-arm64/Singularity",
+			name:      "DnfArm64 Fedora",
+			buildSpec: "../examples/fedora-arm64/Singularity",
 			requirements: func(t *testing.T) {
 				require.Command(t, "dnf")
 				require.RPMMacro(t, "_db_backend", "sqlite")
@@ -172,7 +148,7 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 		},
 		{
 			name:      "Zypper",
-			buildSpec: "../examples/opensuse/Singularity",
+			buildSpec: "../examples/opensuse-amd64/Singularity",
 			requirements: func(t *testing.T) {
 				require.Command(t, "zypper")
 				require.Arch(t, "amd64")
@@ -1630,10 +1606,6 @@ func (c imgBuildTests) buildProot(t *testing.T) {
 			buildSpec: "testdata/proot_alpine.def",
 		},
 		{
-			name:      "CentOS",
-			buildSpec: "testdata/proot_centos.def",
-		},
-		{
 			name:      "Ubuntu",
 			buildSpec: "testdata/proot_ubuntu.def",
 		},
@@ -2476,7 +2448,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"issue 4967":                      c.issue4967,                     // https://github.com/sylabs/singularity/issues/4967
 		"issue 4969":                      c.issue4969,                     // https://github.com/sylabs/singularity/issues/4969
 		"issue 5166":                      c.issue5166,                     // https://github.com/sylabs/singularity/issues/5166
-		"issue 5250":                      c.issue5250,                     // https://github.com/sylabs/singularity/issues/5250
 		"issue 5315":                      c.issue5315,                     // https://github.com/sylabs/singularity/issues/5315
 		"issue 5435":                      c.issue5435,                     // https://github.com/hpcng/singularity/issues/5435
 		"issue 5668":                      c.issue5668,                     // https://github.com/hpcng/singularity/issues/5435

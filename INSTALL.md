@@ -59,29 +59,6 @@ sudo yum install -y \
     zlib-devel
 ```
 
-### RHEL / CentOS 7
-
-```sh
-# Install basic tools for compiling
-sudo yum groupinstall -y 'Development Tools'
-# Install RPM packages for dependencies
-sudo yum install -y \
-    autoconf \
-    automake \
-    cryptsetup \
-    fuse \
-    fuse3 \
-    fuse3-devel \
-    git \
-    glib2-devel \
-    libseccomp-devel \
-    libtool \
-    runc \
-    squashfs-tools \
-    wget \
-    zlib-devel
-```
-
 ### SLES / openSUSE Leap
 
 ```sh
@@ -127,7 +104,7 @@ above. No further action is necessary.
 On Fedora, the `squashfs-tools` package includes `sqfstar`. No further action is
 necessary.
 
-### RHEL / Alma Linux / Rocky Linux / CentOS
+### RHEL / Alma Linux / Rocky Linux
 
 On RHEL and derivatives, the `squashfs-tools-ng` package is now
 available in the EPEL repositories.
@@ -143,16 +120,8 @@ Follow the [EPEL Quickstart](https://docs.fedoraproject.org/en-US/epel/#_quickst
 for you distribution to enable the EPEL repository. Install `squashfs-tools-ng` with
 `dnf` or `yum`.
 
-#### EL 8 / 9
-
 ```sh
 sudo dnf install squashfs-tools-ng
-```
-
-#### EL 7
-
-```sh
-sudo yum install squashfs-tools-ng
 ```
 
 ### SLES / openSUSE Leap
@@ -307,10 +276,10 @@ system.
 
 ## Building & Installing from an RPM
 
-On a RHEL / CentOS / Fedora machine you can build a SingularityCE into an RPM
-package, and install it from the RPM. This is useful if you need to install
-Singularity across multiple machines, or wish to manage all software via
-`yum/dnf`.
+On a RHEL / AlmaLinux / Rocky Linux / Fedora machine you can build a
+SingularityCE into an RPM package, and install it from the RPM. This is useful
+if you need to install Singularity across multiple machines, or wish to manage
+all software via `yum/dnf`.
 
 To build the RPM, you first need to install the
 [system dependencies](#install-system-dependencies) and
