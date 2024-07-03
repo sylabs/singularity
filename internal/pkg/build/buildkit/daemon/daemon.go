@@ -32,11 +32,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containerd/containerd/platforms"
 	"github.com/containerd/containerd/remotes/docker"
 	ctdsnapshot "github.com/containerd/containerd/snapshots"
 	"github.com/containerd/containerd/snapshots/overlay"
 	"github.com/containerd/containerd/sys"
+	"github.com/containerd/platforms"
 	sddaemon "github.com/coreos/go-systemd/v22/daemon"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/gofrs/flock"
