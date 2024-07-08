@@ -21,6 +21,10 @@
   (default) or `tar` format. Images pushed with `--layer-format tar` can be
   pulled and run by other OCI runtimes.
 
+### Requirements
+
+- Requires a minimum of Go 1.21.5 to build due to dependency updates.
+
 ## 4.1.4 \[2024-06-28\]
 
 ### Bug Fixes
