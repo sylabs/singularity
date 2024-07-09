@@ -204,6 +204,10 @@ func (b *Bundle) mountLayers(ctx context.Context, img v1.Image, imgFile string) 
 		if err != nil {
 			return fmt.Errorf("while checking layer: %w", err)
 		}
+		// An ext3 final layer is an overlay, and handled separately from the rootfs assembly.
+		if mt == ocisif.Ext3LayerMediaType && i == len(layers)-1 {
+			continue
+		}
 		if mt != ocisif.SquashfsLayerMediaType {
 			return fmt.Errorf("unsupported layer mediaType %q", mt)
 		}

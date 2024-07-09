@@ -65,7 +65,7 @@ func TestHasOverlay(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			got, err := HasOverlay(imgFile)
+			got, _, err := HasOverlay(imgFile)
 
 			if got != tt.want {
 				t.Errorf("Expected %v, got %v", tt.want, got)
@@ -132,7 +132,7 @@ func TestAddOverlay(t *testing.T) {
 				t.Error("Expected error, but no error returned.")
 			}
 
-			hasOverlay, err := HasOverlay(imgFile)
+			hasOverlay, _, err := HasOverlay(imgFile)
 			if err != nil {
 				t.Fatal(err)
 			}

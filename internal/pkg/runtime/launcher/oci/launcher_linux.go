@@ -38,7 +38,7 @@ import (
 	imgutil "github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/ocibundle"
 	"github.com/sylabs/singularity/v4/pkg/ocibundle/native"
-	"github.com/sylabs/singularity/v4/pkg/ocibundle/ocisif"
+	ocisifbundle "github.com/sylabs/singularity/v4/pkg/ocibundle/ocisif"
 	sifbundle "github.com/sylabs/singularity/v4/pkg/ocibundle/sif"
 	"github.com/sylabs/singularity/v4/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -117,6 +117,10 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 	if !lo.NoCompat || lo.WritableTmpfs {
 		lo.WritableTmpfs = true
 	}
+	// Explicit writable (overlay) request means no WritableTmpfs
+	if lo.Writable {
+		lo.WritableTmpfs = false
+	}
 
 	return &Launcher{
 		cfg:                     lo,
@@ -132,10 +136,6 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 // checkOpts ensures that options set are supported by the oci.Launcher.
 func checkOpts(lo launcher.Options) error {
 	badOpt := []string{}
-
-	if lo.Writable {
-		badOpt = append(badOpt, "Writable")
-	}
 
 	if len(lo.FuseMount) > 0 {
 		badOpt = append(badOpt, "FuseMount")
@@ -252,10 +252,10 @@ func (l *Launcher) createSpec() (spec *specs.Spec, err error) {
 	ms := minimalSpec()
 	spec = &ms
 
-	// The OCI mode always wraps the rootfs in a tmpfs.
-	// Whether we  make it writable inside the container depends on a request for `--writable-tmpfs`.
-	// Note that --writable-tmpfs is inferred by default in OCI mode. See NewLauncher().
-	spec.Root.Readonly = !l.cfg.WritableTmpfs
+	// Rootfs is writable if there is a writable tmpfs in place, or --writable
+	// is requested with an overlay in the image. Note that --writable-tmpfs is
+	// inferred by default in OCI mode. See NewLauncher().
+	spec.Root.Readonly = !l.cfg.WritableTmpfs && !l.cfg.Writable
 
 	err = addNamespaces(spec, l.cfg.Namespaces)
 	if err != nil {
@@ -722,9 +722,9 @@ func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 	var b ocibundle.Bundle
 	switch {
 	case strings.HasPrefix(image, "oci-sif:"):
-		b, err = ocisif.New(
-			ocisif.OptBundlePath(bundleDir),
-			ocisif.OptImageRef(image),
+		b, err = ocisifbundle.New(
+			ocisifbundle.OptBundlePath(bundleDir),
+			ocisifbundle.OptImageRef(image),
 		)
 	case strings.HasPrefix(image, "sif:"):
 		sylog.Infof("Running a non-OCI SIF in OCI mode. See user guide for compatibility information.")
@@ -832,11 +832,7 @@ func (l *Launcher) RunWrapped(ctx context.Context, containerID, bundlePath, pidF
 		return err
 	}
 
-	if len(l.cfg.OverlayPaths) > 0 {
-		return WrapWithOverlays(ctx, runFunc, absBundle, l.cfg.OverlayPaths, l.cfg.AllowSUID)
-	}
-
-	return WrapWithWritableTmpFs(ctx, runFunc, absBundle, l.cfg.AllowSUID)
+	return l.WrapWithOverlays(ctx, runFunc, absBundle)
 }
 
 // getCgroup will return a cgroup path and resources for the runtime to create.

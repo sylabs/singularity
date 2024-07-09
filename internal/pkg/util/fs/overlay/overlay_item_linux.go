@@ -33,6 +33,10 @@ type Item struct {
 	// colon-prefixed options (like ":ro")
 	SourcePath string
 
+	// SourceOffset is the (optional) offset of the overlay filesystem within
+	// SourcePath, in bytes.
+	SourceOffset int64
+
 	// StagingDir is the directory on which this overlay item is staged, to be
 	// used as a source for an overlayfs mount as part of an overlay.Set
 	StagingDir string
@@ -250,6 +254,10 @@ func (i *Item) mountWithFuse(ctx context.Context) error {
 		EnclosingDir: parentDir,
 		AllowSetuid:  i.allowSetuid,
 		AllowDev:     i.allowDev,
+	}
+
+	if i.SourceOffset != 0 {
+		im.ExtraOpts = []string{fmt.Sprintf("offset=%d", i.SourceOffset)}
 	}
 
 	if err := im.Mount(ctx); err != nil {
