@@ -489,8 +489,8 @@ github.com/stretchr/testify v1.9.0 h1:HtqpIVDClZ4nwg75+f6Lvsy/wHu+3BoSGCbBAcpTsT
 github.com/stretchr/testify v1.9.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
 github.com/sylabs/json-resp v0.9.3 h1:9GuEmBb1ZHNhVlUEI1wzQSE4ol5avakmRnmeyXfmIk0=
 github.com/sylabs/json-resp v0.9.3/go.mod h1:Q9X4wRlZNPv3x76KaL8vTCBO4aC/DP2gh13xdtEqd1g=
-github.com/sylabs/oci-tools v0.10.0 h1:af2NUFdGoQnjd9U9fCRmWO65QOrVDsosttIj6mrjAP0=
-github.com/sylabs/oci-tools v0.10.0/go.mod h1:cZPg0FwNmUkrMUVDI7KMaociyDwR/pYyEqKb1PJlEk4=
+github.com/sylabs/oci-tools v0.11.0 h1:MAF+wdgsSIsC9Oti6Q6mlhXSCsHpEYxZFh5wKXVpLus=
+github.com/sylabs/oci-tools v0.11.0/go.mod h1:VsfSXGYzoRlZrhDh4jUNdtU/BNK5SaAiHeg9WiQh4nA=
 github.com/sylabs/scs-build-client v0.9.6 h1:aUZtiixIjsfv0KvctbgV5uEP2ZwdrYCjt3tFx1nm/Zo=
 github.com/sylabs/scs-build-client v0.9.6/go.mod h1:l75uhZgPAWdwrUTAbhaEcKKF3AM9D15pbRk0u1I4fwE=
 github.com/sylabs/scs-key-client v0.7.6 h1:4PbySN/0UQpMVoXbhQjcxgZqdFZ6pRbMnCAB35u8ekk=
