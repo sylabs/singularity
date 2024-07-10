@@ -403,6 +403,7 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 			DockerDaemonHost: dockerHost,
 			AuthFilePath:     ociauth.ChooseAuthFile(reqAuthFile),
 			UserAgent:        useragent.Value(),
+			Platform:         getOCIPlatform(),
 		}
 		opts = append(opts, launcher.OptTransportOptions(tOpts))
 
@@ -441,11 +442,6 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 	sylog.Warningf("%v", execErr)
 	sylog.Warningf("OCI-SIF could not be used, falling back to unpacking OCI bundle in temporary sandbox dir")
 
-	// Create a cache handle only when we know we are using a URI
-	imgCache := getCacheHandle(cache.Config{Disable: disableCache})
-	if imgCache == nil {
-		sylog.Fatalf("failed to create a new image cache handle")
-	}
 	origImageURIPtr := cmd.Context().Value(keyOrigImageURI)
 	if origImageURIPtr == nil {
 		return fmt.Errorf("unable to recover original image URI from context")
@@ -457,5 +453,9 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 	}
 	ep.Image = *origImageURI
 
+	l, err = ocilauncher.NewLauncher(opts...)
+	if err != nil {
+		return fmt.Errorf("while configuring container: %s", err)
+	}
 	return l.Exec(cmd.Context(), ep)
 }

@@ -1,5 +1,12 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Fix fall-back to temporary sandbox rootfs bundle in OCI-Mode for OCI URIs
+  (`docker://`) etc.
+
 ## 4.1.4 \[2024-06-28\]
 
 ### Bug Fixes
