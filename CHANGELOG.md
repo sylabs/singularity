@@ -21,6 +21,11 @@
   (default) or `tar` format. Images pushed with `--layer-format tar` can be
   pulled and run by other OCI runtimes.
 
+### Bug Fixes
+
+- Fix fall-back to temporary sandbox rootfs bundle in OCI-Mode for OCI URIs
+  (`docker://`) etc.
+
 ### Requirements
 
 - Requires a minimum of Go 1.21.5 to build due to dependency updates.
