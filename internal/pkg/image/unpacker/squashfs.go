@@ -7,13 +7,16 @@
 package unpacker
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/namespaces"
 	"golang.org/x/sys/unix"
@@ -160,7 +163,52 @@ func (s *Squashfs) extract(files []string, reader io.Reader, dest string) (err e
 
 	// Now run unsquashfs with our 'best' options
 	sylog.Debugf("Trying unsquashfs options: %v", opts)
-	cmd, err := cmdFunc(s, dest, filename, filter, opts...)
+
+	// unsquasfs doesn't replace existing directories which makes it fail for symlinks.
+	// So we need to remove all pre-created (empty) directories that are present in the image.
+	listopts := make([]string, len(opts))
+	copy(listopts, opts)
+	listopts = append(listopts, "-ls")
+	cmd, err := cmdFunc(s, dest, filename, filter, listopts...)
+	if err != nil {
+		return fmt.Errorf("command error: %s", err)
+	}
+	cmd.Args = append(cmd.Args, files...)
+	if stdin {
+		cmd.Stdin = reader
+	}
+	o, err := cmd.CombinedOutput()
+
+	sylog.Debugf("*** BEGIN WRAPPED UNSQUASHFS LIST OUTPUT ***")
+	sylog.Debugf(string(o))
+	sylog.Debugf("*** END WRAPPED UNSQUASHFS LIST OUTPUT ***")
+
+	if err != nil {
+		return fmt.Errorf("list command failed: %s: %s", string(o), err)
+	}
+
+	// There is one path per line and some unrelated output.
+	// The first path (detectable as it ends with our destination)
+	// is the root folder of the image which all other paths are relative to
+	rootDir := ""
+	destFolder := filepath.Base(dest)
+	scanner := bufio.NewScanner(strings.NewReader(string(o)))
+	for scanner.Scan() {
+		path := filepath.ToSlash(scanner.Text())
+		if rootDir == "" {
+			if strings.HasSuffix(path, destFolder) {
+				rootDir = path
+			}
+		} else if strings.HasPrefix(path, rootDir) {
+			destPath := filepath.Join(dest, strings.TrimPrefix(path, rootDir))
+			if fs.IsDir(destPath) {
+				sylog.Debugf("Removing folder %s from target. To be overwritten by image", destPath)
+				os.Remove(destPath)
+			}
+		}
+	}
+
+	cmd, err = cmdFunc(s, dest, filename, filter, opts...)
 	if err != nil {
 		return fmt.Errorf("command error: %s", err)
 	}
@@ -169,13 +217,11 @@ func (s *Squashfs) extract(files []string, reader io.Reader, dest string) (err e
 		cmd.Stdin = reader
 	}
 
-	o, err := cmd.CombinedOutput()
+	o, err = cmd.CombinedOutput()
 
-	if os.Getenv("SINGULARITY_DEBUG") != "" {
-		sylog.Debugf("*** BEGIN WRAPPED UNSQUASHFS OUTPUT ***")
-		sylog.Debugf(string(o))
-		sylog.Debugf("*** END WRAPPED UNSQUASHFS OUTPUT ***")
-	}
+	sylog.Debugf("*** BEGIN WRAPPED UNSQUASHFS OUTPUT ***")
+	sylog.Debugf(string(o))
+	sylog.Debugf("*** END WRAPPED UNSQUASHFS OUTPUT ***")
 
 	if err != nil {
 		return fmt.Errorf("extract command failed: %s: %s", string(o), err)
