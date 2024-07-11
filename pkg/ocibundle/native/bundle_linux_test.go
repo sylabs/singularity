@@ -9,8 +9,10 @@ import (
 	"context"
 	"os"
 	"os/exec"
+	"reflect"
 	"testing"
 
+	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
 	ocitest "github.com/sylabs/singularity/v4/internal/pkg/test/tool/oci"
@@ -100,6 +102,10 @@ func TestFromImageRef(t *testing.T) {
 
 			if err := b.Create(context.Background(), nil); err != nil {
 				t.Errorf("While creating bundle: %s", err)
+			}
+
+			if b.ImageSpec() == nil || reflect.DeepEqual(b.ImageSpec(), imgspecv1.Image{}) {
+				t.Errorf("ImageSpec is nil / empty.")
 			}
 
 			ocitest.ValidateBundle(t, bundleDir)

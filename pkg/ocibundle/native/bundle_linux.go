@@ -174,21 +174,12 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 		return err
 	}
 
-	manifestData, err := localImg.RawManifest()
-	if err != nil {
-		return fmt.Errorf("error obtaining manifest source: %s", err)
-	}
-	var manifest imgspecv1.Manifest
-	if err := json.Unmarshal(manifestData, &manifest); err != nil {
-		return fmt.Errorf("error parsing manifest: %w", err)
-	}
-
 	configData, err := localImg.RawConfigFile()
 	if err != nil {
 		return fmt.Errorf("error obtaining image config source: %s", err)
 	}
 	b.imageSpec = &imgspecv1.Image{}
-	if err := json.Unmarshal(configData, &manifest); err != nil {
+	if err := json.Unmarshal(configData, b.imageSpec); err != nil {
 		return fmt.Errorf("error parsing image config: %w", err)
 	}
 
