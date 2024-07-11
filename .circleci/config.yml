@@ -41,10 +41,10 @@ executors:
       - image: golangci/golangci-lint:v1.59.0
   ubuntu-machine:
     machine:
-      image: ubuntu-2204:2024.04.4
+      image: ubuntu-2404:2024.05.1
   ubuntu-machine-large:
     machine:
-      image: ubuntu-2204:2024.04.4
+      image: ubuntu-2404:2024.05.1
     resource_class: large
 
 commands:
@@ -123,6 +123,24 @@ commands:
             Delegate=cpu cpuset io memory pids
             EOF
             sudo systemctl daemon-reload
+
+  apparmor-config:
+    steps:
+      - run:
+          name: Permit unprivileged user namespaces (apparmor)
+          command: |-
+            cat \<<EOF | sudo tee /etc/apparmor.d/singularity-ce
+            abi <abi/4.0>,
+            include <tunables/global>
+
+            profile singularity-ce /usr/local/libexec/singularity/bin/starter{,-suid} flags=(unconfined) {
+              userns,
+
+              # Site-specific additions and overrides. See local/README for details.
+              include if exists <local/singularity-ce>
+            }
+            EOF
+            sudo apparmor_parser -r /etc/apparmor.d/singularity-ce
 
   configure-singularity:
     steps:
@@ -262,6 +280,7 @@ jobs:
       - stop-background-apt
       - install-deps-apt
       - cgroups-delegation
+      - apparmor-config
       - update-submodules
       - install-singularity
       - run:
