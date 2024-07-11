@@ -12,9 +12,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"testing"
+
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
-func createArchive(t *testing.T) *os.File {
+func createArchiveFromDir(dir string, t *testing.T) *os.File {
 	mk, err := exec.LookPath("mksquashfs")
 	if err != nil {
 		t.SkipNow()
@@ -23,11 +25,21 @@ func createArchive(t *testing.T) *os.File {
 	if err != nil {
 		t.Fatal(err)
 	}
-	cmd := exec.Command(mk, ".", f.Name(), "-noappend", "-no-progress")
+	cmd := exec.Command(mk, dir, f.Name(), "-noappend", "-no-progress")
 	if err := cmd.Run(); err != nil {
 		t.Fatal(err)
 	}
 	return f
+}
+
+func createArchive(t *testing.T) *os.File {
+	return createArchiveFromDir(".", t)
+}
+
+func makeDir(path string, t *testing.T) {
+	if err := os.MkdirAll(path, 0o755); err != nil {
+		t.Fatalf("while creating directory %s: %v", path, err)
+	}
 }
 
 func isExist(path string) bool {
@@ -118,6 +130,64 @@ func testSquashfs(t *testing.T, tmpParent string) {
 	path = filepath.Join(dir, "squashfs_test.go")
 	if !isExist(path) {
 		t.Errorf("file extraction failed, %s is missing", path)
+	}
+
+	// Check that existing folders don't cause trouble with folder symlinks in the image
+	inputDir, err := os.MkdirTemp(tmpParent, "test-squashfs-input-")
+	if err != nil {
+		t.Fatalf("while creating tmpdir: %v", err)
+	}
+	defer os.RemoveAll(inputDir)
+
+	// Existing directory /var/tmp at target
+	makeDir(filepath.Join(dir, "var", "tmp"), t)
+	// Symlink /var/tmp -> /tmp in image
+	makeDir(filepath.Join(inputDir, "tmp"), t)
+	makeDir(filepath.Join(inputDir, "var"), t)
+	if err := os.Symlink("../tmp", filepath.Join(inputDir, "var", "tmp")); err != nil {
+		t.Fatalf("while creating symlink: %v", err)
+	}
+	// And a file we can check for
+	testfile := "squashfs.go"
+	data, err := os.ReadFile(testfile)
+	if err != nil {
+		t.Fatalf("while reading test file: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(inputDir, testfile), data, 0o644); err != nil {
+		t.Fatalf("while writing test file: %v", err)
+	}
+	archive = createArchiveFromDir(inputDir, t)
+	defer os.Remove(archive.Name())
+
+	// extract all
+	if err := s.ExtractAll(archive, dir); err != nil {
+		t.Fatalf("extraction failed: %v", err)
+	}
+
+	// check if testfile was extracted
+	path = filepath.Join(dir, testfile)
+	if !isExist(path) {
+		t.Errorf("extraction failed, %s is missing", path)
+	}
+	// Check folders and symlinks
+	path = filepath.Join(dir, "tmp")
+	if !fs.IsDir(path) {
+		t.Errorf("extraction failed, %s is missing", path)
+	}
+	path = filepath.Join(dir, "var")
+	if !fs.IsDir(path) {
+		t.Errorf("extraction failed, %s is missing", path)
+	}
+	path = filepath.Join(dir, "var", "tmp")
+	if !isExist(path) {
+		t.Errorf("extraction failed, %s is missing", path)
+	} else if !fs.IsLink(path) {
+		t.Errorf("extraction failed, %s is not a symlink", path)
+	} else {
+		tgt, _ := os.Readlink(path)
+		if tgt != "../tmp" {
+			t.Errorf("extraction failed, %s wrongly points to %s", path, tgt)
+		}
 	}
 }
 
