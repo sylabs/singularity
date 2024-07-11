@@ -28,7 +28,6 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/native"
 	ocilauncher "github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/oci"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/uri"
-	"github.com/sylabs/singularity/v4/pkg/image"
 	bndocisif "github.com/sylabs/singularity/v4/pkg/ocibundle/ocisif"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
@@ -421,41 +420,52 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 
 	execErr := l.Exec(cmd.Context(), ep)
 
-	// Check if we are using an OCI-SIF *and* the exec error indicates that a
-	// direct mount bundle is unavailable (squashfs mount failure etc). If both
-	// are true, we will try a fallback path extracting to a sandbox dir
-	// bundle.
-	isOCISIF, ocisifCheckErr := image.IsOCISIF(ep.Image)
-	if ocisifCheckErr != nil {
-		return ocisifCheckErr
-	}
+	// When the image is an OCI-SIF, the initial l.Exec above could fail in
+	// OCI-Mode if required FUSE tools are not available. This is indicated by
+	// execErr being an ocisif.UnavailableError.
+	//
+	// If the OCI-SIF image was created by replaceURIWithImage - i.e. the user
+	// asked to run a docker:// or other URI, not an OCI-SIF file - then we can
+	// try to exec again from the original URI. In this case, the OCI launcher
+	// will construct a bundle based on a temporary sandbox rootfs, rather than
+	// an OCI-SIF.
+
+	// Fail if the execError wasn't a result of being unable to create a FUSE
+	// mount bundle from an OCI-SIF.
 	var mountErr bndocisif.UnavailableError
-	if !(errors.As(execErr, &mountErr) && isOCISIF) {
-		// Any other situation is a failure
+	if !(errors.As(execErr, &mountErr)) {
 		return execErr
 	}
 
-	if !canUseTmpSandbox {
-		sylog.Errorf("%v", execErr)
-		return fmt.Errorf("OCI-SIF could not be used, and fallback to temporary sandbox dir disallowed")
-	}
-	sylog.Warningf("%v", execErr)
-	sylog.Warningf("OCI-SIF could not be used, falling back to unpacking OCI bundle in temporary sandbox dir")
-
+	// Fail if the ImageURI is the same as the origImageURI ... i.e. if the
+	// image was directly specified by the user, and is not a reult of
+	// replaceURIWIthImage.
 	origImageURIPtr := cmd.Context().Value(keyOrigImageURI)
 	if origImageURIPtr == nil {
 		return fmt.Errorf("unable to recover original image URI from context")
 	}
-
 	origImageURI, ok := origImageURIPtr.(*string)
 	if !ok {
 		return fmt.Errorf("unable to recover original image URI (expected string, found: %T) from context", origImageURIPtr)
 	}
-	ep.Image = *origImageURI
+	if ep.Image == *origImageURI {
+		return execErr
+	}
 
+	// Fail if we are not permitted to try using a temporary sandbox.
+	if !canUseTmpSandbox {
+		sylog.Warningf("OCI-SIF could not be used, and fallback to temporary sandbox dir disallowed")
+		return execErr
+	}
+
+	// Try to launch the original user-specified URI directly - which will use a
+	// tmp sandbox rootfs bundle, rather than OCI-SIF.
+	sylog.Warningf("%v", execErr)
+	sylog.Warningf("OCI-SIF could not be used, falling back to unpacking OCI bundle in temporary sandbox dir")
 	l, err = ocilauncher.NewLauncher(opts...)
 	if err != nil {
 		return fmt.Errorf("while configuring container: %s", err)
 	}
+	ep.Image = *origImageURI
 	return l.Exec(cmd.Context(), ep)
 }

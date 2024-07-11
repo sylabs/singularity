@@ -6,6 +6,8 @@
 
 - Fix fall-back to temporary sandbox rootfs bundle in OCI-Mode for OCI URIs
   (`docker://`) etc.
+- Fix confusing error messages / incorrect fall-back attempt when explicit
+  execution of an OCI-SIF fails.
 
 ## 4.1.4 \[2024-06-28\]
 
