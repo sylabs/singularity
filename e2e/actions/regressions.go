@@ -17,8 +17,10 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
@@ -857,5 +859,42 @@ func (c actionTests) issue2690(t *testing.T) {
 		e2e.WithCommand("exec"),
 		e2e.WithArgs("--writable", c.env.ImagePath, "touch", "/foo"),
 		e2e.ExpectExit(0),
+	)
+}
+
+// When FUSE mounts are not possible, we should be able to fall back to running
+// a docker:// URI via a tmp-sandbox rootfs bundle.
+func (c actionTests) issue3100(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	// Make sure we don't mess with a system squashfuse!
+	if buildcfg.SQUASHFUSE_LIBEXEC == 0 {
+		t.Skipf("using system squashfuse")
+	}
+	// Disable our bundled squashfuse_ll for this test, so OCI-SIF FUSE mount
+	// will fail.
+	squashfuseBin, err := bin.FindBin("squashfuse")
+	if err != nil {
+		t.Fatal(err)
+	}
+	squashfuseDisabled := squashfuseBin + ".disabled"
+	e2e.Privileged(func(t *testing.T) {
+		if err := os.Rename(squashfuseBin, squashfuseDisabled); err != nil {
+			t.Fatal(err)
+		}
+	})(t)
+	defer e2e.Privileged(func(t *testing.T) {
+		if err := os.Rename(squashfuseDisabled, squashfuseBin); err != nil {
+			t.Fatal(err)
+		}
+	})(t)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.OCIUserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(c.env.TestRegistryImage, "/bin/true"),
+		e2e.ExpectExit(0,
+			e2e.ExpectError(e2e.ContainMatch, "falling back to unpacking OCI bundle in temporary sandbox dir")),
 	)
 }

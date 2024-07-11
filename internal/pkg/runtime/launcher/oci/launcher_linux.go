@@ -773,7 +773,7 @@ func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 	// make a best effort here even if the main context has been canceled, hence
 	// the use of context.Background().
 	if cleanupErr := b.Delete(context.Background()); cleanupErr != nil { //nolint:contextcheck
-		sylog.Errorf("Couldn't cleanup bundle: %v", err)
+		sylog.Errorf("Couldn't cleanup bundle: %v", cleanupErr)
 	}
 
 	if err := l.unmountSessionTmpfs(); err != nil {
