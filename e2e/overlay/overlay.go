@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
@@ -188,6 +189,92 @@ func (c ctx) testOverlayCreate(t *testing.T) {
 	}
 }
 
+func (c ctx) testOverlayCreateOCI(t *testing.T) {
+	require.Filesystem(t, "overlay")
+	require.MkfsExt3(t)
+	e2e.EnsureOCISIF(t, c.env)
+
+	tmpDir := t.TempDir()
+	pgpDir, _ := e2e.MakeSyPGPDir(t, tmpDir)
+	c.env.KeyringDir = pgpDir
+	ocisifSigned := filepath.Join(tmpDir, "signed.sif")
+	ocisif := filepath.Join(tmpDir, "unsigned.sif")
+
+	// signed OCI-SIF image
+	err := fs.CopyFile(c.env.OCISIFPath, ocisifSigned, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("key import"),
+		e2e.WithArgs("testdata/ecl-pgpkeys/key1.asc"),
+		e2e.ConsoleRun(e2e.ConsoleSendLine("e2e")),
+		e2e.ExpectExit(0),
+	)
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("sign"),
+		e2e.WithArgs("-k", "0", ocisifSigned),
+		e2e.ConsoleRun(e2e.ConsoleSendLine("e2e")),
+		e2e.ExpectExit(0),
+	)
+
+	// unsigned SIF image
+	err = fs.CopyFile(c.env.OCISIFPath, ocisif, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	type test struct {
+		name    string
+		profile e2e.Profile
+		command string
+		args    []string
+		exit    int
+	}
+
+	// Size / sparse / directory additions in the ext3 image are checked by the
+	// native SIF tests above. Same code path for OCI-SIF. We don't need to
+	// repeat them here.
+	tests := []test{
+		{
+			name:    "create",
+			profile: e2e.UserProfile,
+			command: "overlay",
+			args:    []string{"create", ocisif},
+			exit:    0,
+		},
+		{
+			name:    "create fail existing",
+			profile: e2e.UserProfile,
+			command: "overlay",
+			args:    []string{"create", ocisif},
+			exit:    255,
+		},
+		{
+			name:    "create fail signed",
+			profile: e2e.UserProfile,
+			command: "overlay",
+			args:    []string{"create", ocisifSigned},
+			exit:    255,
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(tt.profile),
+			e2e.WithCommand(tt.command),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(tt.exit),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -195,6 +282,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	}
 
 	return testhelper.Tests{
-		"create": c.testOverlayCreate,
+		"create":    c.testOverlayCreate,
+		"createOCI": c.testOverlayCreateOCI,
 	}
 }
