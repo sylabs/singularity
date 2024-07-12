@@ -750,7 +750,7 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 	// sandbox overlay implies creation of upper/work directories by
 	// Singularity, so we would need privileges to delete the test
 	// directory correctly
-	defer e2e.Privileged(cleanup)
+	defer e2e.Privileged(cleanup)(t)
 
 	squashfsImage := filepath.Join(testdir, "squashfs.simg")
 	ext3Img := filepath.Join(testdir, "ext3_fs.img")
@@ -1165,7 +1165,7 @@ func (c actionTests) actionBinds(t *testing.T) {
 
 	workspace, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "bind-workspace-", "")
 	sandbox, _ := e2e.MakeTempDir(t, workspace, "sandbox-", "")
-	defer e2e.Privileged(cleanup)
+	defer e2e.Privileged(cleanup)(t)
 
 	contCanaryDir := "/canary"
 	hostCanaryDir := filepath.Join(workspace, "canary")
@@ -1693,7 +1693,7 @@ func (c actionTests) fuseMount(t *testing.T) {
 	u := e2e.UserProfile.HostUser(t)
 
 	imageDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "sshfs-", "")
-	defer e2e.Privileged(cleanup)
+	defer e2e.Privileged(cleanup)(t)
 
 	sshfsWrapper := filepath.Join(imageDir, "sshfs-wrapper")
 	rootPrivKey := filepath.Join(imageDir, "/etc/ssh/ssh_host_rsa_key")
@@ -2639,7 +2639,7 @@ func (c actionTests) relWorkdirScratch(t *testing.T) {
 	testdir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "persistent-overlay-", "")
 	t.Cleanup(func() {
 		if !t.Failed() {
-			e2e.Privileged(cleanup)
+			e2e.Privileged(cleanup)(t)
 		}
 	})
 

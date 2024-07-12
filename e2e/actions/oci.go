@@ -490,7 +490,7 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 	workspace, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "bind-workspace-", "")
 	t.Cleanup(func() {
 		if !t.Failed() {
-			e2e.Privileged(cleanup)
+			e2e.Privileged(cleanup)(t)
 		}
 	})
 
@@ -809,7 +809,7 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 		mainDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "", "")
 		t.Cleanup(func() {
 			if !t.Failed() {
-				e2e.Privileged(cleanup)
+				e2e.Privileged(cleanup)(t)
 			}
 		})
 		stws.mainDir = mainDir
@@ -1840,7 +1840,7 @@ func (c actionTests) actionOciRelWorkdirScratch(t *testing.T) {
 	testdir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "persistent-overlay-", "")
 	t.Cleanup(func() {
 		if !t.Failed() {
-			e2e.Privileged(cleanup)
+			e2e.Privileged(cleanup)(t)
 		}
 	})
 
