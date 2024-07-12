@@ -26,7 +26,6 @@ var Ext3LayerMediaType types.MediaType = "application/vnd.sylabs.image.layer.v1.
 func HasOverlay(imagePath string) (bool, error) {
 	fi, err := sif.LoadContainerFromPath(imagePath,
 		sif.OptLoadWithFlag(os.O_RDONLY),
-		sif.OptLoadWithCloseOnUnload(false),
 	)
 	if err != nil {
 		return false, err
@@ -55,6 +54,9 @@ func HasOverlay(imagePath string) (bool, error) {
 	layers, err := img.Layers()
 	if err != nil {
 		return false, fmt.Errorf("while getting image layers: %w", err)
+	}
+	if len(layers) < 1 {
+		return false, fmt.Errorf("image has no layers")
 	}
 	mt, err := layers[len(layers)-1].MediaType()
 	if err != nil {
