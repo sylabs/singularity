@@ -14,12 +14,32 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/types"
+	ocitmutate "github.com/sylabs/oci-tools/pkg/mutate"
 	ocitsif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/pkg/image"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 var Ext3LayerMediaType types.MediaType = "application/vnd.sylabs.image.layer.v1.ext3"
+
+func getSingleImage(fi *sif.FileImage) (v1.Image, error) {
+	ii, err := ocitsif.ImageIndexFromFileImage(fi)
+	if err != nil {
+		return nil, fmt.Errorf("while obtaining image index: %w", err)
+	}
+	ix, err := ii.IndexManifest()
+	if err != nil {
+		return nil, fmt.Errorf("while obtaining index manifest: %w", err)
+	}
+
+	// One image only.
+	if len(ix.Manifests) != 1 {
+		return nil, fmt.Errorf("only single image data containers are supported, found %d images", len(ix.Manifests))
+	}
+	imageDigest := ix.Manifests[0].Digest
+	return ii.Image(imageDigest)
+}
 
 // HasOverlay returns whether the OCI-SIF at imgPath has an ext3 writable final
 // layer - an 'overlay'. If present, the offset of the overlay data in the
@@ -33,25 +53,10 @@ func HasOverlay(imagePath string) (bool, int64, error) {
 	}
 	defer fi.UnloadContainer()
 
-	ii, err := ocitsif.ImageIndexFromFileImage(fi)
+	img, err := getSingleImage(fi)
 	if err != nil {
-		return false, 0, fmt.Errorf("while obtaining image index: %w", err)
+		return false, 0, fmt.Errorf("while getting image: %w", err)
 	}
-	ix, err := ii.IndexManifest()
-	if err != nil {
-		return false, 0, fmt.Errorf("while obtaining index manifest: %w", err)
-	}
-
-	// One image only.
-	if len(ix.Manifests) != 1 {
-		return false, 0, fmt.Errorf("only single image data containers are supported, found %d images", len(ix.Manifests))
-	}
-	imageDigest := ix.Manifests[0].Digest
-	img, err := ii.Image(imageDigest)
-	if err != nil {
-		return false, 0, fmt.Errorf("while initializing image: %w", err)
-	}
-
 	layers, err := img.Layers()
 	if err != nil {
 		return false, 0, fmt.Errorf("while getting image layers: %w", err)
@@ -89,21 +94,9 @@ func AddOverlay(imagePath string, overlayPath string) error {
 	}
 	defer fi.UnloadContainer()
 
-	ii, err := ocitsif.ImageIndexFromFileImage(fi)
+	img, err := getSingleImage(fi)
 	if err != nil {
-		return fmt.Errorf("while obtaining image index: %w", err)
-	}
-	ix, err := ii.IndexManifest()
-	if err != nil {
-		return fmt.Errorf("while obtaining index manifest: %w", err)
-	}
-	if len(ix.Manifests) != 1 {
-		return fmt.Errorf("only single image OCI-SIF files are supported - found %d images", len(ix.Manifests))
-	}
-	imageDigest := ix.Manifests[0].Digest
-	img, err := ii.Image(imageDigest)
-	if err != nil {
-		return fmt.Errorf("while initializing image: %w", err)
+		return fmt.Errorf("while getting image: %w", err)
 	}
 
 	ol, err := ext3LayerFromFile(overlayPath)
@@ -116,13 +109,84 @@ func AddOverlay(imagePath string, overlayPath string) error {
 		return err
 	}
 
-	ii = mutate.AppendManifests(empty.Index, mutate.IndexAddendum{Add: img})
+	ii := mutate.AppendManifests(empty.Index, mutate.IndexAddendum{Add: img})
 
 	return ocitsif.Update(fi, ii)
 }
 
+// SyncOverlay synchronizes the digests of the overlay, stored in the OCI
+// structures, with its true content.
+func SyncOverlay(imagePath string) error {
+	fi, err := sif.LoadContainerFromPath(imagePath)
+	if err != nil {
+		return err
+	}
+	defer fi.UnloadContainer()
+
+	img, err := getSingleImage(fi)
+	if err != nil {
+		return fmt.Errorf("while getting image: %w", err)
+	}
+	layers, err := img.Layers()
+	if err != nil {
+		return fmt.Errorf("while getting image layers: %w", err)
+	}
+	if len(layers) < 1 {
+		return fmt.Errorf("image has no layers")
+	}
+	oldLayer := layers[len(layers)-1]
+	mt, err := oldLayer.MediaType()
+	if err != nil {
+		return fmt.Errorf("while getting layer mediatype: %w", err)
+	}
+	if mt != Ext3LayerMediaType {
+		return fmt.Errorf("image does not contain a writable overlay")
+	}
+
+	// Existing descriptor and digest
+	oldDigest, err := oldLayer.Digest()
+	if err != nil {
+		return err
+	}
+	desc, err := fi.GetDescriptor(sif.WithOCIBlobDigest(oldDigest))
+	if err != nil {
+		return err
+	}
+	// Updated layer and digest
+	o := func() (io.ReadCloser, error) {
+		return io.NopCloser(desc.GetReader()), nil
+	}
+	newLayer, err := ext3LayerFromOpener(o)
+	if err != nil {
+		return err
+	}
+	newDigest, err := newLayer.Digest()
+	if err != nil {
+		return err
+	}
+
+	if newDigest == oldDigest {
+		sylog.Infof("OCI digest matches overlay, no update required.")
+		return nil
+	}
+
+	// Update overlay OCI.Blob digest in SIF. This must be done before the
+	// oci-tools Update is called, so that it re-uses the existing overlay
+	// descriptor, with the updated digest.
+	if err := fi.SetOCIBlobDigest(desc.ID(), newDigest); err != nil {
+		return fmt.Errorf("while updating descriptor digest: %v", err)
+	}
+
+	img, err = ocitmutate.Apply(img, ocitmutate.SetLayer(len(layers)-1, newLayer))
+	if err != nil {
+		return err
+	}
+	ii := mutate.AppendManifests(empty.Index, mutate.IndexAddendum{Add: img})
+	return ocitsif.Update(fi, ii)
+}
+
 // ext3ImageOpener opens a source ext3 overlay image file to be added as a layer.
-type ext3ImageOpener func() (io.ReadSeekCloser, error)
+type ext3ImageOpener func() (io.ReadCloser, error)
 
 type ext3ImageLayer struct {
 	opener ext3ImageOpener
@@ -173,7 +237,7 @@ func (l *ext3ImageLayer) MediaType() (types.MediaType, error) {
 }
 
 func ext3LayerFromFile(path string) (v1.Layer, error) {
-	opener := func() (io.ReadSeekCloser, error) {
+	opener := func() (io.ReadCloser, error) {
 		return os.Open(path)
 	}
 	return ext3LayerFromOpener(opener)
@@ -198,10 +262,17 @@ func ext3LayerFromOpener(opener ext3ImageOpener) (v1.Layer, error) {
 		return nil, fmt.Errorf("while checking overlay file header: %w", err)
 	}
 
-	_, err = rc.Seek(0, io.SeekStart)
+	// Re-open rather than seek, so we can use the SIF GetReader API which
+	// returns an io.Reader only.
+	if err := rc.Close(); err != nil {
+		return nil, err
+	}
+	rc, err = opener()
 	if err != nil {
 		return nil, err
 	}
+	defer rc.Close()
+
 	digest, size, err := v1.SHA256(rc)
 	if err != nil {
 		return nil, err

@@ -11,11 +11,13 @@ import (
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(OverlayCmd)
-		cmdManager.RegisterSubCmd(OverlayCmd, OverlayCreateCmd)
 
+		cmdManager.RegisterSubCmd(OverlayCmd, OverlayCreateCmd)
 		cmdManager.RegisterFlagForCmd(&overlaySizeFlag, OverlayCreateCmd)
 		cmdManager.RegisterFlagForCmd(&overlayCreateDirFlag, OverlayCreateCmd)
 		cmdManager.RegisterFlagForCmd(&overlaySparseFlag, OverlayCreateCmd)
+
+		cmdManager.RegisterSubCmd(OverlayCmd, OverlaySyncCmd)
 	})
 }
 

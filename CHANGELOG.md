@@ -24,6 +24,10 @@
   overlay create` command. The overlay will be applied read-only, by default,
   when executing the OCI-SIF. To write changes to the container into the overlay,
   use the `--writable` flag.
+- A writable overlay is added to an OCI-SIF file as an ext3 format layer,
+  appended to the encapsulated OCI image. After the overlay has been modified,
+  use the `singularity overlay sync` command to synchronize the OCI digests with
+  the overlay content.
 - Added a new `instance run` command that will execute the runscript when an
   instance is initiated instead of executing the startscript.
 
