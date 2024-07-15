@@ -20,6 +20,10 @@
   image to be pushed to `library://` and `docker://` registries in `squashfs`
   (default) or `tar` format. Images pushed with `--layer-format tar` can be
   pulled and run by other OCI runtimes.
+- A writable overlay can be added to an OCI-SIF file with the `singularity
+  overlay create` command. The overlay will be applied read-only, by default,
+  when executing the OCI-SIF. To write changes to the container into the overlay,
+  use the `--writable` flag.
 
 ### Bug Fixes
 

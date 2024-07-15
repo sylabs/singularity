@@ -22,47 +22,62 @@ import (
 var Ext3LayerMediaType types.MediaType = "application/vnd.sylabs.image.layer.v1.ext3"
 
 // HasOverlay returns whether the OCI-SIF at imgPath has an ext3 writable final
-// layer - an 'overlay'.
-func HasOverlay(imagePath string) (bool, error) {
+// layer - an 'overlay'. If present, the offset of the overlay data in the
+// OCI-SIF file is also returned.
+func HasOverlay(imagePath string) (bool, int64, error) {
 	fi, err := sif.LoadContainerFromPath(imagePath,
 		sif.OptLoadWithFlag(os.O_RDONLY),
 	)
 	if err != nil {
-		return false, err
+		return false, 0, err
 	}
 	defer fi.UnloadContainer()
 
 	ii, err := ocitsif.ImageIndexFromFileImage(fi)
 	if err != nil {
-		return false, fmt.Errorf("while obtaining image index: %w", err)
+		return false, 0, fmt.Errorf("while obtaining image index: %w", err)
 	}
 	ix, err := ii.IndexManifest()
 	if err != nil {
-		return false, fmt.Errorf("while obtaining index manifest: %w", err)
+		return false, 0, fmt.Errorf("while obtaining index manifest: %w", err)
 	}
 
 	// One image only.
 	if len(ix.Manifests) != 1 {
-		return false, fmt.Errorf("only single image data containers are supported, found %d images", len(ix.Manifests))
+		return false, 0, fmt.Errorf("only single image data containers are supported, found %d images", len(ix.Manifests))
 	}
 	imageDigest := ix.Manifests[0].Digest
 	img, err := ii.Image(imageDigest)
 	if err != nil {
-		return false, fmt.Errorf("while initializing image: %w", err)
+		return false, 0, fmt.Errorf("while initializing image: %w", err)
 	}
 
 	layers, err := img.Layers()
 	if err != nil {
-		return false, fmt.Errorf("while getting image layers: %w", err)
+		return false, 0, fmt.Errorf("while getting image layers: %w", err)
 	}
 	if len(layers) < 1 {
-		return false, fmt.Errorf("image has no layers")
+		return false, 0, fmt.Errorf("image has no layers")
 	}
 	mt, err := layers[len(layers)-1].MediaType()
 	if err != nil {
-		return false, fmt.Errorf("while getting layer mediatype: %w", err)
+		return false, 0, fmt.Errorf("while getting layer mediatype: %w", err)
 	}
-	return mt == Ext3LayerMediaType, nil
+	// Not an overlay as last layer
+	if mt != Ext3LayerMediaType {
+		return false, 0, nil
+	}
+
+	// Overlay as last layer, get offset
+	ld, err := layers[len(layers)-1].Digest()
+	if err != nil {
+		return false, 0, fmt.Errorf("while getting layer digest: %w", err)
+	}
+	desc, err := fi.GetDescriptor(sif.WithOCIBlobDigest(ld))
+	if err != nil {
+		return false, 0, fmt.Errorf("while getting layer descriptor: %w", err)
+	}
+	return true, desc.Offset(), nil
 }
 
 // AddOverlay adds the provided ext3 overlay file at overlayPath to the OCI-SIF

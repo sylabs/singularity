@@ -8,7 +8,9 @@ package oci
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/sylabs/singularity/v4/internal/pkg/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/overlay"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/ocibundle/tools"
@@ -52,14 +54,70 @@ func cleanupWritableTmpfs(ctx context.Context, bundleDir, overlayDir string) err
 	return tools.DeleteOverlayTmpfs(ctx, bundleDir, overlayDir)
 }
 
+// imageOverlaySet returns an overlay.Set that includes the correct r/o or
+// writable overlay item for an ext3 overlay layer in an OCI-SIF image file, if
+// applicable.
+func (l *Launcher) imageOverlaySet(bundleDir string) (*overlay.Set, error) {
+	if !strings.HasPrefix(l.image, "oci-sif:") {
+		return nil, nil
+	}
+
+	sifOverlay, sifOffset, err := ocisif.HasOverlay(strings.TrimPrefix(l.image, "oci-sif:"))
+	if err != nil {
+		return nil, err
+	}
+
+	if !sifOverlay {
+		return nil, nil
+	}
+
+	item := &overlay.Item{
+		Type:         image.EXT3,
+		Readonly:     !l.cfg.Writable,
+		SourcePath:   strings.TrimPrefix(l.image, "oci-sif:"),
+		SourceOffset: sifOffset,
+	}
+	item.SetParentDir(bundleDir)
+
+	if l.cfg.Writable {
+		return &overlay.Set{
+			WritableOverlay: item,
+		}, nil
+	}
+
+	return &overlay.Set{
+		ReadonlyOverlays: []*overlay.Item{item},
+	}, nil
+}
+
 // WrapWithOverlays runs a function wrapped with prep / cleanup steps for the
-// overlays specified in overlayPaths. If there is no user-provided writable
-// overlay, it adds an ephemeral overlay which is always writable so that the
-// launcher and runtime are able to add content to the container. Whether it is
-// writable from inside the container is controlled by the runtime config.
-func WrapWithOverlays(ctx context.Context, f func() error, bundleDir string, overlayPaths []string, allowSetuid bool) error {
-	s := overlay.Set{}
-	for _, p := range overlayPaths {
+// overlays in the image, and/or specified in overlayPaths. If there is no
+// writable overlay, it adds an ephemeral overlay which is always writable so
+// that the launcher and runtime are able to add content to the container.
+// Whether an ephemeral overlay is writable from inside the container is
+// controlled by the runtime config.
+func (l *Launcher) WrapWithOverlays(ctx context.Context, f func() error, bundleDir string) error {
+	s, err := l.imageOverlaySet(bundleDir)
+	if err != nil {
+		return err
+	}
+
+	hasSifOverlay := s != nil
+	hasUserOverlay := len(l.cfg.OverlayPaths) > 0
+	if l.cfg.Writable && !hasSifOverlay {
+		return fmt.Errorf("image %s does not contain a writable overlay", l.image)
+	}
+
+	// No image embedded overlay, or user requested --overlay - just wrap with a writable tmpfs.
+	if !hasSifOverlay && !hasUserOverlay {
+		return WrapWithWritableTmpFs(ctx, f, bundleDir, l.cfg.AllowSUID)
+	}
+
+	if s == nil {
+		s = &overlay.Set{}
+	}
+
+	for _, p := range l.cfg.OverlayPaths {
 		item, err := overlay.NewItemFromString(p)
 		if err != nil {
 			return err
@@ -67,7 +125,7 @@ func WrapWithOverlays(ctx context.Context, f func() error, bundleDir string, ove
 
 		item.SetParentDir(bundleDir)
 
-		if allowSetuid {
+		if l.cfg.AllowSUID {
 			item.SetAllowSetuid(true)
 		}
 
@@ -83,7 +141,7 @@ func WrapWithOverlays(ctx context.Context, f func() error, bundleDir string, ove
 
 	systemOverlay := ""
 	if s.WritableOverlay == nil {
-		i, err := prepareSystemOverlay(bundleDir, allowSetuid)
+		i, err := prepareSystemOverlay(bundleDir, l.cfg.AllowSUID)
 		if err != nil {
 			return err
 		}
@@ -92,7 +150,7 @@ func WrapWithOverlays(ctx context.Context, f func() error, bundleDir string, ove
 	}
 
 	rootFsDir := tools.RootFs(bundleDir).Path()
-	err := s.Mount(ctx, rootFsDir)
+	err = s.Mount(ctx, rootFsDir)
 	if err != nil {
 		return err
 	}

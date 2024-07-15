@@ -92,7 +92,7 @@ func canAddOverlay(img *image.Image) (bool, error) {
 			return false, errOverlaySigned
 		}
 
-		hasOverlay, err := ocisif.HasOverlay(img.Path)
+		hasOverlay, _, err := ocisif.HasOverlay(img.Path)
 		if err != nil {
 			return false, fmt.Errorf("while checking for overlays: %s", err)
 		} else if hasOverlay {

@@ -91,6 +91,7 @@ commands:
               build-essential \
               cryptsetup \
               fuse2fs \
+              fuse-overlayfs \
               git \
               libfuse-dev \
               libglib2.0-dev \

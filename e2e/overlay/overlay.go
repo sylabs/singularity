@@ -189,8 +189,10 @@ func (c ctx) testOverlayCreate(t *testing.T) {
 	}
 }
 
-func (c ctx) testOverlayCreateOCI(t *testing.T) {
-	require.Filesystem(t, "overlay")
+func (c ctx) testOverlayOCI(t *testing.T) {
+	require.Command(t, "fuse2fs")
+	require.Command(t, "fuse-overlayfs")
+	require.Command(t, "fusermount")
 	require.MkfsExt3(t)
 	e2e.EnsureOCISIF(t, c.env)
 
@@ -241,6 +243,13 @@ func (c ctx) testOverlayCreateOCI(t *testing.T) {
 	// repeat them here.
 	tests := []test{
 		{
+			name:    "create fail signed",
+			profile: e2e.UserProfile,
+			command: "overlay",
+			args:    []string{"create", ocisifSigned},
+			exit:    255,
+		},
+		{
 			name:    "create",
 			profile: e2e.UserProfile,
 			command: "overlay",
@@ -254,12 +263,81 @@ func (c ctx) testOverlayCreateOCI(t *testing.T) {
 			args:    []string{"create", ocisif},
 			exit:    255,
 		},
+		// Add a file without `--writable` - should go into ephemeral tmpfs, not the overlay.
 		{
-			name:    "create fail signed",
-			profile: e2e.UserProfile,
-			command: "overlay",
-			args:    []string{"create", ocisifSigned},
-			exit:    255,
+			name:    "tmpfs touch",
+			profile: e2e.OCIUserProfile,
+			command: "exec",
+			args:    []string{ocisif, "touch", "/in-overlay"},
+			exit:    0,
+		},
+		{
+			name:    "tmpfs check",
+			profile: e2e.OCIUserProfile,
+			command: "exec",
+			args:    []string{ocisif, "ls", "/in-overlay"},
+			exit:    1,
+		},
+
+		// Add a file to the overlay with `--writable` and check that it exists on re-run.
+		{
+			name:    "writable touch",
+			profile: e2e.OCIUserProfile,
+			command: "exec",
+			args:    []string{"--writable", ocisif, "touch", "/in-overlay"},
+			exit:    0,
+		},
+		{
+			name:    "writable touch check",
+			profile: e2e.OCIUserProfile,
+			command: "exec",
+			args:    []string{ocisif, "ls", "/in-overlay"},
+			exit:    0,
+		},
+		// Remove file without `--writable` - should be an ephemeral change, file still in overlay.
+		{
+			name:    "tmpfs rm",
+			profile: e2e.OCIUserProfile,
+			command: "exec",
+			args:    []string{ocisif, "rm", "/in-overlay"},
+			exit:    0,
+		},
+		{
+			name:    "tmpfs rm check",
+			profile: e2e.OCIUserProfile,
+			command: "exec",
+			args:    []string{ocisif, "ls", "/in-overlay"},
+			exit:    0,
+		},
+		// Remove file with `--writable` - file gone from overlay.
+		{
+			name:    "writable rm",
+			profile: e2e.OCIUserProfile,
+			command: "exec",
+			args:    []string{"--writable", ocisif, "rm", "/in-overlay"},
+			exit:    0,
+		},
+		{
+			name:    "writable rm check",
+			profile: e2e.OCIUserProfile,
+			command: "exec",
+			args:    []string{ocisif, "ls", "/in-overlay"},
+			exit:    1,
+		},
+		// Touch file without `--writable` and no tmpfs (via --no-compat)... should fail
+		{
+			name:    "readonly touch",
+			profile: e2e.OCIUserProfile,
+			command: "exec",
+			args:    []string{"--no-compat", ocisif, "touch", "/in-overlay"},
+			exit:    1,
+		},
+		{
+			name:    "readonly touch check",
+			profile: e2e.OCIUserProfile,
+			command: "exec",
+			args:    []string{ocisif, "ls", "/in-overlay"},
+			exit:    1,
 		},
 	}
 
@@ -282,7 +360,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	}
 
 	return testhelper.Tests{
-		"create":    c.testOverlayCreate,
-		"createOCI": c.testOverlayCreateOCI,
+		"create": c.testOverlayCreate,
+		"OCI":    c.testOverlayOCI,
 	}
 }
