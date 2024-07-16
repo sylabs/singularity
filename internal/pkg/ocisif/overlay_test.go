@@ -11,6 +11,7 @@ import (
 
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/random"
 	"github.com/sylabs/sif/v2/pkg/sif"
@@ -92,12 +93,25 @@ func TestHasOverlay(t *testing.T) {
 	}
 }
 
-func randomImage(t *testing.T, size, layers int64) string {
+func randomImage(t *testing.T, size int64, layers int) string {
 	imgFile := filepath.Join(t.TempDir(), "image.oci.sif")
-	im, err := random.Image(size, layers)
+
+	addenda := []mutate.Addendum{}
+	for i := 0; i < layers; i++ {
+		layer, err := random.Layer(size, SquashfsLayerMediaType)
+		if err != nil {
+			t.Fatal(err)
+		}
+		addenda = append(addenda, mutate.Addendum{
+			Layer: layer,
+		})
+	}
+
+	im, err := mutate.Append(empty.Image, addenda...)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	iw, err := NewImageWriter(im, imgFile, t.TempDir())
 	if err != nil {
 		t.Fatal(err)
@@ -248,5 +262,64 @@ func TestSyncOverlay(t *testing.T) {
 				t.Errorf("final layer digest is %q, expected %q", fld, tt.expectDigest)
 			}
 		})
+	}
+}
+
+func TestSealOverlay(t *testing.T) {
+	origLayers := 3
+	imgFile := randomImage(t, 1024, origLayers)
+
+	// Seal image with no overlay = error
+	err := SealOverlay(imgFile, "")
+	if err == nil {
+		t.Error("Unexpected success sealing OCI-SIF without overlay.")
+	}
+
+	if err := AddOverlay(imgFile, extfsOverlayPath); err != nil {
+		t.Fatal(err)
+	}
+
+	// Seal image with overlay
+	err = SealOverlay(imgFile, "")
+	if err != nil {
+		t.Errorf("Unexpected error sealing OCI-SIF with overlay: %v", err)
+	}
+
+	// After sealing there is no overlay.
+	hasOverlay, _, err := HasOverlay(imgFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hasOverlay {
+		t.Error("Overlay found after OCI-SIF was sealed.")
+	}
+
+	// After sealing there are 4 squashfs layers.
+	fi, err := sif.LoadContainerFromPath(imgFile)
+	if err != nil {
+		t.Error(err)
+	}
+	defer fi.UnloadContainer()
+	img, err := getSingleImage(fi)
+	if err != nil {
+		t.Error(err)
+	}
+
+	layers, err := img.Layers()
+	if err != nil {
+		t.Error(err)
+	}
+	if len(layers) != origLayers+1 {
+		t.Errorf("Expected %d layers, found %d", origLayers+1, len(layers))
+	}
+
+	for i, l := range layers {
+		mt, err := l.MediaType()
+		if err != nil {
+			t.Error(err)
+		}
+		if mt != SquashfsLayerMediaType {
+			t.Errorf("Layer %d is %s. Expected %s.", i, mt, SquashfsLayerMediaType)
+		}
 	}
 }

@@ -28,6 +28,9 @@
   appended to the encapsulated OCI image. After the overlay has been modified,
   use the `singularity overlay sync` command to synchronize the OCI digests with
   the overlay content.
+- A new `singularity overlay seal` command converts a writable overlay inside
+  an OCI-SIF image into a read-only squashfs layer. This seals changes made to
+  the image via the overlay, so that they are permanent.
 - Added a new `instance run` command that will execute the runscript when an
   instance is initiated instead of executing the startscript.
 

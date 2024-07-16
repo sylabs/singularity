@@ -347,6 +347,14 @@ func (c ctx) testOverlayOCI(t *testing.T) {
 			args:    []string{ocisif, "ls", "/in-overlay"},
 			exit:    1,
 		},
+		// Seal the overlay
+		{
+			name:    "seal",
+			profile: e2e.OCIUserProfile,
+			command: "overlay",
+			args:    []string{"seal", ocisif},
+			exit:    0,
+		},
 	}
 
 	for _, tt := range tests {
