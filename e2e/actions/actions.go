@@ -2914,6 +2914,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"ociAllowSetuid":       c.actionOciAllowSetuid,         // --allow-setuid / check for nosuid mount options
 		"ociExitSignals":       c.ociExitSignals,               // test exit and signals propagation
 		"issue 3100":           np(c.issue3100),                // https://github.com/sylabs/singularity/issues/3100
+		"issue 3129":           np(c.issue3129),                // https://github.com/sylabs/singularity/issues/3129
 
 	}
 }
