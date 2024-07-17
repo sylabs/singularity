@@ -18,6 +18,8 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&overlaySparseFlag, OverlayCreateCmd)
 
 		cmdManager.RegisterSubCmd(OverlayCmd, OverlaySyncCmd)
+
+		cmdManager.RegisterSubCmd(OverlayCmd, OverlaySealCmd)
 	})
 }
 

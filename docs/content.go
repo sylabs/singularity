@@ -1152,6 +1152,16 @@ Enterprise Performance Computing (EPC)`
   To synchronize an OCI-SIF image containing an overlay:
   $ singularity overlay sync /tmp/overlay.oci.sif`
 
+	OverlaySealUse   string = `seal oci-sif`
+	OverlaySealShort string = `Seal a writable overlay, into a read-only layer.`
+	OverlaySealLong  string = `
+  The overlay seal command converts a writable overlay in an OCI-SIF image into
+  a read-only image layer. This makes changes in the overlay permanent, and allows
+  the image to be pushed with '--layer-format tar'.`
+	OverlaySealExample string = `
+  To seal an OCI-SIF image containing an overlay:
+  $ singularity overlay seal /tmp/overlay.oci.sif`
+
 	DataUse   string = `data`
 	DataShort string = `Manage an OCI-SIF data container`
 	DataLong  string = `
