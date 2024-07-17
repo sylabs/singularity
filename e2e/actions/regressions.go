@@ -898,3 +898,17 @@ func (c actionTests) issue3100(t *testing.T) {
 			e2e.ExpectError(e2e.ContainMatch, "falling back to unpacking OCI bundle in temporary sandbox dir")),
 	)
 }
+
+// Check that execution of an image from a relative path succeeds
+func (c actionTests) issue3129(t *testing.T) {
+	e2e.EnsureOCISIF(t, c.env)
+	dir, image := filepath.Split(c.env.OCISIFPath)
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.OCIUserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithDir(dir),
+		e2e.WithArgs(image, "/bin/true"),
+		e2e.ExpectExit(0),
+	)
+}

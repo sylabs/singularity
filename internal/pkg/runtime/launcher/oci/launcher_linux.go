@@ -800,11 +800,11 @@ func (l *Launcher) RunWrapped(ctx context.Context, containerID, bundlePath, pidF
 		return fmt.Errorf("failed to determine bundle absolute path: %s", err)
 	}
 
-	if err := os.Chdir(absBundle); err != nil {
-		return fmt.Errorf("failed to change directory to %s: %s", absBundle, err)
-	}
-
 	runFunc := func() error {
+		if err := os.Chdir(absBundle); err != nil {
+			return fmt.Errorf("failed to change directory to %s: %s", absBundle, err)
+		}
+
 		for _, im := range l.imageMountsByMountpoint {
 			if err := os.MkdirAll(im.GetMountPoint(), 0o755); err != nil {
 				return err

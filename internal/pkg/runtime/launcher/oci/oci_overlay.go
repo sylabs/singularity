@@ -8,6 +8,7 @@ package oci
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/ocisif"
@@ -62,7 +63,12 @@ func (l *Launcher) imageOverlaySet(bundleDir string) (*overlay.Set, error) {
 		return nil, nil
 	}
 
-	sifOverlay, sifOffset, err := ocisif.HasOverlay(strings.TrimPrefix(l.image, "oci-sif:"))
+	imgAbs, err := filepath.Abs(strings.TrimPrefix(l.image, "oci-sif:"))
+	if err != nil {
+		return nil, err
+	}
+
+	sifOverlay, sifOffset, err := ocisif.HasOverlay(imgAbs)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +80,7 @@ func (l *Launcher) imageOverlaySet(bundleDir string) (*overlay.Set, error) {
 	item := &overlay.Item{
 		Type:         image.EXT3,
 		Readonly:     !l.cfg.Writable,
-		SourcePath:   strings.TrimPrefix(l.image, "oci-sif:"),
+		SourcePath:   imgAbs,
 		SourceOffset: sifOffset,
 	}
 	item.SetParentDir(bundleDir)
