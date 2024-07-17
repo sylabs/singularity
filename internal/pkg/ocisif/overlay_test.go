@@ -5,13 +5,23 @@
 package ocisif
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/random"
+	"github.com/sylabs/sif/v2/pkg/sif"
 )
+
+const extfsOverlayPath = "../../../test/images/extfs-for-overlay.img"
+
+var extfsOverlayDigest = v1.Hash{
+	Algorithm: "sha256",
+	Hex:       "be6a627e7c4226eacd50f530ce82e83f0efb8e0f7d28a9bcee9d6b4bc208cfd1",
+}
 
 func TestHasOverlay(t *testing.T) {
 	tests := []struct {
@@ -82,6 +92,22 @@ func TestHasOverlay(t *testing.T) {
 	}
 }
 
+func randomImage(t *testing.T, size, layers int64) string {
+	imgFile := filepath.Join(t.TempDir(), "image.oci.sif")
+	im, err := random.Image(size, layers)
+	if err != nil {
+		t.Fatal(err)
+	}
+	iw, err := NewImageWriter(im, imgFile, t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := iw.Write(); err != nil {
+		t.Fatal(err)
+	}
+	return imgFile
+}
+
 func TestAddOverlay(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -102,7 +128,7 @@ func TestAddOverlay(t *testing.T) {
 		},
 		{
 			name:        "OverlayOK",
-			overlayPath: "../../../test/images/extfs-for-overlay.img",
+			overlayPath: extfsOverlayPath,
 			wantErr:     false,
 			wantOverlay: true,
 		},
@@ -110,20 +136,9 @@ func TestAddOverlay(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			imgFile := filepath.Join(t.TempDir(), "image.sif")
-			im, err := random.Image(1024, 3)
-			if err != nil {
-				t.Fatal(err)
-			}
-			iw, err := NewImageWriter(im, imgFile, t.TempDir())
-			if err != nil {
-				t.Fatal(err)
-			}
-			if err := iw.Write(); err != nil {
-				t.Fatal(err)
-			}
+			imgFile := randomImage(t, 1024, 3)
 
-			err = AddOverlay(imgFile, tt.overlayPath)
+			err := AddOverlay(imgFile, tt.overlayPath)
 			if err != nil && !tt.wantErr {
 				t.Errorf("Unexpected error: %v", err)
 			}
@@ -138,6 +153,99 @@ func TestAddOverlay(t *testing.T) {
 			}
 			if hasOverlay != tt.wantOverlay {
 				t.Errorf("Image has overlay: %v, want overlay: %v", hasOverlay, tt.wantOverlay)
+			}
+		})
+	}
+}
+
+// Writes 8 bytes of 0xFF, 2048 bytes inside the overlay in imgFile. This is
+// beyond the area checked for a valid ext3 header.
+func modifyOverlayFF(t *testing.T, imgFile string) {
+	t.Helper()
+	ok, offset, err := HasOverlay(imgFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatalf("no overlay in %s", imgFile)
+	}
+
+	f, err := os.OpenFile(imgFile, os.O_WRONLY, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+
+	_, err = f.WriteAt([]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}, offset+2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Digest of extfsOverlayPath, modified by modifyOverlayFF above
+var modifiedOverlayDigest = v1.Hash{
+	Algorithm: "sha256",
+	Hex:       "1d2b7729ac057ceb9a3b301eec078ef89df5ea54188973e9a9b5f0f9aedf0615",
+}
+
+func TestSyncOverlay(t *testing.T) {
+	imgFile := randomImage(t, 1024, 1)
+	if err := AddOverlay(imgFile, extfsOverlayPath); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name          string
+		modifyOverlay func(t *testing.T, imgFile string)
+		expectDigest  v1.Hash
+	}{
+		{
+			name:         "Unmodified",
+			expectDigest: extfsOverlayDigest,
+		},
+		{
+			name:          "Modified",
+			modifyOverlay: modifyOverlayFF,
+			expectDigest:  modifiedOverlayDigest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.modifyOverlay != nil {
+				tt.modifyOverlay(t, imgFile)
+			}
+
+			if err := SyncOverlay(imgFile); err != nil {
+				t.Fatalf("unexpected error from SyncOverlay: %v", err)
+			}
+
+			fi, err := sif.LoadContainerFromPath(imgFile)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer fi.UnloadContainer()
+
+			// Must have a descriptor with the expected synced digest.
+			if _, err := fi.GetDescriptor(sif.WithOCIBlobDigest(tt.expectDigest)); err != nil {
+				t.Errorf("no descriptor found for %q: %v", tt.expectDigest, err)
+			}
+
+			// Final overlay layer must have the expected digest.
+			img, err := getSingleImage(fi)
+			if err != nil {
+				t.Fatal(err)
+			}
+			layers, err := img.Layers()
+			if err != nil {
+				t.Fatal(err)
+			}
+			fld, err := layers[len(layers)-1].Digest()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if fld != tt.expectDigest {
+				t.Errorf("final layer digest is %q, expected %q", fld, tt.expectDigest)
 			}
 		})
 	}

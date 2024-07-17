@@ -1143,6 +1143,15 @@ Enterprise Performance Computing (EPC)`
   To create a sparse overlay when creating a new ext3 file system image:
   $ singularity overlay create --size 1024 --sparse /tmp/ext3_overlay.img`
 
+	OverlaySyncUse   string = `sync oci-sif`
+	OverlaySyncShort string = `Sync OCI-SIF manifest & config with overlay content`
+	OverlaySyncLong  string = `
+  The overlay sync command updates the OCI manifest and config in an OCI-SIF image
+  to reflect any changes that have been made to the content of a writable overlay.`
+	OverlaySyncExample string = `
+  To synchronize an OCI-SIF image containing an overlay:
+  $ singularity overlay sync /tmp/overlay.oci.sif`
+
 	DataUse   string = `data`
 	DataShort string = `Manage an OCI-SIF data container`
 	DataLong  string = `
