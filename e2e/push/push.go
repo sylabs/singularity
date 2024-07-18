@@ -18,6 +18,7 @@ import (
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 type ctx struct {
@@ -208,6 +209,70 @@ func (c ctx) testPushOCITarLayers(t *testing.T) {
 	})
 }
 
+func (c ctx) testPushOCIOverlay(t *testing.T) {
+	require.MkfsExt3(t)
+	e2e.EnsureOCISIF(t, c.env)
+
+	imgRef := fmt.Sprintf("docker://%s/docker_oci-overlay:test", c.env.TestRegistry)
+
+	// OCI-SIF image with overlay
+	tmpDir := t.TempDir()
+	overlaySIF := filepath.Join(tmpDir, "overlay.sif")
+	if err := fs.CopyFile(c.env.OCISIFPath, overlaySIF, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("overlay create"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("overlay"),
+		e2e.WithArgs("create", overlaySIF),
+		e2e.ExpectExit(0),
+	)
+
+	tests := []struct {
+		name        string
+		layerFormat string
+		expectExit  int
+	}{
+		// Push layers as-is, inc ext3 overlay.
+		{
+			name:        "layer-format default",
+			layerFormat: "",
+			expectExit:  0,
+		},
+		// Refuse to push - ext3 != squashfs.
+		{
+			name:        "layer-format squashfs",
+			layerFormat: "squashfs",
+			expectExit:  255,
+		},
+		// Refuse to push - ext3 != tar, and no conversion.
+		{
+			name:        "layer-format tart",
+			layerFormat: "tar",
+			expectExit:  255,
+		},
+	}
+
+	for _, tt := range tests {
+		args := []string{}
+		if tt.layerFormat != "" {
+			args = []string{"--layer-format", tt.layerFormat}
+		}
+		args = append(args, overlaySIF, imgRef)
+
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("push"),
+			e2e.WithArgs(args...),
+			e2e.ExpectExit(tt.expectExit),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -218,5 +283,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"invalid transport": c.testInvalidTransport,
 		"oras":              c.testPushCmd,
 		"oci tar layers":    c.testPushOCITarLayers,
+		"oci overlay":       c.testPushOCIOverlay,
 	}
 }

@@ -139,9 +139,16 @@ func createOciSif(ctx context.Context, tOpts *ociimage.TransportOptions, imgCach
 }
 
 const (
-	defaultLayerFormat  = ""
-	squashfsLayerFormat = "squashfs"
-	tarLayerFormat      = "tar"
+	// DefaultLayerFormat will push layers to a registry as-is.
+	DefaultLayerFormat = ""
+	// SquashfsLayerFormat will push layers to a registry as squashfs only. An
+	// image containing layers with another mediaType will not be pushed.
+	SquashfsLayerFormat = "squashfs"
+	// TarLayerFormat will push layers to a registry as tar only, for
+	// compatibility with other runtimes. Any squashfs layers will be converted
+	// to tar automatically. An image containing layers with another mediaType
+	// will not be pushed.
+	TarLayerFormat = "tar"
 )
 
 // PushOptions provides options/configuration that determine the behavior of a
@@ -152,8 +159,7 @@ type PushOptions struct {
 	// AuthFile provides a path to a file containing OCI registry credentials.
 	AuthFile string
 	// LayerFormat sets an explicit layer format to use when pushing an OCI
-	// image. Either 'squashfs' or 'tar'. If unset, layers are pushed as
-	// squashfs.
+	// image. See xxxLayerFormat constants.
 	LayerFormat string
 	// TmpDir is a temporary directory to be used for an temporary files created
 	// during the push.
@@ -167,6 +173,10 @@ func PushOCISIF(ctx context.Context, sourceFile, destRef string, opts PushOption
 	ir, err := name.ParseReference(destRef)
 	if err != nil {
 		return fmt.Errorf("invalid reference %q: %w", destRef, err)
+	}
+
+	if err := handleOverlay(sourceFile, opts); err != nil {
+		return err
 	}
 
 	fi, err := sif.LoadContainerFromPath(sourceFile, sif.OptLoadWithFlag(os.O_RDONLY))
@@ -244,19 +254,19 @@ func transformLayers(base v1.Image, layerFormat, tmpDir string) (v1.Image, error
 	ms := []ocimutate.Mutation{}
 
 	for i, l := range ls {
-		// We always expect an OCI-SIF to contain squashfs layers, at present.
 		mt, err := l.MediaType()
 		if err != nil {
 			return nil, err
 		}
-		if mt != ocisif.SquashfsLayerMediaType {
-			return nil, fmt.Errorf("unexpected layer mediaType: %v", mt)
-		}
 
 		switch layerFormat {
-		case defaultLayerFormat, squashfsLayerFormat:
+		case DefaultLayerFormat:
 			continue
-		case tarLayerFormat:
+		case SquashfsLayerFormat:
+			if mt != ocisif.SquashfsLayerMediaType {
+				return nil, fmt.Errorf("unexpected layer mediaType: %v", mt)
+			}
+		case TarLayerFormat:
 			opener, err := ocimutate.TarFromSquashfsLayer(l, ocimutate.OptTarTempDir(tmpDir))
 			if err != nil {
 				return nil, err
@@ -272,4 +282,25 @@ func transformLayers(base v1.Image, layerFormat, tmpDir string) (v1.Image, error
 	}
 
 	return ocimutate.Apply(base, ms...)
+}
+
+func handleOverlay(sourceFile string, opts PushOptions) error {
+	hasOverlay, _, err := ocisif.HasOverlay(sourceFile)
+	if err != nil {
+		return err
+	}
+
+	// No overlay - nothing to do.
+	if !hasOverlay {
+		return nil
+	}
+
+	// We won't push an overlay as ext3 when a specific --layer-format has been requested.
+	if hasOverlay && opts.LayerFormat != DefaultLayerFormat {
+		return fmt.Errorf("cannot push overlay with layer format %q, use 'overlay seal' before pushing this image ", opts.LayerFormat)
+	}
+
+	// Make sure true overlay digest have been synced to the OCI constructs.
+	sylog.Infof("Synchronizing overlay digest to OCI image.")
+	return ocisif.SyncOverlay(sourceFile)
 }
