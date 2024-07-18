@@ -166,6 +166,17 @@ func imgLayersToSquashfs(img ggcrv1.Image, digest ggcrv1.Hash, workDir string) (
 	}
 
 	for i, l := range layers {
+		// If the last layer is ext3 then it's an overlay, and we don't convert
+		// it to squashfs.
+		mt, err := l.MediaType()
+		if err != nil {
+			return nil, err
+		}
+		if i == len(layers)-1 && mt == Ext3LayerMediaType {
+			sylog.Infof("Image contains a writable overlay - use 'singularity overlay seal' to convert to r/o.")
+			continue
+		}
+
 		squashfsLayer, err := mutate.SquashfsLayer(l, workDir, sqOpts...)
 		if err != nil {
 			return nil, fmt.Errorf("%w: %v", ErrFailedSquashfsConversion, err)
