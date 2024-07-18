@@ -20,13 +20,15 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/types"
-	ocisif "github.com/sylabs/oci-tools/pkg/sif"
+	ocitsif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
 	syoras "github.com/sylabs/singularity/v4/internal/pkg/client/oras"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/uri"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"golang.org/x/sys/unix"
@@ -610,7 +612,7 @@ func checkOCISIF(t *testing.T, imgFile string, expectLayers int) {
 	}
 	defer fi.UnloadContainer()
 
-	ix, err := ocisif.ImageIndexFromFileImage(fi)
+	ix, err := ocitsif.ImageIndexFromFileImage(fi)
 	if err != nil {
 		t.Fatalf("while obtaining image index: %v", err)
 	}
@@ -871,6 +873,89 @@ func (c ctx) testPullUmask(t *testing.T) {
 	}
 }
 
+func (c ctx) testPullOCIOverlay(t *testing.T) {
+	require.MkfsExt3(t)
+	e2e.EnsureOCISIF(t, c.env)
+
+	// Create OCI-SIF image with overlay
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "pull-oci-overlay-", "")
+	defer cleanup(t)
+	overlaySIF := filepath.Join(tmpDir, "overlay.sif")
+	if err := fs.CopyFile(c.env.OCISIFPath, overlaySIF, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("overlay create"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("overlay"),
+		e2e.WithArgs("create", overlaySIF),
+		e2e.ExpectExit(0),
+	)
+
+	// Push up to local registry
+	imgRef := fmt.Sprintf("docker://%s/oci-sif-overlay:test", c.env.TestRegistry)
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("push"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("push"),
+		e2e.WithArgs(overlaySIF, imgRef),
+		e2e.ExpectExit(0),
+	)
+
+	tests := []struct {
+		name       string
+		keepLayers bool
+		expectExit int
+	}{
+		// Pull without `--keep-layers`... not implemented
+		{
+			name:       "pull",
+			keepLayers: false,
+			expectExit: 255,
+		},
+		// Pull with `--keep-layers`... success
+		{
+			name:       "pull keep-layers",
+			keepLayers: true,
+			expectExit: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dest := filepath.Join(tmpDir, "pull.sif")
+			defer os.Remove(dest)
+
+			args := []string{}
+			if tt.keepLayers {
+				args = []string{"--keep-layers"}
+			}
+			args = append(args, dest, imgRef)
+
+			c.env.RunSingularity(
+				t,
+				e2e.WithDir(t.TempDir()),
+				e2e.WithProfile(e2e.OCIUserProfile),
+				e2e.WithCommand("pull"),
+				e2e.WithArgs(args...),
+				e2e.ExpectExit(tt.expectExit),
+			)
+
+			if tt.expectExit == 0 {
+				hasOverlay, _, err := ocisif.HasOverlay(dest)
+				if err != nil {
+					t.Error(err)
+				}
+				if !hasOverlay {
+					t.Errorf("Pulled image %s does not have an overlay", dest)
+				}
+			}
+		})
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -889,6 +974,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			t.Run("pullDisableCache", c.testPullDisableCacheCmd)
 			t.Run("concurrencyConfig", c.testConcurrencyConfig)
 			t.Run("concurrentPulls", c.testConcurrentPulls)
+			t.Run("oci overlay", c.testPullOCIOverlay)
 		},
 		"issue1087": c.issue1087,
 		// Manipulates umask for the process, so must be run alone to avoid
