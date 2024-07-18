@@ -14,6 +14,7 @@ import (
 	"github.com/sylabs/singularity/v4/docs"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/library"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oci"
+	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/v4/internal/pkg/signature"
@@ -72,9 +73,9 @@ var pushDescriptionFlag = cmdline.Flag{
 var pushLayerFormatFlag = cmdline.Flag{
 	ID:           "pushLayerFormatFlag",
 	Value:        &pushLayerFormat,
-	DefaultValue: "",
+	DefaultValue: ocisif.DefaultLayerFormat,
 	Name:         "layer-format",
-	Usage:        "layer format when pushing OCI-SIF images - squashfs (default) or tar",
+	Usage:        "layer format when pushing OCI-SIF images - squashfs or tar",
 	EnvKeys:      []string{"LAYER_FORMAT"},
 }
 
