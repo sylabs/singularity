@@ -14,8 +14,10 @@ import (
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	ggcrmutate "github.com/google/go-containerregistry/pkg/v1/mutate"
+	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/sylabs/oci-tools/pkg/mutate"
+	ocimutate "github.com/sylabs/oci-tools/pkg/mutate"
 	ocitsif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
@@ -112,11 +114,24 @@ func (w *ImageWriter) Write() error {
 	var err error
 	img := w.src
 
-	if w.squashLayers && len(w.srcManifest.Layers) > 1 {
-		sylog.Infof("Squashing image to single layer")
-		img, err = mutate.Squash(img)
-		if err != nil {
-			return fmt.Errorf("while squashing image: %w", err)
+	numLayers := len(w.srcManifest.Layers)
+	if numLayers < 1 {
+		return fmt.Errorf("image has no layers")
+	}
+	hasOverlay := w.srcManifest.Layers[numLayers-1].MediaType == Ext3LayerMediaType
+	canSquash := (hasOverlay && numLayers > 2) || (!hasOverlay && numLayers > 1)
+
+	if w.squashLayers && canSquash {
+		if hasOverlay {
+			img, err = squashWithOverlay(img, w.workDir)
+			if err != nil {
+				return fmt.Errorf("while squashing image with overlay: %w", err)
+			}
+		} else {
+			img, err = mutate.Squash(img)
+			if err != nil {
+				return fmt.Errorf("while squashing image: %w", err)
+			}
 		}
 	}
 
@@ -132,6 +147,40 @@ func (w *ImageWriter) Write() error {
 	})
 
 	return ocitsif.Write(w.dest, ii, ocitsif.OptWriteWithSpareDescriptorCapacity(spareDescriptorCapacity))
+}
+
+func squashWithOverlay(base ggcrv1.Image, workDir string) (ggcrv1.Image, error) {
+	ms := []ocimutate.Mutation{}
+	ls, err := base.Layers()
+	if err != nil {
+		return nil, fmt.Errorf("while getting layers: %w", err)
+	}
+
+	// At present, oci-tools can only squash tar layers.
+	for i, l := range ls {
+		mt, err := l.MediaType()
+		if err != nil {
+			return nil, fmt.Errorf("while getting mediaType: %w", err)
+		}
+		if mt == SquashfsLayerMediaType {
+			opener, err := ocimutate.TarFromSquashfsLayer(l, ocimutate.OptTarTempDir(workDir))
+			if err != nil {
+				return nil, fmt.Errorf("while getting tarball from squashfs: %w", err)
+			}
+			tarLayer, err := tarball.LayerFromOpener(opener)
+			if err != nil {
+				return nil, fmt.Errorf("while getting tar layer: %w", err)
+			}
+			ms = append(ms, ocimutate.SetLayer(i, tarLayer))
+		}
+	}
+	img, err := ocimutate.Apply(base, ms...)
+	if err != nil {
+		return nil, fmt.Errorf("while converting layers to tar: %w", err)
+	}
+
+	// Squash all except final ext3 overlay.
+	return mutate.SquashSubset(img, 0, len(ls)-1)
 }
 
 func imgLayersToSquashfs(img ggcrv1.Image, digest ggcrv1.Hash, workDir string) (sqfsImage ggcrv1.Image, err error) {
