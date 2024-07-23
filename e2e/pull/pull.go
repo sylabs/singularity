@@ -909,13 +909,11 @@ func (c ctx) testPullOCIOverlay(t *testing.T) {
 		keepLayers bool
 		expectExit int
 	}{
-		// Pull without `--keep-layers`... not implemented
 		{
 			name:       "pull",
 			keepLayers: false,
-			expectExit: 255,
+			expectExit: 0,
 		},
-		// Pull with `--keep-layers`... success
 		{
 			name:       "pull keep-layers",
 			keepLayers: true,
