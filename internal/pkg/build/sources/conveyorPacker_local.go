@@ -113,10 +113,6 @@ func (cp *LocalConveyorPacker) Pack(ctx context.Context) (*types.Bundle, error) 
 	}
 
 	// insert base metadata AFTER unpacking fs to avoid conflicts with contained files/symlinks
-	if err = makeBaseEnv(b.RootfsPath); err != nil {
-		return nil, fmt.Errorf("while inserting base environment: %v", err)
-	}
-
 	sylog.Infof("Inserting Singularity configuration...")
 	if err = makeBaseEnv(b.RootfsPath); err != nil {
 		return nil, fmt.Errorf("while inserting base environment: %v", err)

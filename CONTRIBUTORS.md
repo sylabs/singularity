@@ -19,6 +19,7 @@ The following have contributed code and/or documentation to this repository.
 - Adam Hughes <adam@sylabs.io>, <stickmanica@gmail.com>
 - Adam Simpson <asimpson@nvidia.com>, <adambsimpson@gmail.com>
 - Afif Elghraoui <afif.elghraoui@nih.gov>
+- Alexander Grund <alexander.grund@tu-dresden.de>
 - Amanda Duffy <aduffy@lenovo.com>
 - Ana Guerrero Lopez <aguerrero@suse.com>
 - Ángel Bejarano <abejarano@ontropos.com>
