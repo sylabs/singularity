@@ -22,12 +22,13 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/sylabs/oci-tools/pkg/mutate"
-	ocisif "github.com/sylabs/oci-tools/pkg/sif"
+	ocitsif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -107,6 +108,19 @@ func PullOCISIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom 
 				return "", err
 			}
 		} else {
+			// Ensure what's retrieved from the cache matches the target platform
+			fi, err := sif.LoadContainerFromPath(cacheEntry.Path)
+			if err != nil {
+				return "", err
+			}
+			defer fi.UnloadContainer()
+			img, err := ocisif.GetSingleImage(fi)
+			if err != nil {
+				return "", fmt.Errorf("while getting image: %w", err)
+			}
+			if err := ociplatform.CheckImagePlatform(opts.Platform, img); err != nil {
+				return "", err
+			}
 			sylog.Infof("Using cached OCI-SIF image")
 		}
 		imagePath = cacheEntry.Path
@@ -136,10 +150,6 @@ func createOciSif(ctx context.Context, tOpts *ociimage.TransportOptions, imgCach
 	img, err := ociimage.LocalImage(ctx, tOpts, imgCache, imageSrc, tmpDir)
 	if err != nil {
 		return fmt.Errorf("while fetching OCI image: %w", err)
-	}
-
-	if err := ociplatform.CheckImagePlatform(tOpts.Platform, img); err != nil {
-		return fmt.Errorf("while checking OCI image: %w", err)
 	}
 
 	digest, err := img.Digest()
@@ -185,7 +195,7 @@ func writeImageToOCISif(img ggcrv1.Image, imageDest string) error {
 	ii := ggcrmutate.AppendManifests(empty.Index, ggcrmutate.IndexAddendum{
 		Add: img,
 	})
-	return ocisif.Write(imageDest, ii, ocisif.OptWriteWithSpareDescriptorCapacity(spareDescriptorCapacity))
+	return ocitsif.Write(imageDest, ii, ocitsif.OptWriteWithSpareDescriptorCapacity(spareDescriptorCapacity))
 }
 
 // convertImageToOciSif will convert an image to an oci-sif with squashfs layer
@@ -209,7 +219,7 @@ func convertImageToOciSif(img ggcrv1.Image, digest ggcrv1.Hash, imageDest, workD
 	ii := ggcrmutate.AppendManifests(empty.Index, ggcrmutate.IndexAddendum{
 		Add: img,
 	})
-	return ocisif.Write(imageDest, ii, ocisif.OptWriteWithSpareDescriptorCapacity(spareDescriptorCapacity))
+	return ocitsif.Write(imageDest, ii, ocitsif.OptWriteWithSpareDescriptorCapacity(spareDescriptorCapacity))
 }
 
 func imgLayersToSquashfs(img ggcrv1.Image, digest ggcrv1.Hash, workDir string) (sqfsImage ggcrv1.Image, err error) {
@@ -266,7 +276,7 @@ func PushOCISIF(ctx context.Context, sourceFile, destRef string, ociAuth *authn.
 	}
 	defer fi.UnloadContainer()
 
-	ix, err := ocisif.ImageIndexFromFileImage(fi)
+	ix, err := ocitsif.ImageIndexFromFileImage(fi)
 	if err != nil {
 		return fmt.Errorf("only OCI-SIF files can be pushed to docker/OCI registries")
 	}
