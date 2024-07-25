@@ -199,7 +199,7 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom st
 
 	src, err := pull(ctx, imgCache, directTo, pullFrom, noHTTPS)
 	if err != nil {
-		return "", fmt.Errorf("error fetching image to cache: %v", err)
+		return "", fmt.Errorf("error fetching image: %v", err)
 	}
 
 	if directTo == "" {

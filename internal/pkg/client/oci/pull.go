@@ -99,7 +99,7 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo, pullFrom st
 		src, err = pullNativeSIF(ctx, imgCache, directTo, pullFrom, opts)
 	}
 	if err != nil {
-		return "", fmt.Errorf("error fetching image to cache: %v", err)
+		return "", fmt.Errorf("error fetching image: %v", err)
 	}
 
 	if directTo == "" {
