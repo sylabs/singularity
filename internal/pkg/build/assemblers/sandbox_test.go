@@ -24,6 +24,8 @@ const (
 )
 
 // TestSandboxAssemblerDocker sees if we can build a sandbox from an image from a Docker registry
+//
+//nolint:dupl
 func TestSandboxAssemblerDocker(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()

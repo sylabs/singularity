@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -16,8 +16,8 @@ import (
 	"syscall"
 
 	"github.com/sylabs/sif/v2/pkg/sif"
-	"github.com/sylabs/singularity/v4/internal/pkg/image/packer"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/crypt"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/squashfs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/machine"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -25,12 +25,7 @@ import (
 )
 
 // SIFAssembler doesn't store anything.
-type SIFAssembler struct {
-	GzipFlag        bool
-	MksquashfsProcs uint
-	MksquashfsMem   string
-	MksquashfsPath  string
-}
+type SIFAssembler struct{}
 
 type encryptionOptions struct {
 	keyInfo   cryptkey.KeyInfo
@@ -143,9 +138,6 @@ func createSIF(path string, b *types.Bundle, squashfile string, encOpts *encrypt
 func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	sylog.Infof("Creating SIF file...")
 
-	s := packer.NewSquashfs()
-	s.MksquashfsPath = a.MksquashfsPath
-
 	f, err := os.CreateTemp(b.TmpDir, "squashfs-")
 	if err != nil {
 		return fmt.Errorf("while creating temporary file for squashfs: %v", err)
@@ -155,21 +147,6 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	f.Close()
 	defer os.Remove(fsPath)
 
-	flags := []string{"-noappend"}
-	// build squashfs with all-root flag when building as a user
-	if syscall.Getuid() != 0 {
-		flags = append(flags, "-all-root")
-	}
-	// specify compression if needed
-	if a.GzipFlag {
-		flags = append(flags, "-comp", "gzip")
-	}
-	if a.MksquashfsMem != "" {
-		flags = append(flags, "-mem", a.MksquashfsMem)
-	}
-	if a.MksquashfsProcs != 0 {
-		flags = append(flags, "-processors", fmt.Sprint(a.MksquashfsProcs))
-	}
 	arch := machine.ArchFromContainer(b.RootfsPath)
 	if arch == "" {
 		sylog.Infof("Architecture not recognized, use native")
@@ -177,7 +154,12 @@ func (a *SIFAssembler) Assemble(b *types.Bundle, path string) error {
 	}
 	sylog.Verbosef("Set SIF container architecture to %s", arch)
 
-	if err := s.Create([]string{b.RootfsPath}, fsPath, flags); err != nil {
+	// Squash ownership of squashfs files to root when called as non-root, so we
+	// don't have container files owned by a uid that might not exist on other
+	// systems.
+	allroot := syscall.Getuid() != 0
+
+	if err := squashfs.Mksquashfs([]string{b.RootfsPath}, fsPath, squashfs.OptAllRoot(allroot)); err != nil {
 		return fmt.Errorf("while creating squashfs: %v", err)
 	}
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the URIs of this project regarding your
 // rights to use or distribute this software.
@@ -8,7 +8,6 @@ package assemblers_test
 import (
 	"context"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -34,14 +33,11 @@ func TestMain(m *testing.M) {
 }
 
 // TestSIFAssemblerDocker sees if we can build a SIF image from an image from a Docker registry
+//
+//nolint:dupl
 func TestSIFAssemblerDocker(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
-	}
-
-	mksquashfsPath, err := exec.LookPath("mksquashfs")
-	if err != nil {
-		t.Fatalf("could not find mksquashfs: %v", err)
 	}
 
 	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-SIFAssembler"), os.TempDir())
@@ -75,9 +71,7 @@ func TestSIFAssemblerDocker(t *testing.T) {
 		t.Fatalf("failed to Pack from %s: %v\n", assemblerDockerURI, err)
 	}
 
-	a := &assemblers.SIFAssembler{
-		MksquashfsPath: mksquashfsPath,
-	}
+	a := &assemblers.SIFAssembler{}
 
 	err = a.Assemble(b, assemblerDockerDest)
 	if err != nil {
@@ -95,11 +89,6 @@ func TestSIFAssemblerShub(t *testing.T) {
 
 	// TODO(mem): reenable this; disabled while shub is down
 	t.Skip("Skipping tests that access singularity hub")
-
-	mksquashfsPath, err := exec.LookPath("mksquashfs")
-	if err != nil {
-		t.Fatalf("could not find mksquashfs: %v", err)
-	}
 
 	b, err := types.NewBundle(filepath.Join(os.TempDir(), "sbuild-SIFAssembler"), os.TempDir())
 	if err != nil {
@@ -123,9 +112,7 @@ func TestSIFAssemblerShub(t *testing.T) {
 		t.Fatalf("failed to Pack from %s: %v\n", assemblerShubURI, err)
 	}
 
-	a := &assemblers.SIFAssembler{
-		MksquashfsPath: mksquashfsPath,
-	}
+	a := &assemblers.SIFAssembler{}
 
 	err = a.Assemble(b, assemblerShubDest)
 	if err != nil {
