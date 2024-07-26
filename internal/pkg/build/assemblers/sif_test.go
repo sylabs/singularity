@@ -33,6 +33,8 @@ func TestMain(m *testing.M) {
 }
 
 // TestSIFAssemblerDocker sees if we can build a SIF image from an image from a Docker registry
+//
+//nolint:dupl
 func TestSIFAssemblerDocker(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
@@ -80,8 +82,6 @@ func TestSIFAssemblerDocker(t *testing.T) {
 }
 
 // TestSIFAssemblerShub sees if we can build a SIF image from an image from a Singularity registry
-//
-//nolint:dupl
 func TestSIFAssemblerShub(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()

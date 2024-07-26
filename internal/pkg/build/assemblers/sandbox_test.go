@@ -24,6 +24,8 @@ const (
 )
 
 // TestSandboxAssemblerDocker sees if we can build a sandbox from an image from a Docker registry
+//
+//nolint:dupl
 func TestSandboxAssemblerDocker(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
@@ -71,8 +73,6 @@ func TestSandboxAssemblerDocker(t *testing.T) {
 }
 
 // TestSandboxAssemblerShub sees if we can build a sandbox from an image from a Singularity registry
-//
-//nolint:dupl
 func TestSandboxAssemblerShub(t *testing.T) {
 	if testing.Short() {
 		t.SkipNow()
