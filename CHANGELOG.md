@@ -8,6 +8,8 @@
   (`docker://`) etc.
 - Fix confusing error messages / incorrect fall-back attempt when explicit
   execution of an OCI-SIF fails.
+- Fix failing builds from local images that have symbolic links for paths that
+  are part of the base container environment (e.g. /var/tmp -> /tmp).
 
 ## 4.1.4 \[2024-06-28\]
 
