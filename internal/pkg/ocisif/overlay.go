@@ -250,9 +250,10 @@ func SealOverlay(imagePath, tmpDir string) error {
 	if err := im.Mount(context.TODO()); err != nil {
 		return err
 	}
-	// Create squashfs from mounted extfs dir.
+	// Create squashfs from upper directory inside mounted extfs dir.
+	upperDir := filepath.Join(mntDir, "upper")
 	sqfs := filepath.Join(tmpDir, "overlay.sqfs")
-	if err := squashfs.Mksquashfs([]string{mntDir}, sqfs); err != nil {
+	if err := squashfs.Mksquashfs([]string{upperDir}, sqfs); err != nil {
 		return err
 	}
 	// Unmount the extfs.
