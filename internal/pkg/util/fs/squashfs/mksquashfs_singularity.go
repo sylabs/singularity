@@ -36,11 +36,13 @@ func getConfig() (*singularityconf.File, error) {
 
 // mksquashfsOpts accumulates mksquashfs options.
 type mksquashfsOpts struct {
-	path    string
-	procs   uint
-	mem     string
-	comp    string
-	allRoot bool
+	path      string
+	procs     uint
+	mem       string
+	comp      string
+	allRoot   bool
+	wildcards bool
+	excludes  []string
 }
 
 func defaultPath() (string, error) {
@@ -135,6 +137,22 @@ func OptAllRoot(a bool) MksquashfsOpt {
 	}
 }
 
+// OptWildcards enables wildcard matching for exclude patterns.
+func OptWildcards(w bool) MksquashfsOpt {
+	return func(o *mksquashfsOpts) error {
+		o.wildcards = w
+		return nil
+	}
+}
+
+// OptExcludes specifies patterns to match against files to be excluded.
+func OptExcludes(e []string) MksquashfsOpt {
+	return func(o *mksquashfsOpts) error {
+		o.excludes = e
+		return nil
+	}
+}
+
 // Mksquashfs calls the mksquashfs binary to create a squashfs image at dest,
 // containing items listed in files. By default, zlib compression is used, and
 // the processor and memory resource limits specified in singularity.conf are
@@ -165,6 +183,13 @@ func Mksquashfs(files []string, dest string, opts ...MksquashfsOpt) error {
 	}
 	if mo.allRoot {
 		flags = append(flags, "-all-root")
+	}
+	if mo.wildcards {
+		flags = append(flags, "-wildcards")
+	}
+	if len(mo.excludes) > 0 {
+		flags = append(flags, "-e")
+		flags = append(flags, mo.excludes...)
 	}
 
 	var stderr bytes.Buffer
