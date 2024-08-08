@@ -1411,7 +1411,7 @@ func (c ctx) testDockerPlatform(t *testing.T) {
 			exit:     0,
 		},
 		{
-			name:     "MultiArchBadPlatform",
+			name:     "MultiArchInvalidPlatform",
 			platform: "windows/m68k",
 			uri:      "docker://alpine:latest",
 			exit:     255,
@@ -1429,8 +1429,14 @@ func (c ctx) testDockerPlatform(t *testing.T) {
 			exit:     0,
 		},
 		{
-			name:     "SingleArchBadPlatform",
+			name:     "SingleArchInvalidPlatform",
 			platform: "windows/m68k",
+			uri:      "docker://ppc64le/alpine:latest",
+			exit:     255,
+		},
+		{
+			name:     "SingleArchMissingPlatform",
+			platform: "linux/arm64",
 			uri:      "docker://ppc64le/alpine:latest",
 			exit:     255,
 		},

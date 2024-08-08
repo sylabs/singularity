@@ -18,6 +18,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/client/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/machine"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/term"
 )
@@ -59,7 +60,7 @@ func Push(ctx context.Context, sourceFile string, destRef *scslibrary.Ref, opts 
 
 // pushNative pushes a non-OCI SIF image, as a SIF, using the library client.
 func pushNative(ctx context.Context, sourceFile string, destRef *scslibrary.Ref, opts PushOptions) (uploadResponse *scslibrary.UploadImageComplete, err error) {
-	arch, err := sifArch(sourceFile)
+	arch, err := machine.SifArch(sourceFile)
 	if err != nil {
 		return nil, err
 	}
@@ -101,20 +102,6 @@ func pushNative(ctx context.Context, sourceFile string, destRef *scslibrary.Ref,
 	}(time.Now())
 
 	return libraryClient.UploadImage(ctx, f, destRef.Path, arch, destRef.Tags, opts.Description, progressBar)
-}
-
-func sifArch(filename string) (string, error) {
-	f, err := sif.LoadContainerFromPath(filename, sif.OptLoadWithFlag(os.O_RDONLY))
-	if err != nil {
-		return "", fmt.Errorf("unable to open: %v: %w", filename, err)
-	}
-	defer f.UnloadContainer()
-
-	arch := f.PrimaryArch()
-	if arch == "unknown" {
-		return arch, fmt.Errorf("unknown architecture in SIF file")
-	}
-	return arch, nil
 }
 
 // pushOCI pushes an OCI SIF image, as an OCI image, using the ocisif client.

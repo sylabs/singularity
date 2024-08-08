@@ -13,6 +13,8 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/build"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/machine"
 	buildtypes "github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
@@ -50,6 +52,18 @@ func pullNativeSIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFr
 				return "", err
 			}
 		} else {
+			// Ensure what's retrieved from the cache matches the target platform
+			sifArch, err := machine.SifArch(cacheEntry.Path)
+			if err != nil {
+				return "", err
+			}
+			sifPlatform, err := ociplatform.PlatformFromArch(sifArch)
+			if err != nil {
+				return "", fmt.Errorf("could not determine OCI platform from cached image architecture %q: %w", sifArch, err)
+			}
+			if !sifPlatform.Satisfies(opts.Platform) {
+				return "", fmt.Errorf("image (%s) does not satisfy required platform (%s)", sifPlatform, opts.Platform)
+			}
 			sylog.Infof("Using cached SIF image")
 		}
 		imagePath = cacheEntry.Path

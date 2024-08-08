@@ -18,6 +18,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
@@ -303,4 +304,19 @@ func CompatibleWith(arch string) bool {
 	}
 
 	return canEmulate(arch)
+}
+
+// SifArch returns the architecture of the primary partition in a SIF file.
+func SifArch(filename string) (string, error) {
+	f, err := sif.LoadContainerFromPath(filename, sif.OptLoadWithFlag(os.O_RDONLY))
+	if err != nil {
+		return "", fmt.Errorf("unable to open: %v: %w", filename, err)
+	}
+	defer f.UnloadContainer()
+
+	arch := f.PrimaryArch()
+	if arch == "unknown" {
+		return arch, fmt.Errorf("unknown architecture in SIF file")
+	}
+	return arch, nil
 }

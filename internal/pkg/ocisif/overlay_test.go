@@ -246,7 +246,7 @@ func TestSyncOverlay(t *testing.T) {
 			}
 
 			// Final overlay layer must have the expected digest.
-			img, err := getSingleImage(fi)
+			img, err := GetSingleImage(fi)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -300,7 +300,7 @@ func TestSealOverlay(t *testing.T) {
 		t.Error(err)
 	}
 	defer fi.UnloadContainer()
-	img, err := getSingleImage(fi)
+	img, err := GetSingleImage(fi)
 	if err != nil {
 		t.Error(err)
 	}
