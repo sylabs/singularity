@@ -165,6 +165,11 @@ func checkOpts(lo launcher.Options) error {
 		badOpt = append(badOpt, "NetworkArgs")
 	}
 
+	// No join of an existing network namespace
+	if lo.NetnsPath != "" {
+		badOpt = append(badOpt, "NetnsPath")
+	}
+
 	if len(lo.SecurityOpts) > 0 {
 		badOpt = append(badOpt, "SecurityOpts")
 	}

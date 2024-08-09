@@ -842,11 +842,14 @@ func (l *Launcher) setGPUBinds(libs, bins, ipcs []string, gpuPlatform string) {
 }
 
 // setNamespaces sets namespace configuration for the engine.
-func (l *Launcher) setNamespaces() {
-	// unprivileged installation could not use fakeroot
-	// network because it requires a setuid installation
-	// so we fallback to none
+func (l *Launcher) setNamespaces() error {
 	if l.cfg.Namespaces.Net {
+		if l.cfg.NetnsPath != "" {
+			return fmt.Errorf("cannot join existing --netns-path and create a new network namespace with --net/-n")
+		}
+		// unprivileged installation could not use fakeroot
+		// network because it requires a setuid installation
+		// so we fallback to none
 		if l.cfg.Fakeroot && l.cfg.Network != "none" {
 			if buildcfg.SINGULARITY_SUID_INSTALL == 0 || !l.engineConfig.File.AllowSetuid {
 				sylog.Warningf(
@@ -857,6 +860,11 @@ func (l *Launcher) setNamespaces() {
 			}
 		}
 		l.generator.AddOrReplaceLinuxNamespace("network", "")
+	}
+	if l.cfg.NetnsPath != "" {
+		// Note - runtime code checks whether netns-path is permitted (root or
+		// allowed via singularity.conf).
+		l.generator.AddOrReplaceLinuxNamespace("network", l.cfg.NetnsPath)
 	}
 	if l.cfg.Namespaces.UTS {
 		l.generator.AddOrReplaceLinuxNamespace("uts", "")
@@ -875,6 +883,7 @@ func (l *Launcher) setNamespaces() {
 			l.generator.AddLinuxGIDMapping(l.gid, l.gid, 1)
 		}
 	}
+	return nil
 }
 
 // setEnv sets the environment for the container, from the host environment, glads, env-file.
