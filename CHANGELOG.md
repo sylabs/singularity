@@ -33,6 +33,12 @@
   the image via the overlay, so that they are permanent.
 - Added a new `instance run` command that will execute the runscript when an
   instance is initiated instead of executing the startscript.
+- The new `--netns-path` flag takes a path to a network namespace to join when
+  starting a container. The `root` user may join any network namespace. An
+  unprivileged user can only join a network namespace specified in the new
+  `allowed netns paths` directive in `singularity.conf`, if they are also listed
+  in `allowed net users` / `allowed net groups`. Not currently supported with
+  `--fakeroot`, or in `--oci` mode.
 
 ### Bug Fixes
 

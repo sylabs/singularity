@@ -367,6 +367,7 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 		launcher.OptEnv(singularityEnv, singularityEnvFiles, isCleanEnv),
 		launcher.OptNoEval(noEval),
 		launcher.OptNamespaces(ns),
+		launcher.OptNetnsPath(netnsPath),
 		launcher.OptNetwork(network, networkArgs),
 		launcher.OptHostname(hostname),
 		launcher.OptDNS(dns),
