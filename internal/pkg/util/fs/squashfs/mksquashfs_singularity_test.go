@@ -14,7 +14,7 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/image"
 )
 
-func checkArchive(t *testing.T, path string, files []string, comp string) {
+func checkArchive(t *testing.T, path string, presentFiles, absentFiles []string, comp string) {
 	b, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
@@ -40,10 +40,17 @@ func checkArchive(t *testing.T, path string, files []string, comp string) {
 		t.Fatalf("%v: %v", err, string(out))
 	}
 
-	for _, f := range files {
+	for _, f := range presentFiles {
 		path := filepath.Join(dir, f)
 		if _, err := os.Stat(path); err != nil {
 			t.Errorf("squashfs verification failed: %s :%v", path, err)
+		}
+	}
+
+	for _, f := range absentFiles {
+		path := filepath.Join(dir, f)
+		if _, err := os.Stat(path); !os.IsNotExist(err) {
+			t.Errorf("squashfs verification failed: %s is present but not expected", path)
 		}
 	}
 }
@@ -57,21 +64,22 @@ func TestMksquashfs(t *testing.T) {
 		opts          []MksquashfsOpt
 		expectError   bool
 		expectComp    string
-		checkForFiles []string
+		expectPresent []string
+		expectAbsent  []string
 	}{
 		{
 			name:          "DefaultFiles",
 			files:         testFiles,
 			expectError:   false,
 			expectComp:    "gzip",
-			checkForFiles: testFiles,
+			expectPresent: testFiles,
 		},
 		{
 			name:          "DefaultDir",
 			files:         []string{"."},
 			expectError:   false,
 			expectComp:    "gzip",
-			checkForFiles: testFiles,
+			expectPresent: testFiles,
 		},
 		{
 			name:        "DoesNotExist",
@@ -84,7 +92,7 @@ func TestMksquashfs(t *testing.T) {
 			opts:          []MksquashfsOpt{OptProcs(1)},
 			expectError:   false,
 			expectComp:    "gzip",
-			checkForFiles: testFiles,
+			expectPresent: testFiles,
 		},
 		{
 			name:          "OptMem",
@@ -92,7 +100,7 @@ func TestMksquashfs(t *testing.T) {
 			opts:          []MksquashfsOpt{OptMem("64M")},
 			expectError:   false,
 			expectComp:    "gzip",
-			checkForFiles: testFiles,
+			expectPresent: testFiles,
 		},
 		{
 			name:        "BadMem",
@@ -106,7 +114,7 @@ func TestMksquashfs(t *testing.T) {
 			opts:          []MksquashfsOpt{OptComp("xz")},
 			expectError:   false,
 			expectComp:    "xz",
-			checkForFiles: testFiles,
+			expectPresent: testFiles,
 		},
 		{
 			name:        "BadComp",
@@ -120,7 +128,30 @@ func TestMksquashfs(t *testing.T) {
 			opts:          []MksquashfsOpt{OptAllRoot(true)},
 			expectError:   false,
 			expectComp:    "gzip",
-			checkForFiles: testFiles,
+			expectPresent: testFiles,
+		},
+		{
+			name:  "OptExcludes",
+			files: []string{"."},
+			opts: []MksquashfsOpt{
+				OptExcludes([]string{"mksquashfs_singularity_test.go"}),
+			},
+			expectError:   false,
+			expectComp:    "gzip",
+			expectPresent: []string{"mksquashfs_singularity.go"},
+			expectAbsent:  []string{"mksquashfs_singularity_test.go"},
+		},
+		{
+			name:  "OptExcludesWildcards",
+			files: []string{"."},
+			opts: []MksquashfsOpt{
+				OptExcludes([]string{"*_test.go"}),
+				OptWildcards(true),
+			},
+			expectError:   false,
+			expectComp:    "gzip",
+			expectPresent: []string{"mksquashfs_singularity.go"},
+			expectAbsent:  []string{"mksquashfs_singularity_test.go"},
 		},
 	}
 
@@ -133,8 +164,8 @@ func TestMksquashfs(t *testing.T) {
 		if err == nil && tt.expectError {
 			t.Error("expected error, but got nil")
 		}
-		if len(tt.checkForFiles) > 0 {
-			checkArchive(t, squashImg, tt.checkForFiles, tt.expectComp)
+		if len(tt.expectPresent) > 0 {
+			checkArchive(t, squashImg, tt.expectPresent, tt.expectAbsent, tt.expectComp)
 		}
 	}
 }

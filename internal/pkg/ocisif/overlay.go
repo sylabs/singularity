@@ -232,9 +232,21 @@ func SealOverlay(imagePath, tmpDir string) error {
 	if err := im.Mount(context.TODO()); err != nil {
 		return err
 	}
-	// Create squashfs from mounted extfs dir.
+	// Create squashfs from upper directory inside mounted extfs dir.
+	upperDir := filepath.Join(mntDir, "upper")
 	sqfs := filepath.Join(tmpDir, "overlay.sqfs")
-	if err := squashfs.Mksquashfs([]string{mntDir}, sqfs); err != nil {
+
+	// Exclude the dangling `.wh..opq` 0:0 char device whiteout marker created
+	// by fuse-overlayfs inside opaque directories. This is neither a valid AUFS
+	// or native OverlayFS whiteout.
+	// See: https://github.com/sylabs/singularity/issues/3176
+	sqfsOpts := []squashfs.MksquashfsOpt{
+		squashfs.OptWildcards(true),
+		// '...' indicates an non-rooted match, i.e. match .wh..opq in any directory.
+		squashfs.OptExcludes([]string{"... .wh..opq"}),
+	}
+
+	if err := squashfs.Mksquashfs([]string{upperDir}, sqfs, sqfsOpts...); err != nil {
 		return err
 	}
 	// Unmount the extfs.
