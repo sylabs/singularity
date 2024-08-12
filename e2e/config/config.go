@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"syscall"
 	"testing"
 
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
@@ -821,32 +822,33 @@ func (c configTests) configGlobal(t *testing.T) {
 	}
 }
 
+func (c *configTests) setDirectives(t *testing.T, directives map[string]string) {
+	for k, v := range directives {
+		c.env.RunSingularity(
+			t,
+			e2e.WithProfile(e2e.RootProfile),
+			e2e.WithCommand("config global"),
+			e2e.WithArgs("--set", k, v),
+			e2e.ExpectExit(0),
+		)
+	}
+}
+
+func (c *configTests) resetDirectives(t *testing.T, directives map[string]string) {
+	for k := range directives {
+		c.env.RunSingularity(
+			t,
+			e2e.WithProfile(e2e.RootProfile),
+			e2e.WithCommand("config global"),
+			e2e.WithArgs("--reset", k),
+			e2e.ExpectExit(0),
+		)
+	}
+}
+
 // Tests that require combinations of directives to be set
 func (c configTests) configGlobalCombination(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
-
-	setDirective := func(t *testing.T, directives map[string]string) {
-		for k, v := range directives {
-			c.env.RunSingularity(
-				t,
-				e2e.WithProfile(e2e.RootProfile),
-				e2e.WithCommand("config global"),
-				e2e.WithArgs("--set", k, v),
-				e2e.ExpectExit(0),
-			)
-		}
-	}
-	resetDirective := func(t *testing.T, directives map[string]string) {
-		for k := range directives {
-			c.env.RunSingularity(
-				t,
-				e2e.WithProfile(e2e.RootProfile),
-				e2e.WithCommand("config global"),
-				e2e.WithArgs("--reset", k),
-				e2e.ExpectExit(0),
-			)
-		}
-	}
 
 	u := e2e.UserProfile.HostUser(t)
 	g, err := user.GetGrGID(u.GID)
@@ -1041,14 +1043,131 @@ func (c configTests) configGlobalCombination(t *testing.T) {
 				if tt.addRequirementsFn != nil {
 					tt.addRequirementsFn(t)
 				}
-				setDirective(t, tt.directives)
+				c.setDirectives(t, tt.directives)
 			}),
 			e2e.PostRun(func(t *testing.T) {
-				resetDirective(t, tt.directives)
+				c.resetDirectives(t, tt.directives)
 			}),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit, tt.resultOp),
+		)
+	}
+}
+
+func (c configTests) configUserNetns(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+	require.Command(t, "ip")
+
+	u := e2e.UserProfile.HostUser(t)
+	g, err := user.GetGrGID(u.GID)
+	if err != nil {
+		t.Fatalf("could not retrieve user group information: %s", err)
+	}
+
+	nsName := "singularity-e2e"
+	nsPath := filepath.Join("/run", "netns", nsName)
+
+	netnsInode := uint64(0)
+
+	e2e.Privileged(func(t *testing.T) {
+		t.Log("Creating netns")
+		cmd := exec.Command("ip", "netns", "add", nsName)
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("While creating network namespace: %v", err)
+		}
+		fi, err := os.Stat(nsPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		stat, ok := fi.Sys().(*syscall.Stat_t)
+		if !ok {
+			t.Fatal("Stat_t assertion error")
+		}
+		netnsInode = stat.Ino
+		t.Logf("Netns inode: %d", netnsInode)
+	})(t)
+
+	defer e2e.Privileged(func(t *testing.T) {
+		t.Log("Deleting netns")
+		cmd := exec.Command("ip", "netns", "delete", nsName)
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("While deleting network namespace: %v", err)
+		}
+	})(t)
+
+	tests := []struct {
+		name         string
+		netnsPath    string
+		directives   map[string]string
+		expectExit   int
+		expectOutput string
+	}{
+		{
+			name:       "Default",
+			netnsPath:  nsPath,
+			expectExit: 255,
+		},
+		{
+			name:      "NetnsPathOnly",
+			netnsPath: nsPath,
+			directives: map[string]string{
+				"allow netns paths": nsPath,
+			},
+			expectExit: 255,
+		},
+		{
+			name:      "NetUserOnly",
+			netnsPath: nsPath,
+			directives: map[string]string{
+				"allow net users": u.Name,
+			},
+			expectExit: 255,
+		},
+		{
+			name:      "NetGroupOnly",
+			netnsPath: nsPath,
+			directives: map[string]string{
+				"allow net groups": g.Name,
+			},
+			expectExit: 255,
+		},
+		{
+			name:      "ValidUser",
+			netnsPath: nsPath,
+			directives: map[string]string{
+				"allow net users":   u.Name,
+				"allow netns paths": nsPath,
+			},
+			expectExit:   0,
+			expectOutput: fmt.Sprintf("%d", netnsInode),
+		},
+		{
+			name:      "ValidGroup",
+			netnsPath: nsPath,
+			directives: map[string]string{
+				"allow net groups":  g.Name,
+				"allow netns paths": nsPath,
+			},
+			expectExit:   0,
+			expectOutput: fmt.Sprintf("%d", netnsInode),
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.PreRun(func(t *testing.T) {
+				c.setDirectives(t, tt.directives)
+			}),
+			e2e.PostRun(func(t *testing.T) {
+				c.resetDirectives(t, tt.directives)
+			}),
+			e2e.WithCommand("exec"),
+			e2e.WithArgs("--netns-path", tt.netnsPath, c.env.ImagePath, "stat", "-L", "-c", "%i", "/proc/self/ns/net"),
+			e2e.ExpectExit(tt.expectExit, e2e.ExpectOutput(e2e.ContainMatch, tt.expectOutput)),
 		)
 	}
 }
@@ -1125,6 +1244,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"config file":               c.configFile,                  // test --config file option
 		"config global":             np(c.configGlobal),            // test various global configuration
 		"config global combination": np(c.configGlobalCombination), // test various global configuration with combination
+		"config user netns":         np(c.configUserNetns),         // test entering a network namespace as an unpriv user
 		"oci config global":         np(c.ociConfigGlobal),         // test various global configuration for OCI mode
 	}
 }

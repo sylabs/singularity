@@ -63,6 +63,7 @@ var (
 	disableCache    bool
 
 	netNamespace   bool
+	netnsPath      string
 	utsNamespace   bool
 	userNamespace  bool
 	pidNamespace   bool
@@ -549,6 +550,16 @@ var actionNetNamespaceFlag = cmdline.Flag{
 	EnvKeys:      []string{"NET", "UNSHARE_NET"},
 }
 
+// --netns-path
+var actionNetnsPathFlag = cmdline.Flag{
+	ID:           "actionNetnsPathFlag",
+	Value:        &netnsPath,
+	DefaultValue: "",
+	Name:         "netns-path",
+	Usage:        "join the network namespace at the specified path (as root, or if permitted in singularity.conf)",
+	EnvKeys:      []string{"NETNS_PATH"},
+}
+
 // --uts
 var actionUtsNamespaceFlag = cmdline.Flag{
 	ID:           "actionUtsNamespaceFlag",
@@ -851,6 +862,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&actionKeepPrivsFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionMountFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNetNamespaceFlag, actionsInstanceCmd...)
+		cmdManager.RegisterFlagForCmd(&actionNetnsPathFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNetworkArgsFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNetworkFlag, actionsInstanceCmd...)
 		cmdManager.RegisterFlagForCmd(&actionNoHomeFlag, actionsInstanceCmd...)

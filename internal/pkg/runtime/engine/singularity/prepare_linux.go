@@ -45,6 +45,7 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/v4/pkg/util/namespaces"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
+	"github.com/sylabs/singularity/v4/pkg/util/slice"
 	"golang.org/x/sys/unix"
 )
 
@@ -530,15 +531,59 @@ func (e *EngineOperations) removeNamespace(namespaceType specs.LinuxNamespaceTyp
 	}
 }
 
-// hasNamespaces checks for existence of a specific namespace in the namespaces slice.
-func (e *EngineOperations) hasNamespace(namespaceType specs.LinuxNamespaceType) bool {
+// hasNamespaces checks for existence of a specific namespace in the namespaces
+// slice, returning true and the ns path (if set) if the namespace exists in the
+// slice.
+func (e *EngineOperations) hasNamespace(namespaceType specs.LinuxNamespaceType) (bool, string) {
 	namespaces := e.EngineConfig.OciConfig.Linux.Namespaces
 	for _, ns := range namespaces {
 		if namespaceType == ns.Type {
-			return true
+			return true, ns.Path
 		}
 	}
-	return false
+	return false, ""
+}
+
+func (e *EngineOperations) joinNetns(starterConfig *starter.Config) error {
+	// No netns path requested - nothing to validate here.
+	ok, netnsPath := e.hasNamespace(specs.NetworkNamespace)
+	if !ok || netnsPath == "" {
+		return nil
+	}
+
+	// The netns path must already exist.
+	_, err := os.Stat(netnsPath)
+	if err != nil {
+		return fmt.Errorf("while checking netns path: %w", err)
+	}
+
+	// Root can join any network namespace.
+	euid := os.Geteuid()
+	if euid == 0 {
+		return starterConfig.SetNsPath(specs.NetworkNamespace, netnsPath)
+	}
+
+	// Is the user permitted in the list of unpriv users / groups permitted to join netns?
+	allowedNetUser, err := user.UIDInList(euid, e.EngineConfig.File.AllowNetUsers)
+	if err != nil {
+		return err
+	}
+	allowedNetGroup, err := user.UIDInAnyGroup(euid, e.EngineConfig.File.AllowNetGroups)
+	if err != nil {
+		return err
+	}
+	// Is the netns path permitted in singularity conf?
+	permittedPath := slice.ContainsString(e.EngineConfig.File.AllowNetnsPaths, netnsPath)
+
+	if !permittedPath {
+		return fmt.Errorf("%q is not an allowed netns path in singularity.conf", netnsPath)
+	}
+
+	if !(allowedNetUser || allowedNetGroup) {
+		return fmt.Errorf("you are not permitted to join network namespaces in singularity.conf")
+	}
+
+	return starterConfig.SetNsPath(specs.NetworkNamespace, netnsPath)
 }
 
 // prepareContainerConfig is responsible for getting and applying
@@ -558,7 +603,7 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 		if buildcfg.SINGULARITY_SUID_INSTALL == 0 {
 			sylog.Fatalf("Unprivileged installation found, user namepace needed but not allowed by configuration.")
 		}
-		if e.hasNamespace(specs.UserNamespace) {
+		if n, _ := e.hasNamespace(specs.UserNamespace); n {
 			sylog.Fatalf("User namespace required but not allowed by configuration.")
 		}
 	}
@@ -567,6 +612,11 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 		if e.EngineConfig.OciConfig.Hostname != "" {
 			sylog.Warningf("Container hostname cannot be set.")
 		}
+	}
+	// Validate and apply any request to join an existing network namespace.
+	// Must be root or authorized in singularity.conf.
+	if err := e.joinNetns(starterConfig); err != nil {
+		return err
 	}
 
 	if os.Getuid() == 0 {
