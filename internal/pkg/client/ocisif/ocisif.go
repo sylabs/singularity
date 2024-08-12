@@ -92,6 +92,19 @@ func PullOCISIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom 
 				return "", err
 			}
 		} else {
+			// Ensure what's retrieved from the cache matches the target platform
+			fi, err := sif.LoadContainerFromPath(cacheEntry.Path)
+			if err != nil {
+				return "", err
+			}
+			defer fi.UnloadContainer()
+			img, err := ocisif.GetSingleImage(fi)
+			if err != nil {
+				return "", fmt.Errorf("while getting image: %w", err)
+			}
+			if err := ociplatform.CheckImagePlatform(opts.Platform, img); err != nil {
+				return "", err
+			}
 			sylog.Infof("Using cached OCI-SIF image")
 		}
 		imagePath = cacheEntry.Path
@@ -121,10 +134,6 @@ func createOciSif(ctx context.Context, tOpts *ociimage.TransportOptions, imgCach
 	img, err := ociimage.LocalImage(ctx, tOpts, imgCache, imageSrc, tmpDir)
 	if err != nil {
 		return fmt.Errorf("while fetching OCI image: %w", err)
-	}
-
-	if err := ociplatform.CheckImagePlatform(tOpts.Platform, img); err != nil {
-		return fmt.Errorf("while checking OCI image: %w", err)
 	}
 
 	iwOpts := []ocisif.ImageWriterOpt{ocisif.WithSquashFSLayers(true)}

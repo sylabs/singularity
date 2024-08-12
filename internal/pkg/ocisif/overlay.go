@@ -27,24 +27,6 @@ import (
 
 var Ext3LayerMediaType types.MediaType = "application/vnd.sylabs.image.layer.v1.ext3"
 
-func getSingleImage(fi *sif.FileImage) (v1.Image, error) {
-	ii, err := ocitsif.ImageIndexFromFileImage(fi)
-	if err != nil {
-		return nil, fmt.Errorf("while obtaining image index: %w", err)
-	}
-	ix, err := ii.IndexManifest()
-	if err != nil {
-		return nil, fmt.Errorf("while obtaining index manifest: %w", err)
-	}
-
-	// One image only.
-	if len(ix.Manifests) != 1 {
-		return nil, fmt.Errorf("only single image data containers are supported, found %d images", len(ix.Manifests))
-	}
-	imageDigest := ix.Manifests[0].Digest
-	return ii.Image(imageDigest)
-}
-
 // HasOverlay returns whether the OCI-SIF at imgPath has an ext3 writable final
 // layer - an 'overlay'. If present, the offset of the overlay data in the
 // OCI-SIF file is also returned.
@@ -57,7 +39,7 @@ func HasOverlay(imagePath string) (bool, int64, error) {
 	}
 	defer fi.UnloadContainer()
 
-	img, err := getSingleImage(fi)
+	img, err := GetSingleImage(fi)
 	if err != nil {
 		return false, 0, fmt.Errorf("while getting image: %w", err)
 	}
@@ -98,7 +80,7 @@ func AddOverlay(imagePath string, overlayPath string) error {
 	}
 	defer fi.UnloadContainer()
 
-	img, err := getSingleImage(fi)
+	img, err := GetSingleImage(fi)
 	if err != nil {
 		return fmt.Errorf("while getting image: %w", err)
 	}
@@ -127,7 +109,7 @@ func SyncOverlay(imagePath string) error {
 	}
 	defer fi.UnloadContainer()
 
-	img, err := getSingleImage(fi)
+	img, err := GetSingleImage(fi)
 	if err != nil {
 		return fmt.Errorf("while getting image: %w", err)
 	}
@@ -200,7 +182,7 @@ func SealOverlay(imagePath, tmpDir string) error {
 	}
 	defer fi.UnloadContainer()
 
-	img, err := getSingleImage(fi)
+	img, err := GetSingleImage(fi)
 	if err != nil {
 		return fmt.Errorf("while getting image: %w", err)
 	}
