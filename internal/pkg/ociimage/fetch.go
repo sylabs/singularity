@@ -20,6 +20,7 @@ import (
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
+	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
@@ -56,7 +57,8 @@ func cachedImage(ctx context.Context, imgCache *cache.Handle, srcImg ggcrv1.Imag
 // docker daemon, it will be pulled into the local cache - which is a
 // multi-image OCI layout. If the cache is disabled, the image will be fetched
 // into a subdirectory of the provided tmpDir. The caller is responsible for
-// cleaning up tmpDir.
+// cleaning up tmpDir. The platform of the image will be checked against
+// tOpts.Platform.
 func LocalImage(ctx context.Context, tOpts *TransportOptions, imgCache *cache.Handle, imageURI, tmpDir string) (ggcrv1.Image, error) {
 	// oci-archive tarball is a local file, but current ggcr cannot read
 	// directly. Must always extract to a layoutdir .
@@ -70,7 +72,16 @@ func LocalImage(ctx context.Context, tOpts *TransportOptions, imgCache *cache.Ha
 	}
 	// Docker tarballs and OCI layouts are already local
 	if srcType == TarballSourceSink || srcType == OCISourceSink {
-		return srcType.Image(ctx, srcRef, tOpts, nil)
+		img, err := srcType.Image(ctx, srcRef, tOpts, nil)
+		if err != nil {
+			return nil, err
+		}
+		// Verify against requested platform - ggcr doesn't filter on platform
+		// when pulling a manifest directly, only on pulling from an image index.
+		if err := ociplatform.CheckImagePlatform(tOpts.Platform, img); err != nil {
+			return nil, fmt.Errorf("while checking OCI image: %w", err)
+		}
+		return img, nil
 	}
 
 	return LocalImageLayout(ctx, tOpts, imgCache, imageURI, tmpDir)
@@ -82,7 +93,8 @@ func LocalImage(ctx context.Context, tOpts *TransportOptions, imgCache *cache.Ha
 // docker daemon, it will be pulled into the local cache - which is a
 // multi-image OCI layout. If the cache is disabled, the image will be fetched
 // into a subdirectory of the provided tmpDir. The caller is responsible for
-// cleaning up tmpDir.
+// cleaning up tmpDir. The platform of the image will be checked against
+// tOpts.Platform.
 func LocalImageLayout(ctx context.Context, tOpts *TransportOptions, imgCache *cache.Handle, imageURI, tmpDir string) (ggcrv1.Image, error) {
 	if strings.HasPrefix(imageURI, "oci-archive:") {
 		// oci-archive is a straight tar of an OCI layout, so extract to a tempDir
@@ -98,18 +110,26 @@ func LocalImageLayout(ctx context.Context, tOpts *TransportOptions, imgCache *ca
 		return nil, err
 	}
 
-	// We might already have an OCI layout at this point
-	if srcType == OCISourceSink {
-		return srcType.Image(ctx, srcRef, tOpts, nil)
-	}
-
-	// Registry / Docker Daemon images need to be fetched
 	rt := progress.NewRoundTripper(ctx, nil)
 	srcImg, err := srcType.Image(ctx, srcRef, tOpts, rt)
 	if err != nil {
 		rt.ProgressShutdown()
 		return nil, err
 	}
+
+	// Verify against requested platform - ggcr doesn't filter on platform when
+	// pulling a manifest directly, only on pulling from an image index.
+	if err := ociplatform.CheckImagePlatform(tOpts.Platform, srcImg); err != nil {
+		return nil, fmt.Errorf("while checking OCI image: %w", err)
+	}
+
+	// We might already have an OCI layout at this point - which is local.
+	if srcType == OCISourceSink {
+		rt.ProgressShutdown()
+		return srcImg, nil
+	}
+
+	// Registry / Docker Daemon images need to be fetched
 
 	if imgCache != nil && !imgCache.IsDisabled() {
 		// Ensure the image is cached, and return reference to the cached image.

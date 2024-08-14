@@ -10,6 +10,8 @@
   execution of an OCI-SIF fails.
 - Fix failing builds from local images that have symbolic links for paths that
   are part of the base container environment (e.g. /var/tmp -> /tmp).
+- Fix issue where `--platform` / `--arch` did not apply when pulling an OCI
+  image to native SIF via image manifest, rather than image index.
 
 ## 4.1.4 \[2024-06-28\]
 
