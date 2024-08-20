@@ -4,7 +4,7 @@
 
 ### Requirements
 
-- Go 1.22 or above is required due to indirect dependencies.
+- Go 1.22.5 or above is required due to indirect dependencies.
 
 ## 4.2.0-rc.1 \[2024-08-13\]
 
