@@ -334,7 +334,7 @@ func TestSyncFrom(t *testing.T) {
 
 	for _, test := range testsPass {
 		t.Run(test.name, func(t *testing.T) {
-			if err := test.usr.SyncFrom(&test.sys); err != nil { //nolint:gosec
+			if err := test.usr.SyncFrom(&test.sys); err != nil {
 				t.Error("failed to sync from sys")
 			}
 
@@ -371,7 +371,7 @@ func TestSyncFrom(t *testing.T) {
 
 	for _, test := range testsFail {
 		t.Run(test.name, func(t *testing.T) {
-			if err := test.usr.SyncFrom(&test.sys); err == nil { //nolint:gosec
+			if err := test.usr.SyncFrom(&test.sys); err == nil {
 				t.Error("unexpected success calling SyncFrom")
 			}
 		})
