@@ -49,7 +49,7 @@ var OverlayCreateCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	RunE: func(_ *cobra.Command, args []string) error {
 		if err := singularity.OverlayCreate(args[0], overlaySize, overlaySparse, overlayDirs...); err != nil {
-			sylog.Fatalf(err.Error())
+			sylog.Fatalf("%v", err.Error())
 		}
 		return nil
 	},

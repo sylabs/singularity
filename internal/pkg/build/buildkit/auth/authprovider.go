@@ -226,7 +226,6 @@ func (ap *authProvider) VerifyTokenAuthority(_ context.Context, req *auth.Verify
 	return &auth.VerifyTokenAuthorityResponse{Signed: sign.Sign(nil, req.Payload, priv)}, nil
 }
 
-//nolint:unparam
 func (ap *authProvider) getAuthConfig(host string) (*authn.AuthConfig, error) {
 	ap.mu.Lock()
 	defer ap.mu.Unlock()

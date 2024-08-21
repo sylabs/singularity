@@ -230,10 +230,10 @@ func (c ctx) testSingularity(t *testing.T) {
 	for _, tt := range tests {
 		printSuccessOrFailureFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
 			if r.Stdout != nil {
-				t.Logf(string(r.Stdout) + "\n")
+				t.Log(string(r.Stdout) + "\n")
 			}
 			if r.Stderr != nil {
-				t.Logf(string(r.Stderr) + "\n")
+				t.Log(string(r.Stderr) + "\n")
 			}
 		}
 
