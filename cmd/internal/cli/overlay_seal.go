@@ -20,7 +20,7 @@ var OverlaySealCmd = &cobra.Command{
 	RunE: func(_ *cobra.Command, args []string) error {
 		tmpEnv := os.Getenv("SINGULARITY_TMPDIR")
 		if err := ocisif.SealOverlay(args[0], tmpEnv); err != nil {
-			sylog.Fatalf(err.Error())
+			sylog.Fatalf("%v", err.Error())
 		}
 		return nil
 	},

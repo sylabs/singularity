@@ -17,7 +17,7 @@ var OverlaySyncCmd = &cobra.Command{
 	Args: cobra.ExactArgs(1),
 	RunE: func(_ *cobra.Command, args []string) error {
 		if err := ocisif.SyncOverlay(args[0]); err != nil {
-			sylog.Fatalf(err.Error())
+			sylog.Fatalf("%v", err.Error())
 		}
 		return nil
 	},

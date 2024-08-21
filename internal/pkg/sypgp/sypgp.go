@@ -587,7 +587,7 @@ func DecryptKey(k *openpgp.Entity, message string) error {
 		message = "Enter key passphrase : "
 	}
 
-	pass, err := interactive.AskQuestionNoEcho(message)
+	pass, err := interactive.AskQuestionNoEcho("%s", message)
 	if err != nil {
 		return err
 	}
