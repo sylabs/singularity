@@ -17,7 +17,7 @@ var DataPackageCmd = &cobra.Command{
 	Args: cobra.ExactArgs(2),
 	RunE: func(_ *cobra.Command, args []string) error {
 		if err := singularity.DataPackage(args[0], args[1]); err != nil {
-			sylog.Fatalf(err.Error())
+			sylog.Fatalf("%v", err.Error())
 		}
 		return nil
 	},

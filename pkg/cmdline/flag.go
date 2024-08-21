@@ -300,7 +300,7 @@ func (m *flagManager) updateCmdFlagFromEnv(cmd *cobra.Command, prefix string) er
 		for _, e := range errs {
 			errStr += fmt.Sprintf("\n%s", e.Error())
 		}
-		return fmt.Errorf(errStr)
+		return fmt.Errorf("while updating flags from environment: %v", errStr)
 	}
 
 	return nil
