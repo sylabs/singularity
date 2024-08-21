@@ -77,7 +77,7 @@ func (s *Squashfs) HasUnsquashfs() bool {
 
 func (s *Squashfs) extract(files []string, reader io.Reader, dest string) (err error) {
 	if !s.HasUnsquashfs() {
-		return fmt.Errorf("could not extract squashfs data, unsquashfs not found")
+		return fmt.Errorf("%w: could not extract squashfs data, unsquashfs not found", os.ErrNotExist)
 	}
 
 	// pipe over stdin by default
@@ -173,7 +173,7 @@ func (s *Squashfs) extract(files []string, reader io.Reader, dest string) (err e
 
 	if os.Getenv("SINGULARITY_DEBUG") != "" {
 		sylog.Debugf("*** BEGIN WRAPPED UNSQUASHFS OUTPUT ***")
-		sylog.Debugf(string(o))
+		sylog.Debugf("%s", string(o))
 		sylog.Debugf("*** END WRAPPED UNSQUASHFS OUTPUT ***")
 	}
 

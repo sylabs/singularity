@@ -530,7 +530,7 @@ func exitError(ctx context.Context, err error) error {
 		}
 		select {
 		case <-ctx.Done():
-			exitErr.Err = errors.Wrapf(ctx.Err(), exitErr.Error())
+			exitErr.Err = errors.Wrap(ctx.Err(), exitErr.Error())
 			return exitErr
 		default:
 			return stack.Enable(exitErr)

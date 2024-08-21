@@ -194,10 +194,10 @@ func startBuildkitd(ctx context.Context, opts *Opts) (bkSocket string, cleanup f
 		select {
 		case <-ctx.Done():
 			cleanup()
-			return "", nil, fmt.Errorf(ctx.Err().Error())
+			return "", nil, fmt.Errorf("%v", ctx.Err().Error())
 		case <-timeout:
 			cleanup()
-			return "", nil, fmt.Errorf("singularity-buildkitd failed to start")
+			return "", nil, fmt.Errorf("%s", "singularity-buildkitd failed to start")
 		case <-tick.C:
 			if ok, err := isBuildkitdRunning(ctx, bkSocket, ""); ok {
 				return bkSocket, cleanup, nil
