@@ -17,8 +17,8 @@ require (
 	github.com/containerd/platforms v0.2.1
 	github.com/containernetworking/cni v1.2.3
 	github.com/containernetworking/plugins v1.5.1
-	github.com/containers/common v0.60.1
-	github.com/containers/image/v5 v5.32.1
+	github.com/containers/common v0.60.2
+	github.com/containers/image/v5 v5.32.2
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/cyphar/filepath-securejoin v0.3.1
 	github.com/docker/cli v27.1.2+incompatible
