@@ -31,12 +31,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/containerd/containerd/pkg/userns"
 	da "github.com/docker/docker/pkg/archive"
 	"github.com/docker/docker/pkg/idtools"
 	"github.com/docker/docker/pkg/pools"
 	"github.com/docker/docker/pkg/system"
 	"github.com/moby/sys/sequential"
+	"github.com/moby/sys/userns"
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
