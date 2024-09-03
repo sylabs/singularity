@@ -157,6 +157,13 @@ func TestWrite(t *testing.T) {
 			workDir: tmpDir,
 			opts:    []ImageWriterOpt{WithSquash(true), WithSquashFSLayers(true)},
 		},
+		{
+			name:    "ArtifactType",
+			srcImg:  tImg,
+			dest:    filepath.Join(tmpDir, "default.oci.sif"),
+			workDir: tmpDir,
+			opts:    []ImageWriterOpt{WithArtifactType(DataContainerArtifactType)},
+		},
 	}
 
 	for _, tt := range tests {
