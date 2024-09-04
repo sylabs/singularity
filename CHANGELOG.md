@@ -2,15 +2,7 @@
 
 ## Changes Since Last Release
 
-### Requirements
-
-- Go 1.22.5 or above is required due to indirect dependencies.
-
-## 4.2.0-rc.1 \[2024-08-13\]
-
-This is the first release candidate for the upcoming 4.2 series of
-SingularityCE. We welcome all feedback and testing. Please continue to use the
-latest 4.1 release for production systems.
+## 4.2.0 \[2024-09-04\]
 
 ### New Features & Functionality
 
