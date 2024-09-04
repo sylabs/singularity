@@ -25,20 +25,21 @@ import (
 
 // ConfigMediaType custom media type.
 const (
-	DataContainerConfigMediaType types.MediaType = "application/vnd.sylabs.data-container.config.v1+json"
+	DataContainerArtifactType string          = "application/vnd.sylabs.data-container.v1"
+	EmptyConfigMediaType      types.MediaType = "application/vnd.oci.empty.v1+json"
 )
-
-// Placeholder config - will become empty JSON in written image
-type DataContainerConfig struct{}
 
 // WriteDataContainerFromPath takes a path to a directory or regular file, and writes
 // a data container image populated with the directory/file to dest, as an OCI-SIF.
 func WriteDataContainerFromPath(path string, dst string, workDir string) error {
-	img, err := newDataContainerFromFSPath(os.DirFS(filepath.Dir(path)), filepath.Base(path), DataContainerConfig{})
+	img, err := newDataContainerFromFSPath(os.DirFS(filepath.Dir(path)), filepath.Base(path))
 	if err != nil {
 		return err
 	}
-	w, err := NewImageWriter(img, dst, workDir, WithSquashFSLayers(true))
+	w, err := NewImageWriter(img, dst, workDir,
+		WithSquashFSLayers(true),
+		WithArtifactType(DataContainerArtifactType),
+	)
 	if err != nil {
 		return err
 	}
@@ -47,7 +48,7 @@ func WriteDataContainerFromPath(path string, dst string, workDir string) error {
 
 // newDataContainerFromFSPath takes a path to a directory or regular file within fsys, and returns
 // a data container image populated with the directory/file.
-func newDataContainerFromFSPath(fsys fs.FS, path string, cfg DataContainerConfig) (ggcrv1.Image, error) {
+func newDataContainerFromFSPath(fsys fs.FS, path string) (ggcrv1.Image, error) {
 	fi, err := fs.Stat(fsys, path)
 	if err != nil {
 		return nil, err
@@ -75,7 +76,7 @@ func newDataContainerFromFSPath(fsys fs.FS, path string, cfg DataContainerConfig
 		return nil, err
 	}
 
-	return createDataContainerFromLayer(l, cfg)
+	return createDataContainerFromLayer(l)
 }
 
 // tarOpener adapts a tarWriter to a tarball.Opener, in a way that is safe for concurrent use, as
@@ -96,7 +97,7 @@ func tarOpener(fn tarWriterFunc) tarball.Opener {
 }
 
 // createDataContainerFromLayer create OCI datacontainer from the supplied v1.Layer.
-func createDataContainerFromLayer(layer ggcrv1.Layer, cfg DataContainerConfig) (ggcrv1.Image, error) {
+func createDataContainerFromLayer(layer ggcrv1.Layer) (ggcrv1.Image, error) {
 	img := ocimutate.MediaType(empty.Image, types.OCIManifestSchema1)
 
 	img, err := ocimutate.AppendLayers(img, layer)
@@ -105,7 +106,7 @@ func createDataContainerFromLayer(layer ggcrv1.Layer, cfg DataContainerConfig) (
 	}
 
 	return mutate.Apply(img,
-		mutate.SetConfig(cfg, DataContainerConfigMediaType),
+		mutate.SetConfig(struct{}{}, types.MediaType(EmptyConfigMediaType)),
 	)
 }
 

@@ -6,12 +6,15 @@
 package ocisif
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"time"
 
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	ggcrmutate "github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
@@ -43,6 +46,7 @@ type ImageWriter struct {
 	srcDigest      ggcrv1.Hash
 	squashLayers   bool
 	squashFSLayers bool
+	artifactType   string
 	workDir        string
 }
 
@@ -60,6 +64,15 @@ func WithSquash(v bool) ImageWriterOpt {
 func WithSquashFSLayers(v bool) ImageWriterOpt {
 	return func(w *ImageWriter) error {
 		w.squashFSLayers = v
+		return nil
+	}
+}
+
+// WithArtifactType says the image should be written with the artifactType field defined in the OCI
+// v1.1.0 specification to v.
+func WithArtifactType(v string) ImageWriterOpt {
+	return func(w *ImageWriter) error {
+		w.artifactType = v
 		return nil
 	}
 }
@@ -139,6 +152,15 @@ func (w *ImageWriter) Write() error {
 		img, err = imgLayersToSquashfs(img, w.srcDigest, w.workDir)
 		if err != nil {
 			return fmt.Errorf("while converting layers: %w", err)
+		}
+	}
+
+	if w.artifactType != "" {
+		// GGCR does not yet support OCI v1.1 artifacts, so wrap our image to handle that in the
+		// meantime.
+		img = &oci11Artifact{
+			Image:        img,
+			artifactType: w.artifactType,
 		}
 	}
 
@@ -247,4 +269,69 @@ func imgLayersToSquashfs(img ggcrv1.Image, digest ggcrv1.Hash, workDir string) (
 	}
 
 	return sqfsImage, nil
+}
+
+// oci11Artifact adapts the base image to comply with the OCI v1.1 artifact specification.
+type oci11Artifact struct {
+	v1.Image
+	artifactType string
+}
+
+// Size returns the size of the manifest.
+func (w *oci11Artifact) Size() (int64, error) {
+	mf, err := w.RawManifest()
+	if err != nil {
+		return 0, err
+	}
+
+	return int64(len(mf)), nil
+}
+
+// Digest returns the sha256 of this image's manifest.
+func (w *oci11Artifact) Digest() (v1.Hash, error) {
+	mf, err := w.RawManifest()
+	if err != nil {
+		return v1.Hash{}, err
+	}
+
+	h, _, err := v1.SHA256(bytes.NewReader(mf))
+	if err != nil {
+		return v1.Hash{}, err
+	}
+	return h, nil
+}
+
+// RawManifest returns the serialized bytes of Manifest().
+func (w *oci11Artifact) RawManifest() ([]byte, error) {
+	mf, err := w.Image.RawManifest()
+	if err != nil {
+		return nil, err
+	}
+
+	var manifest struct {
+		SchemaVersion int64             `json:"schemaVersion"`
+		MediaType     types.MediaType   `json:"mediaType,omitempty"`
+		ArtifactType  string            `json:"artifactType,omitempty"`
+		Config        v1.Descriptor     `json:"config"`
+		Layers        []v1.Descriptor   `json:"layers"`
+		Annotations   map[string]string `json:"annotations,omitempty"`
+		Subject       *v1.Descriptor    `json:"subject,omitempty"`
+	}
+	if err := json.Unmarshal(mf, &manifest); err != nil {
+		return nil, fmt.Errorf("unmarshal OCI v1.1 manifest: %w", err)
+	}
+
+	// Otherwise, set artifactType based on the config mediaType.
+	manifest.ArtifactType = w.artifactType
+
+	mf, err = json.Marshal(manifest)
+	if err != nil {
+		return nil, fmt.Errorf("marshal OCI v1.1 manifest: %w", err)
+	}
+	return mf, nil
+}
+
+// ArtifactType returns the artifact type.
+func (w *oci11Artifact) ArtifactType() (string, error) {
+	return w.artifactType, nil
 }
