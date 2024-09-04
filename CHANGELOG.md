@@ -2,15 +2,7 @@
 
 ## Changes Since Last Release
 
-### Requirements
-
-- Go 1.22.5 or above is required due to indirect dependencies.
-
-## 4.2.0-rc.1 \[2024-08-13\]
-
-This is the first release candidate for the upcoming 4.2 series of
-SingularityCE. We welcome all feedback and testing. Please continue to use the
-latest 4.1 release for production systems.
+## 4.2.0 \[2024-09-04\]
 
 ### New Features & Functionality
 
@@ -50,6 +42,13 @@ latest 4.1 release for production systems.
   in `allowed net users` / `allowed net groups`. Not currently supported with
   `--fakeroot`, or in `--oci` mode.
 
+### Requirements
+
+- Requires a minimum of Go 1.21.5 to build due to dependency updates.
+- OCI-SIF embedded writable overlay functionality requires `fuse2fs` >= 1.46.6.
+
+## 4.1.5 \[2024-08-14\]
+
 ### Bug Fixes
 
 - Fix fall-back to temporary sandbox rootfs bundle in OCI-Mode for OCI URIs
@@ -60,11 +59,6 @@ latest 4.1 release for production systems.
   are part of the base container environment (e.g. /var/tmp -> /tmp).
 - Fix issue where `--platform` / `--arch` did not apply when pulling an OCI
   image to native SIF via image manifest, rather than image index.
-
-### Requirements
-
-- Requires a minimum of Go 1.21.5 to build due to dependency updates.
-- OCI-SIF embedded writable overlay functionality requires `fuse2fs` >= 1.46.6.
 
 ## 4.1.4 \[2024-06-28\]
 
