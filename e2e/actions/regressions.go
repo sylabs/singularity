@@ -1,4 +1,6 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -910,5 +912,29 @@ func (c actionTests) issue3129(t *testing.T) {
 		e2e.WithDir(dir),
 		e2e.WithArgs(image, "/bin/true"),
 		e2e.ExpectExit(0),
+	)
+}
+
+// Verify the generated host user data appended to /etc/passwd
+func (c actionTests) issue1848(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+	user := e2e.UserProfile.HostUser(t)
+	expectedPasswdLine := fmt.Sprintf("%s:x:%d:%d:%s:%s:%s",
+		user.Name,
+		user.UID,
+		user.GID,
+		user.Gecos,
+		user.Dir,
+		user.Shell,
+	)
+
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(c.env.ImagePath, "tail", "-1", "/etc/passwd"),
+		e2e.ExpectExit(0,
+			e2e.ExpectOutput(e2e.ExactMatch, expectedPasswdLine),
+		),
 	)
 }
