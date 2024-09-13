@@ -38,6 +38,7 @@ The following have contributed code and/or documentation to this repository.
 - Dave Godlove <d@sylabs.io>, <davidgodlove@gmail.com>
 - Dave Love <d.love@liverpool.ac.uk>
 - David Trudgian <david.trudgian@sylabs.io>, <dave@trudgian.net>
+- Dennis Klein <d.klein@gsi.de>
 - Diana Langenbach <dcl@dcl.sh>
 - Dimitri Papadopoulos <3234522+DimitriPapadopoulos@users.noreply.github.com>
 - Divya Cote <divya.cote@gmail.com>
