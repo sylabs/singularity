@@ -1,4 +1,6 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -300,19 +302,24 @@ func (c *Config) GetUserEntry(username string) (*Entry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve user information for %s: %s", username, err)
 	}
-	for _, entry := range c.entries {
+
+	entries, err := c.getMappingEntries(u)
+	if err != nil {
+		return nil, fmt.Errorf("failed to look up mapping entries for user %s: %w", username, err)
+	}
+
+	for _, entry := range entries {
 		if entry.invalid {
 			continue
 		}
-		if entry.UID == u.UID {
-			if entry.Count == validRangeCount {
-				return entry, nil
-			} else if entry.Count > validRangeCount {
-				largeRangeEntries = append(largeRangeEntries, entry)
-				continue
-			}
-			entryCount++
+
+		if entry.Count == validRangeCount {
+			return entry, nil
+		} else if entry.Count > validRangeCount {
+			largeRangeEntries = append(largeRangeEntries, entry)
+			continue
 		}
+		entryCount++
 	}
 	var largestEntry *Entry
 
