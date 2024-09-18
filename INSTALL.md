@@ -36,6 +36,12 @@ sudo apt-get install -y \
     zlib1g-dev
 ```
 
+To include support for libsubid on Ubuntu 24.04 and above:
+
+```sh
+sudo apt-get install -y libsubid-dev
+```
+
 ### RHEL / Alma Linux / Rocky Linux 8+ and Fedora
 
 ```sh
@@ -57,6 +63,16 @@ sudo yum install -y \
     squashfs-tools \
     wget \
     zlib-devel
+```
+
+To include support for libsubid:
+
+```sh
+# EL
+sudo dnf --enablerepo=devel install shadow-utils-subid-devel
+
+# Fedora
+sudo dnf install shadow-utils-subid-devel
 ```
 
 ### SLES / openSUSE Leap
