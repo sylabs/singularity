@@ -22,7 +22,7 @@ require (
 	github.com/cyphar/filepath-securejoin v0.3.3
 	github.com/docker/cli v27.2.1+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
-	github.com/docker/docker v27.2.1+incompatible
+	github.com/docker/docker v27.3.1+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/fatih/color v1.17.0
 	github.com/go-log/log v0.2.0
