@@ -30,7 +30,7 @@ require (
 	github.com/google/go-containerregistry v0.20.2
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.14.0
-	github.com/moby/buildkit v0.15.2
+	github.com/moby/buildkit v0.16.0
 	github.com/moby/sys/sequential v0.6.0
 	github.com/moby/sys/userns v0.1.0
 	github.com/moby/term v0.5.0
@@ -97,10 +97,10 @@ require (
 	github.com/containerd/fifo v1.1.0 // indirect
 	github.com/containerd/go-cni v1.1.10 // indirect
 	github.com/containerd/log v0.1.0 // indirect
-	github.com/containerd/nydus-snapshotter v0.13.7 // indirect
+	github.com/containerd/nydus-snapshotter v0.14.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.15.1 // indirect
 	github.com/containerd/ttrpc v1.2.5 // indirect
-	github.com/containerd/typeurl/v2 v2.1.1 // indirect
+	github.com/containerd/typeurl/v2 v2.2.0 // indirect
 	github.com/containers/storage v1.55.0 // indirect
 	github.com/coreos/go-iptables v0.7.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
@@ -151,7 +151,7 @@ require (
 	github.com/moby/patternmatcher v0.6.0 // indirect
 	github.com/moby/sys/mount v0.3.3 // indirect
 	github.com/moby/sys/mountinfo v0.7.2 // indirect
-	github.com/moby/sys/signal v0.7.0 // indirect
+	github.com/moby/sys/signal v0.7.1 // indirect
 	github.com/moby/sys/user v0.3.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
@@ -195,9 +195,8 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.46.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.52.0 // indirect
 	go.opentelemetry.io/otel v1.28.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlpmetric v0.42.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v0.42.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v0.42.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc v0.44.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v0.44.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.27.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.27.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.21.0 // indirect
