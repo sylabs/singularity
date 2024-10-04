@@ -51,7 +51,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/sylabs/json-resp v0.9.4
-	github.com/sylabs/oci-tools v0.13.0
+	github.com/sylabs/oci-tools v0.14.0
 	github.com/sylabs/scs-build-client v0.9.13
 	github.com/sylabs/scs-key-client v0.7.7
 	github.com/sylabs/scs-library-client v1.4.10
