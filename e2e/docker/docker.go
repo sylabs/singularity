@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023 Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2024 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -1478,19 +1478,12 @@ func checkOCISIFPlatform(t *testing.T, imgPath, platform string) {
 		t.Errorf("while loading SIF: %v", err)
 	}
 
-	ix, err := ocisif.ImageIndexFromFileImage(fi)
+	ofi, err := ocisif.FromFileImage(fi)
 	if err != nil {
-		t.Errorf("while obtaining image index: %v", err)
+		t.Fatal(err)
 	}
-	idxManifest, err := ix.IndexManifest()
-	if err != nil {
-		t.Errorf("while obtaining index manifest: %v", err)
-	}
-	if len(idxManifest.Manifests) != 1 {
-		t.Errorf("image has multiple manifests")
-	}
-	imageDigest := idxManifest.Manifests[0].Digest
-	img, err := ix.Image(imageDigest)
+
+	img, err := ofi.Image(nil)
 	if err != nil {
 		t.Errorf("while initializing image: %v", err)
 	}
@@ -1576,20 +1569,12 @@ func verifyImgArch(t *testing.T, imgPath, arch string) {
 	}
 	defer fi.UnloadContainer()
 
-	ix, err := ocisif.ImageIndexFromFileImage(fi)
+	ofi, err := ocisif.FromFileImage(fi)
 	if err != nil {
-		t.Fatalf("while obtaining image index from %s: %v", imgPath, err)
+		t.Fatal(err)
 	}
-	idxManifest, err := ix.IndexManifest()
-	if err != nil {
-		t.Fatalf("while obtaining index manifest from %s: %v", imgPath, err)
-	}
-	if len(idxManifest.Manifests) != 1 {
-		t.Fatalf("while reading %s: single manifest expected, found %d manifests", imgPath, len(idxManifest.Manifests))
-	}
-	imageDigest := idxManifest.Manifests[0].Digest
 
-	img, err := ix.Image(imageDigest)
+	img, err := ofi.Image(nil)
 	if err != nil {
 		t.Fatalf("while initializing image from %s: %v", imgPath, err)
 	}

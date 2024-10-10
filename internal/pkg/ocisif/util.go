@@ -6,8 +6,6 @@
 package ocisif
 
 import (
-	"fmt"
-
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	ocitsif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
@@ -16,19 +14,10 @@ import (
 // GetSingleImage returns a v1.Image from an OCI-SIF, that must contain a single
 // image.
 func GetSingleImage(fi *sif.FileImage) (v1.Image, error) {
-	ii, err := ocitsif.ImageIndexFromFileImage(fi)
+	ofi, err := ocitsif.FromFileImage(fi)
 	if err != nil {
-		return nil, fmt.Errorf("while obtaining image index: %w", err)
-	}
-	ix, err := ii.IndexManifest()
-	if err != nil {
-		return nil, fmt.Errorf("while obtaining index manifest: %w", err)
+		return nil, err
 	}
 
-	// One image only.
-	if len(ix.Manifests) != 1 {
-		return nil, fmt.Errorf("only single image data containers are supported, found %d images", len(ix.Manifests))
-	}
-	imageDigest := ix.Manifests[0].Digest
-	return ii.Image(imageDigest)
+	return ofi.Image(nil)
 }

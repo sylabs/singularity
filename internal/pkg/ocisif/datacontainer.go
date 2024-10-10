@@ -120,22 +120,12 @@ func DataContainerLayerOffset(f *os.File) (int64, error) {
 	}
 	defer fimg.UnloadContainer()
 
-	ix, err := ocitsif.ImageIndexFromFileImage(fimg)
+	ofi, err := ocitsif.FromFileImage(fimg)
 	if err != nil {
-		return 0, fmt.Errorf("while obtaining image index: %w", err)
-	}
-	idxManifest, err := ix.IndexManifest()
-	if err != nil {
-		return 0, fmt.Errorf("while obtaining index manifest: %w", err)
+		return 0, err
 	}
 
-	// One image only.
-	if len(idxManifest.Manifests) != 1 {
-		return 0, fmt.Errorf("only single image data containers are supported, found %d images", len(idxManifest.Manifests))
-	}
-	imageDigest := idxManifest.Manifests[0].Digest
-
-	img, err := ix.Image(imageDigest)
+	img, err := ofi.Image(nil)
 	if err != nil {
 		return 0, fmt.Errorf("while initializing image: %w", err)
 	}
