@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -612,20 +612,12 @@ func checkOCISIF(t *testing.T, imgFile string, expectLayers int) {
 	}
 	defer fi.UnloadContainer()
 
-	ix, err := ocitsif.ImageIndexFromFileImage(fi)
+	ofi, err := ocitsif.FromFileImage(fi)
 	if err != nil {
-		t.Fatalf("while obtaining image index: %v", err)
+		t.Fatalf("while loading OCI-SIF: %v", err)
 	}
-	idxManifest, err := ix.IndexManifest()
-	if err != nil {
-		t.Fatalf("while obtaining index manifest: %v", err)
-	}
-	if len(idxManifest.Manifests) != 1 {
-		t.Fatalf("single manifest expected, found %d manifests", len(idxManifest.Manifests))
-	}
-	imageDigest := idxManifest.Manifests[0].Digest
 
-	img, err := ix.Image(imageDigest)
+	img, err := ofi.Image(nil)
 	if err != nil {
 		t.Fatalf("while initializing image: %v", err)
 	}
