@@ -194,20 +194,12 @@ func PushOCISIF(ctx context.Context, sourceFile, destRef string, opts PushOption
 	}
 	defer fi.UnloadContainer()
 
-	ix, err := ocitsif.ImageIndexFromFileImage(fi)
+	ofi, err := ocitsif.FromFileImage(fi)
 	if err != nil {
-		return fmt.Errorf("only OCI-SIF files can be pushed to docker/OCI registries")
+		return err
 	}
 
-	idxManifest, err := ix.IndexManifest()
-	if err != nil {
-		return fmt.Errorf("while obtaining index manifest: %w", err)
-	}
-
-	if len(idxManifest.Manifests) != 1 {
-		return fmt.Errorf("only single image oci-sif files are supported")
-	}
-	image, err := ix.Image(idxManifest.Manifests[0].Digest)
+	image, err := ofi.Image(nil)
 	if err != nil {
 		return fmt.Errorf("while obtaining image: %w", err)
 	}

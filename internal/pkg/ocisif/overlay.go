@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	ocitmutate "github.com/sylabs/oci-tools/pkg/mutate"
@@ -95,9 +94,12 @@ func AddOverlay(imagePath string, overlayPath string) error {
 		return err
 	}
 
-	ii := mutate.AppendManifests(empty.Index, mutate.IndexAddendum{Add: img})
+	ofi, err := ocitsif.FromFileImage(fi)
+	if err != nil {
+		return err
+	}
 
-	return ocitsif.Update(fi, ii)
+	return ofi.ReplaceImage(img, nil)
 }
 
 // SyncOverlay synchronizes the digests of the overlay, stored in the OCI
@@ -167,8 +169,13 @@ func SyncOverlay(imagePath string) error {
 	if err != nil {
 		return err
 	}
-	ii := mutate.AppendManifests(empty.Index, mutate.IndexAddendum{Add: img})
-	return ocitsif.Update(fi, ii)
+
+	ofi, err := ocitsif.FromFileImage(fi)
+	if err != nil {
+		return err
+	}
+
+	return ofi.ReplaceImage(img, nil)
 }
 
 // SealOverlay converts an ext3 overlay into a r/o squashfs layer. If `tmpDir`
@@ -182,7 +189,12 @@ func SealOverlay(imagePath, tmpDir string) error {
 	}
 	defer fi.UnloadContainer()
 
-	img, err := GetSingleImage(fi)
+	ofi, err := ocitsif.FromFileImage(fi)
+	if err != nil {
+		return err
+	}
+
+	img, err := ofi.Image(nil)
 	if err != nil {
 		return fmt.Errorf("while getting image: %w", err)
 	}
@@ -202,11 +214,7 @@ func SealOverlay(imagePath, tmpDir string) error {
 		return fmt.Errorf("image does not contain a writable overlay")
 	}
 
-	d, err := l.Digest()
-	if err != nil {
-		return err
-	}
-	desc, err := fi.GetDescriptor(sif.WithOCIBlobDigest(d))
+	offset, err := l.(*ocitsif.Layer).Offset()
 	if err != nil {
 		return err
 	}
@@ -226,7 +234,7 @@ func SealOverlay(imagePath, tmpDir string) error {
 		Type:       image.EXT3,
 		Readonly:   true,
 		SourcePath: imagePath,
-		ExtraOpts:  []string{fmt.Sprintf("offset=%d", desc.Offset())},
+		ExtraOpts:  []string{fmt.Sprintf("offset=%d", offset)},
 	}
 	im.SetMountPoint(mntDir)
 	if err := im.Mount(context.TODO()); err != nil {
@@ -262,8 +270,7 @@ func SealOverlay(imagePath, tmpDir string) error {
 	if err != nil {
 		return err
 	}
-	ii := mutate.AppendManifests(empty.Index, mutate.IndexAddendum{Add: img})
-	return ocitsif.Update(fi, ii)
+	return ofi.ReplaceImage(img, nil)
 }
 
 // imageOpener opens an ext3 or squashfs filesystem image file to be added as a

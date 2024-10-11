@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2023-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -133,20 +133,13 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	if err != nil {
 		return fmt.Errorf("while loading SIF: %w", err)
 	}
-	ix, err := ocitsif.ImageIndexFromFileImage(fi)
-	if err != nil {
-		return fmt.Errorf("while obtaining image index: %w", err)
-	}
-	idxManifest, err := ix.IndexManifest()
-	if err != nil {
-		return fmt.Errorf("while obtaining index manifest: %w", err)
-	}
-	if len(idxManifest.Manifests) != 1 {
-		return fmt.Errorf("only single image oci-sif files are supported")
-	}
-	imageDigest := idxManifest.Manifests[0].Digest
 
-	img, err := ix.Image(imageDigest)
+	ofi, err := ocitsif.FromFileImage(fi)
+	if err != nil {
+		return err
+	}
+
+	img, err := ofi.Image(nil)
 	if err != nil {
 		return fmt.Errorf("while initializing image: %w", err)
 	}
