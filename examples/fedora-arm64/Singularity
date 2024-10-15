@@ -1,4 +1,4 @@
-BootStrap: yum
+BootStrap: dnf
 OSVersion: 40
 MirrorURL: http://dfw.mirror.rackspace.com/fedora/releases/%{OSVERSION}/Everything/aarch64/os/
 Include: fedora-release-container dnf
