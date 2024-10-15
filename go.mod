@@ -11,7 +11,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buger/goterm v1.0.4
 	github.com/buger/jsonparser v1.1.1
-	github.com/containerd/containerd v1.7.22
+	github.com/containerd/containerd v1.7.23
 	github.com/containerd/continuity v0.4.3
 	github.com/containerd/go-runc v1.1.0
 	github.com/containerd/platforms v0.2.1
@@ -93,7 +93,7 @@ require (
 	github.com/containerd/cgroups/v3 v3.0.3 // indirect
 	github.com/containerd/console v1.0.4 // indirect
 	github.com/containerd/containerd/api v1.7.19 // indirect
-	github.com/containerd/errdefs v0.1.0 // indirect
+	github.com/containerd/errdefs v0.3.0 // indirect
 	github.com/containerd/fifo v1.1.0 // indirect
 	github.com/containerd/go-cni v1.1.10 // indirect
 	github.com/containerd/log v0.1.0 // indirect
