@@ -1,6 +1,6 @@
 # SingularityCE Changelog
 
-## Changes Since Last Release
+## 4.2.1 \[2024-09-13\]
 
 ### Bug Fixes
 
