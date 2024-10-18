@@ -1,5 +1,12 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Fix regression from 4.1.5 that overwrites source image runscript, environment
+  etc. in build from local image.
+
 ## 4.2.1 \[2024-09-13\]
 
 ### Bug Fixes

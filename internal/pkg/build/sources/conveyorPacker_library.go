@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -37,10 +37,6 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 
 	libraryURL := b.Opts.LibraryURL
 	authToken := b.Opts.LibraryAuthToken
-
-	if err = makeBaseEnv(cp.b.RootfsPath); err != nil {
-		return fmt.Errorf("while inserting base environment: %v", err)
-	}
 
 	// check for custom library from definition
 	customLib, ok := b.Recipe.Header["library"]
@@ -82,7 +78,7 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 	}
 
 	// insert base metadata before unpacking fs
-	if err = makeBaseEnv(cp.b.RootfsPath); err != nil {
+	if err = makeBaseEnv(cp.b.RootfsPath, true); err != nil {
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
