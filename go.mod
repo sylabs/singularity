@@ -1,6 +1,6 @@
 module github.com/sylabs/singularity/v4
 
-go 1.22.5
+go 1.22.8
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
@@ -46,7 +46,7 @@ require (
 	github.com/sebdah/goldie/v2 v2.5.5
 	github.com/seccomp/libseccomp-golang v0.10.0
 	github.com/shopspring/decimal v1.4.0
-	github.com/sigstore/sigstore v1.8.9
+	github.com/sigstore/sigstore v1.8.10
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
