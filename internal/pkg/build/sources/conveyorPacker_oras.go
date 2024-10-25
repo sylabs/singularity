@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -45,7 +45,7 @@ func (cp *OrasConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 	}
 
 	// insert base metadata before unpacking fs
-	if err = makeBaseEnv(b.RootfsPath); err != nil {
+	if err = makeBaseEnv(b.RootfsPath, true); err != nil {
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 

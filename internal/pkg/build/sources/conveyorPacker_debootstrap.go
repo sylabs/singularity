@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -267,7 +267,7 @@ func (cp *DebootstrapConveyorPacker) getRecipeHeaderInfo() (err error) {
 }
 
 func (cp *DebootstrapConveyorPacker) insertBaseEnv(b *types.Bundle) (err error) {
-	if err = makeBaseEnv(b.RootfsPath); err != nil {
+	if err = makeBaseEnv(b.RootfsPath, true); err != nil {
 		return
 	}
 	return nil
