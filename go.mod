@@ -1,7 +1,6 @@
 module github.com/sylabs/singularity/v4
 
 go 1.22.5
-
 require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
 	github.com/ProtonMail/go-crypto v1.0.0
@@ -46,7 +45,7 @@ require (
 	github.com/sebdah/goldie/v2 v2.5.5
 	github.com/seccomp/libseccomp-golang v0.10.0
 	github.com/shopspring/decimal v1.4.0
-	github.com/sigstore/sigstore v1.8.9
+	github.com/sigstore/sigstore v1.8.10
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
@@ -55,7 +54,7 @@ require (
 	github.com/sylabs/scs-build-client v0.9.13
 	github.com/sylabs/scs-key-client v0.7.7
 	github.com/sylabs/scs-library-client v1.4.10
-	github.com/sylabs/sif/v2 v2.19.1
+	github.com/sylabs/sif/v2 v2.19.2
 	github.com/sylabs/squashfs v1.0.0
 	github.com/vbauerster/mpb/v8 v8.8.3
 	go.etcd.io/bbolt v1.3.11
