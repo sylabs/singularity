@@ -490,8 +490,8 @@ github.com/sylabs/scs-key-client v0.7.7 h1:w8uYXeNOoDLRuAwc4hp6szGxIefrTuifChxKT
 github.com/sylabs/scs-key-client v0.7.7/go.mod h1:zIdzguLfCclIy0jdSDOF58IyrHWsY3momcm6yLHjDks=
 github.com/sylabs/scs-library-client v1.4.10 h1:/GnplUVt9c40jhCXa8mE/Uj7U6KzYDsq6+kBjte43ac=
 github.com/sylabs/scs-library-client v1.4.10/go.mod h1:oZJiOBY0d4qb40HDQzSzrMZhGcGY1+Rf4LNIaeOoMEg=
-github.com/sylabs/sif/v2 v2.19.1 h1:1eeMmFc8elqJe60ZiWwXgL3gMheb0IP4GmNZ4q0IEA0=
-github.com/sylabs/sif/v2 v2.19.1/go.mod h1:U1SUhvl8X1JIxAylC0DYz1fa/Xba6EMZD1dGPGBH83E=
+github.com/sylabs/sif/v2 v2.19.2 h1:KKcUKnbnT69rN1WWHRYoAVKFpqnXpNJ36kmQLpp86Uc=
+github.com/sylabs/sif/v2 v2.19.2/go.mod h1:nhX6D/CJntHDWspNLXLe+yct0cd5lm8HJ7VIW6hgKrw=
 github.com/sylabs/squashfs v1.0.0 h1:xAyMS21ogglkuR5HaY55PCfqY3H32ma9GkasTYo28Zg=
 github.com/sylabs/squashfs v1.0.0/go.mod h1:rhWzvgefq1X+R+LZdts10hfMsTg3g74OfGunW8tvg/4=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 h1:kdXcSzyDtseVEc4yCz2qF8ZrQvIDBJLl4S1c3GCXmoI=
