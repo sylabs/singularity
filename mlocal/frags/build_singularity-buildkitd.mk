@@ -6,15 +6,15 @@ singularity-buildkitd_deps := $(BUILDDIR_ABSPATH)/singularity-buildkitd.d
 
 $(singularity-buildkitd_deps): $(GO_MODFILES)
 	@echo " GEN GO DEP" $@
-	$(V)$(SOURCEDIR)/makeit/gengodep -v3 "$(GO)" "singularity-buildkitd_SOURCE" "$(GO_TAGS)" "$@" "$(SOURCEDIR)/cmd/singularity-buildkitd"
+	$(V)cd $(SOURCEDIR) && makeit/gengodep -v3 "$(GO)" "singularity-buildkitd_SOURCE" "$(GO_TAGS)" "$@" "$(SOURCEDIR)/cmd/singularity-buildkitd"
 
 # Look at dependencies file changes via singularity_deps
 # because it means that a module was updated.
-singularity-buildkitd := $(BUILDDIR)/singularity-buildkitd
+singularity-buildkitd := $(BUILDDIR_ABSPATH)/singularity-buildkitd
 $(singularity-buildkitd): $(singularity_build_config) $(singularity-buildkitd_deps) $(singularity-buildkitd_SOURCE)
 	@echo " GO" $@; echo "    [+] GO_TAGS" \"$(GO_TAGS)\"
-	$(V)$(GO) build $(GO_MODFLAGS) $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) \
-		-o $(BUILDDIR)/singularity-buildkitd $(SOURCEDIR)/cmd/singularity-buildkitd
+	$(V)cd $(SOURCEDIR) && $(GO) build $(GO_MODFLAGS) $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) \
+		-o $@ ./cmd/singularity-buildkitd
 
 singularity-buildkitd_INSTALL := $(DESTDIR)$(LIBEXECDIR)/singularity/bin/singularity-buildkitd
 $(singularity-buildkitd_INSTALL): $(singularity-buildkitd)
