@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -34,7 +34,7 @@ func (cp *ShubConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 	}
 
 	// insert base metadata before unpacking fs
-	if err = makeBaseEnv(cp.b.RootfsPath); err != nil {
+	if err = makeBaseEnv(cp.b.RootfsPath, true); err != nil {
 		return fmt.Errorf("while inserting base environment: %v", err)
 	}
 
