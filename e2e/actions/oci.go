@@ -2110,11 +2110,13 @@ func (c actionTests) actionOciNoSetgroups(t *testing.T) {
 }
 
 // Check that by default, the container is entered at the correct $HOME for the
-// user, and $HOME in their passwd entry is correct.
-// https://github.com/sylabs/singularity/issues/1791
+// user when no WorkingDir is set in the image config, and $HOME in their passwd
+// entry is correct. https://github.com/sylabs/singularity/issues/1791
 func (c actionTests) actionOciHomeCwdPasswd(t *testing.T) {
-	e2e.EnsureOCISIF(t, c.env)
-	imageRef := "oci-sif:" + c.env.OCISIFPath
+	e2e.EnsureImage(t, c.env)
+	// Use the non-OCI-SIF test image as from 3.18.9 docker://alpine (used as
+	// OCI-SIF test image source) has WorkingDir="/".
+	imageRef := c.env.ImagePath
 	for _, p := range e2e.OCIProfiles {
 		cu := p.ContainerUser(t)
 		// Ignore shell field as we use preserve container value. Tested previously.
