@@ -12,7 +12,7 @@ require (
 	github.com/buger/goterm v1.0.4
 	github.com/buger/jsonparser v1.1.1
 	github.com/containerd/containerd v1.7.23
-	github.com/containerd/continuity v0.4.4
+	github.com/containerd/continuity v0.4.5
 	github.com/containerd/go-runc v1.1.0
 	github.com/containerd/platforms v0.2.1
 	github.com/containernetworking/cni v1.2.3
