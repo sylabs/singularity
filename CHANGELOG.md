@@ -7,6 +7,16 @@
 - Fix regression from 4.1.5 that overwrites source image runscript, environment
   etc. in build from local image.
 
+### New Features & Functionality
+
+- In OCI-Mode, accommodate systems configured so that they do not create a
+  `/run/user` session directory. OCI-Mode will now attempt to use
+  `$TMPDIR/singularity-oci-<uid>` for runtime state on systems where
+  `$XDG_RUNTIME_DIR` is not set and the default user session path of
+  `/run/user/<uid>` does not exist. Note that the `$TMPDIR/singularity-oci-<uid>`
+  directory is shared between concurrent `--oci` mode invocations, and will not
+  be removed on exit - an empty directory will remain.
+
 ## 4.2.1 \[2024-09-13\]
 
 ### Bug Fixes
