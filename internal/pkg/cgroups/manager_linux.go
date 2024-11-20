@@ -20,6 +20,9 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
+
+	// See https://github.com/opencontainers/runc/pull/3452
+	_ "github.com/opencontainers/runc/libcontainer/cgroups/devices"
 )
 
 var ErrUnitialized = errors.New("cgroups manager is not initialized")
