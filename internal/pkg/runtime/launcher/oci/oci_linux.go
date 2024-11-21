@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,9 +13,11 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"syscall"
 	"time"
 
 	securejoin "github.com/cyphar/filepath-securejoin"
+	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
@@ -58,10 +60,52 @@ func runtimeStateDir() (path string, err error) {
 	if err != nil {
 		return "", err
 	}
+
+	// Root - use our own /run directory
 	if u.Uid == "0" {
 		return "/run/singularity-oci", nil
 	}
-	return fmt.Sprintf("/run/user/%s/singularity-oci", u.Uid), nil
+
+	// Prefer XDG_RUNTIME_DIR for non-root, if set and usable.
+	if ok, _ := cgroups.HasXDGRuntimeDir(); ok {
+		d := filepath.Join(os.Getenv("XDG_RUNTIME_DIR"), "singularity-oci")
+		sylog.Debugf("Using XDG_RUNTIME_DIR for runtime state (%s)", d)
+		return d, nil
+	}
+
+	// If no XDG_RUNTIME_DIR, then try standard user session directory location.
+	runDir := fmt.Sprintf("/run/user/%s/", u.Uid)
+	if fs.IsDir(runDir) {
+		d := filepath.Join(runDir, "singularity-oci")
+		sylog.Debugf("Using /run/user default for runtime state (%s)", d)
+		return d, nil
+	}
+
+	// If standard user session directory not available, use TMPDIR as a last resort.
+	runDir = filepath.Join(os.TempDir(), "singularity-oci-"+u.Uid)
+	sylog.Infof("No /run/user session directory for user. Using %q for runtime state.", runDir)
+
+	// Create if not present
+	st, err := os.Stat(runDir)
+	if os.IsNotExist(err) {
+		return runDir, os.Mkdir(runDir, 0o700)
+	}
+	if err != nil {
+		return "", err
+	}
+
+	// If it exists, verify it's a directory with correct ownership, perms.
+	if !st.IsDir() {
+		return "", fmt.Errorf("%s exists, but is not a directory", runDir)
+	}
+	if st.Sys().(*syscall.Stat_t).Uid != uint32(os.Geteuid()) { //nolint:forcetypeassert
+		return "", fmt.Errorf("%s exists, but is not owned by correct user", runDir)
+	}
+	if st.Mode().Perm() != 0o700 {
+		return "", fmt.Errorf("%s exists, but does not have correct permissions (700)", runDir)
+	}
+
+	return runDir, nil
 }
 
 // stateDir returns the path to container state handled by conmon/singularity
