@@ -47,6 +47,8 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
+	fsoverlay "github.com/sylabs/singularity/v4/internal/pkg/util/fs/overlay"
+	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/sync/errgroup"
 )
@@ -54,7 +56,7 @@ import (
 const (
 	buildTag          = "tag"
 	bkDefaultSocket   = "unix:///run/buildkit/buildkitd.sock"
-	bkLaunchTimeout   = 120 * time.Second
+	bkLaunchTimeout   = 10 * time.Second
 	bkShutdownTimeout = 10 * time.Second
 	bkMinVersion      = "v0.12.3"
 )
@@ -163,11 +165,27 @@ func startBuildkitd(ctx context.Context, opts *Opts) (bkSocket string, cleanup f
 
 	bkSocket = generateSocketAddress()
 
-	// singularity-buildkitd <socket-uri> [architecture]
-	args := []string{bkSocket}
-	if opts.ReqArch != "" {
-		args = append(args, opts.ReqArch)
+	args := []string{}
+	tmpRoot := ""
+	// Check the user .singularity dir is in a location supporting overlayfs etc. If not, use a tmpdir.
+	if err := fsoverlay.CheckUpper(syfs.ConfigDir()); err != nil {
+		tmpRoot, err = os.MkdirTemp("", "singularity-buildkitd-")
+		if err != nil {
+			sylog.Fatalf("while creating singularity-buildkitd temporary root dir: %v", err)
+		}
+		if err := fsoverlay.CheckUpper(tmpRoot); err != nil {
+			sylog.Fatalf("Temporary directory does not support buildkit. Please set $TMPDIR to a local filesystem.")
+		}
+
+		sylog.Warningf("~/.singularity filesystem does not support buildkit. Using temporary directory %s. Layers will not be cached for future builds.", tmpRoot)
+		args = append(args, "--root="+tmpRoot)
 	}
+
+	if opts.ReqArch != "" {
+		args = append(args, "--arch="+opts.ReqArch)
+	}
+	args = append(args, "--socket="+bkSocket)
+
 	cmd := exec.CommandContext(ctx, bkCmd, args...)
 	cmd.WaitDelay = bkShutdownTimeout
 	cmd.Cancel = func() error {
@@ -182,8 +200,15 @@ func startBuildkitd(ctx context.Context, opts *Opts) (bkSocket string, cleanup f
 			sylog.Errorf("while canceling buildkit daemon process: %v", err)
 		}
 		cmd.Wait()
+		if tmpRoot != "" {
+			sylog.Warningf("removing singularity-buildkitd temporary directory %s", tmpRoot)
+			if err := os.RemoveAll(tmpRoot); err != nil {
+				sylog.Errorf("while removing singularity-buildkitd temp dir: %v", err)
+			}
+		}
 	}
 
+	sylog.Debugf("starting %s %v", bkCmd, args)
 	if err := cmd.Start(); err != nil {
 		return "", nil, err
 	}

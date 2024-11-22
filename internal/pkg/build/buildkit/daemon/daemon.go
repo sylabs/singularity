@@ -80,6 +80,8 @@ const DaemonName = "singularity-buildkitd"
 type Opts struct {
 	// Requested build architecture
 	ReqArch string
+	// Override the location of the singularity-buildkitd root with specified directory
+	RootDir string
 }
 
 type workerInitializerOpt struct {
@@ -149,7 +151,7 @@ func waitLock(ctx context.Context, lockPath string) (*flock.Flock, error) {
 func Run(ctx context.Context, opts *Opts, socketPath string) error {
 	// If we need to, enter a new cgroup now, to workaround an issue with crun container cgroup creation (#1538).
 	if err := oci.CrunNestCgroup(); err != nil {
-		sylog.Fatalf("%s: while applying crun cgroup workaround: %v", DaemonName, err)
+		return fmt.Errorf("%s: while applying crun cgroup workaround: %v", DaemonName, err)
 	}
 
 	cfg, err := config.LoadFile(defaultConfigPath())
@@ -166,6 +168,14 @@ func Run(ctx context.Context, opts *Opts, socketPath string) error {
 
 	server := grpc.NewServer()
 
+	if opts.RootDir != "" {
+		ptr := func(v bool) *bool {
+			return &v
+		}
+		cfg.Root = opts.RootDir
+		cfg.Workers.OCI.GC = ptr(false)
+	}
+
 	// relative path does not work with nightlyone/lockfile
 	root, err := filepath.Abs(cfg.Root)
 	if err != nil {
@@ -181,7 +191,7 @@ func Run(ctx context.Context, opts *Opts, socketPath string) error {
 	sylog.Debugf("%s: path for buildkitd lock file: %s", DaemonName, lockPath)
 	lock, err := waitLock(ctx, lockPath)
 	if err != nil {
-		sylog.Fatalf("%s: while creating lock file: %v", DaemonName, err)
+		return fmt.Errorf("%s: while creating lock file: %v", DaemonName, err)
 	}
 	defer func() {
 		lock.Unlock()
