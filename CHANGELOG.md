@@ -6,6 +6,8 @@
 
 - Fix regression from 4.1.5 that overwrites source image runscript, environment
   etc. in build from local image.
+- Fall back to `$TMPDIR` as singularity-buildkitd root directory if
+  `~/.singularity` is on a filesystem that does not fully support overlay.
 
 ## 4.2.1 \[2024-09-13\]
 
