@@ -48,6 +48,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	fsoverlay "github.com/sylabs/singularity/v4/internal/pkg/util/fs/overlay"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/sync/errgroup"
@@ -163,7 +164,10 @@ func startBuildkitd(ctx context.Context, opts *Opts) (bkSocket string, cleanup f
 		return "", nil, err
 	}
 
-	bkSocket = generateSocketAddress()
+	bkSocket, err = generateSocketAddress()
+	if err != nil {
+		return "", nil, err
+	}
 
 	args := []string{}
 	tmpRoot := ""
@@ -403,15 +407,22 @@ func writeDockerTar(r io.Reader, outputFile *os.File) error {
 	return err
 }
 
-func generateSocketAddress() string {
-	socketPath := "/run/singularity-buildkitd"
-
-	//  pam_systemd sets XDG_RUNTIME_DIR but not other dirs.
-	xdgRuntimeDir := os.Getenv("XDG_RUNTIME_DIR")
-	if xdgRuntimeDir != "" {
-		dirs := strings.Split(xdgRuntimeDir, ":")
-		socketPath = filepath.Join(dirs[0], "singularity-buildkitd")
+func generateSocketAddress() (string, error) {
+	uid, err := rootless.Getuid()
+	if err != nil {
+		return "", err
 	}
 
-	return "unix://" + filepath.Join(socketPath, fmt.Sprintf("singularity-buildkitd-%d.sock", os.Getpid()))
+	socketPath := "/run/singularity-buildkitd"
+	if uid == 0 {
+		return "unix://" + filepath.Join(socketPath, fmt.Sprintf("singularity-buildkitd-%d.sock", os.Getpid())), nil
+	}
+
+	xdgRuntimeDir := os.Getenv("XDG_RUNTIME_DIR")
+	if xdgRuntimeDir == "" {
+		return "", fmt.Errorf("rootless build --oci requires XDG_RUNTIME_DIR is set")
+	}
+	dirs := strings.Split(xdgRuntimeDir, ":")
+	socketPath = filepath.Join(dirs[0], "singularity-buildkitd")
+	return "unix://" + filepath.Join(socketPath, fmt.Sprintf("singularity-buildkitd-%d.sock", os.Getpid())), nil
 }
