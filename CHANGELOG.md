@@ -8,6 +8,8 @@
   etc. in build from local image.
 - Fall back to `$TMPDIR` as singularity-buildkitd root directory if
   `~/.singularity` is on a filesystem that does not fully support overlay.
+- Add more intuitive error message for rootless `build --oci` when required
+  `XDG_RUNTIME_DIR` env var is not set.
 
 ### New Features & Functionality
 
