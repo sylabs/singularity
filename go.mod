@@ -19,7 +19,7 @@ require (
 	github.com/containernetworking/plugins v1.5.1
 	github.com/containers/image/v5 v5.33.0
 	github.com/coreos/go-systemd/v22 v22.5.0
-	github.com/cyphar/filepath-securejoin v0.3.4
+	github.com/cyphar/filepath-securejoin v0.3.5
 	github.com/docker/cli v27.4.0-rc.4+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/docker/docker v27.4.0-rc.4+incompatible
@@ -59,12 +59,12 @@ require (
 	github.com/sylabs/squashfs v1.0.0
 	github.com/vbauerster/mpb/v8 v8.8.3
 	go.etcd.io/bbolt v1.3.11
-	golang.org/x/crypto v0.29.0
-	golang.org/x/sync v0.9.0
-	golang.org/x/sys v0.27.0
-	golang.org/x/term v0.26.0
-	golang.org/x/text v0.20.0
-	google.golang.org/grpc v1.67.1
+	golang.org/x/crypto v0.30.0
+	golang.org/x/sync v0.10.0
+	golang.org/x/sys v0.28.0
+	golang.org/x/term v0.27.0
+	golang.org/x/text v0.21.0
+	google.golang.org/grpc v1.67.2
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools v2.2.0+incompatible
 	gotest.tools/v3 v3.5.1
