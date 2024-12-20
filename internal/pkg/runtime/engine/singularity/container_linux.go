@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -2398,8 +2398,15 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 				}
 			}
 			if euid != 0 {
-				priv.Escalate()
-				defer priv.Drop()
+				dropPrivs, err := priv.EscalateRealEffective()
+				if err != nil {
+					return err
+				}
+				defer func() {
+					if err := dropPrivs(); err != nil {
+						sylog.Fatalf("while dropping privilege: %v", err)
+					}
+				}()
 			}
 		}
 
