@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -22,6 +22,7 @@ import (
 	cnitypes "github.com/containernetworking/cni/pkg/types/100"
 	"github.com/containernetworking/plugins/plugins/ipam/host-local/backend/allocator"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 type netError string
@@ -451,12 +452,15 @@ func (m *Setup) DelNetworks(ctx context.Context) error {
 }
 
 func (m *Setup) command(ctx context.Context, command string) error {
-	if m.envPath != "" {
-		backupEnv := os.Environ()
-		os.Clearenv()
-		os.Setenv("PATH", m.envPath)
-		defer env.SetFromList(backupEnv)
+	if m.envPath == "" {
+		sylog.Debugf("Network envPath is unset. Setting PATH to a safe default.")
+		m.envPath = "/bin:/sbin:/usr/bin:/usr/sbin"
 	}
+	sylog.Debugf("Network envPath: %s", m.envPath)
+	backupEnv := os.Environ()
+	os.Clearenv()
+	os.Setenv("PATH", m.envPath)
+	defer env.SetFromList(backupEnv)
 
 	config := &libcni.CNIConfig{Path: []string{m.cniPath.Plugin}}
 

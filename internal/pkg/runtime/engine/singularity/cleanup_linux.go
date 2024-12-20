@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -74,18 +74,23 @@ func (e *EngineOperations) CleanupContainer(ctx context.Context, _ error, _ sysc
 
 	if networkSetup != nil {
 		net := e.EngineConfig.GetNetwork()
-		privileged := false
+		var dropPrivs priv.DropPrivsFunc
 		// If a CNI configuration was allowed as non-root (or fakeroot)
 		if net != "none" && os.Geteuid() != 0 {
-			priv.Escalate()
-			privileged = true
+			var err error
+			dropPrivs, err = priv.EscalateRealEffective()
+			if err != nil {
+				return err
+			}
 		}
 		sylog.Debugf("Cleaning up CNI network config %s", net)
 		if err := networkSetup.DelNetworks(ctx); err != nil {
 			sylog.Errorf("could not delete networks: %v", err)
 		}
-		if privileged {
-			priv.Drop()
+		if dropPrivs != nil {
+			if err := dropPrivs(); err != nil {
+				sylog.Fatalf("while dropping privilege: %v", err)
+			}
 		}
 	}
 
