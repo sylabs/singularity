@@ -10,6 +10,8 @@
   `~/.singularity` is on a filesystem that does not fully support overlay.
 - Add more intuitive error message for rootless `build --oci` when required
   `XDG_RUNTIME_DIR` env var is not set.
+- Avoid error in CNI network setup with newer versions of iptables that include
+  a setuid caller check.
 
 ### New Features & Functionality
 
