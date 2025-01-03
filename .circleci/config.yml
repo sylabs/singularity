@@ -27,6 +27,9 @@ executors:
   almalinux9:
     docker:
       - image: almalinux:9
+  centosstream10:
+    docker:
+      - image: quay.io/centos/centos:stream10
   ubuntu2004:
     docker:
       - image: ubuntu:20.04
@@ -410,12 +413,12 @@ workflows:
       - build-rpm:
           matrix:
             parameters:
-              e: ["almalinux8", "almalinux9"]
-          filters:
-            branches:
-              only:
-                - main
-                - /release-.*/
+              e: ["almalinux8", "almalinux9", "centosstream10"]
+#          filters:
+#            branches:
+#              only:
+#                - main
+#                - /release-.*/
 
       - build-deb:
           matrix:
@@ -432,7 +435,7 @@ workflows:
       - build-rpm:
           matrix:
             parameters:
-              e: ["almalinux8", "almalinux9"]
+              e: ["almalinux8", "almalinux9", "centosstream10"]
           filters:
             branches:
               ignore: /.*/
