@@ -200,6 +200,7 @@ cd singularity
 
 If the repository was already cloned without submodules, the submodules can be
 pulled by executing the following command from the root folder:
+
 ```sh
 git submodule update --init
 ```
