@@ -57,12 +57,12 @@ require (
 	github.com/sylabs/scs-library-client v1.4.11
 	github.com/sylabs/sif/v2 v2.20.2
 	github.com/sylabs/squashfs v1.0.4
-	github.com/vbauerster/mpb/v8 v8.8.3
+	github.com/vbauerster/mpb/v8 v8.9.1
 	go.etcd.io/bbolt v1.3.11
-	golang.org/x/crypto v0.31.0
+	golang.org/x/crypto v0.32.0
 	golang.org/x/sync v0.10.0
-	golang.org/x/sys v0.28.0
-	golang.org/x/term v0.27.0
+	golang.org/x/sys v0.29.0
+	golang.org/x/term v0.28.0
 	golang.org/x/text v0.21.0
 	google.golang.org/grpc v1.69.2
 	gopkg.in/yaml.v3 v3.0.1
