@@ -121,7 +121,7 @@ func stateDir(containerID string) (string, error) {
 		return "", err
 	}
 
-	configDir, err := syfs.ConfigDirForUsername(u.Name)
+	configDir, err := syfs.ConfigDirForUsername(u.Username)
 	if err != nil {
 		return "", err
 	}
