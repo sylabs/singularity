@@ -413,12 +413,12 @@ workflows:
       - build-rpm:
           matrix:
             parameters:
-              e: ["almalinux8", "almalinux9", "centosstream10"]
-#          filters:
-#            branches:
-#              only:
-#                - main
-#                - /release-.*/
+              e: ["almalinux8", "almalinux9"]
+          filters:
+            branches:
+              only:
+                - main
+                - /release-.*/
 
       - build-deb:
           matrix:
@@ -430,12 +430,24 @@ workflows:
                 - main
                 - /release-.*/
 
+  preview:
+    jobs:
+       - build-rpm:
+          matrix:
+            parameters:
+              e: ["centosstream10"]
+          filters:
+            branches:
+              only:
+                - main
+                - /release-.*/
+
   tagged-release:
     jobs:
       - build-rpm:
           matrix:
             parameters:
-              e: ["almalinux8", "almalinux9", "centosstream10"]
+              e: ["almalinux8", "almalinux9"]
           filters:
             branches:
               ignore: /.*/
