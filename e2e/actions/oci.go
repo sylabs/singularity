@@ -308,7 +308,7 @@ func (c actionTests) actionOciExec(t *testing.T) {
 			argv: []string{"--home", "/tmp", imageRef, "cat", "/etc/passwd"},
 			exit: 0,
 			wantOutputs: []e2e.SingularityCmdResultOp{
-				e2e.ExpectOutput(e2e.RegexMatch, `^root:x:0:0:root:[^:]*:/bin/ash\n`),
+				e2e.ExpectOutput(e2e.RegexMatch, `^root:x:0:0:\w*:[^:]*:/bin/ash\n`),
 			},
 		},
 		{
