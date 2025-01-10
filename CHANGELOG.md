@@ -1,5 +1,12 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug Fixes
+
+- Use correct username (not user's name) when computing `singularity oci` conmon
+  / singularity state dir.
+
 ## 4.2.2 \[2024-12-20\]
 
 ### Bug Fixes
