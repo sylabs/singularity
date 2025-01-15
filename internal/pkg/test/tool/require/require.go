@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/security/seccomp"
@@ -98,8 +99,9 @@ func Network(t *testing.T) {
 		cniPath := new(network.CNIPath)
 		cniPath.Conf = filepath.Join(buildcfg.SYSCONFDIR, "singularity", "network")
 		cniPath.Plugin = filepath.Join(buildcfg.LIBEXECDIR, "singularity", "cni")
+		containerID := "singularity-e2e-" + uuid.New().String()
 
-		setup, err := network.NewSetup([]string{"bridge"}, "_test_", nsPath, cniPath)
+		setup, err := network.NewSetup([]string{"bridge"}, containerID, nsPath, cniPath)
 		if err != nil {
 			logFn(err)
 			return
