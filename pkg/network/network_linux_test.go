@@ -349,14 +349,16 @@ func TestNewSetup(t *testing.T) {
 	}
 
 	for _, s := range testSetup {
-		setup, err := NewSetup(s.networks, s.id, s.nspath, s.cniPath)
-		if err != nil && s.success {
-			t.Errorf("unexpected failure for %q test: %s", s.desc, err)
-		} else if err == nil && !s.success {
-			t.Errorf("unexpected success for %q test", s.desc)
-		} else if s.subTest != nil {
-			s.subTest(setup, t)
-		}
+		t.Run(s.desc, func(t *testing.T) {
+			setup, err := NewSetup(s.networks, s.id, s.nspath, s.cniPath)
+			if err != nil && s.success {
+				t.Errorf("unexpected failure for %q test: %s", s.desc, err)
+			} else if err == nil && !s.success {
+				t.Errorf("unexpected success for %q test", s.desc)
+			} else if s.subTest != nil {
+				s.subTest(setup, t)
+			}
+		})
 	}
 }
 
