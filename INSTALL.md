@@ -198,6 +198,13 @@ git clone --recurse-submodules https://github.com/sylabs/singularity.git
 cd singularity
 ```
 
+If the repository was already cloned without submodules, the submodules can be
+pulled by executing the following command from the root folder:
+
+```sh
+git submodule update --init
+```
+
 By default your clone will be on the `main` branch which is where development
 of SingularityCE happens. To build a specific version of SingularityCE, check
 out a [release tag](https://github.com/sylabs/singularity/tags) before
