@@ -20,9 +20,9 @@ require (
 	github.com/containers/image/v5 v5.33.0
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/cyphar/filepath-securejoin v0.3.6
-	github.com/docker/cli v27.4.1+incompatible
+	github.com/docker/cli v27.5.0+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
-	github.com/docker/docker v27.4.1+incompatible
+	github.com/docker/docker v27.5.0+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/fatih/color v1.18.0
 	github.com/go-log/log v0.2.0
@@ -151,6 +151,7 @@ require (
 	github.com/moby/patternmatcher v0.6.0 // indirect
 	github.com/moby/sys/mount v0.3.4 // indirect
 	github.com/moby/sys/mountinfo v0.7.2 // indirect
+	github.com/moby/sys/reexec v0.1.0 // indirect
 	github.com/moby/sys/signal v0.7.1 // indirect
 	github.com/moby/sys/user v0.3.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
