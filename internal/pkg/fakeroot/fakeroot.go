@@ -1,4 +1,6 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -290,9 +292,11 @@ func (c *Config) DisableUser(username string) error {
 	return nil
 }
 
-// GetUserEntry returns a user entry associated to a user and returns
-// an error if there is no entry for this user.
-func (c *Config) GetUserEntry(username string) (*Entry, error) {
+// getUserEntry returns a user entry associated to a user and returns an error
+// if there is no entry for this user. If libsubid is true, entries are returned
+// from the subid file or via libsubid lookup. If libsubid is false, then
+// entries are only returned from the subid file.
+func (c *Config) getUserEntry(username string, libsubid bool) (*Entry, error) {
 	var largeRangeEntries []*Entry
 	entryCount := 0
 
@@ -300,19 +304,24 @@ func (c *Config) GetUserEntry(username string) (*Entry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve user information for %s: %s", username, err)
 	}
-	for _, entry := range c.entries {
+
+	entries, err := c.getMappingEntries(u, libsubid)
+	if err != nil {
+		return nil, fmt.Errorf("failed to look up mapping entries for user %s: %w", username, err)
+	}
+
+	for _, entry := range entries {
 		if entry.invalid {
 			continue
 		}
-		if entry.UID == u.UID {
-			if entry.Count == validRangeCount {
-				return entry, nil
-			} else if entry.Count > validRangeCount {
-				largeRangeEntries = append(largeRangeEntries, entry)
-				continue
-			}
-			entryCount++
+
+		if entry.Count == validRangeCount {
+			return entry, nil
+		} else if entry.Count > validRangeCount {
+			largeRangeEntries = append(largeRangeEntries, entry)
+			continue
 		}
+		entryCount++
 	}
 	var largestEntry *Entry
 
@@ -336,6 +345,14 @@ func (c *Config) GetUserEntry(username string) (*Entry, error) {
 	return nil, fmt.Errorf("no mapping entry found in %s for %s", c.file.Name(), username)
 }
 
+func (c *Config) GetUserEntry(username string) (*Entry, error) {
+	return c.getUserEntry(username, false)
+}
+
+func (c *Config) GetUserEntryWithLibSubid(username string) (*Entry, error) {
+	return c.getUserEntry(username, true)
+}
+
 // getPwUID is also used for mocking purpose
 var (
 	getPwUID = user.GetPwUID
@@ -343,7 +360,7 @@ var (
 )
 
 // GetIDRange determines UID/GID mappings based on configuration
-// file provided in path.
+// file provided in path, and libsubid if compiled with support.
 func GetIDRange(path string, uid uint32) (*specs.LinuxIDMapping, error) {
 	config, err := GetConfig(path, false, getPwNam)
 	if err != nil {
@@ -355,7 +372,7 @@ func GetIDRange(path string, uid uint32) (*specs.LinuxIDMapping, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve user with UID %d: %s", uid, err)
 	}
-	e, err := config.GetUserEntry(userinfo.Name)
+	e, err := config.GetUserEntryWithLibSubid(userinfo.Name)
 	if err != nil {
 		return nil, err
 	}
