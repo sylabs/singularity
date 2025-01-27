@@ -88,12 +88,6 @@ Requires: fuse
 # FUSE 3 for squashfuse
 Requires: fuse3
 %endif
-# Libsubid on EL / OpenSuseTumbleweed
-%if "%{_target_vendor}" == "suse" && 0%{?suse_version} > 1600
-BuildRequires: libsubid-devel
-%else
-BuildRequires: shadow-utils-subid-devel
-%endif
 
 Provides: %{name}-runtime
 

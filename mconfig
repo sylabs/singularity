@@ -1,5 +1,5 @@
 #!/bin/sh -
-# Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+# Copyright (c) 2019-2024, Sylabs Inc. All rights reserved.
 # Copyright (c) 2015-2018, Yannick Cote <yhcote@gmail.com>. All rights reserved.
 # Copyright (c) Contributors to the Apptainer project, established as
 #   Apptainer a Series of LF Projects LLC.
@@ -62,7 +62,6 @@ with_conmon=1
 with_squashfuse=1
 with_suid=1
 with_seccomp_check=1
-with_libsubid=1
 
 builddir=
 prefix=
@@ -118,7 +117,6 @@ usage_args () {
 	echo
 	echo "  Singularity options:"
 	echo "     --without-suid    do not install SUID binary (linux only)"
-  echo "     --without-libsubid do not compile libsubid support even if available (linux only)"
 	echo "     --without-network do not compile/install network plugins (linux only)"
 	echo "     --without-seccomp do not compile/install seccomp support (linux only)"
   echo
@@ -378,8 +376,6 @@ while [ $# -ne 0 ]; do
    verbose=1; shift;;
   --without-suid)
    with_suid=0; shift;;
-  --without-libsubid)
-   with_libsubid=0; shift;;
   --without-network)
    with_network=0; shift;;
   --without-seccomp)
@@ -785,11 +781,6 @@ fi
 if [ "$appsec" = "1" ]; then
 	drawline $makeit_fragsdir/go_appsec_opts.mk
 	cat $makeit_fragsdir/go_appsec_opts.mk >> $makeit_makefile
-fi
-
-if [ "$libsubid" = "1" ]; then
-	drawline $makeit_fragsdir/go_libsubid_opts.mk
-	cat $makeit_fragsdir/go_libsubid_opts.mk >> $makeit_makefile
 fi
 
 if [ "$build_runtime" = "1" ]; then
