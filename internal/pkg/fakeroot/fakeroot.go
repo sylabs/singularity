@@ -292,11 +292,9 @@ func (c *Config) DisableUser(username string) error {
 	return nil
 }
 
-// getUserEntry returns a user entry associated to a user and returns an error
-// if there is no entry for this user. If libsubid is true, entries are returned
-// from the subid file or via libsubid lookup. If libsubid is false, then
-// entries are only returned from the subid file.
-func (c *Config) getUserEntry(username string, libsubid bool) (*Entry, error) {
+// GetUserEntry returns a user entry associated to a user and returns
+// an error if there is no entry for this user.
+func (c *Config) GetUserEntry(username string) (*Entry, error) {
 	var largeRangeEntries []*Entry
 	entryCount := 0
 
@@ -305,7 +303,7 @@ func (c *Config) getUserEntry(username string, libsubid bool) (*Entry, error) {
 		return nil, fmt.Errorf("could not retrieve user information for %s: %s", username, err)
 	}
 
-	entries, err := c.getMappingEntries(u, libsubid)
+	entries, err := c.getMappingEntries(u)
 	if err != nil {
 		return nil, fmt.Errorf("failed to look up mapping entries for user %s: %w", username, err)
 	}
@@ -345,14 +343,6 @@ func (c *Config) getUserEntry(username string, libsubid bool) (*Entry, error) {
 	return nil, fmt.Errorf("no mapping entry found in %s for %s", c.file.Name(), username)
 }
 
-func (c *Config) GetUserEntry(username string) (*Entry, error) {
-	return c.getUserEntry(username, false)
-}
-
-func (c *Config) GetUserEntryWithLibSubid(username string) (*Entry, error) {
-	return c.getUserEntry(username, true)
-}
-
 // getPwUID is also used for mocking purpose
 var (
 	getPwUID = user.GetPwUID
@@ -360,7 +350,7 @@ var (
 )
 
 // GetIDRange determines UID/GID mappings based on configuration
-// file provided in path, and libsubid if compiled with support.
+// file provided in path.
 func GetIDRange(path string, uid uint32) (*specs.LinuxIDMapping, error) {
 	config, err := GetConfig(path, false, getPwNam)
 	if err != nil {
@@ -372,7 +362,7 @@ func GetIDRange(path string, uid uint32) (*specs.LinuxIDMapping, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve user with UID %d: %s", uid, err)
 	}
-	e, err := config.GetUserEntryWithLibSubid(userinfo.Name)
+	e, err := config.GetUserEntry(userinfo.Name)
 	if err != nil {
 		return nil, err
 	}

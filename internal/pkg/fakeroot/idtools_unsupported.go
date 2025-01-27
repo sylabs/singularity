@@ -14,7 +14,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 )
 
-func (c *Config) getMappingEntries(user *user.User, _ bool) ([]*Entry, error) {
+func (c *Config) getMappingEntries(user *user.User) ([]*Entry, error) {
 	entries := make([]*Entry, 0)
 	for _, entry := range c.entries {
 		if entry.UID == user.UID {

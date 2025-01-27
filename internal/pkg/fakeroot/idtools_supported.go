@@ -99,16 +99,12 @@ func readSubgid(user *user.User) ([]*Entry, error) {
 	return readSubid(user, false)
 }
 
-func (c *Config) getMappingEntries(user *user.User, libsubid bool) ([]*Entry, error) {
+func (c *Config) getMappingEntries(user *user.User) ([]*Entry, error) {
 	entries := make([]*Entry, 0)
 	for _, entry := range c.entries {
 		if entry.UID == user.UID {
 			entries = append(entries, entry)
 		}
-	}
-
-	if !libsubid {
-		return entries, nil
 	}
 
 	var subidEntries []*Entry
