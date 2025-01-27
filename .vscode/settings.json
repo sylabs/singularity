@@ -4,7 +4,7 @@
         "--fast"
     ],
     "go.buildFlags": [
-        "-tags=apparmor,fakeroot_engine,libsubid,seccomp,selinux,singularity_engine,sylog"
+        "-tags=apparmor,fakeroot_engine,seccomp,selinux,singularity_engine,sylog"
     ],
     "go.testTags": "apparmor,fakeroot_engine,seccomp,selinux,singularity_engine,sylog,e2e_test,integration_test"
 }

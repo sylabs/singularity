@@ -7,12 +7,6 @@
 - Use correct username (not user's name) when computing `singularity oci` conmon
   / singularity state dir.
 
-### New Features & Functionality
-
-- Add support for libsubid. Sub[ug]id mappings will be retrieved from e.g. LDAP
-  via libsubid and sssd if Singularity is built with libsubid support (default
-  when libsubid headers are available).
-
 ## 4.2.2 \[2024-12-20\]
 
 ### Bug Fixes

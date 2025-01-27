@@ -292,14 +292,6 @@ The source files:
 
 Contain code from the podman project, under the Apache License, Version 2.0.
 
-## github.com/containers/storage
-
-The source file:
-
-* `internal/pkg/fakeroot/idtools_supported.go`
-
-Contains code from the podman project, under the Apache License, Version 2.0.
-
 ## github.com/containers/conmon
 
 The source files:

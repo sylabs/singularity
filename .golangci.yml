@@ -5,7 +5,6 @@ run:
     - apparmor
     - e2e_test
     - fakeroot_engine
-    - libsubid
     - seccomp
     - selinux
     - singularity_engine
