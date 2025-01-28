@@ -38,8 +38,8 @@ import (
 	"syscall"
 	"time"
 
-	authutil "github.com/containerd/containerd/remotes/docker/auth"
-	remoteserrors "github.com/containerd/containerd/remotes/errors"
+	authutil "github.com/containerd/containerd/v2/core/remotes/docker/auth"
+	remoteserrors "github.com/containerd/containerd/v2/core/remotes/errors"
 	"github.com/docker/cli/cli/config"
 	"github.com/gofrs/flock"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -159,19 +159,19 @@ func (ap *authProvider) FetchToken(ctx context.Context, req *auth.FetchTokenRequ
 					if err != nil {
 						return nil, err
 					}
-					return toTokenResponse(resp.Token, resp.IssuedAt, resp.ExpiresIn), nil
+					return toTokenResponse(resp.Token, resp.IssuedAt, resp.ExpiresInSeconds), nil
 				}
 			}
 			return nil, err
 		}
-		return toTokenResponse(resp.AccessToken, resp.IssuedAt, resp.ExpiresIn), nil
+		return toTokenResponse(resp.AccessToken, resp.IssuedAt, resp.ExpiresInSeconds), nil
 	}
 	// do request anonymously
 	resp, err := authutil.FetchToken(ctx, http.DefaultClient, nil, to)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to fetch anonymous token")
 	}
-	return toTokenResponse(resp.Token, resp.IssuedAt, resp.ExpiresIn), nil
+	return toTokenResponse(resp.Token, resp.IssuedAt, resp.ExpiresInSeconds), nil
 }
 
 func (ap *authProvider) credentials(host string) (*auth.CredentialsResponse, error) {
