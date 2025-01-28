@@ -10,8 +10,16 @@
 ### New Features & Functionality
 
 - Add support for libsubid. Sub[ug]id mappings will be retrieved from e.g. LDAP
-  via libsubid and sssd if Singularity is built with libsubid support (default
-  when libsubid headers are available).
+  according to `nssswitch.conf` if Singularity is built with libsubid support
+  (default when libsubid headers are available). If built without libsubid
+  support, Singularity will retrieve subid from `/etc/subid` and `/etc/subgid`
+  regardless of system configuration. Note that `singularity config fakeroot`
+  modifies `/etc/subid` and `/etc/subgid`files.
+
+### Removed Features
+
+- Plugin `fakerootcallback` functionality for customizing fakeroot subid
+  mappings has been removed.
 
 ## 4.2.2 \[2024-12-20\]
 

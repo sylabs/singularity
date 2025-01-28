@@ -118,7 +118,7 @@ usage_args () {
 	echo
 	echo "  Singularity options:"
 	echo "     --without-suid    do not install SUID binary (linux only)"
-  echo "     --without-libsubid do not compile libsubid support even if available (linux only)"
+	echo "     --without-libsubid do not compile libsubid support even if available (linux only)"
 	echo "     --without-network do not compile/install network plugins (linux only)"
 	echo "     --without-seccomp do not compile/install seccomp support (linux only)"
   echo

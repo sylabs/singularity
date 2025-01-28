@@ -296,7 +296,7 @@ Contain code from the podman project, under the Apache License, Version 2.0.
 
 The source file:
 
-* `internal/pkg/fakeroot/idtools_supported.go`
+* `internal/pkg/fakeroot/idtools_libsubid.go`
 
 Contains code from the podman project, under the Apache License, Version 2.0.
 

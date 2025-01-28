@@ -1,5 +1,4 @@
 //go:build linux && cgo && libsubid
-// +build linux,cgo,libsubid
 
 // Portions of this code was adopted from github.com/containers/storage
 // Copyright (C) The Linux Foundation and its contributors.
@@ -18,10 +17,10 @@ package fakeroot
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 	"unsafe"
 
+	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 )
 
@@ -44,11 +43,9 @@ struct subid_range singularity_get_range(struct subid_range *ranges, int i)
 */
 import "C"
 
-var (
-	libsubidMutex sync.Mutex
-)
+var libsubidMutex sync.Mutex
 
-func readSubid(user *user.User, isUser bool) ([]*Entry, error) {
+func readSubid(user *user.User, groupMapping bool) ([]*Entry, error) {
 	ret := make([]*Entry, 0)
 	uidstr := fmt.Sprintf("%d", user.UID)
 
@@ -68,20 +65,21 @@ func readSubid(user *user.User, isUser bool) ([]*Entry, error) {
 	libsubidMutex.Lock()
 	defer libsubidMutex.Unlock()
 
-	if isUser {
-		nRanges = C.subid_get_uid_ranges(cUsername, &cRanges)
-		if nRanges <= 0 {
-			nRanges = C.subid_get_uid_ranges(cuidstr, &cRanges)
-		}
-	} else {
+	if groupMapping {
 		nRanges = C.subid_get_gid_ranges(cUsername, &cRanges)
 		if nRanges <= 0 {
 			nRanges = C.subid_get_gid_ranges(cuidstr, &cRanges)
 		}
+	} else {
+		nRanges = C.subid_get_uid_ranges(cUsername, &cRanges)
+		if nRanges <= 0 {
+			nRanges = C.subid_get_uid_ranges(cuidstr, &cRanges)
+		}
 	}
 	if nRanges < 0 {
-		return nil, errors.New("cannot read subids")
+		return nil, fmt.Errorf("error fetching subid range with libsubid: %v", nRanges)
 	}
+
 	defer C.free(unsafe.Pointer(cRanges))
 
 	for i := 0; i < int(nRanges); i++ {
@@ -100,37 +98,39 @@ func readSubid(user *user.User, isUser bool) ([]*Entry, error) {
 	return ret, nil
 }
 
-func readSubuid(user *user.User) ([]*Entry, error) {
-	return readSubid(user, true)
-}
-
-func readSubgid(user *user.User) ([]*Entry, error) {
-	return readSubid(user, false)
-}
-
-func (c *Config) getMappingEntries(user *user.User, libsubid bool) ([]*Entry, error) {
-	entries := make([]*Entry, 0)
-	for _, entry := range c.entries {
-		if entry.UID == user.UID {
-			entries = append(entries, entry)
-		}
+// getIDRange determines ID mappings via libsubid.
+func getIDRange(groupMapping bool, uid uint32) (*specs.LinuxIDMapping, error) {
+	user, err := user.GetPwUID(uid)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve user with UID %d: %s", uid, err)
 	}
 
-	if !libsubid {
-		return entries, nil
-	}
-
-	var subidEntries []*Entry
-	var err error
-	if strings.Contains(c.file.Name(), "gid") {
-		subidEntries, err = readSubgid(user)
-	} else {
-		subidEntries, err = readSubuid(user)
-	}
-
+	entries, err := readSubid(user, groupMapping)
 	if err != nil {
 		return nil, err
 	}
 
-	return append(entries, subidEntries...), nil
+	for _, entry := range entries {
+		if entry.invalid {
+			continue
+		}
+		if entry.Count >= validRangeCount {
+			return &specs.LinuxIDMapping{
+				ContainerID: 1,
+				HostID:      entry.Start,
+				Size:        entry.Count,
+			}, nil
+		}
+	}
+	return nil, fmt.Errorf("no valid mapping entry found for %s (%d)", user.Name, uid)
+}
+
+// GetUIDRange determines subUID mappings for the user uid via libsubid.
+func GetUIDRange(uid uint32) (*specs.LinuxIDMapping, error) {
+	return getIDRange(false, uid)
+}
+
+// GetGIDRange determines subGID mappings for the user uid via libsubid.
+func GetGIDRange(uid uint32) (*specs.LinuxIDMapping, error) {
+	return getIDRange(true, uid)
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
@@ -24,9 +24,8 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
-	fakerootutil "github.com/sylabs/singularity/v4/internal/pkg/fakeroot"
+	"github.com/sylabs/singularity/v4/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/v4/internal/pkg/instance"
-	"github.com/sylabs/singularity/v4/internal/pkg/plugin"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/starter"
 	"github.com/sylabs/singularity/v4/internal/pkg/security"
 	"github.com/sylabs/singularity/v4/internal/pkg/security/seccomp"
@@ -37,7 +36,6 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/mainthread"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 	"github.com/sylabs/singularity/v4/pkg/image"
-	fakerootcallback "github.com/sylabs/singularity/v4/pkg/plugin/callback/runtime/fakeroot"
 	"github.com/sylabs/singularity/v4/pkg/runtime/engine/config"
 	singularityConfig "github.com/sylabs/singularity/v4/pkg/runtime/engine/singularity/config"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -653,22 +651,8 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 		uid := uint32(os.Getuid())
 		gid := uint32(os.Getgid())
 
-		getIDRange := fakerootutil.GetIDRange
-
-		callbackType := (fakerootcallback.UserMapping)(nil)
-		callbacks, err := plugin.LoadCallbacks(callbackType)
-		if err != nil {
-			return fmt.Errorf("while loading plugins callbacks '%T': %s", callbackType, err)
-		}
-		if len(callbacks) > 1 {
-			return fmt.Errorf("multiple plugins have registered hook callback for fakeroot")
-		} else if len(callbacks) == 1 {
-			//nolint:forcetypeassert
-			getIDRange = callbacks[0].(fakerootcallback.UserMapping)
-		}
-
 		e.EngineConfig.OciConfig.AddLinuxUIDMapping(uid, 0, 1)
-		idRange, err := getIDRange(fakerootutil.SubUIDFile, uid)
+		idRange, err := fakeroot.GetUIDRange(uid)
 		if err != nil {
 			return fmt.Errorf("could not use fakeroot: %s", err)
 		}
@@ -676,7 +660,7 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 		starterConfig.AddUIDMappings(e.EngineConfig.OciConfig.Linux.UIDMappings)
 
 		e.EngineConfig.OciConfig.AddLinuxGIDMapping(gid, 0, 1)
-		idRange, err = getIDRange(fakerootutil.SubGIDFile, uid)
+		idRange, err = fakeroot.GetGIDRange(uid)
 		if err != nil {
 			return fmt.Errorf("could not use fakeroot: %s", err)
 		}
