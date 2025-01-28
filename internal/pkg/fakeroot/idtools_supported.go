@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 	"unsafe"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
@@ -43,6 +44,10 @@ struct subid_range singularity_get_range(struct subid_range *ranges, int i)
 */
 import "C"
 
+var (
+	libsubidMutex sync.Mutex
+)
+
 func readSubid(user *user.User, isUser bool) ([]*Entry, error) {
 	ret := make([]*Entry, 0)
 	uidstr := fmt.Sprintf("%d", user.UID)
@@ -59,6 +64,10 @@ func readSubid(user *user.User, isUser bool) ([]*Entry, error) {
 
 	var nRanges C.int
 	var cRanges *C.struct_subid_range
+
+	libsubidMutex.Lock()
+	defer libsubidMutex.Unlock()
+
 	if isUser {
 		nRanges = C.subid_get_uid_ranges(cUsername, &cRanges)
 		if nRanges <= 0 {
