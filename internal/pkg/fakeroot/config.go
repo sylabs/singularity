@@ -1,4 +1,6 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,7 +17,6 @@ import (
 	"strings"
 	"syscall"
 
-	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 	"github.com/sylabs/singularity/v4/pkg/util/fs/lock"
 )
@@ -290,8 +291,19 @@ func (c *Config) DisableUser(username string) error {
 	return nil
 }
 
-// GetUserEntry returns a user entry associated to a user and returns
-// an error if there is no entry for this user.
+func (c *Config) getMappingEntries(user *user.User) []*Entry {
+	entries := make([]*Entry, 0)
+	for _, entry := range c.entries {
+		if entry.UID == user.UID {
+			entries = append(entries, entry)
+		}
+	}
+
+	return entries
+}
+
+// getUserEntry returns a user entry associated to a user and returns an error
+// if there is no entry for this user.
 func (c *Config) GetUserEntry(username string) (*Entry, error) {
 	var largeRangeEntries []*Entry
 	entryCount := 0
@@ -300,19 +312,21 @@ func (c *Config) GetUserEntry(username string) (*Entry, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not retrieve user information for %s: %s", username, err)
 	}
-	for _, entry := range c.entries {
+
+	entries := c.getMappingEntries(u)
+
+	for _, entry := range entries {
 		if entry.invalid {
 			continue
 		}
-		if entry.UID == u.UID {
-			if entry.Count == validRangeCount {
-				return entry, nil
-			} else if entry.Count > validRangeCount {
-				largeRangeEntries = append(largeRangeEntries, entry)
-				continue
-			}
-			entryCount++
+
+		if entry.Count == validRangeCount {
+			return entry, nil
+		} else if entry.Count > validRangeCount {
+			largeRangeEntries = append(largeRangeEntries, entry)
+			continue
 		}
+		entryCount++
 	}
 	var largestEntry *Entry
 
@@ -334,37 +348,4 @@ func (c *Config) GetUserEntry(username string) (*Entry, error) {
 		)
 	}
 	return nil, fmt.Errorf("no mapping entry found in %s for %s", c.file.Name(), username)
-}
-
-// getPwUID is also used for mocking purpose
-var (
-	getPwUID = user.GetPwUID
-	getPwNam = user.GetPwNam
-)
-
-// GetIDRange determines UID/GID mappings based on configuration
-// file provided in path.
-func GetIDRange(path string, uid uint32) (*specs.LinuxIDMapping, error) {
-	config, err := GetConfig(path, false, getPwNam)
-	if err != nil {
-		return nil, err
-	}
-	defer config.Close()
-
-	userinfo, err := getPwUID(uid)
-	if err != nil {
-		return nil, fmt.Errorf("could not retrieve user with UID %d: %s", uid, err)
-	}
-	e, err := config.GetUserEntry(userinfo.Name)
-	if err != nil {
-		return nil, err
-	}
-	if e.disabled {
-		return nil, fmt.Errorf("your fakeroot mapping has been disabled by the administrator")
-	}
-	return &specs.LinuxIDMapping{
-		ContainerID: 1,
-		HostID:      e.Start,
-		Size:        e.Count,
-	}, nil
 }

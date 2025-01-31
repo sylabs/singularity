@@ -1,5 +1,5 @@
 #!/bin/sh -
-# Copyright (c) 2019-2024, Sylabs Inc. All rights reserved.
+# Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 # Copyright (c) 2015-2018, Yannick Cote <yhcote@gmail.com>. All rights reserved.
 # Copyright (c) Contributors to the Apptainer project, established as
 #   Apptainer a Series of LF Projects LLC.
@@ -62,6 +62,7 @@ with_conmon=1
 with_squashfuse=1
 with_suid=1
 with_seccomp_check=1
+with_libsubid_check=1
 
 builddir=
 prefix=
@@ -116,9 +117,11 @@ usage_args () {
 	echo "     -h   this help"
 	echo
 	echo "  Singularity options:"
-	echo "     --without-suid    do not install SUID binary (linux only)"
-	echo "     --without-network do not compile/install network plugins (linux only)"
-	echo "     --without-seccomp do not compile/install seccomp support (linux only)"
+	echo "     --without-suid     do not install SUID binary (linux only)"
+	echo "     --without-libsubid do not compile/install libsubid support (linux only)"
+  echo "                        singularity will not honor nss subid configuration"
+	echo "     --without-network  do not compile/install network plugins (linux only)"
+	echo "     --without-seccomp  do not compile/install seccomp support (linux only)"
   echo
   echo "  Third-party dependencies:"
   echo "     --without-conmon      do not build conmon, use distro provided version"
@@ -376,6 +379,8 @@ while [ $# -ne 0 ]; do
    verbose=1; shift;;
   --without-suid)
    with_suid=0; shift;;
+  --without-libsubid)
+   with_libsubid_check=0; shift;;
   --without-network)
    with_network=0; shift;;
   --without-seccomp)
@@ -783,6 +788,11 @@ if [ "$appsec" = "1" ]; then
 	cat $makeit_fragsdir/go_appsec_opts.mk >> $makeit_makefile
 fi
 
+if [ "$libsubid" = "1" ]; then
+	drawline $makeit_fragsdir/go_libsubid_opts.mk
+	cat $makeit_fragsdir/go_libsubid_opts.mk >> $makeit_makefile
+fi
+
 if [ "$build_runtime" = "1" ]; then
 	drawline $makeit_fragsdir/go_runtime_opts.mk
 	cat $makeit_fragsdir/go_runtime_opts.mk >> $makeit_makefile
@@ -931,6 +941,11 @@ if [ "$appsec" = 0 ]; then
 	echo "    - seccomp support: no"
 else
 	echo "    - seccomp support: yes"
+fi
+if [ "$libsubid" = 0 ]; then
+	echo "    - libsubid support: no"
+else
+	echo "    - libsubid support: yes"
 fi
 if [ "$with_conmon" = 0 ]; then
 	echo "    - Build conmon: no"

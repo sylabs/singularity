@@ -208,7 +208,7 @@ func (l *Launcher) getProcessCwd(imgSpec imgspecv1.Image) (dir string, err error
 //	e.g. host 1001 -> fakeroot userns 0 -> container targetUID
 func getReverseUserMaps(hostUID, targetUID, targetGID uint32) (uidMap, gidMap []specs.LinuxIDMapping, err error) {
 	// Get user's configured subuid & subgid ranges
-	subuidRange, err := fakeroot.GetIDRange(fakeroot.SubUIDFile, hostUID)
+	subuidRange, err := fakeroot.GetUIDRange(hostUID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -216,7 +216,7 @@ func getReverseUserMaps(hostUID, targetUID, targetGID uint32) (uidMap, gidMap []
 	if subuidRange.Size < 65536 {
 		return nil, nil, fmt.Errorf("subuid range size (%d) must be at least 65536", subuidRange.Size)
 	}
-	subgidRange, err := fakeroot.GetIDRange(fakeroot.SubGIDFile, hostUID)
+	subgidRange, err := fakeroot.GetGIDRange(hostUID)
 	if err != nil {
 		return nil, nil, err
 	}

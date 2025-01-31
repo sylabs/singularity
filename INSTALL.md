@@ -36,13 +36,29 @@ sudo apt-get install -y \
     zlib1g-dev
 ```
 
-### RHEL / Alma Linux / Rocky Linux 8+ and Fedora
+On Ubuntu 24.04 and above install additional libsubid headers:
+
+```sh
+sudo apt-get install -y libsubid-dev
+```
+
+### RHEL / Alma Linux / Rocky Linux 8+ / Fedora
+
+On RHEL / Alma Linux / Rocky Linux, CentOS Stream, you will need to enable the
+CRB (9+) or powertools repository (8). This is not necessary on Fedora.
+
+```sh
+sudo dnf install -y dnf-plugins-core
+sudo dnf config-manager --enable crb || dnf config-manager --enable powertools
+```
+
+You can now install the build dependencies:
 
 ```sh
 # Install basic tools for compiling
-sudo yum groupinstall -y 'Development Tools'
+sudo dnf groupinstall -y 'Development Tools'
 # Install RPM packages for dependencies
-sudo yum install -y \
+sudo dnf --enablerepo=devel install -y \
     autoconf \
     automake \
     crun \
@@ -54,31 +70,8 @@ sudo yum install -y \
     glib2-devel \
     libseccomp-devel \
     libtool \
+    shadow-utils-subid-devel \
     squashfs-tools \
-    wget \
-    zlib-devel
-```
-
-### SLES / openSUSE Leap
-
-```sh
-sudo zypper in \
-    autoconf \
-    automake \
-    cryptsetup \
-    fuse2fs \
-    fuse3 \
-    fuse3-devel \
-    gcc \
-    gcc-c++ \
-    git \
-    glib2-devel \
-    libseccomp-devel \
-    libtool \
-    make \
-    pkg-config \
-    runc \
-    squashfs \
     wget \
     zlib-devel
 ```
@@ -118,17 +111,11 @@ sudo dnf copr remove dctrud/squashfs-tools-ng
 
 Follow the [EPEL Quickstart](https://docs.fedoraproject.org/en-US/epel/#_quickstart)
 for you distribution to enable the EPEL repository. Install `squashfs-tools-ng` with
-`dnf` or `yum`.
+`dnf`.
 
 ```sh
 sudo dnf install squashfs-tools-ng
 ```
-
-### SLES / openSUSE Leap
-
-On SLES/openSUSE, follow the instructions at the [filesystems
-project](https://software.opensuse.org//download.html?project=filesystems&package=squashfs)
-to obtain an more recent `squashfs` package that provides `sqfstar`.
 
 ## Install Go
 
@@ -217,11 +204,24 @@ git checkout --recurse-submodules v4.2.2
 
 ## Compiling SingularityCE
 
+### RHEL / Alma Linux / Rocky Linux / Fedora / Ubuntu 24.04+
+
 You can configure, build, and install SingularityCE using the following
 commands:
 
 ```sh
 ./mconfig
+make -C builddir
+sudo make -C builddir install
+```
+
+### Ubuntu <=23.10
+
+Use the `--without-libsubid` flag to configure SingularityCE without libsubid
+support, as libsubid is not available on older versions of Ubuntu.
+
+```sh
+./mconfig --without-libsubid
 make -C builddir
 sudo make -C builddir install
 ```
@@ -286,7 +286,7 @@ system.
 On a RHEL / AlmaLinux / Rocky Linux / Fedora machine you can build a
 SingularityCE into an RPM package, and install it from the RPM. This is useful
 if you need to install Singularity across multiple machines, or wish to manage
-all software via `yum/dnf`.
+all software via `dnf`.
 
 To build the RPM, you first need to install the
 [system dependencies](#install-system-dependencies) and
