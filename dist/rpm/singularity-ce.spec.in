@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017-2022, SyLabs, Inc. All rights reserved.
+# Copyright (c) 2017-2025, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -47,53 +47,31 @@ BuildRequires: make
 BuildRequires: /usr/bin/pkg-config
 # Paths to runtime dependencies detected by mconfig, so must be present at build time.
 BuildRequires: cryptsetup
-%if "%{_target_vendor}" == "suse"
-BuildRequires: squashfs
-%else
 BuildRequires: squashfs-tools
-%endif
 # Required for building bundled conmon
 BuildRequires: libseccomp-devel
 BuildRequires: glib2-devel
 # Required for building bundled squashfuse
 BuildRequires: autoconf
 BuildRequires: automake
-%if "%{_target_vendor}" == "suse" && 0%{?suse_version} < 1500
-BuildRequires: fuse-devel
-%else
 BuildRequires: fuse3-devel
-%endif
 BuildRequires: libtool
 BuildRequires: zlib-devel
+# Required for libsubid support
+BuildRequires: shadow-utils-subid-devel
 
-# crun requirement not satisfied on EL7 or SLES default repos - use runc there.
-%if "%{_target_vendor}" == "suse" || 0%{?rhel} < 8
-Requires: runc
-%else
 Requires: crun
-%endif
-%if "%{_target_vendor}" == "suse"
-Requires: fuse2fs
-Requires: squashfs
-%else
 Requires: shadow-utils
+Requires: shadow-utils-subid
 Requires: squashfs-tools
-%endif
 Requires: cryptsetup
-%if "%{_target_vendor}" == "suse" && 0%{?suse_version} < 1500
-Requires: fuse
-%else
+
 # FUSE 2 for fuse2fs
 Requires: fuse
 # FUSE 3 for squashfuse
 Requires: fuse3
-%endif
-# Libsubid on EL / OpenSuseTumbleweed
-%if "%{_target_vendor}" == "suse" && 0%{?suse_version} > 1600
-BuildRequires: libsubid-devel
-%else
-BuildRequires: shadow-utils-subid-devel
-%endif
+
+
 
 Provides: %{name}-runtime
 

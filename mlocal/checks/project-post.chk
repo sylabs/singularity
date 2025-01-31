@@ -522,7 +522,7 @@ config_add_footer
 ########################
 # libsubid
 ########################
-if [ "$with_libsubid" = "1" ];then
+if [ "$with_libsubid_check" = "1" ];then
     printf " checking: libsubid support... "
     testprog=$makeit_testprogdir/test_libsubid
     cat > ${testprog}.c << "EOF"
@@ -544,14 +544,26 @@ if [ "$with_libsubid" = "1" ];then
         return 0;
     }
 EOF
-    if ! $tgtcc -x c -o $testprog ${testprog}.c -l subid >/dev/null 2>&1; then
-        echo "no"
-    else
-        if ! $testprog; then
-            echo "no"
-        else
-            echo "yes"
-            libsubid=1
-        fi
-    fi
+   if ! $tgtcc -x c -o $testprog ${testprog}.c -l subid >/dev/null 2>&1; then
+      echo "no"
+      echo
+      echo "libsubid headers are required to build Singularity with libsubid support."
+      echo "To disable libsubid support run mconfig using '--without-libsubid'."
+      echo "Without libsubid support, singularity will not honor nss subid configuration."
+      echo
+      exit 2
+   fi
+   if ! $testprog; then
+      echo "no"
+      echo
+      echo "test for functional libsubid support failed."
+      echo "To disable libsubid support run mconfig using '--without-libsubid'."
+      echo "Without libsubid support, singularity will not honor nss subid configuration."
+      echo
+      exit 2          
+   fi     
+   echo "yes"
+   libsubid=1  
+else
+   libsubid=0
 fi

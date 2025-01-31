@@ -63,7 +63,8 @@ override_dh_auto_configure:
 	  --sysconfdir=/etc \
 	  --libexecdir=/usr/lib/$(DEB_HOST_MULTIARCH) \
 	  --localstatedir=/var/lib \
-	  --mandir=/usr/share/man
+	  --mandir=/usr/share/man \
+	  --without-libsubid
 
 override_dh_auto_build:
 # build standard install

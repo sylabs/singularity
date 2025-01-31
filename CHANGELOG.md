@@ -11,10 +11,19 @@
 
 - Add support for libsubid. Sub[ug]id mappings will be retrieved from e.g. LDAP
   according to `nssswitch.conf` if Singularity is built with libsubid support
-  (default when libsubid headers are available). If built without libsubid
-  support, Singularity will retrieve subid from `/etc/subid` and `/etc/subgid`
-  regardless of system configuration. Note that `singularity config fakeroot`
-  modifies `/etc/subid` and `/etc/subgid`files.
+  (default). If built without libsubid support, Singularity will retrieve subid
+  from `/etc/subid` and `/etc/subgid` regardless of system configuration. Note
+  that `singularity config fakeroot` always modifies `/etc/subid` and
+  `/etc/subgid`files.
+
+## Requirements / Packaging
+
+- libsubid headers are now required to build SingularityCE, unless the
+  `--without-libsubid` flag is passed to `mconfig`.
+- EL RPM packages are built with libsubid support.
+- Ubuntu deb packages are built without libsubid support.
+- The RPM spec file no longer includes rules for SLES / openSUSE package builds,
+  which have been untested / unsupported for some time.
 
 ### Removed Features
 
