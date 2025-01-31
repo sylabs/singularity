@@ -19,7 +19,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/samber/lo"
+	"github.com/samber/lo/mutable"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -416,7 +416,8 @@ func (cp *ZypperConveyorPacker) prepareFakerootRpmMacros() (func(), error) {
 	cleanupTasks := [](func()){}
 	cleanupFunc := func() {
 		// Perform tasks in cleanupTasks in reverse order
-		for _, f := range lo.Reverse(cleanupTasks) {
+		mutable.Reverse(cleanupTasks)
+		for _, f := range cleanupTasks {
 			f()
 		}
 	}
