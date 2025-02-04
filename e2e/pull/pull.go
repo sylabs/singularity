@@ -20,7 +20,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/types"
-	ocitsif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
@@ -612,12 +611,7 @@ func checkOCISIF(t *testing.T, imgFile string, expectLayers int) {
 	}
 	defer fi.UnloadContainer()
 
-	ofi, err := ocitsif.FromFileImage(fi)
-	if err != nil {
-		t.Fatalf("while loading OCI-SIF: %v", err)
-	}
-
-	img, err := ofi.Image(nil)
+	img, err := ocisif.GetSingleImage(fi)
 	if err != nil {
 		t.Fatalf("while initializing image: %v", err)
 	}

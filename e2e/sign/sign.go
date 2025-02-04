@@ -190,6 +190,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			c.importPGPKeypairs(t)
 
 			t.Run("Sign", c.sign)
+			t.Run("signOCICosign", c.signOCICosign)
 		},
 	}
 }

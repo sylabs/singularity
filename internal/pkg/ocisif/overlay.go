@@ -194,7 +194,7 @@ func SealOverlay(imagePath, tmpDir string) error {
 		return err
 	}
 
-	img, err := ofi.Image(nil)
+	img, err := ofi.Image(SkipCosignMatcher)
 	if err != nil {
 		return fmt.Errorf("while getting image: %w", err)
 	}
