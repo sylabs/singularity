@@ -17,7 +17,7 @@ require (
 	github.com/containerd/platforms v1.0.0-rc.1
 	github.com/containernetworking/cni v1.2.3
 	github.com/containernetworking/plugins v1.6.2
-	github.com/containers/image/v5 v5.33.1
+	github.com/containers/image/v5 v5.34.0
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/cyphar/filepath-securejoin v0.3.6
 	github.com/docker/cli v27.5.1+incompatible
@@ -58,12 +58,12 @@ require (
 	github.com/sylabs/sif/v2 v2.20.2
 	github.com/sylabs/squashfs v1.0.4
 	github.com/vbauerster/mpb/v8 v8.9.1
-	go.etcd.io/bbolt v1.3.11
+	go.etcd.io/bbolt v1.4.0
 	golang.org/x/crypto v0.32.0
-	golang.org/x/sync v0.10.0
-	golang.org/x/sys v0.29.0
-	golang.org/x/term v0.28.0
-	golang.org/x/text v0.21.0
+	golang.org/x/sync v0.11.0
+	golang.org/x/sys v0.30.0
+	golang.org/x/term v0.29.0
+	golang.org/x/text v0.22.0
 	google.golang.org/grpc v1.70.0
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools v2.2.0+incompatible
@@ -102,7 +102,7 @@ require (
 	github.com/containerd/stargz-snapshotter/estargz v0.16.3 // indirect
 	github.com/containerd/ttrpc v1.2.7 // indirect
 	github.com/containerd/typeurl/v2 v2.2.3 // indirect
-	github.com/containers/storage v1.56.1 // indirect
+	github.com/containers/storage v1.57.1 // indirect
 	github.com/coreos/go-iptables v0.8.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
 	github.com/creack/pty v1.1.23 // indirect
@@ -191,7 +191,7 @@ require (
 	github.com/u-root/uio v0.0.0-20240224005618-d2acac8f3701 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect
 	github.com/vbatts/go-mtree v0.5.0 // indirect
-	github.com/vbatts/tar-split v0.11.6 // indirect
+	github.com/vbatts/tar-split v0.11.7 // indirect
 	github.com/vishvananda/netlink v1.3.1-0.20240922070040-084abd93d350 // indirect
 	github.com/vishvananda/netns v0.0.4 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
@@ -213,12 +213,12 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.32.0 // indirect
 	go.opentelemetry.io/otel/trace v1.33.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.4.0 // indirect
-	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c // indirect
+	golang.org/x/exp v0.0.0-20241217172543-b2144cdd0a67 // indirect
 	golang.org/x/mod v0.22.0 // indirect
-	golang.org/x/net v0.33.0 // indirect
+	golang.org/x/net v0.34.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241209162323-e6fa225c2576 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20241209162323-e6fa225c2576 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250102185135-69823020774d // indirect
 	google.golang.org/protobuf v1.36.3 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	sigs.k8s.io/knftables v0.0.18 // indirect
