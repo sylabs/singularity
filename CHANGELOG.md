@@ -6,6 +6,9 @@
 
 - Use correct username (not user's name) when computing `singularity oci` conmon
   / singularity state dir.
+- Write StdErr messages from starter to terminal StdErr when an instance fails
+  to start. Previously incorrectly written to terminal StdOut.
+- Fix incorrect debug message in Cgroups checks.
 
 ### New Features & Functionality
 

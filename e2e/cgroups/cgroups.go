@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -467,7 +467,8 @@ func (c *ctx) actionDbusXDG(t *testing.T) {
 					e2e.WithProfile(profile),
 					e2e.WithCommand("exec"),
 					e2e.WithArgs(tt.args...),
-					e2e.WithEnv(testEnv),
+					e2e.WithRootlessEnv(), // Apply valid rootless env vars
+					e2e.WithEnv(testEnv),  // Override with invalid values from test
 					e2e.ExpectExit(tt.expectErrorCode, exitFunc...),
 				)
 			}
@@ -487,6 +488,7 @@ func (c *ctx) instanceDbusXdg(t *testing.T) {
 		name            string
 		args            []string
 		expectErrorCode int
+		expectErrorOut  string
 		xdgVar          string
 		dbusVar         string
 	}{
@@ -506,12 +508,14 @@ func (c *ctx) instanceDbusXdg(t *testing.T) {
 			name:            "bad xdg limits",
 			args:            []string{"--cpus", "1", c.env.ImagePath},
 			expectErrorCode: 255,
+			expectErrorOut:  "XDG_RUNTIME_DIR",
 			xdgVar:          "/not/a/dir",
 		},
 		{
 			name:            "bad dbus limits",
 			args:            []string{"--cpus", "1", c.env.ImagePath},
 			expectErrorCode: 255,
+			expectErrorOut:  "DBUS_SESSION_BUS_ADDRESS",
 			dbusVar:         "/not/a/dbus/socket",
 		},
 	}
@@ -519,6 +523,11 @@ func (c *ctx) instanceDbusXdg(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			instanceName := randomName(t)
+
+			exitFunc := []e2e.SingularityCmdResultOp{}
+			if tt.expectErrorOut != "" {
+				exitFunc = []e2e.SingularityCmdResultOp{e2e.ExpectError(e2e.ContainMatch, tt.expectErrorOut)}
+			}
 
 			testEnv := []string{}
 			if tt.xdgVar != "" {
@@ -535,8 +544,9 @@ func (c *ctx) instanceDbusXdg(t *testing.T) {
 				e2e.WithProfile(e2e.UserProfile),
 				e2e.WithCommand("instance start"),
 				e2e.WithArgs(createArgs...),
-				e2e.WithEnv(testEnv),
-				e2e.ExpectExit(tt.expectErrorCode),
+				e2e.WithRootlessEnv(), // Apply valid rootless env vars
+				e2e.WithEnv(testEnv),  // Override with invalid values from test
+				e2e.ExpectExit(tt.expectErrorCode, exitFunc...),
 			)
 
 			if tt.expectErrorCode == 0 {
@@ -546,6 +556,7 @@ func (c *ctx) instanceDbusXdg(t *testing.T) {
 					e2e.WithProfile(e2e.UserProfile),
 					e2e.WithCommand("instance stop"),
 					e2e.WithArgs(instanceName),
+					e2e.WithRootlessEnv(),
 					e2e.ExpectExit(0),
 				)
 			}
