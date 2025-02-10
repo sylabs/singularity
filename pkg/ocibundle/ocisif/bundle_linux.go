@@ -134,12 +134,7 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 		return fmt.Errorf("while loading SIF: %w", err)
 	}
 
-	ofi, err := ocitsif.FromFileImage(fi)
-	if err != nil {
-		return err
-	}
-
-	img, err := ofi.Image(nil)
+	img, err := ocisif.GetSingleImage(fi)
 	if err != nil {
 		return fmt.Errorf("while initializing image: %w", err)
 	}

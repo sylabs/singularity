@@ -120,12 +120,7 @@ func DataContainerLayerOffset(f *os.File) (int64, error) {
 	}
 	defer fimg.UnloadContainer()
 
-	ofi, err := ocitsif.FromFileImage(fimg)
-	if err != nil {
-		return 0, err
-	}
-
-	img, err := ofi.Image(nil)
+	img, err := GetSingleImage(fimg)
 	if err != nil {
 		return 0, fmt.Errorf("while initializing image: %w", err)
 	}

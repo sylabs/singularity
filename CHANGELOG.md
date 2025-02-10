@@ -15,6 +15,9 @@
   from `/etc/subid` and `/etc/subgid` regardless of system configuration. Note
   that `singularity config fakeroot` always modifies `/etc/subid` and
   `/etc/subgid`files.
+- `singularity sign` now supports signing an image in an OCI-SIF with a
+  cosign-compatible sigstore signature. Use the `--cosign` flag, and provide
+  a private key with the `--key` flag.
 
 ## Requirements / Packaging
 

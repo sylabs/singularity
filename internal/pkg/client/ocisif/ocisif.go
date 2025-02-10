@@ -19,7 +19,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	ocimutate "github.com/sylabs/oci-tools/pkg/mutate"
-	ocitsif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
@@ -194,12 +193,7 @@ func PushOCISIF(ctx context.Context, sourceFile, destRef string, opts PushOption
 	}
 	defer fi.UnloadContainer()
 
-	ofi, err := ocitsif.FromFileImage(fi)
-	if err != nil {
-		return err
-	}
-
-	image, err := ofi.Image(nil)
+	image, err := ocisif.GetSingleImage(fi)
 	if err != nil {
 		return fmt.Errorf("while obtaining image: %w", err)
 	}

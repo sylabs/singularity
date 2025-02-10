@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,12 +6,17 @@
 package cli
 
 import (
+	"context"
 	"crypto"
+	"fmt"
+	"os"
 
+	"github.com/sigstore/cosign/v2/pkg/cosign"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/v4/docs"
+	cosignsignature "github.com/sylabs/singularity/v4/internal/pkg/cosign"
 	sifsignature "github.com/sylabs/singularity/v4/internal/pkg/signature"
 	"github.com/sylabs/singularity/v4/internal/pkg/sypgp"
 	"github.com/sylabs/singularity/v4/pkg/cmdline"
@@ -22,6 +27,7 @@ var (
 	priKeyPath string
 	priKeyIdx  int
 	signAll    bool
+	useCosign  bool
 )
 
 // -g|--group-id
@@ -95,6 +101,16 @@ var signAllFlag = cmdline.Flag{
 	Deprecated:   "now the default behavior",
 }
 
+// -c|--cosign
+var cosignFlag = cmdline.Flag{
+	ID:           "cosignFlag",
+	Value:        &useCosign,
+	DefaultValue: false,
+	Name:         "cosign",
+	ShortHand:    "c",
+	Usage:        "sign an OCI-SIF with a cosign-compatible sigstore signature",
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(SignCmd)
@@ -106,6 +122,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&signPrivateKeyFlag, SignCmd)
 		cmdManager.RegisterFlagForCmd(&signKeyIdxFlag, SignCmd)
 		cmdManager.RegisterFlagForCmd(&signAllFlag, SignCmd)
+		cmdManager.RegisterFlagForCmd(&cosignFlag, SignCmd)
 	})
 }
 
@@ -126,6 +143,30 @@ var SignCmd = &cobra.Command{
 }
 
 func doSignCmd(cmd *cobra.Command, cpath string) {
+	if useCosign {
+		if priKeyPath == "" {
+			sylog.Fatalf("--cosign signatures require a private --key to be specified")
+		}
+		if priKeyIdx != 0 {
+			sylog.Fatalf("--keyidx not supported: --cosign signatures use a private --key, not the PGP keyring")
+		}
+		if signAll || sifGroupID != 0 || sifDescID != 0 {
+			sylog.Fatalf("--cosign signatures sign an OCI image, specifying SIF descriptors / groups is not supported")
+		}
+		err := signCosign(cmd.Context(), cpath, priKeyPath)
+		if err != nil {
+			sylog.Fatalf("%v", err)
+		}
+		return
+	}
+
+	err := signSIF(cmd, cpath)
+	if err != nil {
+		sylog.Fatalf("%v", err)
+	}
+}
+
+func signSIF(cmd *cobra.Command, cpath string) error {
 	var opts []sifsignature.SignOpt
 
 	// Set key material.
@@ -135,7 +176,7 @@ func doSignCmd(cmd *cobra.Command, cpath string) {
 
 		s, err := signature.LoadSignerFromPEMFile(priKeyPath, crypto.SHA256, cryptoutils.GetPasswordFromStdIn)
 		if err != nil {
-			sylog.Fatalf("Failed to load key material: %v", err)
+			return fmt.Errorf("Failed to load key material: %v", err)
 		}
 		opts = append(opts, sifsignature.OptSignWithSigner(s))
 
@@ -165,7 +206,28 @@ func doSignCmd(cmd *cobra.Command, cpath string) {
 
 	// Sign the image.
 	if err := sifsignature.Sign(cmd.Context(), cpath, opts...); err != nil {
-		sylog.Fatalf("Failed to sign container: %v", err)
+		return fmt.Errorf("Failed to sign container: %w", err)
 	}
 	sylog.Infof("Signature created and applied to image '%v'", cpath)
+	return nil
+}
+
+func signCosign(ctx context.Context, sifPath, keyPath string) error {
+	sylog.Infof("Sigstore/cosign compatible signature, using key material from '%v'", priKeyPath)
+	kb, err := os.ReadFile(keyPath)
+	if err != nil {
+		return fmt.Errorf("failed to load key material: %w", err)
+	}
+
+	pass, err := cryptoutils.GetPasswordFromStdIn(false)
+	if err != nil {
+		return fmt.Errorf("couldn't read key password: %w", err)
+	}
+
+	sv, err := cosign.LoadPrivateKey(kb, pass)
+	if err != nil {
+		return fmt.Errorf("failed to open OCI-SIF: %w", err)
+	}
+
+	return cosignsignature.SignOCISIF(ctx, sifPath, sv)
 }

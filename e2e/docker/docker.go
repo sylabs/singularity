@@ -24,10 +24,10 @@ import (
 	dockerclient "github.com/docker/docker/client"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/pkg/errors"
-	ocisif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/v4/internal/pkg/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/tmpl"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
@@ -1478,12 +1478,7 @@ func checkOCISIFPlatform(t *testing.T, imgPath, platform string) {
 		t.Errorf("while loading SIF: %v", err)
 	}
 
-	ofi, err := ocisif.FromFileImage(fi)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	img, err := ofi.Image(nil)
+	img, err := ocisif.GetSingleImage(fi)
 	if err != nil {
 		t.Errorf("while initializing image: %v", err)
 	}
@@ -1569,12 +1564,7 @@ func verifyImgArch(t *testing.T, imgPath, arch string) {
 	}
 	defer fi.UnloadContainer()
 
-	ofi, err := ocisif.FromFileImage(fi)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	img, err := ofi.Image(nil)
+	img, err := ocisif.GetSingleImage(fi)
 	if err != nil {
 		t.Fatalf("while initializing image from %s: %v", imgPath, err)
 	}
