@@ -7,15 +7,19 @@
 package cli
 
 import (
+	"context"
 	"crypto"
+	"fmt"
 	"os"
 
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/spf13/cobra"
 	"github.com/sylabs/singularity/v4/docs"
+	cosignsignature "github.com/sylabs/singularity/v4/internal/pkg/cosign"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
 	sifsignature "github.com/sylabs/singularity/v4/internal/pkg/signature"
 	"github.com/sylabs/singularity/v4/pkg/cmdline"
+	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
@@ -174,6 +178,16 @@ var verifyLegacyFlag = cmdline.Flag{
 	Usage:        "enable verification of (insecure) legacy signatures",
 }
 
+// -c|--cosign
+var verifyCosignFlag = cmdline.Flag{
+	ID:           "verifyCosignFlag",
+	Value:        &useCosign,
+	DefaultValue: false,
+	Name:         "cosign",
+	ShortHand:    "c",
+	Usage:        "verify an OCI-SIF with a cosign-compatible sigstore signature",
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(VerifyCmd)
@@ -192,6 +206,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&verifyJSONFlag, VerifyCmd)
 		cmdManager.RegisterFlagForCmd(&verifyAllFlag, VerifyCmd)
 		cmdManager.RegisterFlagForCmd(&verifyLegacyFlag, VerifyCmd)
+		cmdManager.RegisterFlagForCmd(&verifyCosignFlag, VerifyCmd)
 	})
 }
 
@@ -212,7 +227,45 @@ var VerifyCmd = &cobra.Command{
 }
 
 func doVerifyCmd(cmd *cobra.Command, cpath string) {
+	if useCosign {
+		if pubKeyPath == "" {
+			sylog.Fatalf("--cosign verification requires a public --key to be specified")
+		}
+		if certificatePath != "" || certificateIntermediatesPath != "" || certificateRootsPath != "" || ocspVerify {
+			sylog.Fatalf("certificate not supported: --cosign verification uses a public --key")
+		}
+		if localVerify {
+			sylog.Fatalf("--local not supported: --cosign verification uses a public --key")
+		}
+		if keyServerURI != "" {
+			sylog.Fatalf("key server not supported: --cosign verification uses a public --key")
+		}
+		if signAll || sifGroupID != 0 || sifDescID != 0 {
+			sylog.Fatalf("--cosign signatures apply to an OCI image, specifying SIF descriptors / groups is not supported")
+		}
+		if verifyLegacy {
+			sylog.Fatalf("--legacy-insecure not supported: not applicable to --cosign verification")
+		}
+		err := verifyCosign(cmd.Context(), cpath, pubKeyPath)
+		if err != nil {
+			sylog.Fatalf("%v", err)
+		}
+		return
+	}
+
+	err := verifySIF(cmd, cpath)
+	if err != nil {
+		sylog.Fatalf("%v", err)
+	}
+}
+
+func verifySIF(cmd *cobra.Command, cpath string) error {
 	var opts []sifsignature.VerifyOpt
+
+	ociSIF, _ := image.IsOCISIF(cpath)
+	if ociSIF {
+		sylog.Infof("Image is an OCI-SIF, use `--cosign` to verify cosign compatible signatures.")
+	}
 
 	switch {
 	case cmd.Flag(verifyCertificateFlag.Name).Changed:
@@ -220,14 +273,14 @@ func doVerifyCmd(cmd *cobra.Command, cpath string) {
 
 		c, err := loadCertificate(certificatePath)
 		if err != nil {
-			sylog.Fatalf("Failed to load certificate: %v", err)
+			return fmt.Errorf("Failed to load certificate: %w", err)
 		}
 		opts = append(opts, sifsignature.OptVerifyWithCertificate(c))
 
 		if cmd.Flag(verifyCertificateIntermediatesFlag.Name).Changed {
 			p, err := loadCertificatePool(certificateIntermediatesPath)
 			if err != nil {
-				sylog.Fatalf("Failed to load intermediate certificates: %v", err)
+				return fmt.Errorf("Failed to load intermediate certificates: %w", err)
 			}
 			opts = append(opts, sifsignature.OptVerifyWithIntermediates(p))
 		}
@@ -235,7 +288,7 @@ func doVerifyCmd(cmd *cobra.Command, cpath string) {
 		if cmd.Flag(verifyCertificateRootsFlag.Name).Changed {
 			p, err := loadCertificatePool(certificateRootsPath)
 			if err != nil {
-				sylog.Fatalf("Failed to load root certificates: %v", err)
+				return fmt.Errorf("Failed to load root certificates: %w", err)
 			}
 			opts = append(opts, sifsignature.OptVerifyWithRoots(p))
 		}
@@ -249,7 +302,7 @@ func doVerifyCmd(cmd *cobra.Command, cpath string) {
 
 		v, err := signature.LoadVerifierFromPEMFile(pubKeyPath, crypto.SHA256)
 		if err != nil {
-			sylog.Fatalf("Failed to load key material: %v", err)
+			return fmt.Errorf("Failed to load key material: %w", err)
 		}
 		opts = append(opts, sifsignature.OptVerifyWithVerifier(v))
 
@@ -262,7 +315,7 @@ func doVerifyCmd(cmd *cobra.Command, cpath string) {
 		} else {
 			co, err := getKeyserverClientOpts(keyServerURI, endpoint.KeyserverVerifyOp)
 			if err != nil {
-				sylog.Fatalf("Error while getting keyserver client config: %v", err)
+				return fmt.Errorf("Error while getting keyserver client config: %w", err)
 			}
 			opts = append(opts, sifsignature.OptVerifyWithPGP(co...))
 		}
@@ -298,19 +351,36 @@ func doVerifyCmd(cmd *cobra.Command, cpath string) {
 
 		// Always output JSON.
 		if err := outputJSON(os.Stdout, kl); err != nil {
-			sylog.Fatalf("Failed to output JSON: %v", err)
+			return fmt.Errorf("Failed to output JSON: %v", err)
 		}
 
 		if verifyErr != nil {
-			sylog.Fatalf("Failed to verify container: %v", verifyErr)
+			return fmt.Errorf("Failed to verify container: %v", verifyErr)
 		}
 	} else {
 		opts = append(opts, sifsignature.OptVerifyCallback(outputVerify))
 
 		if err := sifsignature.Verify(cmd.Context(), cpath, opts...); err != nil {
-			sylog.Fatalf("Failed to verify container: %v", err)
+			return fmt.Errorf("Failed to verify container: %v", err)
 		}
 
 		sylog.Infof("Verified signature(s) from image '%v'", cpath)
 	}
+	return nil
+}
+
+func verifyCosign(ctx context.Context, sifPath, keyPath string) error {
+	sylog.Infof("Verifying image with sigstore/cosign signature, using key material from '%v'", keyPath)
+
+	v, err := signature.LoadVerifierFromPEMFile(keyPath, crypto.SHA256)
+	if err != nil {
+		return fmt.Errorf("Failed to load key material: %w", err)
+	}
+
+	payloads, err := cosignsignature.VerifyOCISIF(ctx, sifPath, v)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(payloads))
+	return nil
 }

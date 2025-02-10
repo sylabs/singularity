@@ -301,6 +301,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			c.importPGPKeypairs(t)
 
 			t.Run("Verify", c.verify)
+			t.Run("VerifyOCICosign", c.verifyOCICosign)
 		},
 	}
 }
