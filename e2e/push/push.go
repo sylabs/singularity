@@ -273,6 +273,79 @@ func (c ctx) testPushOCIOverlay(t *testing.T) {
 	}
 }
 
+func (c ctx) testPushOCICosign(t *testing.T) {
+	e2e.EnsureOCISIF(t, c.env)
+
+	imgRef := fmt.Sprintf("docker://%s/docker_oci-cosign:test", c.env.TestRegistry)
+
+	testSif := filepath.Join(t.TempDir(), "signed.sif")
+	if err := fs.CopyFile(c.env.OCISIFPath, testSif, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	keyPath := filepath.Join("..", "test", "keys", "cosign.key")
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("sign"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("sign"),
+		e2e.WithArgs("--cosign", "--key", keyPath, testSif),
+		e2e.ExpectExit(0),
+	)
+
+	tests := []struct {
+		name        string
+		withCosign  bool
+		layerFormat string
+		expectExit  int
+		resultOps   []e2e.SingularityCmdResultOp
+	}{
+		{
+			name:        "Default",
+			withCosign:  false,
+			layerFormat: "",
+			expectExit:  0,
+			resultOps: []e2e.SingularityCmdResultOp{
+				e2e.ExpectError(e2e.UnwantedContainMatch, "Writing cosign signatures"),
+			},
+		},
+		{
+			name:        "WithCosign",
+			withCosign:  true,
+			layerFormat: "",
+			expectExit:  0,
+			resultOps: []e2e.SingularityCmdResultOp{
+				e2e.ExpectError(e2e.ContainMatch, "Writing cosign signatures"),
+			},
+		},
+		{
+			name:        "WithCosignMutated",
+			withCosign:  true,
+			layerFormat: "tar",
+			expectExit:  255,
+		},
+	}
+
+	for _, tt := range tests {
+		args := []string{}
+		if tt.layerFormat != "" {
+			args = []string{"--layer-format", tt.layerFormat}
+		}
+		if tt.withCosign {
+			args = append(args, "--with-cosign")
+		}
+		args = append(args, testSif, imgRef)
+
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.WithCommand("push"),
+			e2e.WithArgs(args...),
+			e2e.ExpectExit(tt.expectExit, tt.resultOps...),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -284,5 +357,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"oras":              c.testPushCmd,
 		"oci tar layers":    c.testPushOCITarLayers,
 		"oci overlay":       c.testPushOCIOverlay,
+		"oci cosign":        c.testPushOCICosign,
 	}
 }

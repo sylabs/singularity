@@ -36,6 +36,9 @@ var (
 
 	// pushLayerFormat sets the layer format to be used when pushing OCI images.
 	pushLayerFormat string
+
+	// pushWithCosign sets whether cosign signatures are pushed when pushing OCI images.
+	pushWithCosign bool
 )
 
 // --library
@@ -79,6 +82,16 @@ var pushLayerFormatFlag = cmdline.Flag{
 	EnvKeys:      []string{"LAYER_FORMAT"},
 }
 
+// --with-cosign
+var pushWithCosignFlag = cmdline.Flag{
+	ID:           "pushWithCosignFlag",
+	Value:        &pushWithCosign,
+	DefaultValue: false,
+	Name:         "with-cosign",
+	Usage:        "push cosign signatures from OCI-SIF images",
+	EnvKeys:      []string{"WITH_COSIGN"},
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(PushCmd)
@@ -95,6 +108,7 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&commonTmpDirFlag, PushCmd)
 
 		cmdManager.RegisterFlagForCmd(&pushLayerFormatFlag, PushCmd)
+		cmdManager.RegisterFlagForCmd(&pushWithCosignFlag, PushCmd)
 	})
 }
 
@@ -206,6 +220,7 @@ var PushCmd = &cobra.Command{
 				Auth:        ociAuth,
 				AuthFile:    reqAuthFile,
 				LayerFormat: pushLayerFormat,
+				WithCosign:  pushWithCosign,
 			}
 			if err := oci.Push(cmd.Context(), file, ref, opts); err != nil {
 				sylog.Fatalf("Unable to push image to oci registry: %v", err)

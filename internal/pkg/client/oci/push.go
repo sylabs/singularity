@@ -28,6 +28,9 @@ type PushOptions struct {
 	// TmpDir is a temporary directory to be used for an temporary files created
 	// during the push.
 	TmpDir string
+	// WithCosign sets whether to push any associated cosign signatures when
+	// pushing an OCI-SIF to a registry.
+	WithCosign bool
 }
 
 // Push pushes an image into an OCI registry, as an OCI image (not an ORAS artifact).
@@ -46,6 +49,7 @@ func Push(ctx context.Context, sourceFile string, destRef string, opts PushOptio
 			AuthFile:    opts.AuthFile,
 			LayerFormat: opts.LayerFormat,
 			TmpDir:      opts.TmpDir,
+			WithCosign:  opts.WithCosign,
 		}
 		return ocisif.PushOCISIF(ctx, sourceFile, destRef, ocisifOpts)
 	case image.SIF:
