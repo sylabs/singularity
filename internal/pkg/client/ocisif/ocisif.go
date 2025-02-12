@@ -17,10 +17,12 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	cosignremote "github.com/sigstore/cosign/v2/pkg/oci/remote"
 	ocimutate "github.com/sylabs/oci-tools/pkg/mutate"
+	ocitsif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/oci-tools/pkg/sourcesink"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
@@ -53,6 +55,10 @@ type PullOptions struct {
 
 // PullOCISIF will create an OCI-SIF image in the cache if directTo="", or a specific file if directTo is set.
 func PullOCISIF(ctx context.Context, imgCache *cache.Handle, directTo, pullFrom string, opts PullOptions) (imagePath string, err error) {
+	if opts.WithCosign && directTo == "" {
+		return "", fmt.Errorf("cosign signatures cannot be pulled through the OCI-SIF cache")
+	}
+
 	tOpts := &ociimage.TransportOptions{
 		AuthConfig:       opts.OciAuth,
 		AuthFilePath:     ociauth.ChooseAuthFile(opts.ReqAuthFile),
@@ -147,7 +153,77 @@ func createOciSif(ctx context.Context, tOpts *ociimage.TransportOptions, imgCach
 	if err != nil {
 		return err
 	}
-	return w.Write()
+	if err := w.Write(); err != nil {
+		return err
+	}
+
+	if opts.WithCosign {
+		if err := canPullSignatures(img, opts.KeepLayers); err != nil {
+			sylog.Warningf("Not fetching cosign signatures: %v", err)
+			return nil
+		}
+		return pullSignatures(ctx, tOpts, imageSrc, imageDest)
+	}
+
+	return nil
+}
+
+func canPullSignatures(img v1.Image, keepLayers bool) error {
+	layers, err := img.Layers()
+	if err != nil {
+		return err
+	}
+	if len(layers) > 1 && !keepLayers {
+		return fmt.Errorf("pulling a multiple layer image without --keep-layers invalidates signatures")
+	}
+	for _, l := range layers {
+		mt, err := l.MediaType()
+		if err != nil {
+			return err
+		}
+		if mt != ocisif.SquashfsLayerMediaType {
+			return fmt.Errorf("converting %q layer to squashfs invalidates signatures", mt)
+		}
+	}
+	return nil
+}
+
+func pullSignatures(ctx context.Context, tOpts *ociimage.TransportOptions, imageSrc, imageDest string) error {
+	srcType, srcRef, err := ociimage.URItoSourceSinkRef(imageSrc)
+	if err != nil {
+		return err
+	}
+	si, err := srcType.SignedImage(ctx, srcRef, tOpts, nil)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve SignedImage: %w", err)
+	}
+	id, err := si.Digest()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve image digest: %w", err)
+	}
+	sigImg, err := si.Signatures()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve signatures: %w", err)
+	}
+	if sigImg == nil {
+		return nil
+	}
+
+	csRef, err := sourcesink.CosignRef(id, nil, cosignremote.SignatureTagSuffix)
+	if err != nil {
+		return err
+	}
+	sylog.Infof("Writing cosign signatures: %s", csRef.Name())
+	fi, err := sif.LoadContainerFromPath(imageDest)
+	defer fi.UnloadContainer()
+	if err != nil {
+		return fmt.Errorf("while loading SIF: %w", err)
+	}
+	ofi, err := ocitsif.FromFileImage(fi)
+	if err != nil {
+		return fmt.Errorf("while loading SIF: %w", err)
+	}
+	return ofi.ReplaceImage(sigImg, match.Name(csRef.Name()), ocitsif.OptAppendReference(csRef))
 }
 
 const (
@@ -251,7 +327,7 @@ func PushOCISIF(ctx context.Context, sourceFile, destRef string, opts PushOption
 	}
 
 	if opts.WithCosign {
-		return writeSignatures(ctx, ir, d, opts)
+		return pushSignatures(ctx, ir, d, opts)
 	}
 
 	return nil
@@ -325,7 +401,7 @@ func handleOverlay(sourceFile string, opts PushOptions) error {
 	return ocisif.SyncOverlay(sourceFile)
 }
 
-func writeSignatures(ctx context.Context, ir name.Reference, d sourcesink.Descriptor, opts PushOptions) error {
+func pushSignatures(ctx context.Context, ir name.Reference, d sourcesink.Descriptor, opts PushOptions) error {
 	sd, ok := d.(sourcesink.SignedDescriptor)
 	if !ok {
 		return fmt.Errorf("failed to upgrade Descriptor to SignedDescriptor")
@@ -342,6 +418,10 @@ func writeSignatures(ctx context.Context, ir name.Reference, d sourcesink.Descri
 	if err != nil {
 		return fmt.Errorf("failed to retrieve signatures: %w", err)
 	}
+	if sigImg == nil {
+		return nil
+	}
+
 	csRef, err := sourcesink.CosignRef(id, ir, cosignremote.SignatureTagSuffix)
 	if err != nil {
 		return err

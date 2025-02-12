@@ -49,6 +49,8 @@ type PullOptions struct {
 	RequireOciSif bool
 	// When pulling an OCI-SIF, keep multiple layers if true, squash to single layer otherwise.
 	KeepLayers bool
+	// When pulling an OCI-SIF, pull cosign signatures associated with the image if true.
+	WithCosign bool
 	// Platform specifies the platform of the image to retrieve.
 	Platform gccrv1.Platform
 }
@@ -152,6 +154,7 @@ func pullOCI(ctx context.Context, imgCache *cache.Handle, directTo string, pullF
 		OciAuth:    authConf,
 		Platform:   opts.Platform,
 		KeepLayers: opts.KeepLayers,
+		WithCosign: opts.WithCosign,
 	}
 	return ocisif.PullOCISIF(ctx, imgCache, directTo, pullRef, ocisifOpts)
 }
@@ -182,6 +185,10 @@ func PullToFile(ctx context.Context, imgCache *cache.Handle, pullTo string, pull
 	if imgCache.IsDisabled() {
 		directTo = pullTo
 		sylog.Debugf("Cache disabled, pulling directly to: %s", directTo)
+	}
+	if opts.WithCosign {
+		directTo = pullTo
+		sylog.Infof("cosign signature functionality does not support SIF caching, pulling directly to: %s", directTo)
 	}
 
 	src := ""

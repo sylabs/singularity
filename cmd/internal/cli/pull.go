@@ -51,6 +51,8 @@ var (
 	unauthenticatedPull bool
 	// pullDir is the path that the containers will be pulled to, if set.
 	pullDir string
+	// pullWithCosign sets whether cosign signatures are pushed when pushing OCI images.
+	pullWithCosign bool
 )
 
 // --library
@@ -118,6 +120,16 @@ var pullAllowUnauthenticatedFlag = cmdline.Flag{
 	Hidden:       true,
 }
 
+// --with-cosign
+var pullWithCosignFlag = cmdline.Flag{
+	ID:           "pullWithCosignFlag",
+	Value:        &pullWithCosign,
+	DefaultValue: false,
+	Name:         "with-cosign",
+	Usage:        "pull associated cosign signatures into an OCI-SIF image",
+	EnvKeys:      []string{"WITH_COSIGN"},
+}
+
 func init() {
 	addCmdInit(func(cmdManager *cmdline.CommandManager) {
 		cmdManager.RegisterCmd(PullCmd)
@@ -147,6 +159,8 @@ func init() {
 		cmdManager.RegisterFlagForCmd(&commonPlatformFlag, PullCmd)
 
 		cmdManager.RegisterFlagForCmd(&commonAuthFileFlag, PullCmd)
+
+		cmdManager.RegisterFlagForCmd(&pullWithCosignFlag, PullCmd)
 	})
 }
 
@@ -244,6 +258,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			KeepLayers:    keepLayers,
 			TmpDir:        tmpDir,
 			Platform:      getOCIPlatform(),
+			WithCosign:    pullWithCosign,
 		}
 		_, err = library.PullToFile(ctx, imgCache, pullTo, ref, pullOpts)
 		if err != nil && err != library.ErrLibraryPullUnsigned {
@@ -309,6 +324,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			KeepLayers:  keepLayers,
 			Platform:    getOCIPlatform(),
 			ReqAuthFile: reqAuthFile,
+			WithCosign:  pullWithCosign,
 		}
 
 		_, err = oci.PullToFile(ctx, imgCache, pullTo, pullFrom, pullOpts)

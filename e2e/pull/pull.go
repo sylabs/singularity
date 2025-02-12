@@ -940,6 +940,58 @@ func (c ctx) testPullOCIOverlay(t *testing.T) {
 	}
 }
 
+func (c ctx) testCosignRoundTrip(t *testing.T) {
+	e2e.EnsureOCISIF(t, c.env)
+
+	priKeyPath := filepath.Join("..", "test", "keys", "cosign.key")
+	pubKeyPath := filepath.Join("..", "test", "keys", "cosign.pub")
+
+	// Create a signed OCI-SIF
+	pushedSIF := filepath.Join(t.TempDir(), "signed.sif")
+	if err := fs.CopyFile(c.env.OCISIFPath, pushedSIF, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("sign"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("sign"),
+		e2e.WithArgs("--cosign", "--key", priKeyPath, pushedSIF),
+		e2e.ExpectExit(0),
+	)
+
+	// Push up to local registry
+	imgRef := fmt.Sprintf("docker://%s/docker_oci-cosign:roundtrip", c.env.TestRegistry)
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("push"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("push"),
+		e2e.WithArgs("--with-cosign", pushedSIF, imgRef),
+		e2e.ExpectExit(0),
+	)
+
+	// Pull from local registry
+	pulledSIF := filepath.Join(t.TempDir(), "signed.sif")
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("pull"),
+		e2e.WithProfile(e2e.OCIUserProfile),
+		e2e.WithCommand("pull"),
+		e2e.WithArgs("--with-cosign", pulledSIF, imgRef),
+		e2e.ExpectExit(0),
+	)
+
+	// Verify pulled image
+	c.env.RunSingularity(t,
+		e2e.AsSubtest("verify"),
+		e2e.WithProfile(e2e.UserProfile),
+		e2e.WithCommand("verify"),
+		e2e.WithArgs("--cosign", "--key", pubKeyPath, pulledSIF),
+		e2e.ExpectExit(0, e2e.ExpectOutput(e2e.ContainMatch, "cosign container image signature")),
+	)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -960,6 +1012,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			t.Run("concurrentPulls", c.testConcurrentPulls)
 			t.Run("oci overlay", c.testPullOCIOverlay)
 		},
+		"cosign":    c.testCosignRoundTrip,
 		"issue1087": c.issue1087,
 		// Manipulates umask for the process, so must be run alone to avoid
 		// causing permission issues for other tests.

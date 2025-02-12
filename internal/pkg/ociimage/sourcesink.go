@@ -18,6 +18,8 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
+	cosignoci "github.com/sigstore/cosign/v2/pkg/oci"
+	cosignremote "github.com/sigstore/cosign/v2/pkg/oci/remote"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -59,6 +61,34 @@ func getDockerImage(ctx context.Context, src string, tOpts *TransportOptions, rt
 	}
 
 	return remote.Image(srcRef, pullOpts...)
+}
+
+func getSignedDockerImage(ctx context.Context, src string, tOpts *TransportOptions, rt *progress.RoundTripper) (cosignoci.SignedImage, error) {
+	var nameOpts []name.Option
+	if tOpts != nil && tOpts.Insecure {
+		nameOpts = append(nameOpts, name.Insecure)
+	}
+
+	srcRef, err := name.ParseReference(src, nameOpts...)
+	if err != nil {
+		return nil, err
+	}
+
+	pullOpts := []remote.Option{
+		remote.WithContext(ctx),
+	}
+
+	if tOpts != nil {
+		pullOpts = append(pullOpts,
+			remote.WithPlatform(tOpts.Platform),
+			ociauth.AuthOptn(tOpts.AuthConfig, tOpts.AuthFilePath))
+	}
+
+	if rt != nil {
+		pullOpts = append(pullOpts, remote.WithTransport(rt))
+	}
+
+	return cosignremote.SignedImage(srcRef, cosignremote.WithRemoteOptions(pullOpts...))
 }
 
 // getOCIImage retrieves an image from a layout ref provided in <dir>[@digest] format.
@@ -158,6 +188,15 @@ func (ss SourceSink) Image(ctx context.Context, ref string, tOpts *TransportOpti
 		return getDaemonImage(ctx, ref, tOpts)
 	case UnknownSourceSink:
 		return nil, errUnsupportedTransport
+	default:
+		return nil, errUnsupportedTransport
+	}
+}
+
+func (ss SourceSink) SignedImage(ctx context.Context, ref string, tOpts *TransportOptions, rt *progress.RoundTripper) (cosignoci.SignedImage, error) {
+	switch ss {
+	case RegistrySourceSink:
+		return getSignedDockerImage(ctx, ref, tOpts, rt)
 	default:
 		return nil, errUnsupportedTransport
 	}
