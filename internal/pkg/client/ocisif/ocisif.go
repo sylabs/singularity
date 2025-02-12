@@ -7,6 +7,7 @@ package ocisif
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -18,7 +19,9 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
+	cosignremote "github.com/sigstore/cosign/v2/pkg/oci/remote"
 	ocimutate "github.com/sylabs/oci-tools/pkg/mutate"
+	"github.com/sylabs/oci-tools/pkg/sourcesink"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
@@ -45,6 +48,7 @@ type PullOptions struct {
 	Platform    ggcrv1.Platform
 	ReqAuthFile string
 	KeepLayers  bool
+	WithCosign  bool
 }
 
 // PullOCISIF will create an OCI-SIF image in the cache if directTo="", or a specific file if directTo is set.
@@ -172,6 +176,9 @@ type PushOptions struct {
 	// TmpDir is a temporary directory to be used for an temporary files created
 	// during the push.
 	TmpDir string
+	// WithCosign controls whether cosign signatures present in the SIF are also
+	// pushed to the destination repository in the registry.
+	WithCosign bool
 }
 
 // PushOCISIF pushes a single image from sourceFile to the OCI registry destRef.
@@ -187,18 +194,20 @@ func PushOCISIF(ctx context.Context, sourceFile, destRef string, opts PushOption
 		return err
 	}
 
-	fi, err := sif.LoadContainerFromPath(sourceFile, sif.OptLoadWithFlag(os.O_RDONLY))
+	ss, err := sourcesink.SIFFromPath(sourceFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open OCI-SIF: %w", err)
 	}
-	defer fi.UnloadContainer()
-
-	image, err := ocisif.GetSingleImage(fi)
+	d, err := ss.Get(ctx)
 	if err != nil {
-		return fmt.Errorf("while obtaining image: %w", err)
+		return fmt.Errorf("while fetching image from OCI-SIF: %v", err)
+	}
+	image, err := d.Image()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve image: %w", err)
 	}
 
-	image, err = transformLayers(image, opts.LayerFormat, opts.TmpDir)
+	image, err = transformLayers(image, opts)
 	if err != nil {
 		return err
 	}
@@ -237,10 +246,18 @@ func PushOCISIF(ctx context.Context, sourceFile, destRef string, opts PushOption
 		remoteOpts = append(remoteOpts, remote.WithProgress(progChan))
 	}
 
-	return remote.Write(ir, image, remoteOpts...)
+	if err := remote.Write(ir, image, remoteOpts...); err != nil {
+		return err
+	}
+
+	if opts.WithCosign {
+		return writeSignatures(ctx, ir, d, opts)
+	}
+
+	return nil
 }
 
-func transformLayers(base v1.Image, layerFormat, tmpDir string) (v1.Image, error) {
+func transformLayers(base v1.Image, opts PushOptions) (v1.Image, error) {
 	ls, err := base.Layers()
 	if err != nil {
 		return nil, err
@@ -254,7 +271,7 @@ func transformLayers(base v1.Image, layerFormat, tmpDir string) (v1.Image, error
 			return nil, err
 		}
 
-		switch layerFormat {
+		switch opts.LayerFormat {
 		case DefaultLayerFormat:
 			continue
 		case SquashfsLayerFormat:
@@ -262,7 +279,7 @@ func transformLayers(base v1.Image, layerFormat, tmpDir string) (v1.Image, error
 				return nil, fmt.Errorf("unexpected layer mediaType: %v", mt)
 			}
 		case TarLayerFormat:
-			opener, err := ocimutate.TarFromSquashfsLayer(l, ocimutate.OptTarTempDir(tmpDir))
+			opener, err := ocimutate.TarFromSquashfsLayer(l, ocimutate.OptTarTempDir(opts.TmpDir))
 			if err != nil {
 				return nil, err
 			}
@@ -272,8 +289,12 @@ func transformLayers(base v1.Image, layerFormat, tmpDir string) (v1.Image, error
 			}
 			ms = append(ms, ocimutate.SetLayer(i, tarLayer))
 		default:
-			return nil, fmt.Errorf("unsupported layer format: %v", layerFormat)
+			return nil, fmt.Errorf("unsupported layer format: %v", opts.TmpDir)
 		}
+	}
+
+	if len(ms) > 0 && opts.WithCosign {
+		return nil, fmt.Errorf("cannot push signature - invalidated by transforming layer format to %s", opts.LayerFormat)
 	}
 
 	return ocimutate.Apply(base, ms...)
@@ -295,7 +316,42 @@ func handleOverlay(sourceFile string, opts PushOptions) error {
 		return fmt.Errorf("cannot push overlay with layer format %q, use 'overlay seal' before pushing this image ", opts.LayerFormat)
 	}
 
+	if opts.WithCosign {
+		return errors.New("cannot push signature - would be invalidated by synchronizing overlay")
+	}
+
 	// Make sure true overlay digest have been synced to the OCI constructs.
 	sylog.Infof("Synchronizing overlay digest to OCI image.")
 	return ocisif.SyncOverlay(sourceFile)
+}
+
+func writeSignatures(ctx context.Context, ir name.Reference, d sourcesink.Descriptor, opts PushOptions) error {
+	sd, ok := d.(sourcesink.SignedDescriptor)
+	if !ok {
+		return fmt.Errorf("failed to upgrade Descriptor to SignedDescriptor")
+	}
+	si, err := sd.SignedImage(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve SignedImage: %w", err)
+	}
+	id, err := si.Digest()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve image digest: %w", err)
+	}
+	sigImg, err := si.Signatures()
+	if err != nil {
+		return fmt.Errorf("failed to retrieve signatures: %w", err)
+	}
+	csRef, err := sourcesink.CosignRef(id, ir, cosignremote.SignatureTagSuffix)
+	if err != nil {
+		return err
+	}
+
+	sylog.Infof("Writing cosign signatures: %s", csRef.Name())
+	remoteOpts := []remote.Option{
+		ociauth.AuthOptn(opts.Auth, opts.AuthFile),
+		remote.WithUserAgent(useragent.Value()),
+		remote.WithContext(ctx),
+	}
+	return remote.Write(csRef, sigImg, remoteOpts...)
 }

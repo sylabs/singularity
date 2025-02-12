@@ -26,6 +26,8 @@
   public key with the `--key` flag. Verification passes if at least one
   signature that can be validated with the provided key is present. The JSON
   payloads of all valid signatures are displayed.
+- `singularity push` now supports pushing cosign signatures in an OCI-SIF to
+  an OCI registry, via the `--with-cosign` flag.
 
 ## Requirements / Packaging
 
