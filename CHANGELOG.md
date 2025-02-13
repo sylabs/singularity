@@ -45,6 +45,8 @@
 - Ubuntu deb packages are built without libsubid support.
 - The RPM spec file no longer includes rules for SLES / openSUSE package builds,
   which have been untested / unsupported for some time.
+- Make binary builds more reproducible by deriving the GNU build ID
+  from the Go build ID instead of using a randomly generated one.
 
 ### Removed Features
 
