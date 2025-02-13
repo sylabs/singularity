@@ -1,4 +1,6 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -55,7 +57,7 @@ func NewConveyorPacker(def types.Definition) (ConveyorPacker, error) {
 		return &sources.ArchConveyorPacker{}, nil
 	case "localimage":
 		return &sources.LocalConveyorPacker{}, nil
-	case "yum":
+	case "yum", "dnf":
 		return &sources.YumConveyorPacker{}, nil
 	case "zypper":
 		return &sources.ZypperConveyorPacker{}, nil

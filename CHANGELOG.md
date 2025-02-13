@@ -41,6 +41,7 @@
 - The new `singularity key generate-cosign-key-pair` subcommand can be used
   to generate a password-protected key-pair for signing OCI-SIF images with
   cosign-compatible signatures.
+- Added `dnf` definition file bootstrap as an alias for `yum`.
 
 ## Requirements / Packaging
 
