@@ -28,6 +28,11 @@
   payloads of all valid signatures are displayed.
 - `singularity push` now supports pushing cosign signatures in an OCI-SIF to
   an OCI registry, via the `--with-cosign` flag.
+- `singularity pull` now supports pulling cosign signatures from a registry
+  to an OCI-SIF, via the `--with-cosign` flag when `--oci` is also specified.
+  Signatures can only be pulled when the image in the registry is in SquashFS
+  format. Converting layer formats, or squashing to a single layer, modifies
+  the image manifest, and would invalidate any signatures.
 
 ## Requirements / Packaging
 
