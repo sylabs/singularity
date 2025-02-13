@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -174,7 +174,7 @@ func (c *ctx) singularityKeyNewpair(t *testing.T) {
 		{
 			name:   "newpair help",
 			args:   []string{"newpair", "--help"},
-			stdout: "^Create a new key pair",
+			stdout: "^Create a new PGP key-pair",
 		},
 		{
 			name: "newpair",
@@ -728,6 +728,70 @@ func (c ctx) singularityKeyCmd(t *testing.T) {
 	c.singularityKeyRemove(t)
 }
 
+func (c *ctx) generateCosignKeypair(t *testing.T) {
+	testDir := t.TempDir()
+
+	tests := []struct {
+		name          string
+		args          []string
+		consoleOps    []string
+		expectExit    int
+		expectPrivate string
+		expectPublic  string
+	}{
+		{
+			name: "OK",
+			args: []string{"generate-cosign-key-pair"},
+			consoleOps: []string{
+				"test123",
+				"test123",
+			},
+			expectExit:    0,
+			expectPrivate: filepath.Join(testDir, "singularity-cosign.key"),
+			expectPublic:  filepath.Join(testDir, "singularity-cosign.pub"),
+		},
+		{
+			name:       "FilesExist",
+			args:       []string{"generate-cosign-key-pair"},
+			expectExit: 255,
+		},
+		{
+			name: "Prefix",
+			args: []string{"generate-cosign-key-pair", "--output-key-prefix", "test"},
+			consoleOps: []string{
+				"test123",
+				"test123",
+			},
+			expectExit:    0,
+			expectPrivate: filepath.Join(testDir, "test.key"),
+			expectPublic:  filepath.Join(testDir, "test.pub"),
+		},
+	}
+
+	for _, tt := range tests {
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithProfile(e2e.UserProfile),
+			e2e.ConsoleRun(buildConsoleLines(tt.consoleOps...)...),
+			e2e.WithDir(testDir),
+			e2e.WithCommand("key"),
+			e2e.WithArgs(tt.args...),
+			e2e.ExpectExit(tt.expectExit),
+		)
+		if tt.expectPrivate != "" {
+			if !e2e.PathExists(t, tt.expectPrivate) {
+				t.Errorf("Private key %q not found", tt.expectPrivate)
+			}
+		}
+		if tt.expectPublic != "" {
+			if !e2e.PathExists(t, tt.expectPublic) {
+				t.Errorf("Public key %q not found", tt.expectPublic)
+			}
+		}
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -746,5 +810,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			t.Run("keyCmd", c.singularityKeyCmd)                       // Run all the tests in order
 			t.Run("keyNewpairWithLen", c.singularityKeyNewpairWithLen) // We run a separate test for `key newpair --bit-length` because it requires handling a keyring a specific way
 		},
+		"cosign": c.generateCosignKeypair,
 	}
 }

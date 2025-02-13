@@ -1,4 +1,4 @@
-// Copyright (c) 2017-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -261,7 +261,7 @@ Enterprise Performance Computing (EPC)`
 	// key newpair
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	KeyNewPairUse   string = `newpair`
-	KeyNewPairShort string = `Create a new key pair`
+	KeyNewPairShort string = `Create a new PGP key-pair`
 	KeyNewPairLong  string = `
   The 'key newpair' command allows you to create a new key or public/private
   keys to be stored in the default user local keyring location (e.g., 
@@ -339,6 +339,18 @@ Enterprise Performance Computing (EPC)`
   the local or the global keyring.`
 	KeyRemoveExample string = `
   $ singularity key remove D87FE3AF5C1F063FCBCC9B02F812842B5EEE5934`
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	// key new-cosign-pair
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	KeyGenerateCosignKeyPairUse   string = `generate-cosign-key-pair`
+	KeyGenerateCosignKeyPairShort string = `Generate a new cosign key-pair`
+	KeyGenerateCosignKeyPairLong  string = `
+  The 'key generate-cosign-key-pair' command allows you to create a new public/private
+  key-pair that can be used to sign OCI-SIF images with a cosign compatible signature.`
+	KeyGenerateCosignKeyPairExample string = `
+  $ singularity key generate-cosign-keypair
+  $ singularity key generate-cosign-keypair --output-key-prefix=mykeypair`
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// delete

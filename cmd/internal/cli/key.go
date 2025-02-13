@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2017-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -94,6 +94,9 @@ func init() {
 			&keyGlobalPubKeyFlag,
 			KeyImportCmd, KeyExportCmd, KeyListCmd, KeyPullCmd, KeyPushCmd, KeyRemoveCmd,
 		)
+
+		cmdManager.RegisterSubCmd(KeyCmd, KeyGenerateCosignKeyPairCmd)
+		cmdManager.RegisterFlagForCmd(&keyOutputKeyPrefixFlag, KeyGenerateCosignKeyPairCmd)
 	})
 }
 
