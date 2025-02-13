@@ -2,6 +2,11 @@
 
 ## Changes Since Last Release
 
+### Behaviour Changes
+
+- Skip attempting to bind inaccessible mount points when handling the
+  `mount hostfs = yes` configuration option.
+
 ### Bug Fixes
 
 - Use correct username (not user's name) when computing `singularity oci` conmon
