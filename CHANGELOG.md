@@ -14,6 +14,8 @@
 - Write StdErr messages from starter to terminal StdErr when an instance fails
   to start. Previously incorrectly written to terminal StdOut.
 - Fix incorrect debug message in Cgroups checks.
+- Skip invalid environment variables when pulling pulling OCI images to
+  native SIF, so environment sourcing does not fail.
 
 ### New Features & Functionality
 
