@@ -33,6 +33,9 @@
   Signatures can only be pulled when the image in the registry is in SquashFS
   format. Converting layer formats, or squashing to a single layer, modifies
   the image manifest, and would invalidate any signatures.
+- The new `singularity key generate-cosign-key-pair` subcommand can be used
+  to generate a password-protected key-pair for signing OCI-SIF images with
+  cosign-compatible signatures.
 
 ## Requirements / Packaging
 
