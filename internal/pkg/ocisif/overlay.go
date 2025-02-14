@@ -7,6 +7,7 @@ package ocisif
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -213,8 +214,11 @@ func SealOverlay(imagePath, tmpDir string) error {
 	if mt != Ext3LayerMediaType {
 		return fmt.Errorf("image does not contain a writable overlay")
 	}
-
-	offset, err := l.(*ocitsif.Layer).Offset()
+	ol, ok := l.(*ocitsif.Layer)
+	if !ok {
+		return errors.New("couldn't get overlay as an OCI-SIF layer")
+	}
+	offset, err := ol.Offset()
 	if err != nil {
 		return err
 	}

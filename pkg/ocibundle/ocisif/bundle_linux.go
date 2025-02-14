@@ -199,8 +199,11 @@ func (b *Bundle) mountLayers(ctx context.Context, img v1.Image, imgFile string) 
 		if mt != ocisif.SquashfsLayerMediaType {
 			return fmt.Errorf("unsupported layer mediaType %q", mt)
 		}
-
-		offset, err := l.(*ocitsif.Layer).Offset()
+		ol, ok := l.(*ocitsif.Layer)
+		if !ok {
+			return fmt.Errorf("couldn't get layer %d as an OCI-SIF layer", i)
+		}
+		offset, err := ol.Offset()
 		if err != nil {
 			return fmt.Errorf("while finding layer offset: %w", err)
 		}
