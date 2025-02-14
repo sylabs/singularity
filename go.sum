@@ -72,8 +72,8 @@ github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2 h1:+vx7roKuyA63n
 github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2/go.mod h1:HBCaDeC1lPdgDeDbhX8XFpy1jqjK0IBG8W5K+xYqA0w=
 github.com/OneOfOne/xxhash v1.2.8 h1:31czK/TI9sNkxIKfaUfGlU47BAxQ0ztGgd9vPyqimf8=
 github.com/OneOfOne/xxhash v1.2.8/go.mod h1:eZbhyaAYD41SGSSsnmcpxVoRiQ/MPUTjUdIIOT9Um7Q=
-github.com/ProtonMail/go-crypto v1.1.3 h1:nRBOetoydLeUb4nHajyO2bKqMLfWQ/ZPwkXqXxPxCFk=
-github.com/ProtonMail/go-crypto v1.1.3/go.mod h1:rA3QumHc/FZ8pAHreoekgiAbzpNsfQAosU5td4SnOrE=
+github.com/ProtonMail/go-crypto v1.1.5 h1:eoAQfK2dwL+tFSFpr7TbOaPNUbPiJj4fLYwwGE1FQO4=
+github.com/ProtonMail/go-crypto v1.1.5/go.mod h1:rA3QumHc/FZ8pAHreoekgiAbzpNsfQAosU5td4SnOrE=
 github.com/ThalesIgnite/crypto11 v1.2.5 h1:1IiIIEqYmBvUYFeMnHqRft4bwf/O36jryEUpY+9ef8E=
 github.com/ThalesIgnite/crypto11 v1.2.5/go.mod h1:ILDKtnCKiQ7zRoNxcp36Y1ZR8LBPmR2E23+wTQe/MlE=
 github.com/VividCortex/ewma v1.2.0 h1:f58SaIzcDXrSy3kWaHNvuJgJ3Nmz59Zji6XoJR/q1ow=
@@ -787,8 +787,8 @@ github.com/sigstore/protobuf-specs v0.4.0 h1:yoZbdh0kZYKOSiVbYyA8J3f2wLh5aUk2SQB
 github.com/sigstore/protobuf-specs v0.4.0/go.mod h1:FKW5NYhnnFQ/Vb9RKtQk91iYd0MKJ9AxyqInEwU6+OI=
 github.com/sigstore/rekor v1.3.9 h1:sUjRpKVh/hhgqGMs0t+TubgYsksArZ6poLEC3MsGAzU=
 github.com/sigstore/rekor v1.3.9/go.mod h1:xThNUhm6eNEmkJ/SiU/FVU7pLY2f380fSDZFsdDWlcM=
-github.com/sigstore/sigstore v1.8.12 h1:S8xMVZbE2z9ZBuQUEG737pxdLjnbOIcFi5v9UFfkJFc=
-github.com/sigstore/sigstore v1.8.12/go.mod h1:+PYQAa8rfw0QdPpBcT+Gl3egKD9c+TUgAlF12H3Nmjo=
+github.com/sigstore/sigstore v1.8.14 h1:JqDkQ7PQCiCOerPRSkYr57Rj9sZO59fOcXDxvLsbNQw=
+github.com/sigstore/sigstore v1.8.14/go.mod h1:2lXojNsjZjkqu1//FWxq7qUcPB8Lq1KsR5hc+GkcC/4=
 github.com/sigstore/sigstore-go v0.7.0 h1:bIGPc2IbnbxnzlqQcKlh1o96bxVJ4yRElpP1gHrOH48=
 github.com/sigstore/sigstore-go v0.7.0/go.mod h1:4RrCK+i+jhx7lyOG2Vgef0/kFLbKlDI1hrioUYvkxxA=
 github.com/sigstore/sigstore/pkg/signature/kms/aws v1.8.12 h1:EC3UmIaa7nV9sCgSpVevmvgvTYTkMqyrRbj5ojPp7tE=
@@ -861,8 +861,8 @@ github.com/sylabs/scs-key-client v0.7.7 h1:w8uYXeNOoDLRuAwc4hp6szGxIefrTuifChxKT
 github.com/sylabs/scs-key-client v0.7.7/go.mod h1:zIdzguLfCclIy0jdSDOF58IyrHWsY3momcm6yLHjDks=
 github.com/sylabs/scs-library-client v1.4.11 h1:hI5EsLAoexYJ6kVDbmCN5LWS4vIleLxBWorOhKovp3c=
 github.com/sylabs/scs-library-client v1.4.11/go.mod h1:9EAaOoSKHp4hJaZSPKQTl7qWvJE+vO7U5D8vbLKzWPs=
-github.com/sylabs/sif/v2 v2.20.2 h1:HGEPzauCHhIosw5o6xmT3jczuKEuaFzSfdjAsH33vYw=
-github.com/sylabs/sif/v2 v2.20.2/go.mod h1:WyYryGRaR4Wp21SAymm5pK0p45qzZCSRiZMFvUZiuhc=
+github.com/sylabs/sif/v2 v2.21.0 h1:vvHp5vBsyIOv70T7rgWN8CcT6cS3j3Jtm4rELZJYc4c=
+github.com/sylabs/sif/v2 v2.21.0/go.mod h1:d4ifdG5JnlEwHmM6dWcAqZiGNWEAj9RM8P8JwkRnG7o=
 github.com/sylabs/squashfs v1.0.4 h1:uFSw7WXv7zjutPvU+JzY0nY494Vw8s4FAf4+7DhoMdI=
 github.com/sylabs/squashfs v1.0.4/go.mod h1:PDgf8YmCntvN4d9Y8hBUBDCZL6qZOzOQwRGxnIdbERk=
 github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635 h1:kdXcSzyDtseVEc4yCz2qF8ZrQvIDBJLl4S1c3GCXmoI=
