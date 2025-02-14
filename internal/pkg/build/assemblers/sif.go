@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"syscall"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/crypt"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/squashfs"
@@ -96,7 +97,10 @@ func createSIF(path string, b *types.Bundle, squashfile string, encOpts *encrypt
 		}
 
 		if data != nil {
-			syspartID := uint32(len(dis))
+			syspartID, err := safecast.ToUint32(len(dis))
+			if err != nil {
+				return err
+			}
 			part, err := sif.NewDescriptorInput(sif.DataCryptoMessage, bytes.NewReader(data),
 				sif.OptLinkedID(syspartID),
 				sif.OptCryptoMessageMetadata(sif.FormatPEM, sif.MessageRSAOAEP),

@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
 )
 
@@ -65,13 +66,16 @@ func TestGetGrNam(t *testing.T) {
 }
 
 func testCurrent(t *testing.T, fn func() (*User, error)) {
-	uid := os.Getuid()
+	uid, err := safecast.ToUint32(os.Getuid())
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	u, err := fn()
 	if err != nil {
 		t.Fatalf("Failed to retrieve information for current user")
 	}
-	if u.UID != uint32(uid) {
+	if u.UID != uid {
 		t.Fatalf("returned UID (%d) doesn't match current UID (%d)", uid, u.UID)
 	}
 }

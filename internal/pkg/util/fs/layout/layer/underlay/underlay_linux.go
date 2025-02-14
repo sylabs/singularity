@@ -13,6 +13,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/layout"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/mount"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -108,11 +109,16 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 					return err
 				}
 			}
+
+			sepCount, err := safecast.ToUint16(strings.Count(dst, "/"))
+			if err != nil {
+				return err
+			}
 			createdPath = append(
 				createdPath,
 				pathLen{
 					path: dst,
-					len:  uint16(strings.Count(dst, "/")),
+					len:  sepCount,
 				},
 			)
 		}

@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ccoveille/go-safecast"
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
@@ -247,7 +248,11 @@ func extractTarNaive(src string, dst string) error {
 			}
 		// if it's a file create it
 		case tar.TypeReg:
-			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			tarMode, err := safecast.ToUint32(header.Mode)
+			if err != nil {
+				return err
+			}
+			f, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(tarMode))
 			if err != nil {
 				return err
 			}

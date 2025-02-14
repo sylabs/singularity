@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -45,7 +46,11 @@ func Group(path string, uid int, gids []int, customLookup UserGroupLookup) (cont
 		getGroups = customLookup.Getgroups
 	}
 
-	pwInfo, err := getPwUID(uint32(uid))
+	uid32, err := safecast.ToUint32(uid)
+	if err != nil {
+		return nil, err
+	}
+	pwInfo, err := getPwUID(uid32)
 	if err != nil || pwInfo == nil {
 		return content, err
 	}
@@ -82,7 +87,11 @@ func Group(path string, uid int, gids []int, customLookup UserGroupLookup) (cont
 	}
 
 	for _, gid := range groups {
-		grInfo, err := getGrGID(uint32(gid))
+		gid32, err := safecast.ToUint32(gid)
+		if err != nil {
+			return nil, err
+		}
+		grInfo, err := getGrGID(gid32)
 		if err != nil || grInfo == nil {
 			sylog.Verbosef("Skipping GID %d as group entry doesn't exist.\n", gid)
 			continue

@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/ccoveille/go-safecast"
 )
 
 type readerError string
@@ -32,8 +34,16 @@ func checkImage(image *Image) error {
 	return nil
 }
 
-func getSectionReader(file *os.File, section Section) io.Reader {
-	return io.NewSectionReader(file, int64(section.Offset), int64(section.Size))
+func getSectionReader(file *os.File, section Section) (io.Reader, error) {
+	start, err := safecast.ToInt64(section.Offset)
+	if err != nil {
+		return nil, err
+	}
+	size, err := safecast.ToInt64(section.Size)
+	if err != nil {
+		return nil, err
+	}
+	return io.NewSectionReader(file, start, size), nil
 }
 
 func commonSectionReader(partition bool, image *Image, name string, index int) (io.Reader, error) {
@@ -66,7 +76,7 @@ func commonSectionReader(partition bool, image *Image, name string, index int) (
 	}
 	for i, p := range sections {
 		if p.Name == name || i == idx {
-			return getSectionReader(image.File, p), nil
+			return getSectionReader(image.File, p)
 		}
 	}
 	return nil, err

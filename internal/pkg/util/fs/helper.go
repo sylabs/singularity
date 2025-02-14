@@ -14,6 +14,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/sys/unix"
 )
@@ -378,7 +379,11 @@ func CopyFileAtomic(from, to string, mode os.FileMode) (err error) {
 	// act like other file copy functions that respect umask
 	oldmask := syscall.Umask(0)
 	syscall.Umask(oldmask)
-	mode = mode &^ os.FileMode(oldmask)
+	oldmask32, err := safecast.ToUint32(oldmask)
+	if err != nil {
+		return err
+	}
+	mode = mode &^ os.FileMode(oldmask32)
 
 	parentDir := filepath.Dir(to)
 

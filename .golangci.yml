@@ -55,7 +55,7 @@ linters-settings:
     locale: US
 
 issues:
-  max-per-linter: 0
+  max-issues-per-linter: 0
   max-same-issues: 0
   exclude:
     # EXC0004 excluded due to spurious "should have signature XYZ" errors on

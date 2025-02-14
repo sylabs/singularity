@@ -10,29 +10,36 @@ import (
 	"os/user"
 	"reflect"
 	"testing"
+
+	"github.com/ccoveille/go-safecast"
 )
 
 //nolint:dupl
 func TestGetuid(t *testing.T) {
+	currUID, err := safecast.ToUint32(os.Getuid())
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tests := []struct {
 		name    string
 		setEnv  bool
 		envVal  string
-		wantUID int
+		wantUID uint32
 		wantErr bool
 	}{
 		{
 			name:    "unset",
 			setEnv:  false,
 			envVal:  "",
-			wantUID: os.Geteuid(),
+			wantUID: currUID,
 			wantErr: false,
 		},
 		{
 			name:    "empty",
 			setEnv:  true,
 			envVal:  "",
-			wantUID: os.Geteuid(),
+			wantUID: currUID,
 			wantErr: false,
 		},
 		{
@@ -70,25 +77,29 @@ func TestGetuid(t *testing.T) {
 
 //nolint:dupl
 func TestGetgid(t *testing.T) {
+	currGID, err := safecast.ToUint32(os.Getgid())
+	if err != nil {
+		t.Fatal(err)
+	}
 	tests := []struct {
 		name    string
 		setEnv  bool
 		envVal  string
-		wantGID int
+		wantGID uint32
 		wantErr bool
 	}{
 		{
 			name:    "unset",
 			setEnv:  false,
 			envVal:  "",
-			wantGID: os.Getegid(),
+			wantGID: currGID,
 			wantErr: false,
 		},
 		{
 			name:    "empty",
 			setEnv:  true,
 			envVal:  "",
-			wantGID: os.Getegid(),
+			wantGID: currGID,
 			wantErr: false,
 		},
 		{

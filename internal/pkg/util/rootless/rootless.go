@@ -15,6 +15,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	fakerootConfig "github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/fakeroot/config"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/starter"
@@ -30,22 +31,30 @@ const (
 
 // Getuid retrieves the uid stored in the env var _CONTAINERS_ROOTLESS_UID, or
 // the current euid if the env var is not set.
-func Getuid() (uid int, err error) {
+func Getuid() (uid uint32, err error) {
 	u := os.Getenv(UIDEnv)
 	if u != "" {
-		return strconv.Atoi(u)
+		uid, err := strconv.ParseUint(u, 10, 32)
+		if err != nil {
+			return 0, err
+		}
+		return uint32(uid), nil
 	}
-	return os.Geteuid(), nil
+	return safecast.ToUint32(os.Geteuid())
 }
 
 // Getgid retrieves the uid stored in the env var _CONTAINERS_ROOTLESS_GID, or
 // the current egid if the env var is not set.
-func Getgid() (uid int, err error) {
+func Getgid() (uid uint32, err error) {
 	g := os.Getenv(GIDEnv)
 	if g != "" {
-		return strconv.Atoi(g)
+		gid, err := strconv.ParseUint(g, 10, 32)
+		if err != nil {
+			return 0, err
+		}
+		return uint32(gid), nil
 	}
-	return os.Getegid(), nil
+	return safecast.ToUint32(os.Getegid())
 }
 
 // GetUser retrieves the User struct for the uid stored in the env var

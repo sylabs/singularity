@@ -12,6 +12,7 @@ import (
 	"os"
 	"unsafe"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
@@ -49,9 +50,13 @@ type squashfsFormat struct{}
 func parseSquashfsHeader(b []byte) (*squashfsInfo, uint64, error) {
 	var offset uint64
 
-	o := bytes.Index(b, []byte(launchString))
-	if o > 0 {
-		offset += uint64(o + len(launchString) + 1)
+	launchStart := bytes.Index(b, []byte(launchString))
+	if launchStart > 0 {
+		launchEnd, err := safecast.ToUint64(launchStart + len(launchString) + 1)
+		if err != nil {
+			return nil, 0, err
+		}
+		offset += launchEnd
 	}
 	sinfo := &squashfsInfo{}
 
@@ -144,11 +149,15 @@ func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
 	if err != nil {
 		return err
 	}
+	fSize, err := safecast.ToUint64(fileinfo.Size())
+	if err != nil {
+		return err
+	}
 	img.Type = SQUASHFS
 	img.Partitions = []Section{
 		{
 			Offset:       offset,
-			Size:         uint64(fileinfo.Size()) - offset,
+			Size:         fSize - offset,
 			ID:           1,
 			Type:         SQUASHFS,
 			Name:         RootFs,

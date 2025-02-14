@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 )
 
@@ -18,7 +19,11 @@ import (
 // user.Current was first called in unprivileged context and called after in a
 // privileged context as it will return information of unprivileged user.
 func CurrentUser(t *testing.T) *user.User {
-	u, err := user.GetPwUID(uint32(os.Getuid()))
+	uid, err := safecast.ToUint32(os.Getuid())
+	if err != nil {
+		t.Fatal(err)
+	}
+	u, err := user.GetPwUID(uid)
 	if err != nil {
 		t.Fatalf("failed to retrieve user information")
 	}

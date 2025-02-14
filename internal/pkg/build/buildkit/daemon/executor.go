@@ -34,6 +34,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/containerd/containerd/v2/core/diff/apply"
 	ctdmetadata "github.com/containerd/containerd/v2/core/metadata"
 	"github.com/containerd/containerd/v2/core/mount"
@@ -524,8 +525,12 @@ func exitError(ctx context.Context, err error) error {
 		}
 		var runcExitError *runc.ExitError
 		if errors.As(err, &runcExitError) && runcExitError.Status >= 0 {
+			ec, err := safecast.ToUint32(runcExitError.Status)
+			if err != nil {
+				return err
+			}
 			exitErr = &gatewayapi.ExitError{
-				ExitCode: uint32(runcExitError.Status),
+				ExitCode: ec,
 			}
 		}
 		select {

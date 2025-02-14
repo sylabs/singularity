@@ -8,11 +8,12 @@
 package loop
 
 import (
+	"github.com/ccoveille/go-safecast"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
 )
 
-func GetMaxLoopDevices() int {
+func GetMaxLoopDevices() (int, error) {
 	// if the caller has set the current config use it
 	// otherwise parse the default configuration file
 	cfg := singularityconf.GetCurrentConfig()
@@ -22,8 +23,8 @@ func GetMaxLoopDevices() int {
 		configFile := buildcfg.SINGULARITY_CONF_FILE
 		cfg, err = singularityconf.Parse(configFile)
 		if err != nil {
-			return 256
+			return 256, nil
 		}
 	}
-	return int(cfg.MaxLoopDevices)
+	return safecast.ToInt(cfg.MaxLoopDevices)
 }

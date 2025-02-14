@@ -11,8 +11,10 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/machine"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 const (
@@ -108,10 +110,18 @@ func (f *sifFormat) initializer(img *Image, fi os.FileInfo) error {
 
 		groupID = desc.GroupID()
 
+		offset, err := safecast.ToUint64(desc.Offset())
+		if err != nil {
+			return err
+		}
+		size, err := safecast.ToUint64(desc.Size())
+		if err != nil {
+			return err
+		}
 		img.Partitions = []Section{
 			{
-				Offset:       uint64(desc.Offset()),
-				Size:         uint64(desc.Size()),
+				Offset:       offset,
+				Size:         size,
 				ID:           desc.ID(),
 				Name:         RootFs,
 				Type:         htype,
@@ -122,6 +132,21 @@ func (f *sifFormat) initializer(img *Image, fi os.FileInfo) error {
 	}
 
 	fimg.WithDescriptors(func(desc sif.Descriptor) bool {
+		offset, err := safecast.ToUint64(desc.Offset())
+		if err != nil {
+			sylog.Warningf("Invalid descriptor offset: %v", err)
+			return false
+		}
+		size, err := safecast.ToUint64(desc.Size())
+		if err != nil {
+			sylog.Warningf("Invalid descriptor size: %v", err)
+			return false
+		}
+		dType, err := safecast.ToUint32(desc.DataType())
+		if err != nil {
+			sylog.Warningf("Invalid descriptor type: %v", err)
+			return false
+		}
 		if fstype, ptype, _, err := desc.PartitionMetadata(); err == nil {
 			// exclude partitions that are not types data or overlay
 			if ptype != sif.PartData && ptype != sif.PartOverlay {
@@ -146,8 +171,8 @@ func (f *sifFormat) initializer(img *Image, fi os.FileInfo) error {
 			}
 
 			partition := Section{
-				Offset:       uint64(desc.Offset()),
-				Size:         uint64(desc.Size()),
+				Offset:       offset,
+				Size:         size,
 				ID:           desc.ID(),
 				Name:         desc.Name(),
 				Type:         htype,
@@ -157,10 +182,10 @@ func (f *sifFormat) initializer(img *Image, fi os.FileInfo) error {
 			img.Usage |= usage
 		} else if desc.DataType() != 0 {
 			data := Section{
-				Offset:       uint64(desc.Offset()),
-				Size:         uint64(desc.Size()),
+				Offset:       offset,
+				Size:         size,
 				ID:           desc.ID(),
-				Type:         uint32(desc.DataType()),
+				Type:         dType,
 				Name:         desc.Name(),
 				AllowedUsage: DataUsage,
 			}

@@ -14,6 +14,7 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/ccoveille/go-safecast"
 	dseccomp "github.com/docker/docker/profiles/seccomp"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	lseccomp "github.com/seccomp/libseccomp-golang"
@@ -110,10 +111,18 @@ func getAction(specAction specs.LinuxSeccompAction, errnoRet *uint, defaultErrNo
 	if specAction == specs.ActErrno || specAction == specs.ActTrace {
 		// errnoRet override of the default
 		if errnoRet != nil {
-			return scmpAction.SetReturnCode(int16(*errnoRet)), nil
+			rc, err := safecast.ToInt16(*errnoRet)
+			if err != nil {
+				return 0, err
+			}
+			return scmpAction.SetReturnCode(rc), nil
 		}
 		// defaultErrnoRet (which is EPERM if not specified)
-		return scmpAction.SetReturnCode(int16(defaultErrNoRet)), nil
+		rc, err := safecast.ToInt16(defaultErrNoRet)
+		if err != nil {
+			return 0, err
+		}
+		return scmpAction.SetReturnCode(rc), nil
 	}
 
 	// Other actions which don't take an errno
