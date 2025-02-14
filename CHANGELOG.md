@@ -47,6 +47,7 @@
 
 ## Requirements / Packaging
 
+- Go 1.23.4 or above is now required to build SingularityCE.
 - libsubid headers are now required to build SingularityCE, unless the
   `--without-libsubid` flag is passed to `mconfig`.
 - EL RPM packages are built with libsubid support.
