@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -513,7 +513,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			}
 
 			for _, profile := range profiles {
-				profile := profile
 				t.Run(profile.String(), func(t *testing.T) {
 					c.profile = profile
 					for _, tt := range tests {

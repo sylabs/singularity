@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -21,6 +21,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/google/uuid"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/samber/lo"
@@ -326,8 +327,8 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 	if err != nil {
 		return fmt.Errorf("while fetching gid: %w", err)
 	}
-	currentUID := uint32(rootlessUID)
-	currentGID := uint32(rootlessGID)
+	currentUID := rootlessUID
+	currentGID := rootlessGID
 	targetUID := currentUID
 	targetGID := currentGID
 	containerUser := false
@@ -382,7 +383,10 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 	if l.cfg.NoCompat && !l.cfg.NoUmask {
 		currentMask := unix.Umask(0)
 		unix.Umask(currentMask)
-		containerMask := uint32(currentMask)
+		containerMask, err := safecast.ToUint32(currentMask)
+		if err != nil {
+			return err
+		}
 		u.Umask = &containerMask
 	}
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -148,10 +148,10 @@ func (t *RPC) SendFuseFd(socket int, fds []int) error {
 }
 
 // Symlink calls the mkdir RPC using the supplied arguments.
-func (t *RPC) Symlink(old string, new string) error {
+func (t *RPC) Symlink(target string, link string) error {
 	arguments := &args.SymlinkArgs{
-		Old: old,
-		New: new,
+		Target: target,
+		Link:   link,
 	}
 	return t.Client.Call(t.Name+".Symlink", arguments, nil)
 }

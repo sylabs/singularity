@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,6 +11,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/ccoveille/go-safecast"
 )
 
 // IsInsideUserNamespace checks if a process is already running in a
@@ -61,10 +63,13 @@ func IsInsideUserNamespace(pid int) (bool, bool) {
 // HostUID attempts to find the original host UID if the current
 // process is running inside a user namespace, if it doesn't it
 // simply returns the current UID
-func HostUID() (int, error) {
+func HostUID() (uint32, error) {
 	const uidMap = "/proc/self/uid_map"
 
-	currentUID := os.Getuid()
+	currentUID, err := safecast.ToUint32(os.Getuid())
+	if err != nil {
+		return 0, err
+	}
 
 	f, err := os.Open(uidMap)
 	if err != nil {
@@ -90,19 +95,20 @@ func HostUID() (int, error) {
 		}
 
 		// we are inside a user namespace
-		containerID, err := strconv.ParseUint(fields[0], 10, 32)
+		parsedID, err := strconv.ParseUint(fields[0], 10, 32)
 		if err != nil {
 			return 0, fmt.Errorf("failed to convert container UID field %s: %s", fields[0], err)
 		}
+		containerUID := uint32(parsedID)
 		// we can safely assume that a user won't have two
 		// consequent UID and we look if current UID match
 		// a 1:1 user mapping
-		if size == 1 && uint32(currentUID) == uint32(containerID) {
+		if size == 1 && currentUID == containerUID {
 			uid, err := strconv.ParseUint(fields[1], 10, 32)
 			if err != nil {
 				return 0, fmt.Errorf("failed to convert host UID field %s: %s", fields[1], err)
 			}
-			return int(uid), nil
+			return uint32(uid), nil
 		}
 	}
 

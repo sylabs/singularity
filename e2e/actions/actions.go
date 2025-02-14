@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -1013,8 +1013,6 @@ func (c actionTests) actionBasicProfiles(t *testing.T) {
 	}
 
 	for _, profile := range e2e.NativeProfiles {
-		profile := profile
-
 		t.Run(profile.String(), func(t *testing.T) {
 			for _, tt := range tests {
 				env.RunSingularity(
@@ -1702,7 +1700,6 @@ func (c actionTests) actionBinds(t *testing.T) {
 	}
 
 	for _, profile := range e2e.NativeProfiles {
-		profile := profile
 		createWorkspaceDirs(t)
 
 		t.Run(profile.String(), func(t *testing.T) {

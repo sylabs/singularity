@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -40,10 +40,10 @@ const (
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote get-login-password
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-	RemoteGetLoginPasswordUse     string = `get-login-password` //nolint:gosec
+	RemoteGetLoginPasswordUse     string = `get-login-password`
 	RemoteGetLoginPasswordShort   string = `Retrieves the cli secret for the currently logged in user`
 	RemoteGetLoginPasswordLong    string = `The 'remote get-login-password' command allows you to retrieve the cli secret for the currently user.`
-	RemoteGetLoginPasswordExample string = `$ singularity remote get-login-password | docker login -u user --password-stdin https://harbor.sylabs.io` //nolint:gosec
+	RemoteGetLoginPasswordExample string = `$ singularity remote get-login-password | docker login -u user --password-stdin https://harbor.sylabs.io`
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 	// remote add command
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

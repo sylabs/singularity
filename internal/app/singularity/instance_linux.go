@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/buger/goterm"
+	"github.com/ccoveille/go-safecast"
 	units "github.com/docker/go-units"
 	libcgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
@@ -182,14 +183,17 @@ func calculateMemoryUsage(stats *libcgroups.MemoryStats) (float64, float64, floa
 	return float64(memUsage), float64(memLimit), memPercent
 }
 
-func calculateCPUUsage(prevTime, prevCPU uint64, cpuStats *libcgroups.CpuStats) (cpuPercent float64, curTime, curCPU uint64) {
+func calculateCPUUsage(prevTime, prevCPU uint64, cpuStats *libcgroups.CpuStats) (cpuPercent float64, curTime, curCPU uint64, err error) {
 	// Update 1s interval CPU ns usage
-	curTime = uint64(time.Now().UnixNano())
+	curTime, err = safecast.ToUint64(time.Now().UnixNano())
+	if err != nil {
+		return 0, 0, 0, err
+	}
 	curCPU = cpuStats.CpuUsage.TotalUsage
 	deltaCPU := float64(curCPU - prevCPU)
 	deltaTime := float64(curTime - prevTime)
 	cpuPercent = (deltaCPU / deltaTime) * 100
-	return cpuPercent, curTime, curCPU
+	return cpuPercent, curTime, curCPU, nil
 }
 
 // InstanceStats uses underlying cgroups to get statistics for a named instance
@@ -237,7 +241,10 @@ func InstanceStats(ctx context.Context, name, instanceUser string, formatJSON bo
 		return fmt.Errorf("while getting stats for pid: %v", err)
 	}
 	prevCPU := stats.CpuStats.CpuUsage.TotalUsage
-	prevTime := uint64(time.Now().UnixNano())
+	prevTime, err := safecast.ToUint64(time.Now().UnixNano())
+	if err != nil {
+		return err
+	}
 	cpuPercent := 0.0
 
 	for {
@@ -275,7 +282,10 @@ func InstanceStats(ctx context.Context, name, instanceUser string, formatJSON bo
 				return fmt.Errorf("could not write stats header: %v", err)
 			}
 
-			cpuPercent, prevTime, prevCPU = calculateCPUUsage(prevTime, prevCPU, &stats.CpuStats)
+			cpuPercent, prevTime, prevCPU, err = calculateCPUUsage(prevTime, prevCPU, &stats.CpuStats)
+			if err != nil {
+				return err
+			}
 			memUsage, memLimit, memPercent := calculateMemoryUsage(&stats.MemoryStats)
 			blockRead, blockWrite := calculateBlockIO(&stats.BlkioStats)
 

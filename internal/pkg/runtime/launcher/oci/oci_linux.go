@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -16,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ccoveille/go-safecast"
 	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
@@ -98,7 +99,11 @@ func runtimeStateDir() (path string, err error) {
 	if !st.IsDir() {
 		return "", fmt.Errorf("%s exists, but is not a directory", runDir)
 	}
-	if st.Sys().(*syscall.Stat_t).Uid != uint32(os.Geteuid()) { //nolint:forcetypeassert
+	euid, err := safecast.ToUint32(os.Geteuid())
+	if err != nil {
+		return "", err
+	}
+	if st.Sys().(*syscall.Stat_t).Uid != euid { //nolint:forcetypeassert
 		return "", fmt.Errorf("%s exists, but is not owned by correct user", runDir)
 	}
 	if st.Mode().Perm() != 0o700 {

@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,6 +6,7 @@
 package ocisif
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -140,7 +141,10 @@ func DataContainerLayerOffset(f *os.File) (int64, error) {
 	if mt != SquashfsLayerMediaType {
 		return 0, fmt.Errorf("unsupported layer mediaType: %v", mt)
 	}
-
-	offset, err := layers[0].(*ocitsif.Layer).Offset()
+	ol, ok := layers[0].(*ocitsif.Layer)
+	if !ok {
+		return 0, errors.New("couldn't get layer 0 as an OCI-SIF layer")
+	}
+	offset, err := ol.Offset()
 	return offset, err
 }

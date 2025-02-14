@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/docker/go-units"
 	"github.com/shopspring/decimal"
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
@@ -198,9 +199,14 @@ func getCPULimits() (*cgroups.LinuxCPU, error) {
 			return nil, fmt.Errorf("cpus value must be in range %s - %s", minCPU.String(), maxCPU.String())
 		}
 
-		nanoCPUs := dCpus.Mul(decimal.NewFromInt(1e9)).IntPart()
-
-		quota := nanoCPUs * int64(period) / 1e9
+		nanoCPUs, err := safecast.ToUint64(dCpus.Mul(decimal.NewFromInt(1e9)).IntPart())
+		if err != nil {
+			return nil, err
+		}
+		quota, err := safecast.ToInt64(nanoCPUs * period / 1e9)
+		if err != nil {
+			return nil, err
+		}
 		cpu.Period = &period
 		cpu.Quota = &quota
 		configured = true

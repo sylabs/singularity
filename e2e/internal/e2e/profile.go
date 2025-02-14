@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/sylabs/singularity/v4/internal/pkg/fakeroot"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
@@ -215,7 +216,11 @@ func (p Profile) args(cmd []string) []string {
 
 // ContainerUser returns the container user information.
 func (p Profile) ContainerUser(t *testing.T) *user.User {
-	u, err := user.GetPwUID(uint32(p.containerUID))
+	uid, err := safecast.ToUint32(p.containerUID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	u, err := user.GetPwUID(uid)
 	if err != nil {
 		t.Fatalf("failed to retrieve user container information for user ID %d: %s", p.containerUID, err)
 	}
@@ -225,7 +230,11 @@ func (p Profile) ContainerUser(t *testing.T) *user.User {
 
 // HostUser returns the host user information.
 func (p Profile) HostUser(t *testing.T) *user.User {
-	u, err := user.GetPwUID(uint32(p.hostUID))
+	uid, err := safecast.ToUint32(p.hostUID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	u, err := user.GetPwUID(uid)
 	if err != nil {
 		t.Fatalf("failed to retrieve user host information for user ID %d: %s", p.containerUID, err)
 	}
@@ -255,7 +264,10 @@ func (p Profile) String() string {
 func fakerootRequirements(t *testing.T) {
 	require.UserNamespace(t)
 
-	uid := uint32(origUID)
+	uid, err := safecast.ToUint32(origUID)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// check that current user has valid mappings in /etc/subuid
 	if _, err := fakeroot.GetUIDRange(uid); err != nil {
@@ -280,7 +292,10 @@ func ociRequirements(t *testing.T) {
 	require.OneCommand(t, []string{"runc", "crun"})
 	require.OneCommand(t, []string{"sqfstar", "tar2sqfs"})
 
-	uid := uint32(origUID)
+	uid, err := safecast.ToUint32(origUID)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// check that current user has valid mappings in /etc/subuid
 	if _, err := fakeroot.GetUIDRange(uid); err != nil {
