@@ -82,8 +82,8 @@ type SendFuseFdArgs struct {
 
 // SymlinkArgs defines the arguments to symlink.
 type SymlinkArgs struct {
-	Old string
-	New string
+	Target string
+	Link   string
 }
 
 // ReadDirArgs defines the arguments to readdir.

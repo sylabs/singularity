@@ -148,10 +148,10 @@ func (t *RPC) SendFuseFd(socket int, fds []int) error {
 }
 
 // Symlink calls the mkdir RPC using the supplied arguments.
-func (t *RPC) Symlink(old string, new string) error {
+func (t *RPC) Symlink(target string, link string) error {
 	arguments := &args.SymlinkArgs{
-		Old: old,
-		New: new,
+		Target: target,
+		Link:   link,
 	}
 	return t.Client.Call(t.Name+".Symlink", arguments, nil)
 }

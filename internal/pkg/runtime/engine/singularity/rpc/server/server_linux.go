@@ -350,7 +350,7 @@ func (t *Methods) SendFuseFd(arguments *args.SendFuseFdArgs, _ *int) error {
 
 // Symlink performs a symlink with the specified arguments.
 func (t *Methods) Symlink(arguments *args.SymlinkArgs, _ *int) error {
-	return os.Symlink(arguments.Old, arguments.New)
+	return os.Symlink(arguments.Target, arguments.Link)
 }
 
 // ReadDir performs a readdir with the specified arguments.
