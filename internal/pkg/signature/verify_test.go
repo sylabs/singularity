@@ -189,7 +189,6 @@ func Test_newVerifier(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			v, err := newVerifier(tt.opts)
 
@@ -342,7 +341,6 @@ func Test_verifier_getOpts(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			opts, err := tt.v.getOpts(context.Background(), tt.f)
 
@@ -544,7 +542,6 @@ func TestVerify(t *testing.T) { //nolint:maintidx
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			i := 0
 
@@ -744,7 +741,6 @@ func TestVerifyFingerPrint(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			i := 0
 

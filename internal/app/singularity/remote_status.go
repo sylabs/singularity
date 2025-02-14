@@ -78,9 +78,7 @@ func RemoteStatus(usrConfigFile, name string) (err error) {
 
 	ch := make(chan *status)
 	for name, sp := range sps {
-		name := name
 		for _, service := range sp {
-			service := service
 			go func() {
 				ch <- doStatusCheck(name, service)
 			}()

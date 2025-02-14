@@ -99,7 +99,6 @@ func TestAPutConfig(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			tf, err := os.CreateTemp("", "eclconfig-test")
 			if err != nil {
@@ -199,7 +198,6 @@ func TestLoadConfig(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			path := filepath.Join("testdata", "configs", fmt.Sprintf("%s.toml", tt.name))
 			c, err := LoadConfig(path)
@@ -316,7 +314,6 @@ func TestValidateConfig(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.c.ValidateConfig(); (err != nil) != tt.wantErr {
 				t.Errorf("got error %v, wantErr %v", err, tt.wantErr)

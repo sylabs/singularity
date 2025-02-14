@@ -1013,8 +1013,6 @@ func (c actionTests) actionBasicProfiles(t *testing.T) {
 	}
 
 	for _, profile := range e2e.NativeProfiles {
-		profile := profile
-
 		t.Run(profile.String(), func(t *testing.T) {
 			for _, tt := range tests {
 				env.RunSingularity(
@@ -1702,7 +1700,6 @@ func (c actionTests) actionBinds(t *testing.T) {
 	}
 
 	for _, profile := range e2e.NativeProfiles {
-		profile := profile
 		createWorkspaceDirs(t)
 
 		t.Run(profile.String(), func(t *testing.T) {

@@ -771,7 +771,6 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 	}
 
 	for _, profile := range e2e.OCIProfiles {
-		profile := profile
 		createWorkspaceDirs(t)
 
 		t.Run(profile.String(), func(t *testing.T) {
