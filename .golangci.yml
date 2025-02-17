@@ -44,10 +44,10 @@ linters:
     - reassign
     - revive
     - staticcheck
-    - tenv
     - typecheck
     - unparam
     - unused
+    - usetesting
     - whitespace
 
 linters-settings:
