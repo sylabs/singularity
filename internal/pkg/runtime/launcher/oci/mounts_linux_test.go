@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -501,16 +501,7 @@ func ptsFlags(t *testing.T) []string {
 }
 
 func TestLauncher_addLibrariesMounts(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "add-libraries-mounts")
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		if !t.Failed() {
-			os.RemoveAll(tmpDir)
-		}
-	})
-
+	tmpDir := t.TempDir()
 	lib1 := filepath.Join(tmpDir, "lib1.so")
 	lib2 := filepath.Join(tmpDir, "lib2.so")
 	libInvalid := filepath.Join(tmpDir, "invalid")

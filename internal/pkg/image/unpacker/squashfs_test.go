@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -19,7 +19,7 @@ func createArchive(t *testing.T) *os.File {
 	if err != nil {
 		t.SkipNow()
 	}
-	f, err := os.CreateTemp("", "archive-")
+	f, err := os.CreateTemp(t.TempDir(), "archive-")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func testSquashfs(t *testing.T, tmpParent string) {
 		t.Skip("unsquashfs not found")
 	}
 
-	dir, err := os.MkdirTemp(tmpParent, "test-squashfs-")
+	dir, err := os.MkdirTemp(tmpParent, "test-squashfs-") //nolint:usetesting
 	if err != nil {
 		t.Fatalf("while creating tmpdir: %v", err)
 	}
@@ -64,7 +64,6 @@ func testSquashfs(t *testing.T, tmpParent string) {
 
 	// create archive with files present in this directory
 	archive := createArchive(t)
-	defer os.Remove(archive.Name())
 
 	savedPath := s.UnsquashfsPath
 

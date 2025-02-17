@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -31,12 +31,11 @@ func TestGroup(t *testing.T) {
 		t.Errorf("should have passed with correct group file")
 	}
 	// with an empty file
-	f, err := os.CreateTemp("", "empty-group-")
+	f, err := os.CreateTemp(t.TempDir(), "empty-group-")
 	if err != nil {
 		t.Error(err)
 	}
 	emptyGroup := f.Name()
-	defer os.Remove(emptyGroup)
 	f.Close()
 
 	_, err = Group(emptyGroup, uid, gids, nil)

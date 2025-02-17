@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,6 @@
 package cmdline
 
 import (
-	"os"
 	"testing"
 
 	"github.com/spf13/cobra"
@@ -273,7 +272,7 @@ func TestCmdFlag(t *testing.T) {
 		} else if len(cm.GetError()) == 0 && d.expectedFailure {
 			t.Errorf("unexpected success for %s", d.desc)
 		} else if len(cm.GetError()) == 0 && d.envValue != "" && len(d.flag.EnvKeys) > 0 {
-			os.Setenv(d.flag.EnvKeys[0], d.envValue)
+			t.Setenv(d.flag.EnvKeys[0], d.envValue)
 			cmds[d.cmd] = c
 		}
 		// reset error

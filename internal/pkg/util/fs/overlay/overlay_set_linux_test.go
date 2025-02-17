@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2023-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -76,7 +76,7 @@ func TestAllTypesAtOnce(t *testing.T) {
 		extfsSupported := false
 		if _, err := exec.LookPath("fuse2fs"); err == nil {
 			extfsSupported = true
-			tmpDir := mkTempDirOrFatal(t)
+			tmpDir := t.TempDir()
 			readonlyExtfsImgPath := filepath.Join(tmpDir, "readonly-extfs.img")
 			if err := fs.CopyFile(extfsImgPath, readonlyExtfsImgPath, 0o444); err != nil {
 				t.Fatalf("could not copy %q to %q: %s", extfsImgPath, readonlyExtfsImgPath, err)
@@ -91,7 +91,7 @@ func TestAllTypesAtOnce(t *testing.T) {
 		}
 		s.WritableOverlay = i
 
-		rootfsDir := mkTempDirOrFatal(t)
+		rootfsDir := t.TempDir()
 		if err := s.Mount(ctx, rootfsDir); err != nil {
 			t.Fatalf("failed to mount overlay set: %s", err)
 		}
@@ -144,7 +144,7 @@ func TestPersistentWriteToExtfsImg(t *testing.T) {
 	require.Command(t, "fuse2fs")
 	require.Command(t, "fuse-overlayfs")
 	require.Command(t, "fusermount")
-	tmpDir := mkTempDirOrFatal(t)
+	tmpDir := t.TempDir()
 	ctx := context.Background()
 
 	// Create a copy of the extfs test image to be used for testing writable
@@ -165,7 +165,7 @@ func TestPersistentWriteToExtfsImg(t *testing.T) {
 }
 
 func performPersistentWriteTest(ctx context.Context, t *testing.T, s Set) {
-	rootfsDir := mkTempDirOrFatal(t)
+	rootfsDir := t.TempDir()
 
 	// This cleanup will serve adequately for both iterations of the overlay-set
 	// mounting, below. If it happens to get called while the set is not
@@ -227,7 +227,7 @@ func TestDuplicateItemsInSet(t *testing.T) {
 		addROItemOrFatal(t, &s, roI2.SourcePath+":ro")
 		addROItemOrFatal(t, &s, mkTempOlDirOrFatal(t)+":ro")
 
-		rootfsDir = mkTempDirOrFatal(t)
+		rootfsDir = t.TempDir()
 		if err := s.Mount(ctx, rootfsDir); err == nil {
 			t.Errorf("unexpected success: Mounting overlay.Set with duplicate (%q) should have failed", roI2.SourcePath)
 			if err := s.Unmount(ctx, rootfsDir); err != nil {
@@ -244,7 +244,7 @@ func TestDuplicateItemsInSet(t *testing.T) {
 		}
 		s.WritableOverlay = rwI
 
-		rootfsDir = mkTempDirOrFatal(t)
+		rootfsDir = t.TempDir()
 		if err := s.Mount(ctx, rootfsDir); err == nil {
 			t.Errorf("unexpected success: Mounting overlay.Set with duplicate (%q) should have failed", roI2.SourcePath)
 			if err := s.Unmount(ctx, rootfsDir); err != nil {

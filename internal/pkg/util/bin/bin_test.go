@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
@@ -161,17 +162,11 @@ func TestFindFromConfigOrPath(t *testing.T) {
 				tc.expectPath = lookPath
 			}
 
-			f, err := os.CreateTemp("", "test.conf")
-			if err != nil {
-				t.Fatalf("cannot create temporary test configuration: %+v", err)
-			}
-			f.Close()
-			defer os.Remove(f.Name())
-
+			testConf := filepath.Join(t.TempDir(), "test.conf")
 			cfg := fmt.Sprintf("%s = %s\n", tc.configKey, tc.configVal)
-			os.WriteFile(f.Name(), []byte(cfg), 0o644)
+			os.WriteFile(testConf, []byte(cfg), 0o644)
 
-			conf, err := singularityconf.Parse(f.Name())
+			conf, err := singularityconf.Parse(testConf)
 			if err != nil {
 				t.Errorf("Error parsing test singularityconf: %v", err)
 			}
@@ -296,17 +291,11 @@ func TestFindFromConfigOnly(t *testing.T) {
 				t.Skip("skipping - no buildcfg path known")
 			}
 
-			f, err := os.CreateTemp("", "test.conf")
-			if err != nil {
-				t.Fatalf("cannot create temporary test configuration: %+v", err)
-			}
-			f.Close()
-			defer os.Remove(f.Name())
-
+			testConf := filepath.Join(t.TempDir(), "test.conf")
 			cfg := fmt.Sprintf("%s = %s\n", tc.configKey, tc.configVal)
-			os.WriteFile(f.Name(), []byte(cfg), 0o644)
+			os.WriteFile(testConf, []byte(cfg), 0o644)
 
-			conf, err := singularityconf.Parse(f.Name())
+			conf, err := singularityconf.Parse(testConf)
 			if err != nil {
 				t.Errorf("Error parsing test singularityconf: %v", err)
 			}

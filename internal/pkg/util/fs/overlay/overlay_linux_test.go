@@ -215,7 +215,7 @@ func TestCheckLowerUpper(t *testing.T) {
 }
 
 func TestAbsOverlay(t *testing.T) {
-	tmpDir := mkTempDirOrFatal(t)
+	tmpDir := t.TempDir()
 	oldDir, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,6 +7,7 @@ package singularity
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/remote"
@@ -23,12 +24,7 @@ const (
 )
 
 func createInvalidCfgFile(t *testing.T) string {
-	f, err := os.CreateTemp("", "")
-	if err != nil {
-		t.Fatalf("cannot create temporary configuration file for testing: %s\n", err)
-	}
-
-	path := f.Name()
+	path := filepath.Join(t.TempDir(), "invalid.yml")
 
 	// Set an invalid configuration
 	type aDummyStruct struct {
@@ -40,24 +36,18 @@ func createInvalidCfgFile(t *testing.T) string {
 
 	yaml, err := yaml.Marshal(cfg)
 	if err != nil {
-		f.Close()
-		os.Remove(path)
 		t.Fatalf("cannot marshal YAML: %s\n", err)
 	}
 
-	f.Write(yaml)
-	f.Close()
+	if err := os.WriteFile(path, yaml, 0o644); err != nil {
+		t.Fatal(err)
+	}
 
 	return path
 }
 
 func createValidCfgFile(t *testing.T) string {
-	f, err := os.CreateTemp("", "")
-	if err != nil {
-		t.Fatalf("cannot create temporary configuration file for testing: %s\n", err)
-	}
-
-	path := f.Name()
+	path := filepath.Join(t.TempDir(), "valid.yml")
 
 	// Set a valid configuration
 	cfg := remote.Config{
@@ -76,13 +66,12 @@ func createValidCfgFile(t *testing.T) string {
 
 	yaml, err := yaml.Marshal(cfg)
 	if err != nil {
-		f.Close()
-		os.Remove(path)
 		t.Fatalf("cannot marshal YAML: %s\n", err)
 	}
 
-	f.Write(yaml)
-	f.Close()
+	if err := os.WriteFile(path, yaml, 0o644); err != nil {
+		t.Fatal(err)
+	}
 
 	return path
 }

@@ -60,8 +60,7 @@ func TestGetuid(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setEnv {
-				os.Setenv(UIDEnv, tt.envVal)
-				defer os.Unsetenv(UIDEnv)
+				t.Setenv(UIDEnv, tt.envVal)
 			}
 			gotUID, err := Getuid()
 			if (err != nil) != tt.wantErr {
@@ -120,8 +119,7 @@ func TestGetgid(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setEnv {
-				os.Setenv(GIDEnv, tt.envVal)
-				defer os.Unsetenv(GIDEnv)
+				t.Setenv(GIDEnv, tt.envVal)
 			}
 			gotGID, err := Getgid()
 			if (err != nil) != tt.wantErr {
@@ -184,8 +182,7 @@ func TestGetUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.setEnv {
-				os.Setenv(UIDEnv, tt.envVal)
-				defer os.Unsetenv(UIDEnv)
+				t.Setenv(UIDEnv, tt.envVal)
 			}
 			got, err := GetUser()
 			if (err != nil) != tt.wantErr {

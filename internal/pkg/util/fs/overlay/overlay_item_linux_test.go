@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -32,22 +32,8 @@ var (
 	extfsImgPath    = filepath.Join(imgsPath, "extfs-for-overlay.img")
 )
 
-func mkTempDirOrFatal(t *testing.T) string {
-	tmpDir, err := os.MkdirTemp(t.TempDir(), "testoverlayitem-")
-	if err != nil {
-		t.Fatalf("failed to create temporary dir: %s", err)
-	}
-	t.Cleanup(func() {
-		if !t.Failed() {
-			os.RemoveAll(tmpDir)
-		}
-	})
-
-	return tmpDir
-}
-
 func mkTempOlDirOrFatal(t *testing.T) string {
-	tmpOlDir := mkTempDirOrFatal(t)
+	tmpOlDir := t.TempDir()
 	dirs.MkdirOrFatal(t, filepath.Join(tmpOlDir, "upper"), 0o777)
 	dirs.MkdirOrFatal(t, filepath.Join(tmpOlDir, "lower"), 0o777)
 
@@ -174,7 +160,7 @@ func verifyDirExistsAndWritable(t *testing.T, dir string) {
 }
 
 func TestUpperAndWorkCreation(t *testing.T) {
-	tmpDir := mkTempDirOrFatal(t)
+	tmpDir := t.TempDir()
 
 	item, err := NewItemFromString(tmpDir)
 	if err != nil {
@@ -362,7 +348,7 @@ func TestExtfsRW(t *testing.T) {
 	require.Command(t, "fuse2fs")
 	require.Command(t, "fuse-overlayfs")
 	require.Command(t, "fusermount")
-	tmpDir := mkTempDirOrFatal(t)
+	tmpDir := t.TempDir()
 	ctx := context.Background()
 
 	// Create a copy of the extfs test image to be used for testing writable

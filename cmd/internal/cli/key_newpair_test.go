@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -61,14 +61,13 @@ func Test_collectInput_flags(t *testing.T) {
 }
 
 func TestCollectInput(t *testing.T) {
-	tf, err := os.CreateTemp("", "collect-test-")
+	tf, err := os.CreateTemp(t.TempDir(), "collect-test-")
 	assert.NilError(t, err)
 	defer tf.Close()
 
 	oldStdin := os.Stdin
 	defer func(ostdin *os.File) {
 		os.Stdin = ostdin
-		os.Remove(tf.Name())
 	}(oldStdin)
 	os.Stdin = tf
 

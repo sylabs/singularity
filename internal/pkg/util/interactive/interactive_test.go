@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -19,7 +19,7 @@ func generateQuestionInput(t *testing.T, input string) (*os.File, *os.File) {
 	testBytes := []byte(input)
 
 	// we create a temporary file that will act as Stdin
-	testFile, err := os.CreateTemp("", "inputTest")
+	testFile, err := os.CreateTemp(t.TempDir(), "inputTest")
 	if err != nil {
 		t.Fatalf("failed to create temporary file: %s", err)
 	}
@@ -28,7 +28,6 @@ func generateQuestionInput(t *testing.T, input string) (*os.File, *os.File) {
 	_, err = testFile.Write(testBytes)
 	if err != nil {
 		testFile.Close()
-		os.Remove(testFile.Name())
 		t.Fatalf("failed to write to %s: %s", testFile.Name(), err)
 	}
 
@@ -36,7 +35,6 @@ func generateQuestionInput(t *testing.T, input string) (*os.File, *os.File) {
 	_, err = testFile.Seek(0, io.SeekStart)
 	if err != nil {
 		testFile.Close()
-		os.Remove(testFile.Name())
 		t.Fatalf("failed to seek to beginning of file %s: %s", testFile.Name(), err)
 	}
 

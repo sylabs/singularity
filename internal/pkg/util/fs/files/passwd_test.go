@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -29,12 +29,11 @@ func TestPasswd(t *testing.T) {
 	}
 
 	// Adding current user to an empty file
-	f, err := os.CreateTemp("", "empty-passwd-")
+	f, err := os.CreateTemp(t.TempDir(), "empty-passwd-")
 	if err != nil {
 		t.Fatal(err)
 	}
 	emptyPasswd := f.Name()
-	defer os.Remove(emptyPasswd)
 	f.Close()
 
 	_, err = Passwd(emptyPasswd, "/home", uid, nil)
