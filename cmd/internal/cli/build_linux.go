@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -18,6 +18,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 	keyclient "github.com/sylabs/scs-key-client/client"
@@ -74,7 +75,11 @@ func fakerootExec() {
 		}
 	}
 
-	user, err := user.GetPwUID(uint32(os.Getuid()))
+	uid, err := safecast.ToUint32(os.Getuid())
+	if err != nil {
+		sylog.Fatalf("while getting uid: %v", err)
+	}
+	user, err := user.GetPwUID(uid)
 	if err != nil {
 		sylog.Fatalf("failed to retrieve user information: %s", err)
 	}

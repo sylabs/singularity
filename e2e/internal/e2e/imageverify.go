@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -262,13 +262,13 @@ func appDetailImageVerify(t *testing.T, cmdPath, imagePath string, apps []AppDet
 	}
 }
 
-func verifyFile(t *testing.T, original, copy string) error {
+func verifyFile(t *testing.T, original, duplicated string) error {
 	ofi, err := os.Stat(original)
 	if err != nil {
 		t.Fatalf("While getting file info: %v", err)
 	}
 
-	cfi, err := os.Stat(copy)
+	cfi, err := os.Stat(duplicated)
 	if err != nil {
 		t.Fatalf("While getting file info: %v", err)
 	}
@@ -286,7 +286,7 @@ func verifyFile(t *testing.T, original, copy string) error {
 		t.Fatalf("While reading file: %v", err)
 	}
 
-	c, err := os.ReadFile(copy)
+	c, err := os.ReadFile(duplicated)
 	if err != nil {
 		t.Fatalf("While reading file: %v", err)
 	}

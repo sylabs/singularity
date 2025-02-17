@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/sylabs/singularity/v4/internal/pkg/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/overlay"
 	"github.com/sylabs/singularity/v4/pkg/image"
@@ -47,7 +48,11 @@ func prepareWritableTmpfs(ctx context.Context, bundleDir string, allowSetuid boo
 	if c == nil {
 		return "", fmt.Errorf("singularity configuration is not initialized")
 	}
-	return tools.CreateOverlayTmpfs(ctx, bundleDir, int(c.SessiondirMaxSize), allowSetuid)
+	tmpfsSize, err := safecast.ToInt(c.SessiondirMaxSize)
+	if err != nil {
+		return "", err
+	}
+	return tools.CreateOverlayTmpfs(ctx, bundleDir, tmpfsSize, allowSetuid)
 }
 
 func cleanupWritableTmpfs(ctx context.Context, bundleDir, overlayDir string) error {
@@ -183,8 +188,11 @@ func prepareSystemOverlay(bundleDir string, allowSetuid bool) (*overlay.Item, er
 	if c == nil {
 		return nil, fmt.Errorf("singularity configuration is not initialized")
 	}
-
-	systemOverlay, err := tools.PrepareOverlayTmpfs(bundleDir, int(c.SessiondirMaxSize), allowSetuid)
+	tmpfsSize, err := safecast.ToInt(c.SessiondirMaxSize)
+	if err != nil {
+		return nil, err
+	}
+	systemOverlay, err := tools.PrepareOverlayTmpfs(bundleDir, tmpfsSize, allowSetuid)
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -316,8 +316,8 @@ func addBuildLabels(labels map[string]string, b *types.Bundle) error {
 	currentTime := time.Now()
 	year, month, day := currentTime.Date()
 	date := strconv.Itoa(day) + `_` + month.String() + `_` + strconv.Itoa(year)
-	hour, min, sec := currentTime.Clock()
-	time := strconv.Itoa(hour) + `:` + strconv.Itoa(min) + `:` + strconv.Itoa(sec)
+	hours, minutes, secs := currentTime.Clock()
+	time := strconv.Itoa(hours) + `:` + strconv.Itoa(minutes) + `:` + strconv.Itoa(secs)
 	zone, _ := currentTime.Zone()
 	timeString := currentTime.Weekday().String() + `_` + date + `_` + time + `_` + zone
 	labels["org.label-schema.build-date"] = timeString

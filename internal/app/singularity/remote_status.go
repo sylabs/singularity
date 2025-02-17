@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -78,9 +78,7 @@ func RemoteStatus(usrConfigFile, name string) (err error) {
 
 	ch := make(chan *status)
 	for name, sp := range sps {
-		name := name
 		for _, service := range sp {
-			service := service
 			go func() {
 				ch <- doStatusCheck(name, service)
 			}()

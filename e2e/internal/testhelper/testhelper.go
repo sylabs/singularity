@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -71,15 +71,10 @@ func (s *Suite) Run(filter *string) {
 	// Run parallel test first
 	s.t.Run("PAR", func(t *testing.T) {
 		for name := range s.groups {
-			name := name
-
 			t.Run(name, func(t *testing.T) {
 				t.Parallel()
 
 				for testName, fn := range tests[name] {
-					fn := fn
-					testName := testName
-
 					if filterMatch != nil {
 						if !filterMatch.MatchString(testName) {
 							continue
@@ -102,8 +97,6 @@ func (s *Suite) Run(filter *string) {
 
 	s.t.Run("SEQ", func(t *testing.T) {
 		for name := range s.groups {
-			name := name
-
 			t.Run(name, func(t *testing.T) {
 				for testName, fn := range tests[name] {
 					if filterMatch != nil {

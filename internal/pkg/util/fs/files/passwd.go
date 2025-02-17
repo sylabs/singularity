@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	pwd "github.com/astromechza/etcpwdparse"
+	"github.com/ccoveille/go-safecast"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
@@ -52,7 +53,11 @@ func Passwd(path string, home string, uid int, customLookup UserGroupLookup) (co
 		getPwUID = customLookup.GetPwUID
 	}
 
-	pwInfo, err := getPwUID(uint32(uid))
+	uid32, err := safecast.ToUint32(uid)
+	if err != nil {
+		return nil, err
+	}
+	pwInfo, err := getPwUID(uid32)
 	if err != nil {
 		return content, err
 	}

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
@@ -55,14 +56,14 @@ func NormalizeLibraryRef(ref string) (*scslibrary.Ref, error) {
 	return &scslibrary.Ref{Host: host, Path: elem[0], Tags: tags}, nil
 }
 
-func getEnvInt(key string, defval int64) int64 {
+func getEnvInt64(key string, confVal uint) (int64, error) {
 	if env := os.Getenv(key); env != "" {
 		if n, err := strconv.ParseInt(env, 10, 0); err == nil {
-			return n
+			return n, nil
 		}
-		sylog.Warningf("Error parsing %s; using default (%d)", key, defval)
+		sylog.Warningf("Error parsing %s; using default (%d)", key, confVal)
 	}
-	return defval
+	return safecast.ToInt64(confVal)
 }
 
 func getDownloadConfig() (scslibrary.Downloader, error) {
@@ -77,9 +78,18 @@ func getDownloadConfig() (scslibrary.Downloader, error) {
 		}
 	}
 
-	concurrency := int64(getEnvInt("SINGULARITY_DOWNLOAD_CONCURRENCY", int64(conf.DownloadConcurrency)))
-	partSize := int64(getEnvInt("SINGULARITY_DOWNLOAD_PART_SIZE", int64(conf.DownloadPartSize)))
-	bufferSize := int64(getEnvInt("SINGULARITY_DOWNLOAD_BUFFER_SIZE", int64(conf.DownloadBufferSize)))
+	concurrency, err := getEnvInt64("SINGULARITY_DOWNLOAD_CONCURRENCY", conf.DownloadConcurrency)
+	if err != nil {
+		return scslibrary.Downloader{}, err
+	}
+	partSize, err := getEnvInt64("SINGULARITY_DOWNLOAD_PART_SIZE", conf.DownloadPartSize)
+	if err != nil {
+		return scslibrary.Downloader{}, err
+	}
+	bufferSize, err := getEnvInt64("SINGULARITY_DOWNLOAD_BUFFER_SIZE", conf.DownloadBufferSize)
+	if err != nil {
+		return scslibrary.Downloader{}, err
+	}
 
 	if concurrency < 1 {
 		return scslibrary.Downloader{}, fmt.Errorf("invalid download concurrency value (%v)", concurrency)

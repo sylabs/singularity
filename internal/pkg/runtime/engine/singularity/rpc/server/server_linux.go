@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -350,7 +350,7 @@ func (t *Methods) SendFuseFd(arguments *args.SendFuseFdArgs, _ *int) error {
 
 // Symlink performs a symlink with the specified arguments.
 func (t *Methods) Symlink(arguments *args.SymlinkArgs, _ *int) error {
-	return os.Symlink(arguments.Old, arguments.New)
+	return os.Symlink(arguments.Target, arguments.Link)
 }
 
 // ReadDir performs a readdir with the specified arguments.

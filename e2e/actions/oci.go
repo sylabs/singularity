@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -771,7 +771,6 @@ func (c actionTests) actionOciBinds(t *testing.T) {
 	}
 
 	for _, profile := range e2e.OCIProfiles {
-		profile := profile
 		createWorkspaceDirs(t)
 
 		t.Run(profile.String(), func(t *testing.T) {

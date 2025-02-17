@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Copyright (c) 2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2023-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -34,6 +34,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ccoveille/go-safecast"
 	"github.com/containerd/containerd/v2/core/diff/apply"
 	ctdmetadata "github.com/containerd/containerd/v2/core/metadata"
 	"github.com/containerd/containerd/v2/core/mount"
@@ -524,8 +525,12 @@ func exitError(ctx context.Context, err error) error {
 		}
 		var runcExitError *runc.ExitError
 		if errors.As(err, &runcExitError) && runcExitError.Status >= 0 {
+			ec, err := safecast.ToUint32(runcExitError.Status)
+			if err != nil {
+				return err
+			}
 			exitErr = &gatewayapi.ExitError{
-				ExitCode: uint32(runcExitError.Status),
+				ExitCode: ec,
 			}
 		}
 		select {

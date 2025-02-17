@@ -21,6 +21,7 @@ import (
 	"syscall"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
+	"github.com/ccoveille/go-safecast"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
@@ -143,7 +144,9 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 			return err
 		}
 	} else {
-		e.setUserInfo(useTargetIDs)
+		if err := e.setUserInfo(useTargetIDs); err != nil {
+			return err
+		}
 
 		if err := e.prepareContainerConfig(starterConfig); err != nil {
 			return err
@@ -246,9 +249,13 @@ func (e *EngineOperations) prepareUserCaps(enforced bool) error {
 		}
 
 		for _, g := range groups {
-			gr, err := user.GetGrGID(uint32(g))
+			g32, err := safecast.ToUint32(g)
 			if err != nil {
-				sylog.Debugf("Ignoring group %d: %s", g, err)
+				return err
+			}
+			gr, err := user.GetGrGID(g32)
+			if err != nil {
+				sylog.Debugf("Ignoring group %d: %s", g32, err)
 				continue
 			}
 			authorizedCaps, unauthorizedCaps := capConfig.CheckGroupCaps(gr.Name, caps)
@@ -353,9 +360,13 @@ func (e *EngineOperations) prepareRootCaps() error {
 		}
 
 		for _, g := range groups {
-			gr, err := user.GetGrGID(uint32(g))
+			g32, err := safecast.ToUint32(g)
 			if err != nil {
-				sylog.Debugf("Ignoring group %d: %s", g, err)
+				return err
+			}
+			gr, err := user.GetGrGID(g32)
+			if err != nil {
+				sylog.Debugf("Ignoring group %d: %s", g32, err)
 				continue
 			}
 			caps := capConfig.ListGroupCaps(gr.Name)
@@ -648,8 +659,14 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 			}
 		}
 
-		uid := uint32(os.Getuid())
-		gid := uint32(os.Getgid())
+		uid, err := safecast.ToUint32(os.Getuid())
+		if err != nil {
+			return err
+		}
+		gid, err := safecast.ToUint32(os.Getgid())
+		if err != nil {
+			return err
+		}
 
 		e.EngineConfig.OciConfig.AddLinuxUIDMapping(uid, 0, 1)
 		idRange, err := fakeroot.GetUIDRange(uid)
@@ -729,8 +746,14 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		return err
 	}
 
-	uid := os.Getuid()
-	gid := os.Getgid()
+	uid, err := safecast.ToUint32(os.Getuid())
+	if err != nil {
+		return err
+	}
+	gid, err := safecast.ToUint32(os.Getgid())
+	if err != nil {
+		return err
+	}
 	suidRequired := uid != 0 && !file.UserNs
 
 	// basic checks:
@@ -832,7 +855,8 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		}
 		//nolint:forcetypeassert
 		st := fi.Sys().(*syscall.Stat_t)
-		if st.Uid != uint32(uid) || st.Gid != uint32(gid) {
+
+		if st.Uid != uid || st.Gid != gid {
 			return fmt.Errorf("instance process owned by %d:%d instead of %d:%d", st.Uid, st.Gid, uid, gid)
 		}
 
@@ -875,7 +899,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 		}
 		//nolint:forcetypeassert
 		st = fi.Sys().(*syscall.Stat_t)
-		if st.Uid != uint32(uid) || st.Gid != uint32(gid) {
+		if st.Uid != uid || st.Gid != gid {
 			return fmt.Errorf("parent instance process owned by %d:%d instead of %d:%d", st.Uid, st.Gid, uid, gid)
 		}
 
@@ -1519,18 +1543,22 @@ func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, 
 	return imgObject, imgErr
 }
 
-func (e *EngineOperations) setUserInfo(useTargetIDs bool) {
+func (e *EngineOperations) setUserInfo(useTargetIDs bool) error {
 	var gids []int
 
 	pw, err := user.CurrentOriginal()
 	if err != nil {
-		return
+		return nil
 	}
 
 	e.EngineConfig.JSON.UserInfo.Home = pw.Dir
 
 	if useTargetIDs {
-		pw, err = user.GetPwUID(uint32(e.EngineConfig.GetTargetUID()))
+		targetUID, uidErr := safecast.ToUint32(e.EngineConfig.GetTargetUID())
+		if uidErr != nil {
+			return err
+		}
+		pw, err = user.GetPwUID(targetUID)
 	}
 
 	if err == nil {
@@ -1548,7 +1576,7 @@ func (e *EngineOperations) setUserInfo(useTargetIDs bool) {
 	} else {
 		gids, err = os.Getgroups()
 		if err != nil {
-			return
+			return nil
 		}
 	}
 
@@ -1557,9 +1585,14 @@ func (e *EngineOperations) setUserInfo(useTargetIDs bool) {
 	}
 
 	for _, gid := range gids {
-		group, err := user.GetGrGID(uint32(gid))
+		gid32, err := safecast.ToUint32(gid)
+		if err != nil {
+			return err
+		}
+		group, err := user.GetGrGID(gid32)
 		if err == nil {
 			e.EngineConfig.JSON.UserInfo.Groups[gid] = group.Name
 		}
 	}
+	return nil
 }

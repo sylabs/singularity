@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2023-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ccoveille/go-safecast"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -199,8 +200,11 @@ func (b *Bundle) mountLayers(ctx context.Context, img v1.Image, imgFile string) 
 		if mt != ocisif.SquashfsLayerMediaType {
 			return fmt.Errorf("unsupported layer mediaType %q", mt)
 		}
-
-		offset, err := l.(*ocitsif.Layer).Offset()
+		ol, ok := l.(*ocitsif.Layer)
+		if !ok {
+			return fmt.Errorf("couldn't get layer %d as an OCI-SIF layer", i)
+		}
+		offset, err := ol.Offset()
 		if err != nil {
 			return fmt.Errorf("while finding layer offset: %w", err)
 		}
@@ -211,7 +215,11 @@ func (b *Bundle) mountLayers(ctx context.Context, img v1.Image, imgFile string) 
 			return fmt.Errorf("while creating layer directory: %w", err)
 		}
 
-		if _, err := squashfs.FUSEMount(ctx, uint64(offset), imgFile, layerPath, false); err != nil {
+		fuseOffset, err := safecast.ToUint64(offset)
+		if err != nil {
+			return err
+		}
+		if _, err := squashfs.FUSEMount(ctx, fuseOffset, imgFile, layerPath, false); err != nil {
 			return UnavailableError{Underlying: fmt.Errorf("while mounting squashfs layer: %w", err)}
 		}
 		b.mountedLayers = append(b.mountedLayers, layerPath)
