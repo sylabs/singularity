@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -44,13 +44,7 @@ type groupTest struct {
 
 // Copy the test image to a temporary location so we don't accidentally clobber the original
 func copyImage(t *testing.T) string {
-	f, err := os.CreateTemp("", "image-")
-	if err != nil {
-		t.Fatalf("cannot create temporary file: %s\n", err)
-	}
-	name := f.Name()
-	f.Close()
-
+	name := filepath.Join(t.TempDir(), "test.sif")
 	if err := fs.CopyFileAtomic(busyboxSIF, name, 0o755); err != nil {
 		t.Fatalf("Could not copy test image: %v", err)
 	}

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -50,7 +50,7 @@ func DropPrivilege(t *testing.T) {
 			t.Fatalf("failed to set user identity: %v", err)
 		}
 
-		if err := os.Setenv("HOME", unprivHome); err != nil {
+		if err := os.Setenv("HOME", unprivHome); err != nil { //nolint:usetesting
 			t.Fatalf("failed to set HOME environment variable: %v", err)
 		}
 	}
@@ -68,7 +68,7 @@ func ResetPrivilege(t *testing.T) {
 	// We might want restoration of HOME env var to persist past this individual
 	// test, so use os.Setenv() rather than t.Setenv()
 	//nolint:tenv
-	os.Setenv("HOME", origHome)
+	os.Setenv("HOME", origHome) //nolint:usetesting
 
 	runtime.UnlockOSThread()
 }

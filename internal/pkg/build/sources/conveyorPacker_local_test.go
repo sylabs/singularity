@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -20,12 +20,7 @@ import (
 
 func TestLocalPackerSquashfs(t *testing.T) {
 	require.Command(t, "mksquashfs")
-
-	tempDirPath, err := os.MkdirTemp("", "test-localpacker-squashfs")
-	if err != nil {
-		t.Fatalf("while creating temp dir: %v", err)
-	}
-	defer os.RemoveAll(tempDirPath)
+	tempDirPath := t.TempDir()
 
 	// Image root directory
 	rootfs := filepath.Join(tempDirPath, "issue_3084_rootfs")
@@ -65,9 +60,7 @@ func TestLocalPackerSquashfs(t *testing.T) {
 	defer os.Remove(image)
 
 	// Creates bundle
-	bundleTmp, _ := os.MkdirTemp("", "bundle-temp-*")
-	defer os.RemoveAll(bundleTmp)
-
+	bundleTmp := t.TempDir()
 	b, err := types.NewBundle(tempDirPath, bundleTmp)
 	if err != nil {
 		t.Fatalf("while creating bundle: %v", err)
