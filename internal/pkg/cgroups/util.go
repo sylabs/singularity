@@ -14,6 +14,7 @@ import (
 
 	"github.com/opencontainers/runc/libcontainer/cgroups"
 	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/sys/unix"
@@ -117,12 +118,25 @@ func HasXDGRuntimeDir() (bool, error) {
 }
 
 // CanUseCgroups checks whether it's possible to use the cgroups manager.
+// - Systemd cgroups management requires systemd running as init.
 // - Host root can always use cgroups.
 // - Rootless needs cgroups v2.
 // - Rootless needs systemd manager.
 // - Rootless needs DBUS_SESSION_BUS_ADDRESS and XDG_RUNTIME_DIR set properly.
 // warn controls whether configuration problems preventing use of cgroups will be logged as warnings, or debug messages.
 func CanUseCgroups(systemd bool, warn bool) bool {
+	if systemd {
+		systemdRunning := fs.IsDir("/run/systemd/system")
+		if !systemdRunning {
+			if warn {
+				sylog.Warningf("Cannot use systemd cgroups manager, systemd not running as init on this host.")
+			} else {
+				sylog.Debugf("Cannot use systemd cgroups manager, systemd not running as init on this host.")
+			}
+			return false
+		}
+	}
+
 	uid, err := rootless.Getuid()
 	if err != nil {
 		sylog.Errorf("cannot determine uid: %v", err)

@@ -19,6 +19,7 @@ import (
 
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 // This file contains tests that will run under cgroups v1 & v2, and test utility functions.
@@ -55,6 +56,9 @@ func runCgroupfsTests(t *testing.T, tests CgroupTests) {
 
 func runSystemdTests(t *testing.T, tests CgroupTests) {
 	t.Run("systemd", func(t *testing.T) {
+		if !fs.IsDir("/run/systemd/system") {
+			t.Skip("systemd not running as init on this host")
+		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				tt.testFunc(t, true)
