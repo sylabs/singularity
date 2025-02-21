@@ -19,7 +19,6 @@ import (
 func Test_addNamespaces(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
-
 	defaultPlusPID := append(defaultNamespaces,
 		specs.LinuxNamespace{Type: specs.PIDNamespace})
 	defaultPlusNetPID := append(defaultNamespaces,
@@ -28,11 +27,14 @@ func Test_addNamespaces(t *testing.T) {
 	defaultPlusPIDUTS := append(defaultNamespaces,
 		specs.LinuxNamespace{Type: specs.PIDNamespace},
 		specs.LinuxNamespace{Type: specs.UTSNamespace})
-
+	defaultPlusPIDCgroups := append(defaultNamespaces,
+		specs.LinuxNamespace{Type: specs.PIDNamespace},
+		specs.LinuxNamespace{Type: specs.CgroupNamespace})
 	tests := []struct {
-		name   string
-		ns     launcher.Namespaces
-		wantNS []specs.LinuxNamespace
+		name             string
+		ns               launcher.Namespaces
+		cgroupsv2Support bool
+		wantNS           []specs.LinuxNamespace
 	}{
 		{
 			name:   "none",
@@ -69,13 +71,23 @@ func Test_addNamespaces(t *testing.T) {
 			ns:     launcher.Namespaces{UTS: true},
 			wantNS: defaultPlusPIDUTS,
 		},
+		{
+			name:             "cgroupsv2",
+			ns:               launcher.Namespaces{},
+			cgroupsv2Support: true,
+			wantNS:           defaultPlusPIDCgroups,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			l := &Launcher{
+				cgroupsV2:      tt.cgroupsv2Support,
+				cgroupsSupport: tt.cgroupsv2Support,
+			}
 			ms := minimalSpec()
 			spec := &ms
-			err := addNamespaces(spec, tt.ns)
+			err := l.addNamespaces(spec, tt.ns)
 			if err != nil {
 				t.Errorf("addNamespaces() returned an unexpected error: %v", err)
 			}

@@ -12,7 +12,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/opencontainers/runc/libcontainer/cgroups"
 	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
@@ -149,7 +148,7 @@ func CanUseCgroups(systemd bool, warn bool) bool {
 
 	rootlessOK := true
 
-	if !cgroups.IsCgroup2UnifiedMode() {
+	if !lccgroups.IsCgroup2UnifiedMode() {
 		rootlessOK = false
 		if warn {
 			sylog.Warningf("Rootless cgroups require the system to be configured for cgroups v2 in unified mode.")

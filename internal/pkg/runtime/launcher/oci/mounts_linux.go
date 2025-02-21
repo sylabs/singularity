@@ -392,6 +392,20 @@ func (l *Launcher) addSysMount(mounts *[]specs.Mount) error {
 			})
 	}
 
+	if l.cgroupsV2 {
+		cgroupRORW := "ro"
+		if l.cfg.KeepPrivs {
+			cgroupRORW = "rw"
+		}
+		*mounts = append(*mounts,
+			specs.Mount{
+				Source:      "cgroup",
+				Destination: "/sys/fs/cgroup",
+				Type:        "cgroup",
+				Options:     []string{"nosuid", "noexec", "nodev", cgroupRORW},
+			})
+	}
+
 	return nil
 }
 
