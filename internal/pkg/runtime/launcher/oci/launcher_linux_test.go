@@ -10,6 +10,8 @@ import (
 	"reflect"
 	"testing"
 
+	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
+	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/fuse"
@@ -31,6 +33,9 @@ func TestNewLauncher(t *testing.T) {
 		t.Fatalf("while getting current user: %s", err)
 	}
 
+	cgroupsV2 := lccgroups.IsCgroup2UnifiedMode()
+	cgroupsSupport := cgroups.CanUseCgroups(sc.SystemdCgroups, false)
+
 	tests := []struct {
 		name    string
 		opts    []launcher.Option
@@ -47,6 +52,8 @@ func TestNewLauncher(t *testing.T) {
 				homeDest:                u.HomeDir,
 				imageMountsByImagePath:  make(map[string]*fuse.ImageMount),
 				imageMountsByMountpoint: make(map[string]*fuse.ImageMount),
+				cgroupsV2:               cgroupsV2,
+				cgroupsSupport:          cgroupsSupport,
 			},
 		},
 		{
@@ -62,6 +69,8 @@ func TestNewLauncher(t *testing.T) {
 				homeDest:                "/home/dest",
 				imageMountsByImagePath:  make(map[string]*fuse.ImageMount),
 				imageMountsByMountpoint: make(map[string]*fuse.ImageMount),
+				cgroupsV2:               cgroupsV2,
+				cgroupsSupport:          cgroupsSupport,
 			},
 			wantErr: false,
 		},
@@ -78,6 +87,8 @@ func TestNewLauncher(t *testing.T) {
 				homeDest:                "/home/dest",
 				imageMountsByImagePath:  make(map[string]*fuse.ImageMount),
 				imageMountsByMountpoint: make(map[string]*fuse.ImageMount),
+				cgroupsV2:               cgroupsV2,
+				cgroupsSupport:          cgroupsSupport,
 			},
 			wantErr: false,
 		},
@@ -94,6 +105,8 @@ func TestNewLauncher(t *testing.T) {
 				homeDest:                u.HomeDir,
 				imageMountsByImagePath:  make(map[string]*fuse.ImageMount),
 				imageMountsByMountpoint: make(map[string]*fuse.ImageMount),
+				cgroupsV2:               cgroupsV2,
+				cgroupsSupport:          cgroupsSupport,
 			},
 			wantErr: false,
 		},
@@ -111,6 +124,8 @@ func TestNewLauncher(t *testing.T) {
 				homeDest:                u.HomeDir,
 				imageMountsByImagePath:  make(map[string]*fuse.ImageMount),
 				imageMountsByMountpoint: make(map[string]*fuse.ImageMount),
+				cgroupsV2:               cgroupsV2,
+				cgroupsSupport:          cgroupsSupport,
 			},
 			wantErr: false,
 		},

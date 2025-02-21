@@ -23,6 +23,7 @@ import (
 
 	"github.com/ccoveille/go-safecast"
 	"github.com/google/uuid"
+	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/samber/lo"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
@@ -87,6 +88,10 @@ type Launcher struct {
 	// defaultTmpMountIndices contains the indices of mounts added by
 	// addTmpMounts() within the spec.Mounts slice.
 	defaultTmpMountIndices []int
+	// cgroupsSupport indicates if cgroups management is supported
+	cgroupsSupport bool
+	// cgroupsV2 indicates if the system is running cgroups v2
+	cgroupsV2 bool
 }
 
 // NewLauncher returns a oci.Launcher with an initial configuration set by opts.
@@ -123,6 +128,9 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 		lo.WritableTmpfs = false
 	}
 
+	cgroupsv2 := lccgroups.IsCgroup2UnifiedMode()
+	cgroupsSupport := cgroups.CanUseCgroups(c.SystemdCgroups, true)
+
 	return &Launcher{
 		cfg:                     lo,
 		singularityConf:         c,
@@ -131,6 +139,8 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 		homeDest:                homeDest,
 		imageMountsByImagePath:  make(map[string]*fuse.ImageMount),
 		imageMountsByMountpoint: make(map[string]*fuse.ImageMount),
+		cgroupsV2:               cgroupsv2,
+		cgroupsSupport:          cgroupsSupport,
 	}, nil
 }
 
@@ -263,7 +273,7 @@ func (l *Launcher) createSpec() (spec *specs.Spec, err error) {
 	// inferred by default in OCI mode. See NewLauncher().
 	spec.Root.Readonly = !l.cfg.WritableTmpfs && !l.cfg.Writable
 
-	err = addNamespaces(spec, l.cfg.Namespaces)
+	err = l.addNamespaces(spec, l.cfg.Namespaces)
 	if err != nil {
 		return nil, err
 	}
@@ -827,8 +837,7 @@ func (l *Launcher) RunWrapped(ctx context.Context, containerID, bundlePath, pidF
 		// If singularity.conf is set to use systemd for cgroup management, but
 		// we cannot due faulty configuration / environment (e.g. no Dbus),
 		// don't ask runc/crun to use systemd.
-		if systemdCgroups && !cgroups.CanUseCgroups(true, false) {
-			sylog.Infof("System configuration does not support cgroup management - starting container in current cgroup")
+		if systemdCgroups && !l.cgroupsSupport {
 			systemdCgroups = false
 		}
 
@@ -846,15 +855,25 @@ func (l *Launcher) RunWrapped(ctx context.Context, containerID, bundlePath, pidF
 
 // getCgroup will return a cgroup path and resources for the runtime to create.
 func (l *Launcher) getCgroup() (path string, resources *specs.LinuxResources, err error) {
-	if l.cfg.CGroupsJSON == "" {
+	// We can't create a cgroup, but we don't have any resource limits to apply.
+	// Run in the current cgroup.
+	if !l.cgroupsSupport && l.cfg.CGroupsJSON == "" {
+		sylog.Infof("System configuration does not support cgroup management - starting container in current cgroup")
 		return "", nil, nil
 	}
-
-	if !cgroups.CanUseCgroups(l.singularityConf.SystemdCgroups, true) {
+	// We can't create a cgroup, and we have been asked to apply resource limits.
+	// Fatal error - requested limits can't be applied
+	if !l.cgroupsSupport && l.cfg.CGroupsJSON != "" {
 		return "", nil, fmt.Errorf("system configuration does not support cgroup management")
 	}
 
 	path = cgroups.DefaultPathForPid(l.singularityConf.SystemdCgroups, -1)
+	resources = &specs.LinuxResources{}
+
+	if l.cfg.CGroupsJSON == "" {
+		return path, resources, nil
+	}
+
 	resources, err = cgroups.UnmarshalJSONResources(l.cfg.CGroupsJSON)
 	if err != nil {
 		return "", nil, err

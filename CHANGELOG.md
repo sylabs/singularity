@@ -6,6 +6,12 @@
 
 - Skip attempting to bind inaccessible mount points when handling the
   `mount hostfs = yes` configuration option.
+- In OCI mode, on a cgroups v2 system with functioning systemd cgroup
+  management, a cgroup namespace is created for the container, and
+  `/sys/fs/cgroup` is mounted. The cgroups mount is read-only by default, or
+  read-write if the `--keep-privs` flag is used.
+- In OCI mode, a cgroup is now created for the container when possible, even
+  where resource limits have not been requested.
 
 ### Bug Fixes
 

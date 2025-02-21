@@ -769,7 +769,13 @@ func (c *ctx) actionFlagV2(t *testing.T, tt resourceFlagTest, profile e2e.Profil
 	shellCmd := fmt.Sprintf("cat /sys/fs/cgroup$(cat /proc/self/cgroup | grep '^0::' | cut -d ':' -f 3)/%s", tt.resourceV2)
 
 	args := tt.args
-	args = append(args, "-B", "/sys/fs/cgroup", imageRef, "/bin/sh", "-c", shellCmd)
+	// OCI-mode with v2 cgroups will have a namespaced cgroup mount in the
+	// container. In other flows we need to bind from the host to see the
+	// cgroups tree.
+	if !profile.OCI() {
+		args = append(args, "-B", "/sys/fs/cgroup")
+	}
+	args = append(args, imageRef, "/bin/sh", "-c", shellCmd)
 
 	c.env.RunSingularity(
 		t,

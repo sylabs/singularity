@@ -68,7 +68,7 @@ func minimalSpec() runtimespec.Spec {
 
 // addNamespaces adds requested namespace, if appropriate, to an existing spec.
 // It is assumed that spec contains at least the defaultNamespaces.
-func addNamespaces(spec *runtimespec.Spec, ns launcher.Namespaces) error {
+func (l *Launcher) addNamespaces(spec *runtimespec.Spec, ns launcher.Namespaces) error {
 	if ns.IPC {
 		sylog.Infof("--oci runtime always uses an IPC namespace, ipc flag is redundant.")
 	}
@@ -113,6 +113,13 @@ func addNamespaces(spec *runtimespec.Spec, ns launcher.Namespaces) error {
 		spec.Linux.Namespaces = append(
 			spec.Linux.Namespaces,
 			runtimespec.LinuxNamespace{Type: runtimespec.UTSNamespace},
+		)
+	}
+
+	if l.cgroupsV2 && l.cgroupsSupport {
+		spec.Linux.Namespaces = append(
+			spec.Linux.Namespaces,
+			runtimespec.LinuxNamespace{Type: runtimespec.CgroupNamespace},
 		)
 	}
 
