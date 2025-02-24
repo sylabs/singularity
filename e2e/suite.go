@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2022 Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025 Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -40,6 +40,7 @@ import (
 	"github.com/sylabs/singularity/v4/e2e/instance"
 	"github.com/sylabs/singularity/v4/e2e/key"
 	"github.com/sylabs/singularity/v4/e2e/keyserver"
+	"github.com/sylabs/singularity/v4/e2e/nested"
 	"github.com/sylabs/singularity/v4/e2e/oci"
 	"github.com/sylabs/singularity/v4/e2e/overlay"
 	"github.com/sylabs/singularity/v4/e2e/plugin"
@@ -85,6 +86,7 @@ var e2eGroups = map[string]testhelper.Group{
 	"INSTANCE":       instance.E2ETests,
 	"KEY":            key.E2ETests,
 	"KEYSERVER":      keyserver.E2ETests,
+	"NESTED":         nested.E2ETests,
 	"OCI":            oci.E2ETests,
 	"OVERLAY":        overlay.E2ETests,
 	"PLUGIN":         plugin.E2ETests,
