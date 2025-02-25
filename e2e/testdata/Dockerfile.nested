@@ -7,7 +7,7 @@ ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install system packages
-RUN apt-get update && apt-get install -y autoconf \
+RUN apt-get -q update && apt-get -q install -y autoconf \
     automake \
     crun \
     cryptsetup \
@@ -29,11 +29,12 @@ RUN apt-get update && apt-get install -y autoconf \
     wget
 
 # Install GO
-RUN wget -O /tmp/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz https://go.dev/dl/${GOVERSION}.${GOOS}-${GOARCH}.tar.gz && tar -C /usr/local -xzf /tmp/go${GOLANG_VERSION}.linux-${ARCH}.tar.gz
+RUN wget -O /tmp/go.tar.gz https://go.dev/dl/${GOVERSION}.${GOOS}-${GOARCH}.tar.gz && tar -C /usr/local -xzf /tmp/go.tar.gz
 
 # Install SingularityCE
-ADD . singularity
-RUN cd singularity && git clean -fdx && ./mconfig && make -C builddir && make -C builddir install
+ADD . singularity-src
+RUN cd singularity-src && git clean -fdx || true
+RUN cd singularity-src && ./mconfig && make -C builddir && make -C builddir install
 
 ENTRYPOINT ["/usr/local/bin/singularity"]
 CMD ["version"]

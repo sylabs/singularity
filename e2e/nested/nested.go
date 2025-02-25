@@ -7,11 +7,13 @@ package nested
 
 import (
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"testing"
 
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 )
 
@@ -40,7 +42,7 @@ func (c ctx) docker(t *testing.T) {
 	dockerRunPrivileged(t, "exec", dockerRef, tmpHome, "exec", c.env.OrasTestImage, "/bin/true")
 	dockerRunPrivileged(t, "execUserNS", dockerRef, tmpHome, "exec", "-u", c.env.OrasTestImage, "/bin/true")
 	dockerRunPrivileged(t, "execOCI", dockerRef, tmpHome, "exec", "--oci", c.env.TestRegistryOCISIF, "/bin/true")
-	dockerRunPrivileged(t, "buildSIF", dockerRef, tmpHome, "build", "test.sif", "singularity/examples/library/Singularity")
+	dockerRunPrivileged(t, "buildSIF", dockerRef, tmpHome, "build", "test.sif", "singularity-src/examples/library/Singularity")
 }
 
 func dockerBuild(t *testing.T, dockerFile, dockerRef, contextPath, homeDir string) {
@@ -106,7 +108,7 @@ func (c ctx) podman(t *testing.T) {
 	podmanRun(t, "exec", dockerRef, tmpHome, "exec", c.env.OrasTestImage, "/bin/true")
 	podmanRun(t, "execUserNS", dockerRef, tmpHome, "exec", "-u", c.env.OrasTestImage, "/bin/true")
 	podmanRun(t, "execOCI", dockerRef, tmpHome, "exec", "--oci", c.env.TestRegistryOCISIF, "/bin/true")
-	podmanRun(t, "buildSIF", dockerRef, tmpHome, "build", "test.sif", "singularity/examples/library/Singularity")
+	podmanRun(t, "buildSIF", dockerRef, tmpHome, "build", "test.sif", "singularity-src/examples/library/Singularity")
 }
 
 func podmanBuild(t *testing.T, dockerFile, dockerRef, contextPath, homeDir string) {
@@ -151,6 +153,108 @@ func podmanRun(t *testing.T, name, dockerRef, homeDir string, args ...string) { 
 	})
 }
 
+func (c ctx) singularity(t *testing.T) {
+	e2e.EnsureORASImage(t, c.env)
+	e2e.EnsureRegistryOCISIF(t, c.env)
+
+	nestedDef := "e2e/testdata/nested.def"
+	nestedSIF := filepath.Join(t.TempDir(), "nested.sif")
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("build"),
+		e2e.WithDir(buildcfg.SOURCEDIR),
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("build"),
+		e2e.WithArgs(
+			"--build-arg", "GOVERSION="+runtime.Version(),
+			"--build-arg", "GOOS="+runtime.GOOS,
+			"--build-arg", "GOARCH="+runtime.GOARCH,
+			nestedSIF, nestedDef,
+		),
+		e2e.ExpectExit(0),
+	)
+
+	tmpBuildSIF := filepath.Join(t.TempDir(), "build.sif")
+
+	tests := []struct {
+		name         string
+		outerProfile e2e.Profile
+		outerArgs    []string
+		innerCommand string
+		innerArgs    []string
+	}{
+		// Root host -> root outer -> root inner
+		{
+			name:         "root/exec",
+			outerProfile: e2e.RootProfile,
+			outerArgs:    []string{},
+			innerCommand: "exec",
+			innerArgs:    []string{c.env.OrasTestImage, "/bin/true"},
+		},
+		{
+			name:         "root/build",
+			outerProfile: e2e.FakerootProfile,
+			outerArgs:    []string{},
+			innerCommand: "build",
+			innerArgs:    []string{"--force", tmpBuildSIF, "examples/library/Singularity"},
+		},
+		// User host -> fakeroot outer -> fakeroot inner
+		{
+			name:         "fakeroot/exec",
+			outerProfile: e2e.FakerootProfile,
+			outerArgs:    []string{},
+			innerCommand: "exec",
+			innerArgs:    []string{c.env.OrasTestImage, "/bin/true"},
+		},
+		{
+			name:         "fakeroot/build",
+			outerProfile: e2e.FakerootProfile,
+			outerArgs:    []string{},
+			innerCommand: "build",
+			innerArgs:    []string{"--force", tmpBuildSIF, "examples/library/Singularity"},
+		},
+		// User outside -> user (userns) outer -> user (userns) inner
+		{
+			name:         "userns/exec",
+			outerProfile: e2e.UserNamespaceProfile,
+			outerArgs:    []string{},
+			innerCommand: "exec",
+			innerArgs:    []string{"-u", c.env.OrasTestImage, "/bin/true"},
+		},
+		// OCI-Mode: Root host -> root outer -> root inner
+		{
+			name:         "rootOCI/exec",
+			outerProfile: e2e.OCIRootProfile,
+			outerArgs:    []string{"--keep-privs"},
+			innerCommand: "exec",
+			innerArgs:    []string{c.env.OrasTestImage, "/bin/true"},
+		},
+		// OCI-Mode: User host -> fakeroot outer -> fakeroot inner
+		{
+			name:         "fakerootOCI/exec",
+			outerProfile: e2e.OCIFakerootProfile,
+			outerArgs:    []string{"--keep-privs"},
+			innerCommand: "exec",
+			innerArgs:    []string{c.env.OrasTestImage, "/bin/true"},
+		},
+	}
+	for _, tt := range tests {
+		cmdArgs := tt.outerArgs
+		cmdArgs = append(cmdArgs, nestedSIF)
+		cmdArgs = append(cmdArgs, tt.innerCommand)
+		cmdArgs = append(cmdArgs, tt.innerArgs...)
+		c.env.RunSingularity(
+			t,
+			e2e.AsSubtest(tt.name),
+			e2e.WithDir(buildcfg.SOURCEDIR),
+			e2e.WithProfile(e2e.RootProfile),
+			e2e.WithCommand("run"),
+			e2e.WithArgs(cmdArgs...),
+			e2e.ExpectExit(0),
+		)
+	}
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := ctx{
@@ -158,7 +262,8 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	}
 
 	return testhelper.Tests{
-		"Docker": c.docker,
-		"Porman": c.podman,
+		"Docker":      c.docker,
+		"Podman":      c.podman,
+		"Singularity": c.singularity,
 	}
 }
