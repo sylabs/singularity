@@ -36,7 +36,7 @@ require (
 	github.com/moby/term v0.5.2
 	github.com/opencontainers/image-spec v1.1.0
 	github.com/opencontainers/runc v1.2.5
-	github.com/opencontainers/runtime-spec v1.2.0
+	github.com/opencontainers/runtime-spec v1.2.1
 	github.com/opencontainers/runtime-tools v0.9.1-0.20230914150019-408c51e934dc
 	github.com/opencontainers/selinux v1.11.1
 	github.com/opencontainers/umoci v0.4.7
