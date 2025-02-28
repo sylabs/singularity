@@ -1,6 +1,7 @@
 module github.com/sylabs/singularity/v4
 
 go 1.22.6
+toolchain go1.23.6
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
@@ -57,9 +58,9 @@ require (
 	github.com/sylabs/scs-library-client v1.4.11
 	github.com/sylabs/sif/v2 v2.20.2
 	github.com/sylabs/squashfs v1.0.4
-	github.com/vbauerster/mpb/v8 v8.9.2
+	github.com/vbauerster/mpb/v8 v8.9.3
 	go.etcd.io/bbolt v1.3.11
-	golang.org/x/crypto v0.33.0
+	golang.org/x/crypto v0.35.0
 	golang.org/x/sync v0.11.0
 	golang.org/x/sys v0.30.0
 	golang.org/x/term v0.29.0
@@ -69,7 +70,7 @@ require (
 	gotest.tools v2.2.0+incompatible
 	gotest.tools/v3 v3.5.2
 	mvdan.cc/sh/v3 v3.10.0
-	tags.cncf.io/container-device-interface v0.8.0
+	tags.cncf.io/container-device-interface v0.8.1
 	tags.cncf.io/container-device-interface/specs-go v0.8.0
 )
 
