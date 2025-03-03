@@ -1,5 +1,11 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+## Requirements / Packaging
+
+- Now compiles successfully with `-std=c23`.
+
 ## 4.2.2 \[2024-12-20\]
 
 ### Bug Fixes
