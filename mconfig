@@ -58,7 +58,6 @@ if test -z "${package_version}" ; then
 fi
 
 with_network=1
-with_conmon=1
 with_squashfuse=1
 with_suid=1
 with_seccomp_check=1
@@ -124,7 +123,6 @@ usage_args () {
 	echo "     --without-seccomp  do not compile/install seccomp support (linux only)"
   echo
   echo "  Third-party dependencies:"
-  echo "     --without-conmon      do not build conmon, use distro provided version"
   echo "     --without-squashfuse  do not build squashfuse, use distro provided version"
 	echo
 	echo "  Path modification options:"
@@ -385,8 +383,6 @@ while [ $# -ne 0 ]; do
    with_network=0; shift;;
   --without-seccomp)
    with_seccomp_check=0; shift;;
-  --without-conmon)
-   with_conmon=0; shift;;
   --without-squashfuse)
    with_squashfuse=0; shift;;
   --reproducible)
@@ -851,11 +847,6 @@ if [ "$with_network" = 1 ]; then
     cat $makeit_fragsdir/build_network.mk >> $makeit_makefile
 fi
 
-if [ "$with_conmon" = 1 ]; then
-    drawline $makeit_fragsdir/build_conmon.mk
-    cat $makeit_fragsdir/build_conmon.mk >> $makeit_makefile
-fi
-
 if [ "$with_squashfuse" = 1 ]; then
     drawline $makeit_fragsdir/build_squashfuse.mk
     cat $makeit_fragsdir/build_squashfuse.mk >> $makeit_makefile
@@ -946,11 +937,6 @@ if [ "$libsubid" = 0 ]; then
 	echo "    - libsubid support: no"
 else
 	echo "    - libsubid support: yes"
-fi
-if [ "$with_conmon" = 0 ]; then
-	echo "    - Build conmon: no"
-else
-	echo "    - Build conmon: yes"
 fi
 if [ "$with_squashfuse" = 0 ]; then
 	echo "    - Build squashfuse: no"

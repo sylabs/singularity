@@ -1,6 +1,3 @@
-[submodule "third_party/conmon"]
-	path = third_party/conmon
-	url = https://github.com/containers/conmon
 [submodule "third_party/squashfuse"]
 	path = third_party/squashfuse
 	url = https://github.com/vasi/squashfuse

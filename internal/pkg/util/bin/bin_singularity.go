@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -96,14 +96,6 @@ func findFromConfigOnly(name string) (path string, err error) {
 
 	// Use lookPath with the absolute path to confirm it is accessible & executable
 	return exec.LookPath(path)
-}
-
-// findConmon returns either the bundled conmon (if built), or looks for conmon on PATH.
-func findConmon(name string) (path string, err error) {
-	if buildcfg.CONMON_LIBEXEC == 1 {
-		return filepath.Join(buildcfg.LIBEXECDIR, "singularity", "bin", name), nil
-	}
-	return findOnPath(name)
 }
 
 // findSquashfuse returns either the bundled squashfuse_ll (if built), or looks

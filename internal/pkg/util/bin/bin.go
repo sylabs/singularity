@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -29,10 +29,9 @@ func FindBin(name string) (path string, err error) {
 	// distro provided OCI runtime
 	case "crun", "runc":
 		return findOnPath(name)
-	// our, or distro provided conmon
+	// distro provided conmon
 	case "conmon":
-		// Behavior depends on a buildcfg - whether to use bundled or external conmon
-		return findConmon(name)
+		return findOnPath(name)
 	// cryptsetup & nvidia-container-cli paths must be explicitly specified
 	// They are called as root from the RPC server in a setuid install, so this
 	// limits to sysadmin controlled paths.

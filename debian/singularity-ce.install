@@ -1,6 +1,5 @@
 usr/bin/singularity
 usr/bin/run-singularity
-usr/lib/*/singularity/bin/conmon
 usr/lib/*/singularity/bin/singularity-buildkitd
 usr/lib/*/singularity/bin/squashfuse_ll
 usr/lib/*/singularity/bin/starter

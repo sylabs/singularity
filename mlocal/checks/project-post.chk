@@ -51,7 +51,6 @@ config_add_def NVIDIALIBS_FILE SINGULARITY_CONFDIR \"/nvliblist.conf\"
 config_add_def SESSIONDIR LOCALSTATEDIR \"/singularity/mnt/session\"
 config_add_def SINGULARITY_SUID_INSTALL $with_suid
 config_add_def PLUGIN_ROOTDIR LIBEXECDIR \"/singularity/plugin\"
-config_add_def CONMON_LIBEXEC $with_conmon 
 config_add_def SQUASHFUSE_LIBEXEC $with_squashfuse 
 
 # engine configuration constants
@@ -332,48 +331,6 @@ if [ "$with_seccomp_check" = "1" ]; then
 else
    appsec=0
    tgtstatic=0
-fi
-
-
-########################
-# conmon deps
-########################
-if [ "$with_conmon" = "1" ]; then
-
-   if [ "$appsec" = "0" ]; then
-      echo
-      echo "Cannot build conmon for OCI support without libseccomp headers."
-      echo "Use --without-conmon to disable build and use conmon on PATH if present."
-      echo
-      exit 2
-   fi
-
-   printf " checking: conmon source... "
-   if [ ! -f "$sourcedir/third_party/conmon/Makefile" ]; then
-      echo "no"
-      echo
-      echo "conmon source not found"
-      echo
-      echo "Unless you are building --without-conmon you must 'git clone --recurse-submodules'"
-      echo "or 'git submodule update --init'."
-      echo
-      exit 2
-   fi
-   echo "yes"
-
-   printf " checking: conmon glib-2.0 headers... "
-   glib2_iflags=`pkg-config --cflags-only-I glib-2.0 2>/dev/null || true`
-   glib2_lflags=`pkg-config --libs glib-2.0 2>/dev/null || true`
-   if ! printf "#include <glib.h>\nint main() { }" | \
-      $tgtcc $user_cflags $ldflags $glib2_iflags -x c -o /dev/null - $glib2_lflags >/dev/null 2>&1; then  
-      echo "no"
-      echo
-      echo "glib-2.0 headers are required to build conmon."
-      echo
-      exit 2
-   else
-   echo "yes"
-   fi
 fi
 
 ########################
