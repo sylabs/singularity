@@ -1,5 +1,5 @@
 /*
-  Copyright (c) 2018-2023, Sylabs, Inc. All rights reserved.
+  Copyright (c) 2018-2025, Sylabs, Inc. All rights reserved.
 
   This software is licensed under a 3-clause BSD license.  Please
   consult LICENSE.md file distributed with the sources of this project regarding
@@ -10,6 +10,7 @@
 #define _SINGULARITY_STARTER_H
 
 #include <limits.h>
+#include <stdbool.h>
 #include <sys/user.h>
 
 #define fatalf(b...)     singularity_message(ERROR, b); \
@@ -69,11 +70,6 @@ enum goexec {
 #ifndef NS_CLONE_NEWCGROUP
 #define CLONE_NEWCGROUP     0x02000000
 #endif
-
-typedef enum {
-    false,
-    true
-} bool;
 
 /* container capabilities */
 struct capabilities {
