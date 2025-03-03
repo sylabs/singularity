@@ -71,6 +71,7 @@
   binary](https://github.com/containers/conmon/releases), if you need to use the
   `singularity oci` commands. Note that `conmon` is not required for `--oci`
   mode.
+- Now compiles successfully with `-std=c23`.
 
 ### Removed Features
 
