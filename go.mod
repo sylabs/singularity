@@ -1,6 +1,7 @@
 module github.com/sylabs/singularity/v4
 
 go 1.22.6
+toolchain go1.23.6
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
@@ -11,7 +12,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buger/goterm v1.0.4
 	github.com/buger/jsonparser v1.1.1
-	github.com/containerd/containerd/v2 v2.0.2
+	github.com/containerd/containerd/v2 v2.0.3
 	github.com/containerd/continuity v0.4.5
 	github.com/containerd/go-runc v1.1.0
 	github.com/containerd/platforms v1.0.0-rc.1
@@ -34,7 +35,7 @@ require (
 	github.com/moby/sys/sequential v0.6.0
 	github.com/moby/sys/userns v0.1.0
 	github.com/moby/term v0.5.2
-	github.com/opencontainers/image-spec v1.1.0
+	github.com/opencontainers/image-spec v1.1.1
 	github.com/opencontainers/runc v1.2.5
 	github.com/opencontainers/runtime-spec v1.2.1
 	github.com/opencontainers/runtime-tools v0.9.1-0.20230914150019-408c51e934dc
@@ -57,9 +58,9 @@ require (
 	github.com/sylabs/scs-library-client v1.4.11
 	github.com/sylabs/sif/v2 v2.20.2
 	github.com/sylabs/squashfs v1.0.4
-	github.com/vbauerster/mpb/v8 v8.9.2
+	github.com/vbauerster/mpb/v8 v8.9.3
 	go.etcd.io/bbolt v1.3.11
-	golang.org/x/crypto v0.33.0
+	golang.org/x/crypto v0.35.0
 	golang.org/x/sync v0.11.0
 	golang.org/x/sys v0.30.0
 	golang.org/x/term v0.29.0
@@ -69,7 +70,7 @@ require (
 	gotest.tools v2.2.0+incompatible
 	gotest.tools/v3 v3.5.2
 	mvdan.cc/sh/v3 v3.10.0
-	tags.cncf.io/container-device-interface v0.8.0
+	tags.cncf.io/container-device-interface v0.8.1
 	tags.cncf.io/container-device-interface/specs-go v0.8.0
 )
 
@@ -96,7 +97,7 @@ require (
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/fifo v1.1.0 // indirect
-	github.com/containerd/go-cni v1.1.11 // indirect
+	github.com/containerd/go-cni v1.1.12 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/nydus-snapshotter v0.15.0 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.16.3 // indirect
@@ -161,6 +162,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/package-url/packageurl-go v0.1.1-0.20220428063043-89078438f170 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
+	github.com/petermattis/goid v0.0.0-20240813172612-4fcff4a6cae7 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
@@ -172,6 +174,7 @@ require (
 	github.com/rootless-containers/proto v0.1.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/safchain/ethtool v0.4.0 // indirect
+	github.com/sasha-s/go-deadlock v0.3.5 // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.9.0 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
