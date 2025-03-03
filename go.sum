@@ -869,8 +869,8 @@ github.com/subosito/gotenv v1.6.0 h1:9NlTDc1FTs4qu0DDq7AEtTPNw6SVm7uBMsUCUjABIf8
 github.com/subosito/gotenv v1.6.0/go.mod h1:Dk4QP5c2W3ibzajGcXpNraDfq2IrhjMIvMSWPKKo0FU=
 github.com/sylabs/json-resp v0.9.4 h1:gFvnPdfrBUQgTAFKcxW8VOTfFdj/eOwBrwSG76BwiCw=
 github.com/sylabs/json-resp v0.9.4/go.mod h1:Q9X4wRlZNPv3x76KaL8vTCBO4aC/DP2gh13xdtEqd1g=
-github.com/sylabs/oci-tools v0.16.2-0.20250123151945-57acf0cf2534 h1:tH6/mC+3+h+7zQfZcslbQ1prJZk9PGDcoZaFFRPLI7Q=
-github.com/sylabs/oci-tools v0.16.2-0.20250123151945-57acf0cf2534/go.mod h1:eyTvbuLzqt6i7g5qVZFUI9AfnwYtzQ2RDmiaxVzrhdo=
+github.com/sylabs/oci-tools v0.17.0 h1:MrFDJvjNIN2jjsZ5Sjofqe3CUa/v6SM4+T9zU2Uwlcg=
+github.com/sylabs/oci-tools v0.17.0/go.mod h1:ujQ4EcNb2jjsncDF38eAD+GhPN1eQNEr5o40B5WQjwM=
 github.com/sylabs/scs-build-client v0.9.15 h1:RHXBFVTiAIQg+uQi82NGZe/StbFVKgGpm/x4SAEODnk=
 github.com/sylabs/scs-build-client v0.9.15/go.mod h1:L9LlFtMGJwX3EJpC+65Jw6yYLTJLEKfnjAA1UwesjlY=
 github.com/sylabs/scs-key-client v0.7.7 h1:w8uYXeNOoDLRuAwc4hp6szGxIefrTuifChxKTCESHSk=
