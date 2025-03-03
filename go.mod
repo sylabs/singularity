@@ -35,7 +35,7 @@ require (
 	github.com/moby/sys/sequential v0.6.0
 	github.com/moby/sys/userns v0.1.0
 	github.com/moby/term v0.5.2
-	github.com/opencontainers/image-spec v1.1.0
+	github.com/opencontainers/image-spec v1.1.1
 	github.com/opencontainers/runc v1.2.5
 	github.com/opencontainers/runtime-spec v1.2.1
 	github.com/opencontainers/runtime-tools v0.9.1-0.20230914150019-408c51e934dc
