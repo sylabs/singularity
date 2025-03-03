@@ -48,9 +48,6 @@ BuildRequires: /usr/bin/pkg-config
 # Paths to runtime dependencies detected by mconfig, so must be present at build time.
 BuildRequires: cryptsetup
 BuildRequires: squashfs-tools
-# Required for building bundled conmon
-BuildRequires: libseccomp-devel
-BuildRequires: glib2-devel
 # Required for building bundled squashfuse
 BuildRequires: autoconf
 BuildRequires: automake
@@ -60,6 +57,7 @@ BuildRequires: zlib-devel
 # Required for libsubid support
 BuildRequires: shadow-utils-subid-devel
 
+Requires: conmon
 Requires: crun
 Requires: shadow-utils
 Requires: shadow-utils-subid
@@ -122,7 +120,6 @@ make DESTDIR=$RPM_BUILD_ROOT install -C builddir V=
 %{_bindir}/run-singularity
 %dir %{_libexecdir}/singularity
 %dir %{_libexecdir}/singularity/bin
-%{_libexecdir}/singularity/bin/conmon
 %{_libexecdir}/singularity/bin/singularity-buildkitd
 %{_libexecdir}/singularity/bin/squashfuse_ll
 %{_libexecdir}/singularity/bin/starter

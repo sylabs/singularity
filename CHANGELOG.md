@@ -66,6 +66,11 @@
   which have been untested / unsupported for some time.
 - Make binary builds more reproducible by deriving the GNU build ID
   from the Go build ID instead of using a randomly generated one.
+- Conmon sources are no longer bundled and built with SingularityCE. Install the
+  `conmon` package from your distribution, or [upstream
+  binary](https://github.com/containers/conmon/releases), if you need to use the
+  `singularity oci` commands. Note that `conmon` is not required for `--oci`
+  mode.
 
 ### Removed Features
 
