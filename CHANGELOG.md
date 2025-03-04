@@ -1,6 +1,6 @@
 # SingularityCE Changelog
 
-## Changes Since Last Release
+## 4.3.0-rc.1 Release Candidate \[2025-03-04\]
 
 ### Behaviour Changes
 
