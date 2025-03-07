@@ -335,7 +335,7 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 	cfg.Binary = r
 	sylog.Debugf("%s: using %q runtime for buildkitd daemon.", DaemonName, filepath.Base(r))
 
-	opt, err := NewWorkerOpt(ctx, common.config.Root, snFactory, cfg.Rootless, processMode, cfg.Labels, idmapping, nc, dns, cfg.Binary, cfg.ApparmorProfile, cfg.SELinux, parallelismSem, "", cfg.DefaultCgroupParent)
+	opt, err := NewWorkerOpt(ctx, common.config.Root, snFactory, cfg.Rootless, processMode, cfg.Labels, idmapping, nc, dns, cfg.Binary, cfg.ApparmorProfile, cfg.SELinux, parallelismSem, "", cfg.DefaultCgroupParent, nil)
 	if err != nil {
 		return nil, err
 	}
