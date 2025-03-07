@@ -82,7 +82,9 @@ func NewAuthProvider(authConf *authn.AuthConfig, reqAuthFile string) session.Att
 		cf.AuthConfigs[dockerHubConfigfileKey] = cf.AuthConfigs[dockerHubConfigfileCompatKey]
 	}
 
-	return authprovider.NewDockerAuthProvider(cf, nil)
+	return authprovider.NewDockerAuthProvider(authprovider.DockerAuthProviderConfig{
+		ConfigFile: cf,
+	})
 }
 
 type authProvider struct {
