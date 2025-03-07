@@ -55,6 +55,7 @@ import (
 	gatewayapi "github.com/moby/buildkit/frontend/gateway/pb"
 	"github.com/moby/buildkit/identity"
 	containerdsnapshot "github.com/moby/buildkit/snapshot/containerd"
+	"github.com/moby/buildkit/solver/llbsolver/cdidevices"
 	"github.com/moby/buildkit/solver/pb"
 	"github.com/moby/buildkit/util/leaseutil"
 	bknet "github.com/moby/buildkit/util/network"
@@ -79,7 +80,7 @@ type BkSnapshotterFactory struct {
 }
 
 // NewWorkerOpt creates a WorkerOpt.
-func NewWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFactory, rootless bool, processMode bkoci.ProcessMode, labels map[string]string, idmap *idtools.IdentityMapping, nopt netproviders.Opt, dns *bkoci.DNSConfig, binary, apparmorProfile string, selinux bool, parallelismSem *semaphore.Weighted, traceSocket, defaultCgroupParent string) (base.WorkerOpt, error) {
+func NewWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFactory, rootless bool, processMode bkoci.ProcessMode, labels map[string]string, idmap *idtools.IdentityMapping, nopt netproviders.Opt, dns *bkoci.DNSConfig, binary, apparmorProfile string, selinux bool, parallelismSem *semaphore.Weighted, traceSocket, defaultCgroupParent string, cdiManager *cdidevices.Manager) (base.WorkerOpt, error) {
 	var opt base.WorkerOpt
 	name := "runc-" + snFactory.Name
 	root = filepath.Join(root, name)
@@ -208,6 +209,7 @@ func NewWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFacto
 		ParallelismSem:   parallelismSem,
 		MountPoolRoot:    filepath.Join(root, "cachemounts"),
 		ResourceMonitor:  rm,
+		CDIManager:       cdiManager,
 	}
 	return opt, nil
 }
@@ -231,6 +233,7 @@ type WorkerOpt struct {
 	SELinux         bool
 	TracingSocket   string
 	ResourceMonitor *resources.Monitor
+	CDIManager      *cdidevices.Manager
 }
 
 var defaultCommandCandidates = []string{"buildkit-runc", "runc"}
@@ -252,6 +255,7 @@ type buildExecutor struct {
 	selinux          bool
 	tracingSocket    string
 	resmon           *resources.Monitor
+	cdiManager       *cdidevices.Manager
 }
 
 func NewBuildExecutor(opt WorkerOpt, networkProviders map[pb.NetMode]bknet.Provider) (executor.Executor, error) {
@@ -318,6 +322,7 @@ func NewBuildExecutor(opt WorkerOpt, networkProviders map[pb.NetMode]bknet.Provi
 		selinux:          opt.SELinux,
 		tracingSocket:    opt.TracingSocket,
 		resmon:           opt.ResourceMonitor,
+		cdiManager:       opt.CDIManager,
 	}
 	return w, nil
 }
@@ -443,7 +448,7 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 		}
 	}
 
-	spec, cleanup, err := bkoci.GenerateSpec(ctx, meta, mounts, id, resolvConf, hostsFile, namespace, w.cgroupParent, w.processMode, w.idmap, w.apparmorProfile, w.selinux, w.tracingSocket, opts...)
+	spec, cleanup, err := bkoci.GenerateSpec(ctx, meta, mounts, id, resolvConf, hostsFile, namespace, w.cgroupParent, w.processMode, w.idmap, w.apparmorProfile, w.selinux, w.tracingSocket, w.cdiManager, opts...)
 	if err != nil {
 		return nil, err
 	}
