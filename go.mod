@@ -46,7 +46,7 @@ require (
 	github.com/sebdah/goldie/v2 v2.5.5
 	github.com/seccomp/libseccomp-golang v0.10.0
 	github.com/shopspring/decimal v1.4.0
-	github.com/sigstore/sigstore v1.9.0
+	github.com/sigstore/sigstore v1.9.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
@@ -59,7 +59,7 @@ require (
 	github.com/sylabs/squashfs v1.0.4
 	github.com/vbauerster/mpb/v8 v8.9.3
 	go.etcd.io/bbolt v1.3.11
-	golang.org/x/crypto v0.35.0
+	golang.org/x/crypto v0.36.0
 	golang.org/x/sync v0.12.0
 	golang.org/x/sys v0.31.0
 	golang.org/x/term v0.30.0
