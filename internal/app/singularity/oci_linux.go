@@ -12,7 +12,7 @@ import (
 	"context"
 	"fmt"
 
-	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
+	lccgroups "github.com/opencontainers/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/oci"
 	ocibundle "github.com/sylabs/singularity/v4/pkg/ocibundle/sif"

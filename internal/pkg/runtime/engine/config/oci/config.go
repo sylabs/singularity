@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	dseccomp "github.com/docker/docker/profiles/seccomp"
-	"github.com/opencontainers/runc/libcontainer/cgroups"
+	"github.com/opencontainers/cgroups"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci/generate"
 	"github.com/sylabs/singularity/v4/internal/pkg/security/seccomp"
