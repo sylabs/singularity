@@ -25,7 +25,7 @@ import (
 	"github.com/buger/goterm"
 	"github.com/ccoveille/go-safecast"
 	units "github.com/docker/go-units"
-	libcgroups "github.com/opencontainers/runc/libcontainer/cgroups"
+	libcgroups "github.com/opencontainers/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/instance"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -276,7 +276,7 @@ func InstanceStats(ctx context.Context, name, instanceUser string, formatJSON bo
 			}
 
 			// Stats can be added from this set
-			// https://github.com/opencontainers/runc/blob/main/libcontainer/cgroups/stats.go
+			// https://github.com/opencontainers/cgroups/blob/main/stats.go
 			_, err = fmt.Fprintln(tabWriter, "INSTANCE NAME\tCPU USAGE\tMEM USAGE / LIMIT\tMEM %\tBLOCK I/O\tPIDS")
 			if err != nil {
 				return fmt.Errorf("could not write stats header: %v", err)

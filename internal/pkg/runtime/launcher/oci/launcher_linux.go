@@ -23,7 +23,7 @@ import (
 
 	"github.com/ccoveille/go-safecast"
 	"github.com/google/uuid"
-	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
+	lccgroups "github.com/opencontainers/cgroups"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/samber/lo"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
