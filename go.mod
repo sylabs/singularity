@@ -1,6 +1,7 @@
 module github.com/sylabs/singularity/v4
 
 go 1.23.4
+toolchain go1.24.1
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
@@ -56,7 +57,7 @@ require (
 	github.com/sylabs/scs-key-client v0.7.7
 	github.com/sylabs/scs-library-client v1.4.11
 	github.com/sylabs/sif/v2 v2.21.0
-	github.com/sylabs/squashfs v1.0.4
+	github.com/sylabs/squashfs v1.0.6
 	github.com/vbauerster/mpb/v8 v8.9.3
 	go.etcd.io/bbolt v1.3.11
 	golang.org/x/crypto v0.36.0
@@ -137,7 +138,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/in-toto/in-toto-golang v0.9.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/klauspost/compress v1.17.11 // indirect
+	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/letsencrypt/boulder v0.0.0-20240620165639-de9c06129bec // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -161,7 +162,7 @@ require (
 	github.com/package-url/packageurl-go v0.1.1-0.20220428063043-89078438f170 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/petermattis/goid v0.0.0-20240813172612-4fcff4a6cae7 // indirect
-	github.com/pierrec/lz4/v4 v4.1.21 // indirect
+	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.20.5 // indirect
