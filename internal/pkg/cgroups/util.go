@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
+	lccgroups "github.com/opencontainers/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -46,7 +46,7 @@ func pidToPath(pid int) (path string, err error) {
 
 	// For cgroups v1 we are relying on fetching the 'devices' subsystem path.
 	// The devices subsystem is needed for our OCI engine and its presence is
-	// enforced in runc/libcontainer/cgroups/fs initialization without 'skipDevices'.
+	// enforced in opencontainers/cgroups/fs initialization without 'skipDevices'.
 	// This means we never explicitly put a container into a cgroup without a
 	// set 'devices' path.
 	path, ok = paths["devices"]
