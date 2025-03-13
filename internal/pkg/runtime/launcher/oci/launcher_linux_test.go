@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"testing"
 
-	lccgroups "github.com/opencontainers/runc/libcontainer/cgroups"
+	lccgroups "github.com/opencontainers/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
