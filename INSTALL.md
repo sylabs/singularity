@@ -130,7 +130,7 @@ containers in an OCI lifecycle then `conmon` is required.
 `conmon` is available as a package for Ubuntu 24.10+ and Debian 12+
 
 ```sh
-sudo apt get install conmon
+sudo apt-get install conmon
 ```
 
 On older versions, use the latest binary from the [conmon GitHub
