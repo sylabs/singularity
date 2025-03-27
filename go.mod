@@ -21,9 +21,9 @@ require (
 	github.com/containers/image/v5 v5.34.2
 	github.com/coreos/go-systemd/v22 v22.5.0
 	github.com/cyphar/filepath-securejoin v0.4.1
-	github.com/docker/cli v28.0.2+incompatible
+	github.com/docker/cli v28.0.4+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
-	github.com/docker/docker v28.0.2+incompatible
+	github.com/docker/docker v28.0.4+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/fatih/color v1.18.0
 	github.com/go-log/log v0.2.0
@@ -31,7 +31,7 @@ require (
 	github.com/google/go-containerregistry v0.20.4-0.20250225234217-098045d5e61f
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.15.0
-	github.com/moby/buildkit v0.20.1
+	github.com/moby/buildkit v0.20.2
 	github.com/moby/sys/sequential v0.6.0
 	github.com/moby/sys/userns v0.1.0
 	github.com/moby/term v0.5.2
