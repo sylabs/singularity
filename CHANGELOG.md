@@ -1,5 +1,12 @@
 # SingularityCE Changelog
 
+## 4.3.1 \[2025-04-11\]
+
+### Bug Fixes
+
+- Update bundled squashfuse to 0.6.0, which includes `.`, `..` entries in
+  `getdents()` results, fixing errors with some applications.
+
 ## 4.3.0 \[2025-03-13\]
 
 ### Behaviour Changes
