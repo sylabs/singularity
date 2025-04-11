@@ -1,5 +1,10 @@
 # SingularityCE Changelog
 
+## 4.3.1 \[2025-04-11\]
+
+This is a maintenance release updating dependencies and providing packages
+built with Go 1.24.2. No bug-fix or feature additions are included.
+
 ## 4.3.0 \[2025-03-13\]
 
 ### Behaviour Changes
