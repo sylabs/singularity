@@ -2,8 +2,10 @@
 
 ## 4.3.1 \[2025-04-11\]
 
-This is a maintenance release updating dependencies and providing packages
-built with Go 1.24.2. No bug-fix or feature additions are included.
+### Bug Fixes
+
+- Update bundled squashfuse to 0.6.0, which includes `.`, `..` entries in
+  `getdents()` results, fixing errors with some applications.
 
 ## 4.3.0 \[2025-03-13\]
 
