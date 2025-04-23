@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2017-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2017-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -273,14 +273,14 @@ func verifySIF(cmd *cobra.Command, cpath string) error {
 
 		c, err := loadCertificate(certificatePath)
 		if err != nil {
-			return fmt.Errorf("Failed to load certificate: %w", err)
+			return fmt.Errorf("failed to load certificate: %w", err)
 		}
 		opts = append(opts, sifsignature.OptVerifyWithCertificate(c))
 
 		if cmd.Flag(verifyCertificateIntermediatesFlag.Name).Changed {
 			p, err := loadCertificatePool(certificateIntermediatesPath)
 			if err != nil {
-				return fmt.Errorf("Failed to load intermediate certificates: %w", err)
+				return fmt.Errorf("failed to load intermediate certificates: %w", err)
 			}
 			opts = append(opts, sifsignature.OptVerifyWithIntermediates(p))
 		}
@@ -288,7 +288,7 @@ func verifySIF(cmd *cobra.Command, cpath string) error {
 		if cmd.Flag(verifyCertificateRootsFlag.Name).Changed {
 			p, err := loadCertificatePool(certificateRootsPath)
 			if err != nil {
-				return fmt.Errorf("Failed to load root certificates: %w", err)
+				return fmt.Errorf("failed to load root certificates: %w", err)
 			}
 			opts = append(opts, sifsignature.OptVerifyWithRoots(p))
 		}
@@ -302,7 +302,7 @@ func verifySIF(cmd *cobra.Command, cpath string) error {
 
 		v, err := signature.LoadVerifierFromPEMFile(pubKeyPath, crypto.SHA256)
 		if err != nil {
-			return fmt.Errorf("Failed to load key material: %w", err)
+			return fmt.Errorf("failed to load key material: %w", err)
 		}
 		opts = append(opts, sifsignature.OptVerifyWithVerifier(v))
 
@@ -315,7 +315,7 @@ func verifySIF(cmd *cobra.Command, cpath string) error {
 		} else {
 			co, err := getKeyserverClientOpts(keyServerURI, endpoint.KeyserverVerifyOp)
 			if err != nil {
-				return fmt.Errorf("Error while getting keyserver client config: %w", err)
+				return fmt.Errorf("error while getting keyserver client config: %w", err)
 			}
 			opts = append(opts, sifsignature.OptVerifyWithPGP(co...))
 		}
@@ -351,17 +351,17 @@ func verifySIF(cmd *cobra.Command, cpath string) error {
 
 		// Always output JSON.
 		if err := outputJSON(os.Stdout, kl); err != nil {
-			return fmt.Errorf("Failed to output JSON: %v", err)
+			return fmt.Errorf("failed to output JSON: %v", err)
 		}
 
 		if verifyErr != nil {
-			return fmt.Errorf("Failed to verify container: %v", verifyErr)
+			return fmt.Errorf("failed to verify container: %v", verifyErr)
 		}
 	} else {
 		opts = append(opts, sifsignature.OptVerifyCallback(outputVerify))
 
 		if err := sifsignature.Verify(cmd.Context(), cpath, opts...); err != nil {
-			return fmt.Errorf("Failed to verify container: %v", err)
+			return fmt.Errorf("failed to verify container: %v", err)
 		}
 
 		sylog.Infof("Verified signature(s) from image '%v'", cpath)
@@ -374,7 +374,7 @@ func verifyCosign(ctx context.Context, sifPath, keyPath string) error {
 
 	v, err := signature.LoadVerifierFromPEMFile(keyPath, crypto.SHA256)
 	if err != nil {
-		return fmt.Errorf("Failed to load key material: %w", err)
+		return fmt.Errorf("failed to load key material: %w", err)
 	}
 
 	payloads, err := cosignsignature.VerifyOCISIF(ctx, sifPath, v)

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -29,7 +29,7 @@ var (
 	// ErrNoEncryptedKeyData indicates there is no encrypted key data.
 	ErrNoEncryptedKeyData = errors.New("no encrypted key data")
 	// ErrNoPEMData indicates there is no PEM data.
-	ErrNoPEMData = errors.New("No PEM data")
+	ErrNoPEMData = errors.New("no PEM data")
 )
 
 const (

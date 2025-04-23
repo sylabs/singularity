@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -130,7 +130,7 @@ func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) error 
 			return fmt.Errorf("SUSEConnect is not in PATH: %v", err)
 		}
 
-		array := strings.SplitN(osversion, ".", -1)
+		array := strings.Split(osversion, ".")
 		osmajor := array[0]
 		iosmajor, err = strconv.Atoi(osmajor)
 		if err != nil {
@@ -155,7 +155,7 @@ func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) error 
 			mirrorurl = regex.ReplaceAllString(mirrorurl, osmajor+osservicepack)
 		}
 		sleproduct = regex.ReplaceAllString(sleproduct, osmajor+osservicepack)
-		array = strings.SplitN(sleproduct, "/", -1)
+		array = strings.Split(sleproduct, "/")
 		machine, _ := machine()
 		if len(array) == 3 {
 			machine = array[2]
@@ -296,7 +296,7 @@ func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) error 
 			return fmt.Errorf("while registering: %v", err)
 		}
 		if slemodulesOk {
-			array := strings.SplitN(slemodules, ",", -1)
+			array := strings.Split(slemodules, ",")
 			for i := 0; i < len(array); i++ {
 				array[i] = strings.TrimSpace(array[i])
 				cmd := exec.Command(suseconnectPath, `--root`, cp.b.RootfsPath,
@@ -427,7 +427,7 @@ func (cp *ZypperConveyorPacker) prepareFakerootRpmMacros() (func(), error) {
 	}
 
 	insideUserNs, setgroupsAllowed := namespaces.IsInsideUserNamespace(os.Getpid())
-	if !(insideUserNs && setgroupsAllowed) {
+	if !insideUserNs || !setgroupsAllowed {
 		return cleanupFunc, nil
 	}
 
@@ -611,7 +611,7 @@ func rpmPathCheck() (err error) {
 			"%s\n"+
 			"%s\n"+
 			"After creating the file, re-run the bootstrap.\n"+
-			"More info: https://github.com/sylabs/singularity/issues/241\n",
+			"More info: https://github.com/sylabs/singularity/issues/241",
 			rpmDBPath, os.Getenv("HOME"), `%_var /var`, `%_dbpath %{_var}/lib/rpm`)
 	}
 

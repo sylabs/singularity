@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -153,7 +153,7 @@ func (c *YumConveyor) getRPMPath() (err error) {
 				"Place the following lines into the '.rpmmacros' file:\n"+
 				"%s\n"+
 				"%s\n"+
-				"After creating the file, re-run the bootstrap.\n",
+				"After creating the file, re-run the bootstrap",
 				rpmDBPath, os.Getenv("HOME"), `%_var /var`, `%_dbpath %{_var}/lib/rpm`)
 		}
 	}

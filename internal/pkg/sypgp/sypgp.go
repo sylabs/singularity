@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -661,13 +661,14 @@ func formatMROutput(mrString string, longOutput bool) (int, []byte, error) {
 	gotName := false
 	for _, l := range lines {
 		fields := strings.Split(strings.TrimSpace(l), ":")
-		if fields[0] == "info" {
+		switch fields[0] {
+		case "info":
 			var err error
 			numKeys, err = strconv.Atoi(fields[2])
 			if err != nil {
 				return -1, nil, fmt.Errorf("unable to check number of keys")
 			}
-		} else if fields[0] == "pub" {
+		case "pub":
 			if !first {
 				if !gotName {
 					// there was a pub without uid; end line
@@ -689,13 +690,14 @@ func formatMROutput(mrString string, longOutput bool) (int, []byte, error) {
 				keyDateExpired := date(fields[5])
 
 				keyStatus := ""
-				if fields[6] == "r" {
+				switch fields[6] {
+				case "r":
 					keyStatus = "[revoked]"
-				} else if fields[6] == "d" {
+				case "d":
 					keyStatus = "[disabled]"
-				} else if fields[6] == "e" {
+				case "e":
 					keyStatus = "[expired]"
-				} else {
+				default:
 					keyStatus = "[enabled]"
 				}
 
@@ -706,7 +708,7 @@ func formatMROutput(mrString string, longOutput bool) (int, []byte, error) {
 				fmt.Fprintf(tw, shortFmt, keyFingerprint[len(fields[1])-8:], keyBits)
 			}
 			count++
-		} else if fields[0] == "uid" {
+		case "uid":
 			// And the key name/email is on fields[1]
 			// There may be more than one of these for each pub
 			if !gotName {

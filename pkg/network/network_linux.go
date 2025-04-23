@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -280,7 +280,8 @@ func (m *Setup) SetArgs(args []string) error {
 		for _, kv := range argList {
 			key := kv[0]
 			value := kv[1]
-			if key == "portmap" {
+			switch key {
+			case "portmap":
 				pm := &PortMapEntry{}
 
 				splittedPort := strings.SplitN(value, "/", 2)
@@ -318,7 +319,7 @@ func (m *Setup) SetArgs(args []string) error {
 				if err := m.SetCapability(networkName, "portMappings", *pm); err != nil {
 					return err
 				}
-			} else if key == "ipRange" {
+			case "ipRange":
 				ipRange := make([]allocator.Range, 1)
 				_, subnet, err := net.ParseCIDR(value)
 				if err != nil {
@@ -328,7 +329,7 @@ func (m *Setup) SetArgs(args []string) error {
 				if err := m.SetCapability(networkName, "ipRanges", ipRange); err != nil {
 					return err
 				}
-			} else {
+			default:
 				for i := range m.networks {
 					if m.networks[i] == networkName {
 						m.runtimeConf[i].Args = append(m.runtimeConf[i].Args, kv)
@@ -471,7 +472,8 @@ func (m *Setup) command(ctx context.Context, command string) error {
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
-	if command == "ADD" {
+	switch command {
+	case "ADD":
 		m.result = make([]types.Result, len(m.networkConfList))
 		for i := 0; i < len(m.networkConfList); i++ {
 			var err error
@@ -484,12 +486,13 @@ func (m *Setup) command(ctx context.Context, command string) error {
 				return err
 			}
 		}
-	} else if command == "DEL" {
+	case "DEL":
 		for i := 0; i < len(m.networkConfList); i++ {
 			if err := config.DelNetworkList(ctx, m.networkConfList[i], m.runtimeConf[i]); err != nil {
 				return err
 			}
 		}
 	}
+
 	return nil
 }

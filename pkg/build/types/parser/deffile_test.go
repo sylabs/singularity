@@ -260,14 +260,14 @@ func TestIsInvalidSectionErrors(t *testing.T) {
 	if IsInvalidSectionError(myValidErr1) == false ||
 		IsInvalidSectionError(myValidErr2) == false ||
 		IsInvalidSectionError(myInvalidErr) == true {
-		t.Fatal("unexpecter return value for IsInvalidSectionError()")
+		t.Fatal("unexpected return value for IsInvalidSectionError()")
 	}
 
 	// Test of Error()
 	expectedStr1 := "invalid section(s) specified: " + strings.Join(dummyKeys, ", ")
-	expectedStr2 := "Empty definition file: " + strings.Join(dummyKeys, ", ")
+	expectedStr2 := "empty definition file: " + strings.Join(dummyKeys, ", ")
 	if myValidErr1.Error() != expectedStr1 || myValidErr2.Error() != expectedStr2 {
-		t.Fatal("unexpecter result from Error()", myValidErr1.Error())
+		t.Fatal("unexpected result from Error()", myValidErr1.Error())
 	}
 }
 

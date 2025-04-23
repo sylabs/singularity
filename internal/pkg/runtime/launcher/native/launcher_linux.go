@@ -37,7 +37,6 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/gpu"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/starter"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
-	"github.com/sylabs/singularity/v4/pkg/image"
 	imgutil "github.com/sylabs/singularity/v4/pkg/image"
 	clicallback "github.com/sylabs/singularity/v4/pkg/plugin/callback/cli"
 	"github.com/sylabs/singularity/v4/pkg/runtime/engine/config"
@@ -526,7 +525,7 @@ func (l *Launcher) checkImage() error {
 		return fmt.Errorf("could not open image %s: %w", l.engineConfig.GetImage(), err)
 	}
 
-	if img.Type == image.OCISIF {
+	if img.Type == imgutil.OCISIF {
 		return fmt.Errorf("native runtime does not support OCI-SIF images, use --oci mode")
 	}
 
@@ -1040,7 +1039,7 @@ func (l *Launcher) prepareImage(c context.Context, image string) error {
 	// A FUSE image mount can be attempted when none of:
 	// - a --tmp-sandbox was explicitly requested -or-
 	// - the --writable flag was specified
-	tryFuse := !(l.cfg.TmpSandbox || l.cfg.Writable)
+	tryFuse := !l.cfg.TmpSandbox && !l.cfg.Writable
 
 	img, err := imgutil.Init(image, false)
 	if err != nil {
@@ -1140,12 +1139,9 @@ func (l *Launcher) prepareExtfs(ctx context.Context, img *imgutil.Image, tryFuse
 		return fmt.Errorf("extfs images must be kernel or FUSE mounted, extraction to a temporary sandbox is not supported")
 	}
 
-	allowOther := false
 	// In fakeroot mode, the users is able to assume a subuid/subgid, so allow
 	// others to access the FUSE mount.
-	if l.cfg.Fakeroot {
-		allowOther = true
-	}
+	allowOther := l.cfg.Fakeroot
 
 	tempDir, imageDir, err := mkContainerDirs()
 	if err != nil {
@@ -1153,7 +1149,7 @@ func (l *Launcher) prepareExtfs(ctx context.Context, img *imgutil.Image, tryFuse
 	}
 
 	im := fuse.ImageMount{
-		Type:       image.EXT3,
+		Type:       imgutil.EXT3,
 		UID:        os.Getuid(),
 		GID:        os.Getgid(),
 		Readonly:   l.cfg.Writable,
@@ -1271,10 +1267,7 @@ func squashfuseMount(ctx context.Context, img *imgutil.Image, imageDir string, a
 
 // starterInteractive executes the starter binary to run an image interactively, given the supplied engineConfig
 func (l *Launcher) starterInteractive(useSuid bool) error {
-	loadOverlay := false
-	if !l.cfg.Namespaces.User && buildcfg.SINGULARITY_SUID_INSTALL == 1 {
-		loadOverlay = true
-	}
+	loadOverlay := !l.cfg.Namespaces.User && buildcfg.SINGULARITY_SUID_INSTALL == 1
 
 	cfg := &config.Common{
 		EngineName:   singularityConfig.Name,
@@ -1329,10 +1322,7 @@ func (l *Launcher) starterInstance(name string, useSuid bool) error {
 		sylog.Warningf("failed to get standard error stream offset: %s", err)
 	}
 
-	loadOverlay := false
-	if !l.cfg.Namespaces.User && buildcfg.SINGULARITY_SUID_INSTALL == 1 {
-		loadOverlay = true
-	}
+	loadOverlay := !l.cfg.Namespaces.User && buildcfg.SINGULARITY_SUID_INSTALL == 1
 
 	cmdErr := starter.Run(
 		procname,

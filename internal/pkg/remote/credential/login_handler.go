@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2023-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -50,7 +50,7 @@ func ensurePassword(password string) (string, error) {
 			return "", fmt.Errorf("failed to read password: %s", err)
 		}
 		if input == "" {
-			return "", fmt.Errorf("A password is required")
+			return "", fmt.Errorf("a password is required")
 		}
 		return input, nil
 	}

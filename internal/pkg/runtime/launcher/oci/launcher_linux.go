@@ -594,7 +594,7 @@ func (l *Launcher) prepareResolvConf(bundlePath string) (*specs.Mount, error) {
 	var resolvConfData []byte
 	var err error
 	if len(l.cfg.DNS) > 0 {
-		dns := strings.Replace(l.cfg.DNS, " ", "", -1)
+		dns := strings.ReplaceAll(l.cfg.DNS, " ", "")
 		ips := strings.Split(dns, ",")
 		for _, ip := range ips {
 			if net.ParseIP(ip) == nil {

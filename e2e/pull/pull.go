@@ -23,7 +23,6 @@ import (
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
-	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
 	syoras "github.com/sylabs/singularity/v4/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/v4/internal/pkg/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
@@ -654,7 +653,7 @@ func orasPushNoCheck(path, ref, layerMediaType string) error {
 		return err
 	}
 
-	im, err := oras.NewImageFromSIF(path, types.MediaType(layerMediaType))
+	im, err := syoras.NewImageFromSIF(path, types.MediaType(layerMediaType))
 	if err != nil {
 		return err
 	}

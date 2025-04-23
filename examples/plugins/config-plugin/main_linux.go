@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -45,7 +45,7 @@ func callbackCgroups(common *config.Common) {
 
 	data, err := cfg.MarshalJSON()
 	if err != nil {
-		sylog.Errorf("While Marshalling cgroups config to JSON: %s", err)
+		sylog.Errorf("While Marshaling cgroups config to JSON: %s", err)
 		return
 	}
 	sylog.Infof("Overriding cgroups config")
