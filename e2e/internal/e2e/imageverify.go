@@ -274,11 +274,11 @@ func verifyFile(t *testing.T, original, duplicated string) error {
 	}
 
 	if ofi.Size() != cfi.Size() {
-		return fmt.Errorf("Incorrect file sizes. Original: %v, Copy: %v", ofi.Size(), cfi.Size())
+		return fmt.Errorf("incorrect file sizes. Original: %v, Copy: %v", ofi.Size(), cfi.Size())
 	}
 
 	if ofi.Mode() != cfi.Mode() {
-		return fmt.Errorf("Incorrect file modes. Original: %v, Copy: %v", ofi.Mode(), cfi.Mode())
+		return fmt.Errorf("incorrect file modes. Original: %v, Copy: %v", ofi.Mode(), cfi.Mode())
 	}
 
 	o, err := os.ReadFile(original)
@@ -292,7 +292,7 @@ func verifyFile(t *testing.T, original, duplicated string) error {
 	}
 
 	if !bytes.Equal(o, c) {
-		return fmt.Errorf("Incorrect file content")
+		return fmt.Errorf("incorrect file content")
 	}
 
 	return nil
@@ -306,7 +306,7 @@ func verifyHelp(t *testing.T, fileName string, contents []string) error {
 
 	// do perm check
 	if fi.Mode().Perm() != 0o644 {
-		return fmt.Errorf("Incorrect help script perms: %v", fi.Mode().Perm())
+		return fmt.Errorf("incorrect help script perms: %v", fi.Mode().Perm())
 	}
 
 	s, err := os.ReadFile(fileName)
@@ -317,7 +317,7 @@ func verifyHelp(t *testing.T, fileName string, contents []string) error {
 	helpScript := string(s)
 	for _, c := range contents {
 		if !strings.Contains(helpScript, c) {
-			return fmt.Errorf("Missing help script content")
+			return fmt.Errorf("missing help script content")
 		}
 	}
 
@@ -332,7 +332,7 @@ func verifyScript(t *testing.T, fileName string, contents []string) error {
 
 	// do perm check
 	if fi.Mode().Perm() != 0o755 {
-		return fmt.Errorf("Incorrect script perms: %v", fi.Mode().Perm())
+		return fmt.Errorf("incorrect script perms: %v", fi.Mode().Perm())
 	}
 
 	s, err := os.ReadFile(fileName)
@@ -343,7 +343,7 @@ func verifyScript(t *testing.T, fileName string, contents []string) error {
 	script := string(s)
 	for _, c := range contents {
 		if !strings.Contains(script, c) {
-			return fmt.Errorf("Missing script content")
+			return fmt.Errorf("missing script content")
 		}
 	}
 
@@ -368,7 +368,7 @@ func verifyEnv(t *testing.T, cmdPath, imagePath string, env []string, flags []st
 
 	for _, e := range env {
 		if !strings.Contains(out, e) {
-			return fmt.Errorf("Environment is missing: %v", e)
+			return fmt.Errorf("environment is missing: %v", e)
 		}
 	}
 

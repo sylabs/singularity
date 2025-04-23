@@ -184,7 +184,7 @@ func (c *ctx) verify(t *testing.T) {
 			expectCode: 255,
 			expectOps: []e2e.SingularityCmdResultOp{
 				// Expect OCSP to fail due to https://github.com/sylabs/singularity/issues/1152
-				e2e.ExpectError(e2e.ContainMatch, "Failed to verify container: OCSP verification has failed"),
+				e2e.ExpectError(e2e.ContainMatch, "failed to verify container: OCSP verification has failed"),
 			},
 		},
 		{
@@ -200,7 +200,7 @@ func (c *ctx) verify(t *testing.T) {
 			expectCode: 255,
 			expectOps: []e2e.SingularityCmdResultOp{
 				// Expect OCSP to fail due to https://github.com/sylabs/singularity/issues/1152
-				e2e.ExpectError(e2e.ContainMatch, "Failed to verify container: OCSP verification has failed"),
+				e2e.ExpectError(e2e.ContainMatch, "failed to verify container: OCSP verification has failed"),
 			},
 		},
 		{
@@ -214,10 +214,10 @@ func (c *ctx) verify(t *testing.T) {
 			needOCSP:   true,
 			expectCode: 255,
 			expectOps: []e2e.SingularityCmdResultOp{
-				e2e.ExpectError(e2e.ContainMatch, "Failed to verify container: x509: certificate specifies an incompatible key usage"),
+				e2e.ExpectError(e2e.ContainMatch, "failed to verify container: x509: certificate specifies an incompatible key usage"),
 				// https://github.com/sylabs/singularity/pull/1213#pullrequestreview-1240524316
 				// Error Expect OCSP to succeed, but signature verification to fail.
-				// e2e.ExpectError(e2e.ContainMatch, "Failed to verify container: integrity: signature object 3 not valid: dsse: verify envelope failed: Accepted signatures do not match threshold, Found: 0, Expected 1"),
+				// e2e.ExpectError(e2e.ContainMatch, "failed to verify container: integrity: signature object 3 not valid: dsse: verify envelope failed: Accepted signatures do not match threshold, Found: 0, Expected 1"),
 			},
 		},
 	}

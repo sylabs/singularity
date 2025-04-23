@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -537,7 +537,7 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 		if privileged {
 			i := 0
 			for _, e := range cmd.Env {
-				if !(strings.HasPrefix(e, "DBUS_SESSION_BUS_ADDRESS=") || strings.HasPrefix(e, "XDG_RUNTIME_DIR=")) {
+				if !strings.HasPrefix(e, "DBUS_SESSION_BUS_ADDRESS=") && !strings.HasPrefix(e, "XDG_RUNTIME_DIR=") {
 					cmd.Env[i] = e
 					i++
 				}

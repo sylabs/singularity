@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2024-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -23,7 +23,7 @@ func init() {
 // DataCmd is the 'data' command that provides management of data containers.
 var DataCmd = &cobra.Command{
 	RunE: func(_ *cobra.Command, _ []string) error {
-		return errors.New("Invalid command")
+		return errors.New("invalid command")
 	},
 	DisableFlagsInUseLine: true,
 

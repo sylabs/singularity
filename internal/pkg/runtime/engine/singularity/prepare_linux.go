@@ -72,7 +72,7 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		return fmt.Errorf("incorrect engine")
 	}
 
-	if e.EngineConfig.OciConfig.Generator.Config != &e.EngineConfig.OciConfig.Spec {
+	if e.EngineConfig.OciConfig.Config != &e.EngineConfig.OciConfig.Spec {
 		return fmt.Errorf("bad engine configuration provided")
 	}
 
@@ -588,7 +588,7 @@ func (e *EngineOperations) joinNetns(starterConfig *starter.Config) error {
 		return fmt.Errorf("%q is not an allowed netns path in singularity.conf", netnsPath)
 	}
 
-	if !(allowedNetUser || allowedNetGroup) {
+	if !allowedNetUser && !allowedNetGroup {
 		return fmt.Errorf("you are not permitted to join network namespaces in singularity.conf")
 	}
 
@@ -914,7 +914,7 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 			return fmt.Errorf("failed to read %s: %s", path, err)
 		}
 		// check that we are currently joining sinit process
-		if "sinit" != strings.Trim(string(b), "\n") {
+		if strings.Trim(string(b), "\n") != "sinit" {
 			return fmt.Errorf("sinit not found in %s, wrong instance process", path)
 		}
 	}
@@ -1246,7 +1246,8 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 	}
 
 	// sandbox are handled differently for security reasons
-	if img.Type == image.SANDBOX {
+	switch img.Type {
+	case image.SANDBOX:
 		if img.Path == "/" {
 			return fmt.Errorf("/ as sandbox is not authorized")
 		}
@@ -1300,7 +1301,7 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 				return fmt.Errorf("while checking image compatibility with overlay: %s", err)
 			}
 		}
-	} else if img.Type == image.SIF {
+	case image.SIF:
 		// query the ECL module, proceed if an ecl config file is found
 		ecl, err := syecl.LoadConfig(buildcfg.ECL_FILE)
 		if err == nil {

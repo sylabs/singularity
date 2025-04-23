@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -123,7 +123,7 @@ func CopyWithTarWithRoot(src, dst, dstRoot string, disableIDMapping bool) error 
 		}
 
 		if tarArchive == nil {
-			return fmt.Errorf("Empty archive")
+			return fmt.Errorf("empty archive")
 		}
 		dest = filepath.Clean(dest)
 		if options == nil {

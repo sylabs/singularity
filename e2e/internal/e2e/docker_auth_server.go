@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2021-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -64,11 +64,8 @@ func (a *authnz) Authorize(req *registry.AuthorizationRequest) ([]string, error)
 	// release previous lock
 	defer a.Unlock()
 
-	requireAuth := false
+	requireAuth := strings.HasPrefix(req.Name, privateNamespace) || req.Type == ""
 
-	if strings.HasPrefix(req.Name, privateNamespace) || req.Type == "" {
-		requireAuth = true
-	}
 	if requireAuth {
 		if a.username != DefaultUsername || a.password != DefaultPassword {
 			return nil, fmt.Errorf("unauthorized")

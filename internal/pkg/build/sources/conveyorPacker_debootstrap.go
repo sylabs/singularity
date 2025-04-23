@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -164,7 +164,7 @@ func (cp *DebootstrapConveyorPacker) Get(ctx context.Context, b *types.Bundle) (
 	// Debian port arch values do not always match GOARCH values, so we need to look it up.
 	debArch, ok := debootstrapArchs[runtime.GOARCH]
 	if !ok {
-		return fmt.Errorf("Debian arch not known for GOARCH %s", runtime.GOARCH)
+		return fmt.Errorf("Debian arch not known for GOARCH %s", runtime.GOARCH) //nolint:staticcheck
 	}
 
 	insideUserNs, setgroupsAllowed := namespaces.IsInsideUserNamespace(os.Getpid())
@@ -261,7 +261,7 @@ func (cp *DebootstrapConveyorPacker) getRecipeHeaderInfo() (err error) {
 	include = strings.TrimSpace(include)
 
 	// convert Requires string to comma separated list
-	cp.include = strings.Replace(include, ` `, `,`, -1)
+	cp.include = strings.ReplaceAll(include, ` `, `,`)
 
 	return nil
 }
