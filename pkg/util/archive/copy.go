@@ -11,8 +11,9 @@ import (
 	"os"
 	"path/filepath"
 
-	da "github.com/docker/docker/pkg/archive"
-	"github.com/docker/docker/pkg/idtools"
+	"github.com/moby/go-archive"
+	"github.com/moby/go-archive/compression"
+	"github.com/moby/sys/user"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
@@ -21,7 +22,7 @@ import (
 // uid/gid in unprivileged situations. No file may be copied into a location
 // above dst, and hard links / symlinks may not target a file above dst.
 func CopyWithTar(src, dst string, disableIDMapping bool) error {
-	ar := da.NewDefaultArchiver()
+	ar := archive.NewDefaultArchiver()
 
 	// If we are running unprivileged, then squash uid / gid as necessary.
 	// TODO: In future, we want to think about preserving effective ownership
@@ -34,35 +35,35 @@ func CopyWithTar(src, dst string, disableIDMapping bool) error {
 		// The docker CopytWithTar function assumes it should create the top-level of dst as the
 		// container root user. If we are unprivileged this means setting up an ID mapping
 		// from UID/GID 0 to our host UID/GID.
-		ar.IDMapping = idtools.IdentityMapping{
+		ar.IDMapping = user.IdentityMapping{
 			// Single entry mapping of container root (0) to current uid only
-			UIDMaps: []idtools.IDMap{
+			UIDMaps: []user.IDMap{
 				{
-					ContainerID: 0,
-					HostID:      euid,
-					Size:        1,
+					ID:       0,
+					ParentID: int64(euid),
+					Count:    1,
 				},
 			},
 			// Single entry mapping of container root (0) to current gid only
-			GIDMaps: []idtools.IDMap{
+			GIDMaps: []user.IDMap{
 				{
-					ContainerID: 0,
-					HostID:      egid,
-					Size:        1,
+					ID:       0,
+					ParentID: int64(egid),
+					Count:    1,
 				},
 			},
 		}
 		// Actual extraction of files needs to be *always* squashed to our current uid & gid.
 		// This requires clearing the IDMaps, and setting a forced UID/GID with ChownOpts for
 		// the lower level Untar func called by the archiver.
-		eIdentity := &idtools.Identity{
+		chownOpts := &archive.ChownOpts{
 			UID: euid,
 			GID: egid,
 		}
-		ar.Untar = func(tarArchive io.Reader, dest string, options *da.TarOptions) error {
-			options.IDMap = idtools.IdentityMapping{}
-			options.ChownOpts = eIdentity
-			return da.Untar(tarArchive, dest, options)
+		ar.Untar = func(tarArchive io.Reader, dest string, options *archive.TarOptions) error {
+			options.IDMap = user.IdentityMapping{}
+			options.ChownOpts = chownOpts
+			return archive.Untar(tarArchive, dest, options)
 		}
 	}
 
@@ -74,7 +75,7 @@ func CopyWithTar(src, dst string, disableIDMapping bool) error {
 // and not dst. This allows copying a directory src to dst, where the directory
 // contains a link to a location above dst, but under dstroot.
 func CopyWithTarWithRoot(src, dst, dstRoot string, disableIDMapping bool) error {
-	ar := da.NewDefaultArchiver()
+	ar := archive.NewDefaultArchiver()
 
 	// If we are running unprivileged, then squash uid / gid as necessary.
 	// TODO: In future, we want to think about preserving effective ownership
@@ -82,44 +83,44 @@ func CopyWithTarWithRoot(src, dst, dstRoot string, disableIDMapping bool) error 
 	// ownership to be preserved.
 	euid := os.Geteuid()
 	egid := os.Getgid()
-	var eIdentity *idtools.Identity
+	var chownOpts *archive.ChownOpts
 
 	if (euid != 0 || egid != 0) && !disableIDMapping {
 		sylog.Debugf("Using unprivileged CopyWithTar (uid=%d, gid=%d)", euid, egid)
 		// The docker CopytWithTar function assumes it should create the top-level of dst as the
 		// container root user. If we are unprivileged this means setting up an ID mapping
 		// from UID/GID 0 to our host UID/GID.
-		ar.IDMapping = idtools.IdentityMapping{
+		ar.IDMapping = user.IdentityMapping{
 			// Single entry mapping of container root (0) to current uid only
-			UIDMaps: []idtools.IDMap{
+			UIDMaps: []user.IDMap{
 				{
-					ContainerID: 0,
-					HostID:      euid,
-					Size:        1,
+					ID:       0,
+					ParentID: int64(euid),
+					Count:    1,
 				},
 			},
 			// Single entry mapping of container root (0) to current gid only
-			GIDMaps: []idtools.IDMap{
+			GIDMaps: []user.IDMap{
 				{
-					ContainerID: 0,
-					HostID:      egid,
-					Size:        1,
+					ID:       0,
+					ParentID: int64(egid),
+					Count:    1,
 				},
 			},
 		}
 		// Actual extraction of files needs to be *always* squashed to our current uid & gid.
 		// This requires clearing the IDMaps, and setting a forced UID/GID with ChownOpts for
 		// the lower level Untar func called by the archiver.
-		eIdentity = &idtools.Identity{
+		chownOpts = &archive.ChownOpts{
 			UID: euid,
 			GID: egid,
 		}
 	}
 
-	ar.Untar = func(tarArchive io.Reader, dest string, options *da.TarOptions) error {
-		if eIdentity != nil {
-			options.IDMap = idtools.IdentityMapping{}
-			options.ChownOpts = eIdentity
+	ar.Untar = func(tarArchive io.Reader, dest string, options *archive.TarOptions) error {
+		if chownOpts != nil {
+			options.IDMap = user.IdentityMapping{}
+			options.ChownOpts = chownOpts
 		}
 
 		if tarArchive == nil {
@@ -127,13 +128,13 @@ func CopyWithTarWithRoot(src, dst, dstRoot string, disableIDMapping bool) error 
 		}
 		dest = filepath.Clean(dest)
 		if options == nil {
-			options = &da.TarOptions{}
+			options = &archive.TarOptions{}
 		}
 		if options.ExcludePatterns == nil {
 			options.ExcludePatterns = []string{}
 		}
 
-		decompressedArchive, err := da.DecompressStream(tarArchive)
+		decompressedArchive, err := compression.DecompressStream(tarArchive)
 		if err != nil {
 			return err
 		}
