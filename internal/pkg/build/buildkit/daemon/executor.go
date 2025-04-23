@@ -45,7 +45,6 @@ import (
 	"github.com/containerd/continuity/fs"
 	runc "github.com/containerd/go-runc"
 	"github.com/containerd/platforms"
-	"github.com/docker/docker/pkg/idtools"
 	"github.com/moby/buildkit/cache"
 	"github.com/moby/buildkit/cache/metadata"
 	"github.com/moby/buildkit/executor"
@@ -65,6 +64,7 @@ import (
 	"github.com/moby/buildkit/util/winlayers"
 	"github.com/moby/buildkit/worker/base"
 	wlabel "github.com/moby/buildkit/worker/label"
+	"github.com/moby/sys/user"
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -80,7 +80,7 @@ type BkSnapshotterFactory struct {
 }
 
 // NewWorkerOpt creates a WorkerOpt.
-func NewWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFactory, rootless bool, processMode bkoci.ProcessMode, labels map[string]string, idmap *idtools.IdentityMapping, nopt netproviders.Opt, dns *bkoci.DNSConfig, binary, apparmorProfile string, selinux bool, parallelismSem *semaphore.Weighted, traceSocket, defaultCgroupParent string, cdiManager *cdidevices.Manager) (base.WorkerOpt, error) {
+func NewWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFactory, rootless bool, processMode bkoci.ProcessMode, labels map[string]string, idmap *user.IdentityMapping, nopt netproviders.Opt, dns *bkoci.DNSConfig, binary, apparmorProfile string, selinux bool, parallelismSem *semaphore.Weighted, traceSocket, defaultCgroupParent string, cdiManager *cdidevices.Manager) (base.WorkerOpt, error) {
 	var opt base.WorkerOpt
 	name := "runc-" + snFactory.Name
 	root = filepath.Join(root, name)
@@ -224,7 +224,7 @@ type WorkerOpt struct {
 	DefaultCgroupParent string
 	// ProcessMode
 	ProcessMode     bkoci.ProcessMode
-	IdentityMapping *idtools.IdentityMapping
+	IdentityMapping *user.IdentityMapping
 	// runc run --no-pivot (unrecommended)
 	NoPivot         bool
 	DNS             *bkoci.DNSConfig
@@ -245,7 +245,7 @@ type buildExecutor struct {
 	rootless         bool
 	networkProviders map[pb.NetMode]bknet.Provider
 	processMode      bkoci.ProcessMode
-	idmap            *idtools.IdentityMapping
+	idmap            *user.IdentityMapping
 	noPivot          bool
 	dns              *bkoci.DNSConfig
 	oomScoreAdj      *int
@@ -404,17 +404,17 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 	}
 	defer os.RemoveAll(bundle)
 
-	identity := idtools.Identity{}
+	var rootUID, rootGID int
 	if w.idmap != nil {
-		identity = w.idmap.RootPair()
+		rootUID, rootGID = w.idmap.RootPair()
 	}
 
 	rootFSPath := filepath.Join(bundle, "rootfs")
-	if err := idtools.MkdirAllAndChown(rootFSPath, 0o700, identity); err != nil {
-		return nil, err
+	if err := user.MkdirAllAndChown(rootFSPath, 0o700, rootUID, rootGID); err != nil {
+		return nil, errors.WithStack(err)
 	}
 	if err := mount.All(rootMount, rootFSPath); err != nil {
-		return nil, err
+		return nil, errors.WithStack(err)
 	}
 	defer mount.Unmount(rootFSPath, 0)
 
@@ -437,12 +437,9 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 		opts = append(opts, oci.WithRootFSReadonly())
 	}
 
-	identity = idtools.Identity{
-		UID: int(uid),
-		GID: int(gid),
-	}
+	rootUID, rootGID = int(uid), int(gid)
 	if w.idmap != nil {
-		identity, err = w.idmap.ToHost(identity)
+		rootUID, rootGID, err = w.idmap.ToHost(rootUID, rootGID)
 		if err != nil {
 			return nil, err
 		}
@@ -464,7 +461,7 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 		return nil, errors.Wrapf(err, "working dir %s points to invalid target", newp)
 	}
 	if _, err := os.Stat(newp); err != nil {
-		if err := idtools.MkdirAllAndChown(newp, 0o755, identity); err != nil {
+		if err := user.MkdirAllAndChown(newp, 0o755, rootUID, rootGID); err != nil {
 			return nil, errors.Wrapf(err, "failed to create working directory %s", newp)
 		}
 	}
