@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Sylabs Inc. All rights reserved.
+// Copyright (c) 2024-2025 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/random"
@@ -19,7 +18,7 @@ import (
 
 const extfsOverlayPath = "../../../test/images/extfs-for-overlay.img"
 
-var extfsOverlayDigest = v1.Hash{
+var extfsOverlayDigest = ggcrv1.Hash{
 	Algorithm: "sha256",
 	Hex:       "be6a627e7c4226eacd50f530ce82e83f0efb8e0f7d28a9bcee9d6b4bc208cfd1",
 }
@@ -197,7 +196,7 @@ func modifyOverlayFF(t *testing.T, imgFile string) {
 }
 
 // Digest of extfsOverlayPath, modified by modifyOverlayFF above
-var modifiedOverlayDigest = v1.Hash{
+var modifiedOverlayDigest = ggcrv1.Hash{
 	Algorithm: "sha256",
 	Hex:       "1d2b7729ac057ceb9a3b301eec078ef89df5ea54188973e9a9b5f0f9aedf0615",
 }
@@ -211,7 +210,7 @@ func TestSyncOverlay(t *testing.T) {
 	tests := []struct {
 		name          string
 		modifyOverlay func(t *testing.T, imgFile string)
-		expectDigest  v1.Hash
+		expectDigest  ggcrv1.Hash
 	}{
 		{
 			name:         "Unmodified",

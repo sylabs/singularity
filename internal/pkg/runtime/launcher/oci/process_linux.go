@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -74,7 +74,7 @@ func (l *Launcher) getProcess(ctx context.Context, imgSpec imgspecv1.Image, bund
 	}
 
 	// OCI default is NoNewPrivileges = false
-	noNewPrivs := false
+	noNewPrivs := false //nolint:staticcheck
 	// --no-privs sets NoNewPrivileges
 	if l.cfg.NoPrivs {
 		noNewPrivs = true

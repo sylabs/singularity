@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the URIs of this project regarding your
 // rights to use or distribute this software.
@@ -92,10 +92,10 @@ func callbackTestCmd(manager *cmdline.CommandManager) {
 		DisableFlagsInUseLine: true,
 		Args:                  cobra.MinimumNArgs(1),
 		Use:                   "test-cmd [args ...]",
-		Short:                 "Test test test",
+		Short:                 "Short test",
 		Long:                  "Long test long test long test",
 		Example:               "singularity test-cmd my test",
-		Run: func(cmd *cobra.Command, args []string) {
+		Run: func(_ *cobra.Command, args []string) {
 			fmt.Println("test-cmd is printing args:", args)
 		},
 		TraverseChildren: true,

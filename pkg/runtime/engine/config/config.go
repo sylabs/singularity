@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -28,7 +28,7 @@ func (c *Common) GetPluginConfig(pl plugin.Plugin, cfg interface{}) error {
 	if c.PluginConfig == nil {
 		c.PluginConfig = make(map[string]json.RawMessage)
 	}
-	if raw, found := c.PluginConfig[pl.Manifest.Name]; found {
+	if raw, found := c.PluginConfig[pl.Name]; found {
 		return json.Unmarshal(raw, cfg)
 	}
 	return nil
@@ -43,7 +43,7 @@ func (c *Common) SetPluginConfig(pl plugin.Plugin, cfg interface{}) error {
 	if c.PluginConfig == nil {
 		c.PluginConfig = make(map[string]json.RawMessage)
 	}
-	c.PluginConfig[pl.Manifest.Name] = raw
+	c.PluginConfig[pl.Name] = raw
 	return nil
 }
 

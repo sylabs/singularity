@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -37,7 +37,7 @@ func addCDIDevices(spec *specs.Spec, cdiDevices []string, cdiRegOptions ...cdi.O
 	}
 
 	if _, err := cdi.InjectDevices(spec, cdiDevices...); err != nil {
-		return fmt.Errorf("Error encountered setting up CDI devices: %w", err)
+		return fmt.Errorf("while setting up CDI devices: %w", err)
 	}
 
 	return nil

@@ -16,7 +16,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
@@ -168,7 +167,7 @@ func createOciSif(ctx context.Context, tOpts *ociimage.TransportOptions, imgCach
 	return nil
 }
 
-func canPullSignatures(img v1.Image, keepLayers bool) error {
+func canPullSignatures(img ggcrv1.Image, keepLayers bool) error {
 	layers, err := img.Layers()
 	if err != nil {
 		return err
@@ -333,7 +332,7 @@ func PushOCISIF(ctx context.Context, sourceFile, destRef string, opts PushOption
 	return nil
 }
 
-func transformLayers(base v1.Image, opts PushOptions) (v1.Image, error) {
+func transformLayers(base ggcrv1.Image, opts PushOptions) (ggcrv1.Image, error) {
 	ls, err := base.Layers()
 	if err != nil {
 		return nil, err

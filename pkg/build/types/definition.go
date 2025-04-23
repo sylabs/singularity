@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -245,14 +245,14 @@ func populateRaw(d *Definition, w io.Writer) {
 	}
 	fmt.Fprintln(w)
 
-	writeLabelsIfExists(w, d.ImageData.Labels)
+	writeLabelsIfExists(w, d.Labels)
 	writeFilesIfExists(w, d.BuildData.Files)
 
-	writeSectionIfExists(w, "help", d.ImageData.Help)
-	writeSectionIfExists(w, "environment", d.ImageData.Environment)
-	writeSectionIfExists(w, "runscript", d.ImageData.Runscript)
-	writeSectionIfExists(w, "test", d.ImageData.Test)
-	writeSectionIfExists(w, "startscript", d.ImageData.Startscript)
+	writeSectionIfExists(w, "help", d.Help)
+	writeSectionIfExists(w, "environment", d.Environment)
+	writeSectionIfExists(w, "runscript", d.Runscript)
+	writeSectionIfExists(w, "test", d.Test)
+	writeSectionIfExists(w, "startscript", d.Startscript)
 	writeSectionIfExists(w, "pre", d.BuildData.Pre)
 	writeSectionIfExists(w, "setup", d.BuildData.Setup)
 	writeSectionIfExists(w, "post", d.BuildData.Post)

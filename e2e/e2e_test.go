@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -85,13 +85,13 @@ func TestMain(m *testing.M) {
 					os.Exit(status.ExitStatus())
 				}
 			}
+		case syscall.SIGURG:
+			// ignore goroutine preemption
+			break
 		default:
 			// forward signals to e2e test command
 			//nolint:forcetypeassert
 			syscall.Kill(cmdPid, s.(syscall.Signal))
-		case syscall.SIGURG:
-			// ignore goroutine preemption
-			break
 		}
 	}
 }

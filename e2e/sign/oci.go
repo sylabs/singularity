@@ -18,7 +18,7 @@ import (
 func (c *ctx) signOCICosign(t *testing.T) {
 	e2e.EnsureOCISIF(t, c.TestEnv)
 	testSif := filepath.Join(t.TempDir(), "test.sif")
-	if err := fs.CopyFile(c.TestEnv.OCISIFPath, testSif, 0o755); err != nil {
+	if err := fs.CopyFile(c.OCISIFPath, testSif, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	keyPath := filepath.Join("..", "test", "keys", "cosign.key")

@@ -176,7 +176,7 @@ func runBuild(cmd *cobra.Command, args []string) {
 		sylog.Fatalf("Custom authfile is not supported for remote build")
 	}
 
-	if buildArgs.arch != runtime.GOARCH && !(buildArgs.remote || isOCI) {
+	if buildArgs.arch != runtime.GOARCH && !buildArgs.remote && !isOCI {
 		sylog.Fatalf("Requested architecture (%s) does not match host (%s). Cannot build locally.", buildArgs.arch, runtime.GOARCH)
 	}
 
@@ -534,7 +534,7 @@ func getEncryptionMaterial(cmd *cobra.Command) (*cryptkey.KeyInfo, error) {
 	pemPathEnv, pemPathEnvOK := os.LookupEnv("SINGULARITY_ENCRYPTION_PEM_PATH")
 
 	// checks for no flags/envvars being set
-	if !(PEMFlag.Changed || pemPathEnvOK || passphraseFlag.Changed || passphraseEnvOK) {
+	if !PEMFlag.Changed && !pemPathEnvOK && !passphraseFlag.Changed && !passphraseEnvOK {
 		return nil, nil
 	}
 
