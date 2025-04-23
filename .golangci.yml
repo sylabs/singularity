@@ -1,3 +1,5 @@
+version: "2"
+
 run:
   concurrency: 2
   timeout: 5m
@@ -12,8 +14,7 @@ run:
     - sylog
 
 linters:
-  disable-all: true
-  enable-all: false
+  default: none
   enable:
     - asciicheck
     - bidichk
@@ -26,12 +27,9 @@ linters:
     - dupl
     - dupword
     - forcetypeassert
-    - gofumpt
-    - goimports
     - gomodguard
     - goprintffuncname
     - gosec
-    - gosimple
     - govet
     - grouper
     - ineffassign
@@ -44,39 +42,38 @@ linters:
     - reassign
     - revive
     - staticcheck
-    - typecheck
     - unparam
     - unused
     - usetesting
     - whitespace
-
-linters-settings:
-  misspell:
-    locale: US
-
-issues:
-  max-issues-per-linter: 0
-  max-same-issues: 0
-  exclude:
-    # EXC0004 excluded due to spurious "should have signature XYZ" errors on
-    # MarshalJSON methods. See
-    # https://golangci-lint.run/usage/false-positives/#exc0004 for more
-    # information.
-    - EXC0004
-  exclude-rules:
-    - linters:
+  settings:
+    misspell:
+      locale: US
+  exclusions:
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - path: 'e2e/'
+        linters:
+          # The usetesting linter shows a lot of lint for env var handling and
+          # tempdir creation in e2e tests. It's not really valid lint - the e2e
+          # tests were explicitly written to keep tempdirs in a per-run outer dir,
+          # and env var handling is complicated by the e2e.SingularityCmd
+          # execution flow etc.
+          - usetesting
+      - linters:
         - gosec
       # G107 disallows making http calls to a URL stored in a variable
       # G204 disallows exec.Command() with a command/args stored in variables
       # G306 disallows creation of files with permissions greater than 0600
-      text: "^(G107|G204|G306):"
-    - path: 'e2e/'
-      linters:
-        # The usetesting linter shows a lot of lint for env var handling and
-        # tempdir creation in e2e tests. It's not really valid lint - the e2e
-        # tests were explicitly written to keep tempdirs in a per-run outer dir,
-        # and env var handling is complicated by the e2e.SingularityCmd
-        # execution flow etc.
-        - usetesting
-  exclude-files:
-    - "internal/pkg/util/user/cgo_lookup_unix.go"
+        text: "^(G107|G204|G306):"
+    paths:
+      - "internal/pkg/util/user/cgo_lookup_unix.go"
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
