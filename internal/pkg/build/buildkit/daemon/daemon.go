@@ -38,7 +38,6 @@ import (
 	"github.com/containerd/containerd/v2/plugins/snapshots/overlay"
 	"github.com/containerd/platforms"
 	sddaemon "github.com/coreos/go-systemd/v22/daemon"
-	"github.com/docker/docker/pkg/idtools"
 	"github.com/gofrs/flock"
 	"github.com/moby/buildkit/cache/remotecache"
 	localremotecache "github.com/moby/buildkit/cache/remotecache/local"
@@ -62,6 +61,7 @@ import (
 	"github.com/moby/buildkit/version"
 	"github.com/moby/buildkit/worker"
 	"github.com/moby/buildkit/worker/base"
+	"github.com/moby/sys/user"
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/oci"
@@ -374,7 +374,7 @@ func snapshotterFactory(_ context.Context, cfg config.OCIConfig) (BkSnapshotterF
 	return snFactory, nil
 }
 
-func parseIdentityMapping(str string) (*idtools.IdentityMapping, error) {
+func parseIdentityMapping(str string) (*user.IdentityMapping, error) {
 	if str == "" {
 		return nil, nil
 	}
@@ -388,7 +388,7 @@ func parseIdentityMapping(str string) (*idtools.IdentityMapping, error) {
 
 	sylog.Debugf("%s: user namespaces: ID ranges will be mapped to subuid ranges of: %s", DaemonName, username)
 
-	mappings, err := idtools.LoadIdentityMapping(username)
+	mappings, err := user.LoadIdentityMapping(username)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create ID mappings")
 	}
