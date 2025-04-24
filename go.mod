@@ -48,7 +48,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.49.1
 	github.com/sebdah/goldie/v2 v2.5.5
-	github.com/seccomp/libseccomp-golang v0.10.0
+	github.com/seccomp/libseccomp-golang v0.11.0
 	github.com/shopspring/decimal v1.4.0
 	github.com/sigstore/cosign/v2 v2.5.0
 	github.com/sigstore/sigstore v1.9.3
@@ -69,7 +69,7 @@ require (
 	golang.org/x/sys v0.32.0
 	golang.org/x/term v0.31.0
 	golang.org/x/text v0.24.0
-	google.golang.org/grpc v1.71.1
+	google.golang.org/grpc v1.72.0
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools v2.2.0+incompatible
 	gotest.tools/v3 v3.5.2
