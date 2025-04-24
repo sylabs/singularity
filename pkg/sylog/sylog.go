@@ -159,6 +159,13 @@ func Writer() io.Writer {
 	return logWriter
 }
 
+// SetWriter accepts an io.Writer, to which sylog will then print messages.
+// This can be used to capture sylog messages for testing etc. By default log
+// messages are written to os.StdErr.
+func SetWriter(w io.Writer) {
+	logWriter = w
+}
+
 // DebugLogger is an implementation of the go-log/log Logger interface that will
 // output log messages via sylog.debug when required by external packages such
 // as the scs-library-client
