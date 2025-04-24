@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -699,7 +699,7 @@ func (l *Launcher) addBindMount(mounts *[]specs.Mount, b bind.Path, allowSUID bo
 	}
 	if _, err := os.Stat(absSource); err != nil {
 		_, ok := l.imageMountsByMountpoint[absSource]
-		if !(errors.Is(err, os.ErrNotExist) && ok) {
+		if !errors.Is(err, os.ErrNotExist) || !ok {
 			return fmt.Errorf("cannot stat bind source %s: %w", b.Source, err)
 		}
 	}

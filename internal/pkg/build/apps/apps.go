@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -220,7 +220,7 @@ func (pl *BuildApp) createAllApps(b *types.Bundle) error {
 	for _, name := range b.Recipe.AppOrder {
 		app, ok := pl.Apps[name]
 		if !ok {
-			return fmt.Errorf("No BuildApp record for app %s", name)
+			return fmt.Errorf("no BuildApp record for app %s", name)
 		}
 
 		sylog.Debugf("Creating %s app in bundle", name)
@@ -477,7 +477,7 @@ func (pl *BuildApp) HandlePost(b *types.Bundle) (string, error) {
 		sylog.Debugf("Fetching app[%s] post script section", name)
 		app, ok := pl.Apps[name]
 		if !ok {
-			return "", fmt.Errorf("No BuildApp record for app %s", name)
+			return "", fmt.Errorf("no BuildApp record for app %s", name)
 		}
 
 		sylog.Debugf("Building app[%s] post script section", name)

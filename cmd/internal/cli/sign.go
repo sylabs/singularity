@@ -176,7 +176,7 @@ func signSIF(cmd *cobra.Command, cpath string) error {
 
 		s, err := signature.LoadSignerFromPEMFile(priKeyPath, crypto.SHA256, cryptoutils.GetPasswordFromStdIn)
 		if err != nil {
-			return fmt.Errorf("Failed to load key material: %v", err)
+			return fmt.Errorf("failed to load key material: %v", err)
 		}
 		opts = append(opts, sifsignature.OptSignWithSigner(s))
 
@@ -206,7 +206,7 @@ func signSIF(cmd *cobra.Command, cpath string) error {
 
 	// Sign the image.
 	if err := sifsignature.Sign(cmd.Context(), cpath, opts...); err != nil {
-		return fmt.Errorf("Failed to sign container: %w", err)
+		return fmt.Errorf("failed to sign container: %w", err)
 	}
 	sylog.Infof("Signature created and applied to image '%v'", cpath)
 	return nil

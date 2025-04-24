@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2024 Sylabs Inc. All rights reserved.
+// Copyright (c) 2023-2025 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,13 +14,11 @@ import (
 	"time"
 
 	ggcrv1 "github.com/google/go-containerregistry/pkg/v1"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	ggcrmutate "github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	"github.com/google/go-containerregistry/pkg/v1/types"
-	"github.com/sylabs/oci-tools/pkg/mutate"
-	ocimutate "github.com/sylabs/oci-tools/pkg/mutate"
+	ocitmutate "github.com/sylabs/oci-tools/pkg/mutate"
 	ocitsif "github.com/sylabs/oci-tools/pkg/sif"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
@@ -141,7 +139,7 @@ func (w *ImageWriter) Write() error {
 				return fmt.Errorf("while squashing image with overlay: %w", err)
 			}
 		} else {
-			img, err = mutate.Squash(img)
+			img, err = ocitmutate.Squash(img)
 			if err != nil {
 				return fmt.Errorf("while squashing image: %w", err)
 			}
@@ -172,7 +170,7 @@ func (w *ImageWriter) Write() error {
 }
 
 func squashWithOverlay(base ggcrv1.Image, workDir string) (ggcrv1.Image, error) {
-	ms := []ocimutate.Mutation{}
+	ms := []ocitmutate.Mutation{}
 	ls, err := base.Layers()
 	if err != nil {
 		return nil, fmt.Errorf("while getting layers: %w", err)
@@ -185,7 +183,7 @@ func squashWithOverlay(base ggcrv1.Image, workDir string) (ggcrv1.Image, error) 
 			return nil, fmt.Errorf("while getting mediaType: %w", err)
 		}
 		if mt == SquashfsLayerMediaType {
-			opener, err := ocimutate.TarFromSquashfsLayer(l, ocimutate.OptTarTempDir(workDir))
+			opener, err := ocitmutate.TarFromSquashfsLayer(l, ocitmutate.OptTarTempDir(workDir))
 			if err != nil {
 				return nil, fmt.Errorf("while getting tarball from squashfs: %w", err)
 			}
@@ -193,20 +191,20 @@ func squashWithOverlay(base ggcrv1.Image, workDir string) (ggcrv1.Image, error) 
 			if err != nil {
 				return nil, fmt.Errorf("while getting tar layer: %w", err)
 			}
-			ms = append(ms, ocimutate.SetLayer(i, tarLayer))
+			ms = append(ms, ocitmutate.SetLayer(i, tarLayer))
 		}
 	}
-	img, err := ocimutate.Apply(base, ms...)
+	img, err := ocitmutate.Apply(base, ms...)
 	if err != nil {
 		return nil, fmt.Errorf("while converting layers to tar: %w", err)
 	}
 
 	// Squash all except final ext3 overlay.
-	return mutate.SquashSubset(img, 0, len(ls)-1)
+	return ocitmutate.SquashSubset(img, 0, len(ls)-1)
 }
 
 func imgLayersToSquashfs(img ggcrv1.Image, digest ggcrv1.Hash, workDir string) (sqfsImage ggcrv1.Image, err error) {
-	ms := []mutate.Mutation{}
+	ms := []ocitmutate.Mutation{}
 
 	layers, err := img.Layers()
 	if err != nil {
@@ -229,10 +227,10 @@ func imgLayersToSquashfs(img ggcrv1.Image, digest ggcrv1.Hash, workDir string) (
 	}
 
 	sylog.Infof("Converting layers to SquashFS")
-	var sqOpts []mutate.SquashfsConverterOpt
+	var sqOpts []ocitmutate.SquashfsConverterOpt
 	if len(layers) == 1 {
-		sqOpts = []mutate.SquashfsConverterOpt{
-			mutate.OptSquashfsSkipWhiteoutConversion(true),
+		sqOpts = []ocitmutate.SquashfsConverterOpt{
+			ocitmutate.OptSquashfsSkipWhiteoutConversion(true),
 		}
 	}
 
@@ -248,22 +246,22 @@ func imgLayersToSquashfs(img ggcrv1.Image, digest ggcrv1.Hash, workDir string) (
 			continue
 		}
 
-		squashfsLayer, err := mutate.SquashfsLayer(l, workDir, sqOpts...)
+		squashfsLayer, err := ocitmutate.SquashfsLayer(l, workDir, sqOpts...)
 		if err != nil {
 			return nil, fmt.Errorf("%w: %v", ErrFailedSquashfsConversion, err)
 		}
-		ms = append(ms, mutate.SetLayer(i, squashfsLayer))
+		ms = append(ms, ocitmutate.SetLayer(i, squashfsLayer))
 	}
 
 	ms = append(ms,
-		mutate.SetHistory(ggcrv1.History{
+		ocitmutate.SetHistory(ggcrv1.History{
 			Created:    ggcrv1.Time{Time: time.Now()},
 			CreatedBy:  useragent.Value(),
 			Comment:    "oci-sif created from " + digest.Hex,
 			EmptyLayer: false,
 		}))
 
-	sqfsImage, err = mutate.Apply(img, ms...)
+	sqfsImage, err = ocitmutate.Apply(img, ms...)
 	if err != nil {
 		return nil, fmt.Errorf("while replacing layers: %w", err)
 	}
@@ -273,7 +271,7 @@ func imgLayersToSquashfs(img ggcrv1.Image, digest ggcrv1.Hash, workDir string) (
 
 // oci11Artifact adapts the base image to comply with the OCI v1.1 artifact specification.
 type oci11Artifact struct {
-	v1.Image
+	ggcrv1.Image
 	artifactType string
 }
 
@@ -288,15 +286,15 @@ func (w *oci11Artifact) Size() (int64, error) {
 }
 
 // Digest returns the sha256 of this image's manifest.
-func (w *oci11Artifact) Digest() (v1.Hash, error) {
+func (w *oci11Artifact) Digest() (ggcrv1.Hash, error) {
 	mf, err := w.RawManifest()
 	if err != nil {
-		return v1.Hash{}, err
+		return ggcrv1.Hash{}, err
 	}
 
-	h, _, err := v1.SHA256(bytes.NewReader(mf))
+	h, _, err := ggcrv1.SHA256(bytes.NewReader(mf))
 	if err != nil {
-		return v1.Hash{}, err
+		return ggcrv1.Hash{}, err
 	}
 	return h, nil
 }
@@ -309,13 +307,13 @@ func (w *oci11Artifact) RawManifest() ([]byte, error) {
 	}
 
 	var manifest struct {
-		SchemaVersion int64             `json:"schemaVersion"`
-		MediaType     types.MediaType   `json:"mediaType,omitempty"`
-		ArtifactType  string            `json:"artifactType,omitempty"`
-		Config        v1.Descriptor     `json:"config"`
-		Layers        []v1.Descriptor   `json:"layers"`
-		Annotations   map[string]string `json:"annotations,omitempty"`
-		Subject       *v1.Descriptor    `json:"subject,omitempty"`
+		SchemaVersion int64               `json:"schemaVersion"`
+		MediaType     types.MediaType     `json:"mediaType,omitempty"`
+		ArtifactType  string              `json:"artifactType,omitempty"`
+		Config        ggcrv1.Descriptor   `json:"config"`
+		Layers        []ggcrv1.Descriptor `json:"layers"`
+		Annotations   map[string]string   `json:"annotations,omitempty"`
+		Subject       *ggcrv1.Descriptor  `json:"subject,omitempty"`
 	}
 	if err := json.Unmarshal(mf, &manifest); err != nil {
 		return nil, fmt.Errorf("unmarshal OCI v1.1 manifest: %w", err)

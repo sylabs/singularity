@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -74,7 +74,7 @@ func DownloadImage(ctx context.Context, filePath string, netURL string) error {
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(res.Body)
 		s := buf.String()
-		return fmt.Errorf("Download did not succeed: %d %s\n\t",
+		return fmt.Errorf("download did not succeed: %d %s\n\t",
 			res.StatusCode, s)
 	}
 

@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Copyright (c) 2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2023-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -293,7 +293,7 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 	}
 
 	// Force "host" network mode always, to avoid buildkitd doing any CNI setup
-	common.config.Workers.OCI.NetworkConfig.Mode = "host"
+	common.config.Workers.OCI.Mode = "host"
 
 	if cfg.Rootless {
 		sylog.Debugf("%s: running in rootless mode", DaemonName)
@@ -313,7 +313,7 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 	dns := getDNSConfig(common.config.DNS)
 
 	nc := netproviders.Opt{
-		Mode: common.config.Workers.OCI.NetworkConfig.Mode,
+		Mode: common.config.Workers.OCI.Mode,
 		CNI: cniprovider.Opt{
 			Root:       common.config.Root,
 			ConfigPath: common.config.Workers.OCI.CNIConfigPath,

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -129,7 +129,7 @@ func TestNewDefinitionFromJSON(t *testing.T) {
 	if def1Err != nil {
 		t.Fatal("NewDefinitionFromJSON() failed with a valid JSON", def1Err)
 	}
-	if len(def1.ImageData.Labels) != 2 {
+	if len(def1.Labels) != 2 {
 		t.Fatal("Invalid number of labels")
 	}
 
@@ -139,7 +139,7 @@ func TestNewDefinitionFromJSON(t *testing.T) {
 	if def2Err != nil {
 		t.Fatal("NewDefinitionFromJSON() failed with a Singularity JSON", def2Err)
 	}
-	if len(def2.ImageData.Labels) != 1 {
+	if len(def2.Labels) != 1 {
 		t.Fatal("Invalid number of labels")
 	}
 }

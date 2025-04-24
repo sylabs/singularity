@@ -581,7 +581,7 @@ mount:
 				goto mount
 			} else if mnt.Type == "overlay" && err == syscall.EINVAL {
 				sylog.Verbosef("Overlay mount failed with %s, mounting without xino option", err)
-				optsString = strings.Replace(optsString, ",xino=on", "", -1)
+				optsString = strings.ReplaceAll(optsString, ",xino=on", "")
 				goto mount
 			}
 			// mount error for other filesystems is considered fatal
@@ -2244,7 +2244,7 @@ func (c *container) addResolvConfMount(system *mount.System) error {
 				return err
 			}
 		} else {
-			dns = strings.Replace(dns, " ", "", -1)
+			dns = strings.ReplaceAll(dns, " ", "")
 			content, err = files.ResolvConf(strings.Split(dns, ","))
 			if err != nil {
 				return err

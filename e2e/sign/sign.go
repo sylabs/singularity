@@ -119,7 +119,7 @@ func (c *ctx) sign(t *testing.T) {
 			expectCode: 255,
 			expectOps: []e2e.SingularityCmdResultOp{
 				e2e.ExpectError(e2e.ContainMatch, "Signing image with PGP key material"),
-				e2e.ExpectError(e2e.ContainMatch, "Failed to sign container: index out of range"),
+				e2e.ExpectError(e2e.ContainMatch, "failed to sign container: index out of range"),
 			},
 		},
 		{

@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020-2022, ICS-FORTH.  All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
@@ -114,7 +114,7 @@ func revocationCheck(cert *x509.Certificate, pool map[string]*x509.Certificate) 
 			return false
 		}
 
-		if !(isCase1() || isCase2() || isCase3()) {
+		if !isCase1() && !isCase2() && !isCase3() {
 			return fmt.Errorf("ocsp response is rejected")
 		}
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -24,7 +24,7 @@ import (
 
 var (
 	errInvalidSection  = errors.New("invalid section(s) specified")
-	errEmptyDefinition = errors.New("Empty definition file")
+	errEmptyDefinition = errors.New("empty definition file")
 	// Match space but not within double quotes
 	fileSplitter = regexp.MustCompile(`([^\s"']*{{\s*\w+\s*}}*[^\s{}"']*)+|([^\s"']+|"([^"]*)"|'([^']*))`)
 )
