@@ -21524,7 +21524,7 @@ Blackfriday is distributed under the Simplified BSD License:
       same "printed page" as the copyright notice for easier
       identification within third-party archives.
 
-   Copyright {yyyy} {name of copyright owner}
+   Copyright (c) 2015 The Ethtool Authors
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
