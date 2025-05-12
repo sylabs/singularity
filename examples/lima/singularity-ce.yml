@@ -24,7 +24,9 @@ provision:
   script: |
     #!/bin/bash
     set -eux -o pipefail
-    dnf -y install --enablerepo=epel singularity-ce squashfs-tools-ng
+
+    dnf install -y epel-release
+    dnf install -y singularity-ce squashfs-tools-ng
 
 probes:
 - script: |
