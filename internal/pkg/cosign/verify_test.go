@@ -6,7 +6,6 @@
 package cosign
 
 import (
-	"context"
 	"crypto"
 	"errors"
 	"io"
@@ -63,7 +62,7 @@ func TestVerifyOCISIF(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			payloads, err := VerifyOCISIF(context.Background(), tt.sifPath, tt.verifier)
+			payloads, err := VerifyOCISIF(t.Context(), tt.sifPath, tt.verifier)
 			if !errors.Is(err, tt.expectErr) {
 				t.Errorf("Expected error %v, got %v", tt.expectErr, err)
 			}

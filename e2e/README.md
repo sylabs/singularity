@@ -903,8 +903,8 @@ name of the file/dir, and so both these goals can be accomplished:
     package of the standard Go library accepts both a parent directory in which
     to create the file (`dir`) and a pattern for the filename to include
     (`pattern`). Typically, the pattern is used as a prefix, but other behaviors
-    are possible. See the full documentation for this function
-    [here](https://pkg.go.dev/os#CreateTemp).
+    are possible. See the [full documentation for this function
+    here](https://pkg.go.dev/os#CreateTemp).
   - The function `e2e.WriteTempFile(dir, pattern, content string) (string,
     error)` defined in e2e/internal/e2e/fileutil.go behaves similarly - indeed,
     it calls os.CreateTemp() with the `dir` and `pattern` arguments it is given.
@@ -916,8 +916,8 @@ name of the file/dir, and so both these goals can be accomplished:
     package of the standard Go library accepts both a parent directory in which
     to create the temporary subdir (`dir`) and a pattern for the dirname to
     include (`pattern`). Typically, the pattern is used as a prefix, but other
-    behaviors are possible. See the full documentation for this function
-    [here](https://pkg.go.dev/os#MkdirTemp).
+    behaviors are possible. See the [full documentation for this function
+    here](https://pkg.go.dev/os#MkdirTemp).
   - The function `e2e.MakeTempDir(t *testing.T, baseDir string, prefix string,
     context string) (string, func(t *testing.T))` defined in
     e2e/internal/e2e/fileutil.go behaves similarly - indeed, it calls

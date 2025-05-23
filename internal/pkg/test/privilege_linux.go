@@ -67,7 +67,6 @@ func ResetPrivilege(t *testing.T) {
 
 	// We might want restoration of HOME env var to persist past this individual
 	// test, so use os.Setenv() rather than t.Setenv()
-	//nolint:tenv
 	os.Setenv("HOME", origHome) //nolint:usetesting
 
 	runtime.UnlockOSThread()
