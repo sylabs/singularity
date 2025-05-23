@@ -6,7 +6,6 @@
 package env
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -194,7 +193,7 @@ func TestEnvFileMap(t *testing.T) {
 				t.Fatalf("Could not write test env-file: %v", err)
 			}
 
-			got, err := FileMap(context.Background(), envFile, []string{}, tt.hostEnv)
+			got, err := FileMap(t.Context(), envFile, []string{}, tt.hostEnv)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("envFileMap() error = %v, wantErr %v", err, tt.wantErr)
 				return
