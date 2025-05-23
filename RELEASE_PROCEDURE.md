@@ -133,10 +133,10 @@ release of a new major or minor version. Each new RC follows step 5 and above.
 
 1. Ensure the user and admin documentation is up-to-date for the new version,
    has been branched, and tagged.
-   * [User Docs](https://www.sylabs.io/guides/latest/user-guide/) can be edited
-     [here](https://github.com/sylabs/singularity-userdocs)
-   * [Admin Docs](https://www.sylabs.io/guides/latest/admin-guide/) can be edited
-     [here](https://github.com/sylabs/singularity-admindocs)
+   * [User Docs](https://www.sylabs.io/guides/latest/user-guide/) can be [edited
+     here](https://github.com/sylabs/singularity-userdocs)
+   * [Admin Docs](https://www.sylabs.io/guides/latest/admin-guide/) can be [edited
+     here](https://github.com/sylabs/singularity-admindocs)
 1. Ensure the user and admin documentation has been deployed to the sylabs.io
    website.
 1. Modify the `README.md`, `INSTALL.md`, `CHANGELOG.md` via PR against the
