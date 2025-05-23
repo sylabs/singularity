@@ -8,7 +8,6 @@ package sypgp
 
 import (
 	"bytes"
-	"context"
 	"encoding/hex"
 	"log"
 	"net/http"
@@ -89,7 +88,7 @@ func TestSearchPubkey(t *testing.T) {
 				client.OptHTTPClient(srv.Client()),
 			}
 
-			if err := SearchPubkey(context.Background(), tt.search, false, opts...); (err != nil) != tt.wantErr {
+			if err := SearchPubkey(t.Context(), tt.search, false, opts...); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})
@@ -132,7 +131,7 @@ func TestFetchPubkey(t *testing.T) {
 				client.OptHTTPClient(srv.Client()),
 			}
 
-			el, err := FetchPubkey(context.Background(), tt.fingerprint, opts...)
+			el, err := FetchPubkey(t.Context(), tt.fingerprint, opts...)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("unexpected error: %v", err)
 				return
@@ -213,7 +212,7 @@ func TestPushPubkey(t *testing.T) {
 				client.OptHTTPClient(srv.Client()),
 			}
 
-			if err := PushPubkey(context.Background(), testEntity, opts...); (err != nil) != tt.wantErr {
+			if err := PushPubkey(t.Context(), testEntity, opts...); (err != nil) != tt.wantErr {
 				t.Fatalf("got err %v, want error %v", err, tt.wantErr)
 			}
 		})
