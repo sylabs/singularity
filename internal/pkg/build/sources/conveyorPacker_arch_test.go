@@ -6,7 +6,6 @@
 package sources_test
 
 import (
-	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -55,7 +54,7 @@ func TestArchConveyor(t *testing.T) {
 
 	cp := &sources.ArchConveyorPacker{}
 
-	err = cp.Get(context.Background(), b)
+	err = cp.Get(t.Context(), b)
 	// clean up tmpfs since assembler isn't called
 	defer cp.CleanUp()
 	if err != nil {
@@ -93,14 +92,14 @@ func TestArchPacker(t *testing.T) {
 
 	cp := &sources.ArchConveyorPacker{}
 
-	err = cp.Get(context.Background(), b)
+	err = cp.Get(t.Context(), b)
 	// clean up tmpfs since assembler isn't called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", archDef, err)
 	}
 
-	_, err = cp.Pack(context.Background())
+	_, err = cp.Pack(t.Context())
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", archDef, err)
 	}

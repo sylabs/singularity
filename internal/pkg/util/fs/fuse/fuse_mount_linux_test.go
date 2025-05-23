@@ -6,7 +6,6 @@
 package fuse
 
 import (
-	"context"
 	"path/filepath"
 	"testing"
 
@@ -38,7 +37,7 @@ func TestExtraOptOverrides(t *testing.T) {
 }
 
 func testOneOverride(t *testing.T, s string) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	m := ImageMount{
 		Type:       image.SQUASHFS,
@@ -63,7 +62,7 @@ func testOneOverride(t *testing.T, s string) {
 }
 
 func TestAllOverridesAtOnce(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	m := ImageMount{
 		Type:       image.SQUASHFS,
