@@ -6,7 +6,6 @@
 package sources_test
 
 import (
-	"context"
 	"os"
 	"path/filepath"
 	"testing"
@@ -45,7 +44,7 @@ func TestScratchConveyor(t *testing.T) {
 
 	c := &sources.ScratchConveyor{}
 
-	err = c.Get(context.Background(), b)
+	err = c.Get(t.Context(), b)
 	// clean up tmpfs since assembler isn't called
 	defer c.CleanUp()
 	if err != nil {
@@ -75,14 +74,14 @@ func TestScratchPacker(t *testing.T) {
 
 	cp := &sources.ScratchConveyorPacker{}
 
-	err = cp.Get(context.Background(), b)
+	err = cp.Get(t.Context(), b)
 	// clean up tmpfs since assembler isn't called
 	defer cp.CleanUp()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", scratchDef, err)
 	}
 
-	_, err = cp.Pack(context.Background())
+	_, err = cp.Pack(t.Context())
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", scratchDef, err)
 	}

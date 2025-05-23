@@ -216,16 +216,7 @@ func TestCheckLowerUpper(t *testing.T) {
 
 func TestAbsOverlay(t *testing.T) {
 	tmpDir := t.TempDir()
-	oldDir, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Chdir(tmpDir); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() {
-		os.Chdir(oldDir)
-	})
+	t.Chdir(tmpDir)
 
 	innerDir := filepath.Join(tmpDir, "inner")
 	if err := os.Mkdir(innerDir, 0o755); err != nil {
