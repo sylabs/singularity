@@ -6,7 +6,6 @@
 package sources
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -73,14 +72,14 @@ func testYumConveyorPacker(t *testing.T, yumDef string) {
 
 	ycp := &YumConveyorPacker{}
 
-	err = ycp.Get(context.Background(), b)
+	err = ycp.Get(t.Context(), b)
 	// clean up tmpfs since assembler isn't called
 	defer ycp.b.Remove()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", yumDef, err)
 	}
 
-	_, err = ycp.Pack(context.Background())
+	_, err = ycp.Pack(t.Context())
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", yumDef, err)
 	}
