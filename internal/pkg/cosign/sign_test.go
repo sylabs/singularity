@@ -7,6 +7,7 @@ package cosign
 
 import (
 	"bytes"
+	"context"
 	"crypto"
 	"encoding/json"
 	"path/filepath"
@@ -50,7 +51,7 @@ func TestSignOCISIF(t *testing.T) {
 		t.Fatalf("while generating test signer: %v", err)
 	}
 
-	if err := SignOCISIF(t.Context(), testSIF, sv); err != nil {
+	if err := SignOCISIF(context.Background(), testSIF, sv); err != nil {
 		t.Error(err)
 	}
 
@@ -62,7 +63,7 @@ func checkSignature(t *testing.T, verifier signature.Verifier, imgDigest v1.Hash
 	if err != nil {
 		t.Fatal(err)
 	}
-	d, err := s.Get(t.Context())
+	d, err := s.Get(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,7 +72,7 @@ func checkSignature(t *testing.T, verifier signature.Verifier, imgDigest v1.Hash
 	if !ok {
 		t.Fatal("could not upgrade Descriptor to SignedDescriptor")
 	}
-	si, err := sd.SignedImage(t.Context())
+	si, err := sd.SignedImage(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}

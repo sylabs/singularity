@@ -6,6 +6,7 @@
 package sources
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -55,14 +56,14 @@ func testZypperConveyorPacker(t *testing.T, defName string) {
 
 	zcp := &ZypperConveyorPacker{}
 
-	err = zcp.Get(t.Context(), b)
+	err = zcp.Get(context.Background(), b)
 	// clean up tmpfs since assembler isn't called
 	defer zcp.b.Remove()
 	if err != nil {
 		t.Fatalf("failed to Get from %s: %v\n", defName, err)
 	}
 
-	_, err = zcp.Pack(t.Context())
+	_, err = zcp.Pack(context.Background())
 	if err != nil {
 		t.Fatalf("failed to Pack from %s: %v\n", defName, err)
 	}

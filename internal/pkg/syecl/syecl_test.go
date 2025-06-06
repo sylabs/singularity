@@ -7,6 +7,7 @@
 package syecl
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -427,7 +428,7 @@ func TestShouldRun(t *testing.T) {
 			}
 
 			// Test ShouldRun (takes path).
-			got, err := c.ShouldRun(t.Context(), tt.path, openpgp.EntityList{getTestEntity(t)})
+			got, err := c.ShouldRun(context.Background(), tt.path, openpgp.EntityList{getTestEntity(t)})
 
 			if want := !tt.wantErr; got != want {
 				t.Errorf("got run %v, want %v", got, want)
@@ -444,7 +445,7 @@ func TestShouldRun(t *testing.T) {
 			}
 			defer f.Close()
 
-			got, err = c.ShouldRunFp(t.Context(), f, openpgp.EntityList{getTestEntity(t)})
+			got, err = c.ShouldRunFp(context.Background(), f, openpgp.EntityList{getTestEntity(t)})
 
 			if want := !tt.wantErr; got != want {
 				t.Errorf("got run %v, want %v", got, want)
