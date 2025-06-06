@@ -6,6 +6,7 @@
 package native
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"reflect"
@@ -99,7 +100,7 @@ func TestFromImageRef(t *testing.T) {
 				t.Fatalf("While initializing bundle: %s", err)
 			}
 
-			if err := b.Create(t.Context(), nil); err != nil {
+			if err := b.Create(context.Background(), nil); err != nil {
 				t.Errorf("While creating bundle: %s", err)
 			}
 
@@ -109,7 +110,7 @@ func TestFromImageRef(t *testing.T) {
 
 			ocitest.ValidateBundle(t, bundleDir)
 
-			if err := b.Delete(t.Context()); err != nil {
+			if err := b.Delete(context.Background()); err != nil {
 				t.Errorf("While deleting bundle: %s", err)
 			}
 		})

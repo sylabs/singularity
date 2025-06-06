@@ -8,6 +8,7 @@
 package network
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net"
@@ -370,10 +371,10 @@ func testPingIP(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdout io
 		return err
 	}
 	setup.SetArgs([]string{"IP=" + testIP})
-	if err := setup.AddNetworks(t.Context()); err != nil {
+	if err := setup.AddNetworks(context.Background()); err != nil {
 		return err
 	}
-	defer setup.DelNetworks(t.Context())
+	defer setup.DelNetworks(context.Background())
 
 	ip, err := setup.GetNetworkIP("test-bridge", "4")
 	if err != nil {
@@ -399,10 +400,10 @@ func testPingRandomIP(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, std
 	if err != nil {
 		return err
 	}
-	if err := setup.AddNetworks(t.Context()); err != nil {
+	if err := setup.AddNetworks(context.Background()); err != nil {
 		return err
 	}
-	defer setup.DelNetworks(t.Context())
+	defer setup.DelNetworks(context.Background())
 
 	ip, err := setup.GetNetworkIP("test-bridge", "4")
 	if err != nil {
@@ -426,10 +427,10 @@ func testPingIPRange(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdo
 		return err
 	}
 	setup.SetArgs([]string{"ipRange=10.111.112.0/24"})
-	if err := setup.AddNetworks(t.Context()); err != nil {
+	if err := setup.AddNetworks(context.Background()); err != nil {
 		return err
 	}
-	defer setup.DelNetworks(t.Context())
+	defer setup.DelNetworks(context.Background())
 
 	ip, err := setup.GetNetworkIP("test-bridge", "4")
 	if err != nil {
@@ -460,10 +461,10 @@ func testHTTPPortmap(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdo
 		return err
 	}
 	setup.SetArgs([]string{"portmap=31080:80/tcp"})
-	if err := setup.AddNetworks(t.Context()); err != nil {
+	if err := setup.AddNetworks(context.Background()); err != nil {
 		return err
 	}
-	defer setup.DelNetworks(t.Context())
+	defer setup.DelNetworks(context.Background())
 
 	eth, err := setup.GetNetworkInterface("test-bridge-iprange")
 	if err != nil {
@@ -502,10 +503,10 @@ func testBadBridge(nsPath string, cniPath *CNIPath, stdin io.WriteCloser, stdout
 	if err != nil {
 		return err
 	}
-	if err := setup.AddNetworks(t.Context()); err == nil {
+	if err := setup.AddNetworks(context.Background()); err == nil {
 		return fmt.Errorf("unexpected success while calling non existent plugin")
 	}
-	defer setup.DelNetworks(t.Context())
+	defer setup.DelNetworks(context.Background())
 
 	return nil
 }
