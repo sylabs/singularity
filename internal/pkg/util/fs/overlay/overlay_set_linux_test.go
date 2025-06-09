@@ -61,7 +61,7 @@ func wrapOverlayTest(f func(t *testing.T)) func(t *testing.T) {
 
 func TestAllTypesAtOnce(t *testing.T) {
 	wrapOverlayTest(func(t *testing.T) {
-		ctx := t.Context()
+		ctx := context.Background()
 		s := Set{}
 
 		tmpRoOlDir := mkTempOlDirOrFatal(t)
@@ -129,7 +129,7 @@ func TestAllTypesAtOnce(t *testing.T) {
 func TestPersistentWriteToDir(t *testing.T) {
 	wrapOverlayTest(func(t *testing.T) {
 		tmpRwOlDir := mkTempOlDirOrFatal(t)
-		ctx := t.Context()
+		ctx := context.Background()
 		i, err := NewItemFromString(tmpRwOlDir)
 		if err != nil {
 			t.Fatalf("failed to create writable-dir overlay item (%q): %s", tmpRwOlDir, err)
@@ -145,7 +145,7 @@ func TestPersistentWriteToExtfsImg(t *testing.T) {
 	require.Command(t, "fuse-overlayfs")
 	require.Command(t, "fusermount")
 	tmpDir := t.TempDir()
-	ctx := t.Context()
+	ctx := context.Background()
 
 	// Create a copy of the extfs test image to be used for testing writable
 	// extfs image overlays
@@ -216,7 +216,7 @@ func TestDuplicateItemsInSet(t *testing.T) {
 		var rwI *Item
 		var err error
 
-		ctx := t.Context()
+		ctx := context.Background()
 		s := Set{}
 
 		// First, test mounting of an overlay set with only readonly items, one of

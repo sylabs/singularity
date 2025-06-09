@@ -6,6 +6,7 @@
 package ocisif
 
 import (
+	"context"
 	"testing"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
@@ -47,13 +48,13 @@ func TestFromImageRef(t *testing.T) {
 				t.Fatalf("While initializing bundle: %s", err)
 			}
 
-			if err := b.Create(t.Context(), nil); err != nil {
+			if err := b.Create(context.Background(), nil); err != nil {
 				t.Fatalf("While creating bundle: %s", err)
 			}
 
 			ocitest.ValidateBundle(t, bundleDir)
 
-			if err := b.Delete(t.Context()); err != nil {
+			if err := b.Delete(context.Background()); err != nil {
 				t.Errorf("While deleting bundle: %s", err)
 			}
 		})

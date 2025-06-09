@@ -6,6 +6,7 @@
 package overlay
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
@@ -175,7 +176,7 @@ func TestUpperAndWorkCreation(t *testing.T) {
 }
 
 func TestDirMounts(t *testing.T) {
-	ctx := t.Context()
+	ctx := context.Background()
 
 	tests := []struct {
 		name            string
@@ -246,7 +247,7 @@ func TestDirMounts(t *testing.T) {
 
 func TestImageRO(t *testing.T) {
 	require.Command(t, "fusermount")
-	ctx := t.Context()
+	ctx := context.Background()
 
 	tests := []struct {
 		name            string
@@ -348,7 +349,7 @@ func TestExtfsRW(t *testing.T) {
 	require.Command(t, "fuse-overlayfs")
 	require.Command(t, "fusermount")
 	tmpDir := t.TempDir()
-	ctx := t.Context()
+	ctx := context.Background()
 
 	// Create a copy of the extfs test image to be used for testing writable
 	// extfs image overlays
