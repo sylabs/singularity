@@ -115,8 +115,12 @@ func extractLayer(l v1.Layer, mapOptions umocilayer.MapOptions, destDir string) 
 		}
 	}()
 
-	unpackOptions := umocilayer.UnpackOptions{MapOptions: mapOptions}
-	err = umocilayer.UnpackLayer(destDir, layerReader, &unpackOptions)
+	unpackOptions := &umocilayer.UnpackOptions{
+		OnDiskFormat: umocilayer.DirRootfs{
+			MapOptions: mapOptions,
+		},
+	}
+	err = umocilayer.UnpackLayer(destDir, layerReader, unpackOptions)
 	if err != nil {
 		return fmt.Errorf("while unpacking layer %s: %w", layerDigest, err)
 	}
