@@ -100,6 +100,7 @@ The following have contributed code and/or documentation to this repository.
 - Rémy Dernat <remy.dernat@umontpellier.fr>
 - Richard Hattersley <richard.hattersley@metoffice.gov.uk>
 - Richard Neuboeck <hawk@tbi.univie.ac.at>
+- Rowan Kelleher <rck32@duke.edu>
 - Sasha Yakovtseva <sasha@sylabs.io>, <sashayakovtseva@gmail.com>
 - Satish Chebrolu  <satish@sylabs.io>
 - Shane Loretz <sloretz@openrobotics.org>, <shane.loretz@gmail.com>
