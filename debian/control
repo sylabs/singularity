@@ -25,8 +25,8 @@ Architecture: any
 Depends: ${misc:Depends}, ${shlibs:Depends},
   crun (>= 1.5.0) | runc,
   cryptsetup-bin,
-  fuse3,
   fuse2fs,
+  fuse3,
   libseccomp2,
   squashfs-tools,
   uidmap
