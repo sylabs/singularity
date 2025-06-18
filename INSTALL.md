@@ -23,7 +23,7 @@ sudo apt-get install -y \
     fuse2fs \
     git \
     fuse3 \
-    libfuse-dev \
+    libfuse3-dev \
     libseccomp-dev \
     libtool \
     pkg-config \
