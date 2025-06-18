@@ -91,9 +91,10 @@ commands:
               build-essential \
               cryptsetup \
               fuse2fs \
+              fuse3 \
               fuse-overlayfs \
               git \
-              libfuse-dev \
+              libfuse3-dev \
               libseccomp-dev \
               libsubid-dev \
               libtool \
@@ -377,7 +378,7 @@ jobs:
               dh-golang \
               fakeroot \
               git \
-              libfuse-dev \
+              libfuse3-dev \
               libglib2.0-dev \
               libseccomp-dev \
               libtool \
