@@ -8,7 +8,7 @@
 - EL 10 (RHEL/AlmaLinux/Rocky Linux 10) packages introduced.
 - Build bundled squashfuse against FUSE3 for all packages.
 - Don't depend on `fuse` on Ubuntu - installing this package on 22.04 can
-  cause conflicts with the Ubuntu Desktop package set. 
+  cause conflicts with the Ubuntu Desktop package set.
 
 ## 4.3.1 \[2025-04-11\]
 
