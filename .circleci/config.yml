@@ -27,12 +27,9 @@ executors:
   almalinux9:
     docker:
       - image: almalinux:9
-  centosstream10:
+  almalinux10:
     docker:
-      - image: quay.io/centos/centos:stream10
-  ubuntu2004:
-    docker:
-      - image: ubuntu:20.04
+      - image: almalinux:10
   ubuntu2204:
     docker:
       - image: ubuntu:22.04
@@ -44,10 +41,10 @@ executors:
       - image: golangci/golangci-lint:v2.1
   ubuntu-machine:
     machine:
-      image: ubuntu-2404:2024.05.1
+      image: ubuntu-2404:2024.11.1
   ubuntu-machine-large:
     machine:
-      image: ubuntu-2404:2024.05.1
+      image: ubuntu-2404:2024.11.1
     resource_class: large
 
 commands:
@@ -113,7 +110,7 @@ commands:
       - run:
           name: Install crun
           command: |-
-            <<# parameters.sudo >>sudo <</ parameters.sudo >>curl -L -o /usr/local/bin/crun https://github.com/containers/crun/releases/download/1.14.4/crun-1.14.4-linux-amd64
+            <<# parameters.sudo >>sudo <</ parameters.sudo >>curl -L -o /usr/local/bin/crun https://github.com/containers/crun/releases/download/1.21/crun-1.21-linux-amd64
             <<# parameters.sudo >>sudo <</ parameters.sudo >>chmod +x /usr/local/bin/crun
       - run:
           name: Install conmon
@@ -241,7 +238,7 @@ jobs:
           command: |-
             ./mconfig -v -p /usr/local --without-libsubid
             make -C ./builddir all
-            
+
   lint-source:
     executor: golangci-lint
     steps:
@@ -425,7 +422,7 @@ workflows:
       - build-rpm:
           matrix:
             parameters:
-              e: ["almalinux8", "almalinux9"]
+              e: ["almalinux8", "almalinux9", "almalinux10"]
           filters:
             branches:
               only:
@@ -435,19 +432,7 @@ workflows:
       - build-deb:
           matrix:
             parameters:
-              e: ["ubuntu2004", "ubuntu2204", "ubuntu2404"]
-          filters:
-            branches:
-              only:
-                - main
-                - /release-.*/
-
-  preview:
-    jobs:
-       - build-rpm:
-          matrix:
-            parameters:
-              e: ["centosstream10"]
+              e: ["ubuntu2204", "ubuntu2404"]
           filters:
             branches:
               only:
@@ -459,7 +444,7 @@ workflows:
       - build-rpm:
           matrix:
             parameters:
-              e: ["almalinux8", "almalinux9"]
+              e: ["almalinux8", "almalinux9", "almalinux10"]
           filters:
             branches:
               ignore: /.*/
@@ -469,7 +454,7 @@ workflows:
       - build-deb:
           matrix:
             parameters:
-              e: ["ubuntu2004", "ubuntu2204", "ubuntu2404"]
+              e: ["ubuntu2204", "ubuntu2404"]
           filters:
             branches:
               ignore: /.*/
