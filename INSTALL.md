@@ -22,8 +22,8 @@ sudo apt-get install -y \
     cryptsetup \
     fuse2fs \
     git \
-    fuse \
-    libfuse-dev \
+    fuse3 \
+    libfuse3-dev \
     libseccomp-dev \
     libtool \
     pkg-config \
