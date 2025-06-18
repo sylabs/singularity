@@ -55,6 +55,9 @@ func Writer() io.Writer {
 	return io.Discard
 }
 
+// SetWriter is a dummy function doing nothing
+func SetWriter(io.Writer) {}
+
 // DebugLogger is an implementation of the go-log/log Logger interface that will
 // output log messages via sylog.debug when required by external packages such
 // as the scs-library-client

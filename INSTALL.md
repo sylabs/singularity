@@ -22,8 +22,8 @@ sudo apt-get install -y \
     cryptsetup \
     fuse2fs \
     git \
-    fuse \
-    libfuse-dev \
+    fuse3 \
+    libfuse3-dev \
     libseccomp-dev \
     libtool \
     pkg-config \
@@ -130,7 +130,7 @@ containers in an OCI lifecycle then `conmon` is required.
 `conmon` is available as a package for Ubuntu 24.10+ and Debian 12+
 
 ```sh
-sudo apt get install conmon
+sudo apt-get install conmon
 ```
 
 On older versions, use the latest binary from the [conmon GitHub
@@ -227,11 +227,11 @@ git submodule update --init
 By default your clone will be on the `main` branch which is where development
 of SingularityCE happens. To build a specific version of SingularityCE, check
 out a [release tag](https://github.com/sylabs/singularity/tags) before
-compiling. E.g. to build the 4.3.0 release, checkout the
-`v4.3.0` tag:
+compiling. E.g. to build the 4.3.2 release, checkout the
+`v4.3.2` tag:
 
 ```sh
-git checkout --recurse-submodules v4.3.0
+git checkout --recurse-submodules v4.3.2
 ```
 
 ## Compiling SingularityCE
@@ -334,7 +334,7 @@ build and install the RPM like this:
 <!-- markdownlint-disable MD013 -->
 
 ```sh
-export VERSION=4.3.0 # this is the singularity version, change as you need
+export VERSION=4.3.2 # this is the singularity version, change as you need
 
 # Fetch the source
 wget https://github.com/sylabs/singularity/releases/download/v${VERSION}/singularity-ce-${VERSION}.tar.gz
