@@ -1,8 +1,15 @@
 # SingularityCE Changelog
 
+## Changes Since Last Release
+
+### Bug fixes
+
+- Don't set ineffective `mode=777` on workdir bind. Fixes error in OCI-mode with
+  `--workdir` and runc >= 1.2.0.
+
 ## 4.3.2 \[2025-06-18\]
 
-## Requirements / Packaging
+### Requirements / Packaging
 
 - Ubuntu 20.04 packages dropped - end-of-life.
 - EL 10 (RHEL/AlmaLinux/Rocky Linux 10) packages introduced.

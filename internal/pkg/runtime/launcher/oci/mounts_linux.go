@@ -140,7 +140,6 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
 		opts := []string{
 			"rbind",
 			"relatime",
-			"mode=777",
 		}
 		if !l.cfg.AllowSUID {
 			opts = append(opts, "nosuid")
