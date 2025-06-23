@@ -615,11 +615,12 @@ var resourceFlagTests = []resourceFlagTest{
 		controllerV1:    "cpu",
 		resourceV1:      "cpu.shares",
 		expectV1:        "123",
-		// Cgroups v2 has a conversion from shares to weight:
-		// weight = (1 + ((cpuShares-2)*9999)/262142)
+		// Cgroups v2 has a conversion from shares to weight. The formula has
+		// changed between opencontainer/cgroups versions, and runc / crun
+		// versions. See https://github.com/opencontainers/cgroups/pull/20
 		delegationV2: "cpu",
 		resourceV2:   "cpu.weight",
-		expectV2:     "5",
+		expectV2:     "5|20",
 	},
 	{
 		name:            "cpuset-cpus",
@@ -729,7 +730,7 @@ func (c *ctx) actionFlagV1(t *testing.T, tt resourceFlagTest, profile e2e.Profil
 
 	exitFunc := []e2e.SingularityCmdResultOp{}
 	if tt.expectV1 != "" {
-		exitFunc = []e2e.SingularityCmdResultOp{e2e.ExpectOutput(e2e.ContainMatch, tt.expectV1)}
+		exitFunc = []e2e.SingularityCmdResultOp{e2e.ExpectOutput(e2e.RegexMatch, tt.expectV1)}
 	}
 
 	args := tt.args
@@ -759,7 +760,7 @@ func (c *ctx) actionFlagV2(t *testing.T, tt resourceFlagTest, profile e2e.Profil
 
 	exitFunc := []e2e.SingularityCmdResultOp{}
 	if tt.expectV2 != "" {
-		exitFunc = []e2e.SingularityCmdResultOp{e2e.ExpectOutput(e2e.ContainMatch, tt.expectV2)}
+		exitFunc = []e2e.SingularityCmdResultOp{e2e.ExpectOutput(e2e.RegexMatch, tt.expectV2)}
 	}
 
 	// Use shell in the container to find container cgroup and cat the value for the tested controller & resource.
@@ -851,7 +852,7 @@ func (c *ctx) instanceFlagV1(t *testing.T, tt resourceFlagTest, profile e2e.Prof
 	shellCmd := fmt.Sprintf("cat /sys/fs/cgroup/%s$(cat /proc/self/cgroup | grep '[,:]%s[,:]' | cut -d ':' -f 3)/%s", tt.controllerV1, tt.controllerV1, tt.resourceV1)
 	exitFunc := []e2e.SingularityCmdResultOp{}
 	if tt.expectV1 != "" {
-		exitFunc = []e2e.SingularityCmdResultOp{e2e.ExpectOutput(e2e.ContainMatch, tt.expectV1)}
+		exitFunc = []e2e.SingularityCmdResultOp{e2e.ExpectOutput(e2e.RegexMatch, tt.expectV1)}
 	}
 
 	c.env.RunSingularity(
@@ -907,7 +908,7 @@ func (c *ctx) instanceFlagV2(t *testing.T, tt resourceFlagTest, profile e2e.Prof
 	shellCmd := fmt.Sprintf("cat /sys/fs/cgroup$(cat /proc/self/cgroup | grep '^0::' | cut -d ':' -f 3)/%s", tt.resourceV2)
 	exitFunc := []e2e.SingularityCmdResultOp{}
 	if tt.expectV2 != "" {
-		exitFunc = []e2e.SingularityCmdResultOp{e2e.ExpectOutput(e2e.ContainMatch, tt.expectV2)}
+		exitFunc = []e2e.SingularityCmdResultOp{e2e.ExpectOutput(e2e.RegexMatch, tt.expectV2)}
 	}
 
 	c.env.RunSingularity(
