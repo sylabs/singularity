@@ -866,19 +866,19 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 			Mounts: []cdispecs.Mount{
 				{
 					ContainerPath: "/tmp/mount1",
-					Options:       []string{"rw", "bind", "users"},
+					Options:       []string{"rw", "bind"},
 				},
 				{
 					ContainerPath: "/tmp/mount3",
-					Options:       []string{"rw", "bind", "users"},
+					Options:       []string{"rw", "bind"},
 				},
 				{
 					ContainerPath: "/tmp/mount13",
-					Options:       []string{"rw", "bind", "users"},
+					Options:       []string{"rw", "bind"},
 				},
 				{
 					ContainerPath: "/tmp/mount17",
-					Options:       []string{"rw", "bind", "users"},
+					Options:       []string{"rw", "bind"},
 				},
 			},
 			Env: []string{
