@@ -37,7 +37,7 @@ require (
 	github.com/moby/sys/user v0.4.0
 	github.com/moby/sys/userns v0.1.0
 	github.com/moby/term v0.5.2
-	github.com/opencontainers/cgroups v0.0.3
+	github.com/opencontainers/cgroups v0.0.4
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/opencontainers/runc v1.3.0
 	github.com/opencontainers/runtime-spec v1.2.1
