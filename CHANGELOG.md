@@ -6,6 +6,12 @@
 
 - Requires Go 1.24.3 or above, due to various dependencies.
 
+### Changed defaults / behaviours
+
+- Use OCI Manifest Schema 1 for ORAS pushes. Addresses errors pushing to Quay,
+  which applies a `must be` restriction for the `config.mediaType` value on
+  Docker Manifest Schema 2 (spec has a looser `should generally be`).
+
 ### Bug fixes
 
 - Don't set ineffective `mode=777` on workdir bind. Fixes error in OCI-mode with

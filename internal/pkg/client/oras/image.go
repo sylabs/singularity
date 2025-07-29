@@ -125,29 +125,41 @@ func NewImageFromSIF(file string, layerMediaType types.MediaType) (*SifImage, er
 	}
 
 	//
-	// Example manifest - config is always empty JSON '{}'. Single SIF file layer.
+	// Example manifest - config is always empty JSON '{}'. Single SIF file
+	// layer.
+	//
+	// Using the OCI manifest mediaType is important. If using ggcr's default
+	// docker schema 2 value then uploads to Quay will fail. Quay treates a
+	// `should normally be` condition in the spec for the config mediaType as
+	// `must be`. Non docker image config mediaTypes are only allowed for OCI
+	// manifests.
+	//
+	// Per image-spec 1.1 we should be probably now be using an empty config,
+	// and `artifactType`, but this is not yet supported by ggcr and may be
+	// rejected by older registries.
 	//
 	// {
-	// 	"schemaVersion": 2,
-	// 	"config": {
-	// 	  "mediaType": "application/vnd.sylabs.sif.config.v1+json",
-	// 	  "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
-	// 	  "size": 2
-	// 	},
-	// 	"layers": [
-	// 	  {
-	// 		"mediaType": "application/vnd.sylabs.sif.layer.v1.sif",
-	// 		"digest": "sha256:13e1552aaf6aa3916353730be52e06ec214ae8f8a89062cec1f33990b553a6c9",
-	// 		"size": 29814784,
-	// 		"annotations": {
-	// 		  "org.opencontainers.image.title": "ubuntu_latest.sif"
-	// 		}
-	// 	  }
-	// 	]
+	//  "schemaVersion": 2,
+	//  "mediaType": "application/vnd.oci.image.manifest.v1+json",
+	//  "config": {
+	//    "mediaType": "application/vnd.sylabs.sif.config.v1+json",
+	//    "digest": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+	//    "size": 2
+	//  },
+	//  "layers": [
+	//    {
+	//      "mediaType": "application/vnd.sylabs.sif.layer.v1.sif",
+	//      "digest": "sha256:13e1552aaf6aa3916353730be52e06ec214ae8f8a89062cec1f33990b553a6c9",
+	//      "size": 29814784,
+	//      "annotations": {
+	//        "org.opencontainers.image.title": "ubuntu_latest.sif"
+	//      }
+	//    }
+	//  ]
 	//   }
 	si.manifest = v1.Manifest{
 		SchemaVersion: 2,
-		MediaType:     types.DockerManifestSchema2,
+		MediaType:     types.OCIManifestSchema1,
 		Config: v1.Descriptor{
 			MediaType: types.MediaType(SifConfigMediaTypeV1),
 			Digest:    emptyHash,
