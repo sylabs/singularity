@@ -2,6 +2,10 @@
 
 ## Changes Since Last Release
 
+### Requirements / Packaging
+
+- Requires Go 1.24.3 or above, due to various dependencies.
+
 ### Bug fixes
 
 - Don't set ineffective `mode=777` on workdir bind. Fixes error in OCI-mode with
