@@ -6,7 +6,6 @@
 package signature
 
 import (
-	"context"
 	"crypto"
 	"errors"
 	"io"
@@ -143,7 +142,7 @@ func TestSign(t *testing.T) {
 			}
 			defer os.Remove(path)
 
-			if got, want := Sign(context.Background(), path, tt.opts...), tt.wantErr; !errors.Is(got, want) {
+			if got, want := Sign(t.Context(), path, tt.opts...), tt.wantErr; !errors.Is(got, want) {
 				t.Errorf("got error %v, want %v", got, want)
 			}
 		})
