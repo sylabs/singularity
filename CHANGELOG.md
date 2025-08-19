@@ -5,6 +5,7 @@
 ### Requirements / Packaging
 
 - Requires Go 1.24.3 or above, due to various dependencies.
+- Bundled squashfuse is now 0.6.1.
 
 ### Changed defaults / behaviours
 
