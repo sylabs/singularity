@@ -1,10 +1,11 @@
 # SingularityCE Changelog
 
-## Changes Since Last Release
+## 4.3.3 \[2025-08-20\]
 
 ### Requirements / Packaging
 
 - Requires Go 1.24.3 or above, due to various dependencies.
+- Bundled squashfuse is now 0.6.1.
 
 ### Changed defaults / behaviours
 
