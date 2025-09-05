@@ -17,8 +17,8 @@ require (
 	github.com/containerd/go-runc v1.1.0
 	github.com/containerd/platforms v1.0.0-rc.1
 	github.com/containernetworking/cni v1.3.0
-	github.com/containernetworking/plugins v1.7.1
-	github.com/containers/image/v5 v5.36.1
+	github.com/containernetworking/plugins v1.8.0
+	github.com/containers/image/v5 v5.36.2
 	github.com/coreos/go-systemd/v22 v22.6.0
 	github.com/cyphar/filepath-securejoin v0.4.1
 	github.com/docker/cli v28.3.3+incompatible
@@ -53,8 +53,8 @@ require (
 	github.com/sigstore/cosign/v2 v2.5.3
 	github.com/sigstore/sigstore v1.9.5
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cobra v1.9.1
-	github.com/spf13/pflag v1.0.7
+	github.com/spf13/cobra v1.10.1
+	github.com/spf13/pflag v1.0.9
 	github.com/sylabs/json-resp v0.9.5
 	github.com/sylabs/oci-tools v0.18.0
 	github.com/sylabs/scs-build-client v0.9.20
@@ -229,7 +229,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/rootless-containers/proto/go-proto v0.0.0-20230421021042-4cd87ebadd67 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/safchain/ethtool v0.5.10 // indirect
+	github.com/safchain/ethtool v0.6.2 // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/sasha-s/go-deadlock v0.3.5 // indirect
 	github.com/sassoftware/relic v7.2.1+incompatible // indirect
