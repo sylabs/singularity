@@ -15,7 +15,7 @@ import (
 	"syscall"
 
 	"github.com/ccoveille/go-safecast"
-	dseccomp "github.com/docker/docker/profiles/seccomp"
+	mseccomp "github.com/moby/profiles/seccomp"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	lseccomp "github.com/seccomp/libseccomp-golang"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci/generate"
@@ -285,7 +285,7 @@ func LoadProfileFromFile(profile string, generator *generate.Generator) error {
 		generator.Config.Process.Capabilities = &specs.LinuxCapabilities{}
 	}
 
-	seccompConfig, err := dseccomp.LoadProfile(string(data), generator.Config)
+	seccompConfig, err := mseccomp.LoadProfile(string(data), generator.Config)
 	if err != nil {
 		return err
 	}
