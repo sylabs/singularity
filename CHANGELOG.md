@@ -5,6 +5,10 @@
 ### Bug Fixes
 
 - Don't attempt to set `relatime` on workdir / scratch mounts in OCI-Mode.
+- Include the home directory in the `--workdir` option (which is a
+  modifier of the `--contain` option).  This has always been in the
+  `--workdir` usage description but the home directory has not actually
+  been included at least since singularity-2.
 
 ### Requirements / Packaging
 
