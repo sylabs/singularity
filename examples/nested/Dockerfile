@@ -1,4 +1,4 @@
-FROM ubuntu:24.10
+FROM ubuntu:25.04
 
 RUN ln -s /usr/share/zoneinfo/UTC /etc/localtime && \
     apt-get -yq update && \
