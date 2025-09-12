@@ -1,5 +1,5 @@
 Bootstrap: docker
-From: ubuntu:24.10
+From: ubuntu:25.04
 
 %post
     ln -s /usr/share/zoneinfo/UTC /etc/localtime
