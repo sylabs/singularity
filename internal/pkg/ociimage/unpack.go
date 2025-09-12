@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,9 +12,10 @@ import (
 	"os"
 
 	apexlog "github.com/apex/log"
+	"github.com/ccoveille/go-safecast"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/opencontainers/runtime-spec/specs-go"
 	umocilayer "github.com/opencontainers/umoci/oci/layer"
-	"github.com/opencontainers/umoci/pkg/idtools"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/namespaces"
@@ -74,15 +75,25 @@ func UnpackRootfs(_ context.Context, srcImage v1.Image, destDir string) (err err
 	if os.Geteuid() != 0 || insideUserNs {
 		mapOptions.Rootless = true
 
-		uidMap, err := idtools.ParseMapping(fmt.Sprintf("0:%d:1", os.Geteuid()))
+		uid, err := safecast.ToUint32(os.Getuid())
 		if err != nil {
-			return fmt.Errorf("error parsing uidmap: %s", err)
+			sylog.Fatalf("while getting uid: %v", err)
+		}
+		uidMap := specs.LinuxIDMapping{
+			ContainerID: 0,
+			HostID:      uid,
+			Size:        1,
 		}
 		mapOptions.UIDMappings = append(mapOptions.UIDMappings, uidMap)
 
-		gidMap, err := idtools.ParseMapping(fmt.Sprintf("0:%d:1", os.Getegid()))
+		gid, err := safecast.ToUint32(os.Getgid())
 		if err != nil {
-			return fmt.Errorf("error parsing gidmap: %s", err)
+			sylog.Fatalf("while getting gid: %v", err)
+		}
+		gidMap := specs.LinuxIDMapping{
+			ContainerID: 0,
+			HostID:      gid,
+			Size:        1,
 		}
 		mapOptions.GIDMappings = append(mapOptions.GIDMappings, gidMap)
 	}
