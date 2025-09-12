@@ -64,6 +64,8 @@ func (c ctx) issue4524(t *testing.T) {
 }
 
 func (c ctx) issue4943(t *testing.T) {
+	t.Skip(t, "Disabled due to CERN registry unavailability.")
+
 	require.Arch(t, "amd64")
 
 	const (
