@@ -224,7 +224,7 @@ func signCosign(ctx context.Context, sifPath, keyPath string) error {
 		return fmt.Errorf("couldn't read key password: %w", err)
 	}
 
-	sv, err := cosign.LoadPrivateKey(kb, pass)
+	sv, err := cosign.LoadPrivateKey(kb, pass, nil)
 	if err != nil {
 		return fmt.Errorf("failed to open OCI-SIF: %w", err)
 	}
