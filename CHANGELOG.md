@@ -1,5 +1,13 @@
 # SingularityCE Changelog
 
+## 4.3.4 \[2025-10-14\]
+
+### Security Related Fixes
+
+- GitHub release packages built using Go 1.25.3, due to
+  [large number of denial-of-service CVEs fixed in 1.25.2.](https://groups.google.com/g/golang-announce/c/4Emdl2iQ_bI)
+- All dependencies updated.
+
 ## 4.3.3 \[2025-08-20\]
 
 ### Requirements / Packaging
