@@ -1389,8 +1389,8 @@ github.com/opencontainers/runtime-tools v0.9.1-0.20230914150019-408c51e934dc h1:
 github.com/opencontainers/runtime-tools v0.9.1-0.20230914150019-408c51e934dc/go.mod h1:8tx1helyqhUC65McMm3x7HmOex8lO2/v9zPuxmKHurs=
 github.com/opencontainers/selinux v1.12.0 h1:6n5JV4Cf+4y0KNXW48TLj5DwfXpvWlxXplUkdTrmPb8=
 github.com/opencontainers/selinux v1.12.0/go.mod h1:BTPX+bjVbWGXw7ZZWUbdENt8w0htPSrlgOOysQaU62U=
-github.com/opencontainers/umoci v0.5.1 h1:bjfDF30Vyn+yydbucRmCc8kYTNdoHbkwwQeIwYkoalE=
-github.com/opencontainers/umoci v0.5.1/go.mod h1:GsfGXiJRxIQ3Db/7jrCMQhnPBShaCOoPrmAJxb/NZ9Q=
+github.com/opencontainers/umoci v0.6.0 h1:Dsm4beJpglN5y2E2EUSZZcNey4Ml4+nKepvwLQwgIec=
+github.com/opencontainers/umoci v0.6.0/go.mod h1:2DS3cxVN9pRJGYaCK5mnmmwVKV5vd9r6HIYAV0IvdbI=
 github.com/opentracing/opentracing-go v1.2.0 h1:uEJPy/1a5RIPAJ0Ov+OIO8OxWu77jEv+1B0VhjKrZUs=
 github.com/opentracing/opentracing-go v1.2.0/go.mod h1:GxEUsuufX4nBwe+T+Wl9TAgYrxe9dPLANfrWvHYVTgc=
 github.com/package-url/packageurl-go v0.1.1 h1:KTRE0bK3sKbFKAk3yy63DpeskU7Cvs/x/Da5l+RtzyU=
@@ -1627,8 +1627,8 @@ github.com/u-root/uio v0.0.0-20240224005618-d2acac8f3701 h1:pyC9PaHYZFgEKFdlp3G8
 github.com/u-root/uio v0.0.0-20240224005618-d2acac8f3701/go.mod h1:P3a5rG4X7tI17Nn3aOIAYr5HbIMukwXG0urG0WuL8OA=
 github.com/ulikunitz/xz v0.5.14 h1:uv/0Bq533iFdnMHZdRBTOlaNMdb1+ZxXIlHDZHIHcvg=
 github.com/ulikunitz/xz v0.5.14/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
-github.com/vbatts/go-mtree v0.5.4 h1:OMAb8jaCyiFA7zXj0Zc/oARcxBDBoeu2LizjB8BVJl0=
-github.com/vbatts/go-mtree v0.5.4/go.mod h1:5GqJbVhm9BBiCc4K5uc/c42FPgXulHaQs4sFUEfIWMo=
+github.com/vbatts/go-mtree v0.6.1-0.20250911112631-8307d76bc1b9 h1:R6l9BtUe83abUGu1YKGkfa17wMMFLt6mhHVQ8MxpfRE=
+github.com/vbatts/go-mtree v0.6.1-0.20250911112631-8307d76bc1b9/go.mod h1:W7bcG9PCn6lFY+ljGlZxx9DONkxL3v8a7HyN+PrSrjA=
 github.com/vbatts/tar-split v0.12.1 h1:CqKoORW7BUWBe7UL/iqTVvkTBOF8UvOMKOIZykxnnbo=
 github.com/vbatts/tar-split v0.12.1/go.mod h1:eF6B6i6ftWQcDqEn3/iGFRFRo8cBIMSJVOpnNdfTMFA=
 github.com/vbauerster/mpb/v8 v8.10.2 h1:2uBykSHAYHekE11YvJhKxYmLATKHAGorZwFlyNw4hHM=
@@ -2395,8 +2395,8 @@ google.golang.org/protobuf v1.28.0/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqw
 google.golang.org/protobuf v1.28.1/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 google.golang.org/protobuf v1.29.1/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
 google.golang.org/protobuf v1.30.0/go.mod h1:HV8QOd/L58Z+nl8r43ehVNZIU/HEI6OcFqwMG9pJV4I=
-google.golang.org/protobuf v1.36.9 h1:w2gp2mA27hUeUzj9Ex9FBjsBm40zfaDtEWow293U7Iw=
-google.golang.org/protobuf v1.36.9/go.mod h1:fuxRtAxBytpl4zzqUh6/eyUujkJdNiuEkXntxiD/uRU=
+google.golang.org/protobuf v1.36.10 h1:AYd7cD/uASjIL6Q9LiTjz8JLcrh/88q5UObnmY3aOOE=
+google.golang.org/protobuf v1.36.10/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
 gopkg.in/alecthomas/kingpin.v2 v2.2.6/go.mod h1:FMv+mEhP44yOT+4EoQTLFTRgOQ1FBLkstjWtayDeSgw=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
