@@ -9,6 +9,8 @@
   modifier of the `--contain` option).  This has always been in the
   `--workdir` usage description but the home directory has not actually
   been included at least since singularity-2.
+- Avoid a fatal error when starting fakeroot from suid mode while in an
+  NFS directory.
 
 ### Requirements / Packaging
 
