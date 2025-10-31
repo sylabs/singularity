@@ -393,7 +393,7 @@ func (l *Launcher) finalizeSpec(ctx context.Context, b ocibundle.Bundle, spec *s
 	if l.cfg.NoCompat && !l.cfg.NoUmask {
 		currentMask := unix.Umask(0)
 		unix.Umask(currentMask)
-		containerMask, err := safecast.ToUint32(currentMask)
+		containerMask, err := safecast.Convert[uint32](currentMask)
 		if err != nil {
 			return err
 		}

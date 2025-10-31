@@ -215,7 +215,7 @@ func (b *Bundle) mountLayers(ctx context.Context, img v1.Image, imgFile string) 
 			return fmt.Errorf("while creating layer directory: %w", err)
 		}
 
-		fuseOffset, err := safecast.ToUint64(offset)
+		fuseOffset, err := safecast.Convert[uint64](offset)
 		if err != nil {
 			return err
 		}

@@ -527,7 +527,7 @@ func exitError(ctx context.Context, err error) error {
 		}
 		var runcExitError *runc.ExitError
 		if errors.As(err, &runcExitError) && runcExitError.Status >= 0 {
-			ec, err := safecast.ToUint32(runcExitError.Status)
+			ec, err := safecast.Convert[uint32](runcExitError.Status)
 			if err != nil {
 				return err
 			}
