@@ -48,7 +48,7 @@ func prepareWritableTmpfs(ctx context.Context, bundleDir string, allowSetuid boo
 	if c == nil {
 		return "", fmt.Errorf("singularity configuration is not initialized")
 	}
-	tmpfsSize, err := safecast.ToInt(c.SessiondirMaxSize)
+	tmpfsSize, err := safecast.Convert[int](c.SessiondirMaxSize)
 	if err != nil {
 		return "", err
 	}
@@ -188,7 +188,7 @@ func prepareSystemOverlay(bundleDir string, allowSetuid bool) (*overlay.Item, er
 	if c == nil {
 		return nil, fmt.Errorf("singularity configuration is not initialized")
 	}
-	tmpfsSize, err := safecast.ToInt(c.SessiondirMaxSize)
+	tmpfsSize, err := safecast.Convert[int](c.SessiondirMaxSize)
 	if err != nil {
 		return nil, err
 	}

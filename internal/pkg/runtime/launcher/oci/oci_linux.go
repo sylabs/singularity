@@ -99,7 +99,7 @@ func runtimeStateDir() (path string, err error) {
 	if !st.IsDir() {
 		return "", fmt.Errorf("%s exists, but is not a directory", runDir)
 	}
-	euid, err := safecast.ToUint32(os.Geteuid())
+	euid, err := safecast.Convert[uint32](os.Geteuid())
 	if err != nil {
 		return "", err
 	}

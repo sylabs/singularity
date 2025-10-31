@@ -26,5 +26,5 @@ func GetMaxLoopDevices() (int, error) {
 			return 256, nil
 		}
 	}
-	return safecast.ToInt(cfg.MaxLoopDevices)
+	return safecast.Convert[int](cfg.MaxLoopDevices)
 }

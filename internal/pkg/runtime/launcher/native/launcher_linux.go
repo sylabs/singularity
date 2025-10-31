@@ -95,11 +95,11 @@ func NewLauncher(opts ...launcher.Option) (*Launcher, error) {
 	generator := generate.New(&ociConfig.Spec)
 	engineConfig.OciConfig = ociConfig
 
-	uid32, err := safecast.ToUint32(os.Getuid())
+	uid32, err := safecast.Convert[uint32](os.Getuid())
 	if err != nil {
 		return nil, err
 	}
-	gid32, err := safecast.ToUint32(os.Getgid())
+	gid32, err := safecast.Convert[uint32](os.Getgid())
 	if err != nil {
 		return nil, err
 	}
@@ -392,11 +392,11 @@ func (l *Launcher) setUmask() {
 // The effective uid and gid we will run under are returned as uid and gid.
 func (l *Launcher) setTargetIDs() (uid, gid uint32, err error) {
 	// Start with our actual uid / gid as invoked
-	uid, err = safecast.ToUint32(os.Getuid())
+	uid, err = safecast.Convert[uint32](os.Getuid())
 	if err != nil {
 		return 0, 0, err
 	}
-	gid, err = safecast.ToUint32(os.Getgid())
+	gid, err = safecast.Convert[uint32](os.Getgid())
 	if err != nil {
 		return 0, 0, err
 	}
@@ -415,7 +415,7 @@ func (l *Launcher) setTargetIDs() (uid, gid uint32, err error) {
 			return fmt.Errorf("failed to parse provided UID: %w", err)
 		}
 		targetUID = int(u)
-		uid, err = safecast.ToUint32(targetUID)
+		uid, err = safecast.Convert[uint32](targetUID)
 		if err != nil {
 			return err
 		}
@@ -438,7 +438,7 @@ func (l *Launcher) setTargetIDs() (uid, gid uint32, err error) {
 			targetGID = append(targetGID, int(g))
 		}
 		if len(gids) > 0 {
-			gid, err = safecast.ToUint32(targetGID[0])
+			gid, err = safecast.Convert[uint32](targetGID[0])
 			if err != nil {
 				return err
 			}
@@ -1256,7 +1256,7 @@ func squashfuseMount(ctx context.Context, img *imgutil.Image, imageDir string, a
 		return fmt.Errorf("failed to get partition descriptor: %w", err)
 	}
 
-	fuseOffset, err := safecast.ToUint64(d.Offset())
+	fuseOffset, err := safecast.Convert[uint64](d.Offset())
 	if err != nil {
 		return err
 	}
@@ -1299,7 +1299,7 @@ func (l *Launcher) starterInstance(name string, useSuid bool) error {
 	// Allow any plugins with callbacks to modify the assembled Config
 	runPluginCallbacks(cfg)
 
-	uid, err := safecast.ToUint32(os.Getuid())
+	uid, err := safecast.Convert[uint32](os.Getuid())
 	if err != nil {
 		return err
 	}

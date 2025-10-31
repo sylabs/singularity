@@ -16,7 +16,7 @@ import (
 
 //nolint:dupl
 func TestGetuid(t *testing.T) {
-	currUID, err := safecast.ToUint32(os.Getuid())
+	currUID, err := safecast.Convert[uint32](os.Getuid())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestGetuid(t *testing.T) {
 
 //nolint:dupl
 func TestGetgid(t *testing.T) {
-	currGID, err := safecast.ToUint32(os.Getgid())
+	currGID, err := safecast.Convert[uint32](os.Getgid())
 	if err != nil {
 		t.Fatal(err)
 	}

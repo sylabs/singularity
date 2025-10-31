@@ -66,7 +66,7 @@ func IsInsideUserNamespace(pid int) (bool, bool) {
 func HostUID() (uint32, error) {
 	const uidMap = "/proc/self/uid_map"
 
-	currentUID, err := safecast.ToUint32(os.Getuid())
+	currentUID, err := safecast.Convert[uint32](os.Getuid())
 	if err != nil {
 		return 0, err
 	}
