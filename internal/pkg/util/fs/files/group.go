@@ -46,7 +46,7 @@ func Group(path string, uid int, gids []int, customLookup UserGroupLookup) (cont
 		getGroups = customLookup.Getgroups
 	}
 
-	uid32, err := safecast.ToUint32(uid)
+	uid32, err := safecast.Convert[uint32](uid)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func Group(path string, uid int, gids []int, customLookup UserGroupLookup) (cont
 	}
 
 	for _, gid := range groups {
-		gid32, err := safecast.ToUint32(gid)
+		gid32, err := safecast.Convert[uint32](gid)
 		if err != nil {
 			return nil, err
 		}

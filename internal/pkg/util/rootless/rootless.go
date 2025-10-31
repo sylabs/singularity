@@ -40,7 +40,7 @@ func Getuid() (uid uint32, err error) {
 		}
 		return uint32(uid), nil
 	}
-	return safecast.ToUint32(os.Geteuid())
+	return safecast.Convert[uint32](os.Geteuid())
 }
 
 // Getgid retrieves the uid stored in the env var _CONTAINERS_ROOTLESS_GID, or
@@ -54,7 +54,7 @@ func Getgid() (uid uint32, err error) {
 		}
 		return uint32(gid), nil
 	}
-	return safecast.ToUint32(os.Getegid())
+	return safecast.Convert[uint32](os.Getegid())
 }
 
 // GetUser retrieves the User struct for the uid stored in the env var

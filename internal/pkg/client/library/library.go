@@ -63,7 +63,7 @@ func getEnvInt64(key string, confVal uint) (int64, error) {
 		}
 		sylog.Warningf("Error parsing %s; using default (%d)", key, confVal)
 	}
-	return safecast.ToInt64(confVal)
+	return safecast.Convert[int64](confVal)
 }
 
 func getDownloadConfig() (scslibrary.Downloader, error) {

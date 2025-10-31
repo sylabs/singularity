@@ -111,14 +111,14 @@ func getAction(specAction specs.LinuxSeccompAction, errnoRet *uint, defaultErrNo
 	if specAction == specs.ActErrno || specAction == specs.ActTrace {
 		// errnoRet override of the default
 		if errnoRet != nil {
-			rc, err := safecast.ToInt16(*errnoRet)
+			rc, err := safecast.Convert[int16](*errnoRet)
 			if err != nil {
 				return 0, err
 			}
 			return scmpAction.SetReturnCode(rc), nil
 		}
 		// defaultErrnoRet (which is EPERM if not specified)
-		rc, err := safecast.ToInt16(defaultErrNoRet)
+		rc, err := safecast.Convert[int16](defaultErrNoRet)
 		if err != nil {
 			return 0, err
 		}

@@ -154,7 +154,7 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 	cryptF.Close()
 
 	// Associate the temporary crypt file with a loop device
-	uintDevSize, err := safecast.ToUint64(devSize)
+	uintDevSize, err := safecast.Convert[uint64](devSize)
 	if err != nil {
 		return "", err
 	}
