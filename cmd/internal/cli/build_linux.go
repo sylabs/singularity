@@ -75,7 +75,7 @@ func fakerootExec() {
 		}
 	}
 
-	uid, err := safecast.ToUint32(os.Getuid())
+	uid, err := safecast.Convert[uint32](os.Getuid())
 	if err != nil {
 		sylog.Fatalf("while getting uid: %v", err)
 	}

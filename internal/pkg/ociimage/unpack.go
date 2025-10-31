@@ -75,7 +75,7 @@ func UnpackRootfs(_ context.Context, srcImage v1.Image, destDir string) (err err
 	if os.Geteuid() != 0 || insideUserNs {
 		mapOptions.Rootless = true
 
-		uid, err := safecast.ToUint32(os.Getuid())
+		uid, err := safecast.Convert[uint32](os.Getuid())
 		if err != nil {
 			sylog.Fatalf("while getting uid: %v", err)
 		}
@@ -86,7 +86,7 @@ func UnpackRootfs(_ context.Context, srcImage v1.Image, destDir string) (err err
 		}
 		mapOptions.UIDMappings = append(mapOptions.UIDMappings, uidMap)
 
-		gid, err := safecast.ToUint32(os.Getgid())
+		gid, err := safecast.Convert[uint32](os.Getgid())
 		if err != nil {
 			sylog.Fatalf("while getting gid: %v", err)
 		}
