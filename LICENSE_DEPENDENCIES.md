@@ -26585,7 +26585,7 @@ Apache License
 ```
 
 
-## github.com/opencontainers/runc/libcontainer
+## github.com/opencontainers/runc
 
 **License:** Apache-2.0
 
