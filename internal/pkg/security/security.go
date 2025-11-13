@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -28,7 +28,7 @@ func Configure(config *specs.Spec) error {
 					return err
 				}
 			} else {
-				sylog.Warningf("selinux is not enabled or supported on this system")
+				return fmt.Errorf("selinux requested, but is not enabled or supported on this system")
 			}
 		} else if config.Process.ApparmorProfile != "" {
 			if apparmor.Enabled() {
@@ -36,7 +36,7 @@ func Configure(config *specs.Spec) error {
 					return err
 				}
 			} else {
-				sylog.Warningf("apparmor is not enabled or supported on this system")
+				return fmt.Errorf("apparmor requested, but is not enabled or supported on this system")
 			}
 		}
 	}
@@ -46,7 +46,7 @@ func Configure(config *specs.Spec) error {
 				return err
 			}
 		} else {
-			sylog.Warningf("seccomp requested but not enabled, seccomp library is missing or too old")
+			return fmt.Errorf("seccomp requested but not enabled, seccomp library is missing or too old")
 		}
 	}
 	return nil
