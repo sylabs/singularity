@@ -63,7 +63,7 @@ require (
 	github.com/sylabs/scs-library-client v1.4.14
 	github.com/sylabs/sif/v2 v2.22.0
 	github.com/sylabs/squashfs v1.0.4
-	github.com/vbauerster/mpb/v8 v8.11.1
+	github.com/vbauerster/mpb/v8 v8.11.2
 	go.etcd.io/bbolt v1.4.3
 	golang.org/x/crypto v0.44.0
 	golang.org/x/sync v0.18.0
