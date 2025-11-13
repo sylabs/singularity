@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -148,16 +148,17 @@ var authorizedTags = map[AuthorizedTag]struct {
 var authorizedImage = map[string]fsContext{}
 
 var authorizedFS = map[string]fsContext{
-	"overlay": {true},
-	"tmpfs":   {true},
-	"ramfs":   {true},
-	"devpts":  {true},
-	"sysfs":   {false},
-	"proc":    {false},
-	"mqueue":  {false},
-	"cgroup":  {false},
-	"cgroup2": {false},
-	"fuse":    {false},
+	"overlay":   {true},
+	"tmpfs":     {true},
+	"ramfs":     {true},
+	"devpts":    {true},
+	"sysfs":     {false},
+	"proc":      {false},
+	"mqueue":    {false},
+	"cgroup":    {false},
+	"cgroup2":   {false},
+	"fuse":      {false},
+	"selinuxfs": {false},
 }
 
 var internalOptions = []string{"loop", "offset", "sizelimit", "key", "skip-on-error"}
