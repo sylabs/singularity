@@ -85,6 +85,22 @@ func (c ctx) testSecurityUnpriv(t *testing.T) {
 			opts:     []string{"--drop-caps", "CAP_NET_RAW"},
 			expectOp: e2e.ExpectOutput(e2e.RegexMatch, `CapEff:\s+0+\n`),
 		},
+		// apparmor
+		{
+			name:     "apparmor",
+			argv:     []string{"cat", "/proc/self/attr/current"},
+			opts:     []string{"--security", "apparmor:/usr/bin/man"},
+			preFn:    require.Apparmor,
+			expectOp: e2e.ExpectOutput(e2e.ExactMatch, "/usr/bin/man (enforce)"),
+		},
+		// selinux
+		{
+			name:     "selinux",
+			argv:     []string{"cat", "/proc/self/attr/current"},
+			opts:     []string{"--security", "selinux:unconfined_u:unconfined_r:container_t:s0"},
+			preFn:    require.Selinux,
+			expectOp: e2e.ExpectOutput(e2e.ExactMatch, "unconfined_u:unconfined_r:container_t:s0"),
+		},
 	}
 
 	e2e.EnsureImage(t, c.env)
@@ -174,6 +190,22 @@ func (c ctx) testSecurityPriv(t *testing.T) {
 			argv:     []string{"grep", "^CapEff:", "/proc/self/status"},
 			opts:     []string{"--drop-caps", "CAP_NET_RAW"},
 			expectOp: e2e.ExpectOutput(e2e.ContainMatch, dropCap),
+		},
+		// apparmor
+		{
+			name:     "apparmor",
+			argv:     []string{"cat", "/proc/self/attr/current"},
+			opts:     []string{"--security", "apparmor:/usr/bin/man"},
+			preFn:    require.Apparmor,
+			expectOp: e2e.ExpectOutput(e2e.ExactMatch, "/usr/bin/man (enforce)"),
+		},
+		// selinux
+		{
+			name:     "selinux",
+			argv:     []string{"cat", "/proc/self/attr/current"},
+			opts:     []string{"--security", "selinux:unconfined_u:unconfined_r:container_t:s0"},
+			preFn:    require.Selinux,
+			expectOp: e2e.ExpectOutput(e2e.ExactMatch, "unconfined_u:unconfined_r:container_t:s0"),
 		},
 	}
 
