@@ -123,7 +123,8 @@ func TestConfigure(t *testing.T) {
 					ApparmorProfile: "unconfined",
 				},
 			},
-			disabled: apparmor.Enabled(),
+			expectFailure: true,
+			disabled:      apparmor.Enabled(),
 		},
 	}
 
