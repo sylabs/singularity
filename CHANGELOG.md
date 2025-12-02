@@ -1,5 +1,15 @@
 # SingularityCE Changelog
 
+## 4.3.5 \[2025-12-02\]
+
+### Security Related Fixes
+
+- Fix for [CVE-2025-64750 /
+  GHSA-wwrx-w7c9-rf87](https://github.com/sylabs/singularity/security/advisories/GHSA-wwrx-w7c9-rf87)
+  Ineffective application of selinux / apparmor LSM process labels via the
+  `--security` flag.
+- Dependencies updated.
+
 ## 4.3.4 \[2025-10-14\]
 
 ### Security Related Fixes

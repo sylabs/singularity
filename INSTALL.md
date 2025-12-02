@@ -227,11 +227,11 @@ git submodule update --init
 By default your clone will be on the `main` branch which is where development
 of SingularityCE happens. To build a specific version of SingularityCE, check
 out a [release tag](https://github.com/sylabs/singularity/tags) before
-compiling. E.g. to build the 4.3.3 release, checkout the
-`v4.3.3` tag:
+compiling. E.g. to build the 4.3.5 release, checkout the
+`v4.3.5` tag:
 
 ```sh
-git checkout --recurse-submodules v4.3.3
+git checkout --recurse-submodules v4.3.5
 ```
 
 ## Compiling SingularityCE
