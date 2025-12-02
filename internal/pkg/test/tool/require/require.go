@@ -21,7 +21,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/opencontainers/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/security/apparmor"
 	"github.com/sylabs/singularity/v4/internal/pkg/security/seccomp"
+	"github.com/sylabs/singularity/v4/internal/pkg/security/selinux"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rpm"
 	"github.com/sylabs/singularity/v4/pkg/network"
@@ -293,6 +295,22 @@ func OneCommand(t *testing.T, commands []string) {
 func Seccomp(t *testing.T) {
 	if !seccomp.Enabled() {
 		t.Skipf("seccomp disabled, Singularity was compiled without the seccomp library")
+	}
+}
+
+// Apparmor checks that apparmor is enabled. If not, the test is skipped with a
+// message.
+func Apparmor(t *testing.T) {
+	if !apparmor.Enabled() {
+		t.Skipf("apparmor is not available")
+	}
+}
+
+// Selinux checks that selinux is enabled. If not, the test is skipped with a
+// message.
+func Selinux(t *testing.T) {
+	if !selinux.Enabled() {
+		t.Skipf("selinux is not available")
 	}
 }
 
