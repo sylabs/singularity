@@ -20,7 +20,7 @@ import (
 	remoteutil "github.com/sylabs/singularity/v4/internal/pkg/remote/util"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
-	yaml "gopkg.in/yaml.v3"
+	yaml "go.yaml.in/yaml/v3"
 )
 
 // ErrNoDefault indicates no default remote being set

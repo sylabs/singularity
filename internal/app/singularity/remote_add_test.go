@@ -13,7 +13,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/remote"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
-	"gopkg.in/yaml.v3"
+	"go.yaml.in/yaml/v3"
 )
 
 const (

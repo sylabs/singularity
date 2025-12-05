@@ -15,7 +15,7 @@ import (
 
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
-	yaml "gopkg.in/yaml.v3"
+	yaml "go.yaml.in/yaml/v3"
 )
 
 // #nosec G101
