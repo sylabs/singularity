@@ -15,6 +15,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/crypt"
@@ -201,16 +202,31 @@ func hostCleanup(cleanupSocket, imageFd int) error {
 func Master(rpcSocket, masterSocket, postStartSocket, cleanupSocket, containerPid, imageFd int, e *engine.Engine) {
 	var status syscall.WaitStatus
 	fatalChan := make(chan error, 1)
+	var fatal error
 
 	// we could receive signal from child with CreateContainer call so we
 	// set the signal handler earlier to queue signals until MonitorContainer
 	// is called to handle them
 	// Use a channel size of two here, since we may receive SIGURG, which is
 	// used for non-cooperative goroutine preemption starting with Go 1.14.
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
 	signals := make(chan os.Signal, 2)
 	signal.Notify(signals)
-
-	ctx := context.TODO()
+	go func() {
+		for {
+			select {
+			case sig := <-signals:
+				switch sig {
+				case syscall.SIGINT, syscall.SIGTERM:
+					sylog.Debugf("Container Master requested to stop: %v", sig)
+					cancel()
+				}
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
 
 	go createContainer(ctx, rpcSocket, containerPid, e, fatalChan)
 
@@ -220,9 +236,28 @@ func Master(rpcSocket, masterSocket, postStartSocket, cleanupSocket, containerPi
 		var err error
 		status, err = e.MonitorContainer(containerPid, signals)
 		fatalChan <- err
+		cancel()
 	}()
 
-	fatal := <-fatalChan
+	<-ctx.Done()
+
+	// Wait 3 seconds for container to exit gracefully
+	select {
+	case fatal := <-fatalChan:
+		sylog.Debugf("Container exited gracefully: %v", fatal)
+	case <-time.After(3 * time.Second):
+		sylog.Debugf("Grace period expired, sending SIGTERM to container")
+		syscall.Kill(containerPid, syscall.SIGTERM)
+
+		// Force kill after 3 seconds
+		select {
+		case fatal := <-fatalChan:
+			sylog.Debugf("Container exited after SIGTERM: %v", fatal)
+		case <-time.After(3 * time.Second):
+			sylog.Debugf("Container still alive, sending SIGKILL")
+			syscall.Kill(containerPid, syscall.SIGKILL)
+		}
+	}
 
 	if err := e.CleanupContainer(ctx, fatal, status); err != nil {
 		sylog.Errorf("Container cleanup failed: %s", err)
@@ -237,6 +272,7 @@ func Master(rpcSocket, masterSocket, postStartSocket, cleanupSocket, containerPi
 	}
 
 	// reset signal handlers
+	signal.Stop(signals)
 	signal.Reset()
 
 	exitCode := 0
