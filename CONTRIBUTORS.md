@@ -108,6 +108,7 @@ The following have contributed code and/or documentation to this repository.
 - Tarcisio Fedrizzi <tarcisio.fedrizzi@gmail.com>
 - Thomas Hamel <hmlth@t-hamel.fr>
 - Tim Wright <7im.Wright@protonmail.com>
+- Trevor Nichols <teb99@protonmail.com>
 - Tru Huynh <tru@pasteur.fr>
 - Tyson Whitehead <twhitehead@gmail.com>
 - Vanessa Sochat <vsoch@users.noreply.github.com>

@@ -2130,6 +2130,8 @@ This point release addresses the following issues:
 - The command `singularity help` now only provides help regarding the usage of
   the `singularity` command. To display an image's `help` message, use
   `singularity run-help <image path>` instead
+- Fixed an issue preventing containers from gracefully shutting down upon
+  recieving SIGTERM #947.
 
 ### Removed Deprecated Commands
 
