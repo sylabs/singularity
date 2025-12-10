@@ -17,7 +17,7 @@ require (
 	github.com/containerd/go-runc v1.1.0
 	github.com/containerd/platforms v1.0.0-rc.2
 	github.com/containernetworking/cni v1.3.0
-	github.com/containernetworking/plugins v1.8.0
+	github.com/containernetworking/plugins v1.9.0
 	github.com/containers/image/v5 v5.36.2
 	github.com/coreos/go-systemd/v22 v22.6.0
 	github.com/cyphar/filepath-securejoin v0.6.0
@@ -41,8 +41,8 @@ require (
 	github.com/opencontainers/cgroups v0.0.5
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/opencontainers/runc v1.3.3
-	github.com/opencontainers/runtime-spec v1.2.1
-	github.com/opencontainers/runtime-tools v0.9.1-0.20250523060157-0ea5ed0382a2
+	github.com/opencontainers/runtime-spec v1.3.0
+	github.com/opencontainers/runtime-tools v0.9.1-0.20251114084447-edf4cb3d2116
 	github.com/opencontainers/selinux v1.13.1
 	github.com/opencontainers/umoci v0.6.0
 	github.com/pelletier/go-toml/v2 v2.2.4
@@ -65,18 +65,18 @@ require (
 	github.com/sylabs/squashfs v1.0.4
 	github.com/vbauerster/mpb/v8 v8.11.2
 	go.etcd.io/bbolt v1.4.3
-	golang.org/x/crypto v0.45.0
-	golang.org/x/sync v0.18.0
-	golang.org/x/sys v0.38.0
-	golang.org/x/term v0.37.0
-	golang.org/x/text v0.31.0
+	golang.org/x/crypto v0.46.0
+	golang.org/x/sync v0.19.0
+	golang.org/x/sys v0.39.0
+	golang.org/x/term v0.38.0
+	golang.org/x/text v0.32.0
 	google.golang.org/grpc v1.77.0
 	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools v2.2.0+incompatible
 	gotest.tools/v3 v3.5.2
 	mvdan.cc/sh/v3 v3.12.0
-	tags.cncf.io/container-device-interface v1.0.1
-	tags.cncf.io/container-device-interface/specs-go v1.0.0
+	tags.cncf.io/container-device-interface v1.1.0
+	tags.cncf.io/container-device-interface/specs-go v1.1.0
 )
 
 require (
@@ -312,7 +312,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/exp v0.0.0-20250911091902-df9299821621 // indirect
-	golang.org/x/mod v0.29.0 // indirect
+	golang.org/x/mod v0.30.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/oauth2 v0.32.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
