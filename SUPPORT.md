@@ -5,7 +5,8 @@ SingularityCE is a community focused open source project. We maintain
 contribute to. We have a number of spaces, maintained by the project, in which
 questions can be asked and problems reported.
 
-- [GitHub Discussions](#github-discussions) - Usage questions, discussions, and announcements.
+- [GitHub Discussions](#github-discussions) - Usage questions, discussions, and
+  announcements.
 - [Google Group / Mailing List](#google-group--mailing-list)  - Usage questions,
   discussions, and announcements.
 - [Slack](#slack) - Real time chat.

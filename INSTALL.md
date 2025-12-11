@@ -107,8 +107,9 @@ disable it:
 sudo dnf copr remove dctrud/squashfs-tools-ng
 ```
 
-Follow the [EPEL Quickstart](https://docs.fedoraproject.org/en-US/epel/#_quickstart)
-for you distribution to enable the EPEL repository. Install `squashfs-tools-ng` with
+Follow the [EPEL
+Quickstart](https://docs.fedoraproject.org/en-US/epel/#_quickstart) for you
+distribution to enable the EPEL repository. Install `squashfs-tools-ng` with
 `dnf`.
 
 ```sh
