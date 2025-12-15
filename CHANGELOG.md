@@ -418,8 +418,8 @@ In OCI-mode:
 - Container images from OCI sources will be `pull`-ed to an OCI-SIF file. An
   OCI-SIF file encapsulates the OCI image configuration and squashed filesystem
   using an OCI, rather than Singularity specific, structure.
-- The `run / shell / exec` commands use a low-level OCI runtime (crun/runc) for container
-  execution.
+- The `run / shell / exec` commands use a low-level OCI runtime (crun/runc) for
+  container execution.
 - Default operation is compatible with other OCI tools, similar to using
   `--compat` in Singularity's non-OCI native mode.
 - OCI-modes support running existing Singularity non-OCI-SIF images, and can be
@@ -526,8 +526,8 @@ requirements of OCI-mode and usage information.
   with `--fakeroot` has changed. Previously, we were only modifying the `HOME`
   environment variable in these cases, while leaving the container's
   `/etc/passwd` file unchanged (with its homedir field pointing to `/root`,
-  regardless of the value passed to `--home`). With this change, both the value of
-  `HOME` and the contents of `/etc/passwd` in the container will reflect the
+  regardless of the value passed to `--home`). With this change, both the value
+  of `HOME` and the contents of `/etc/passwd` in the container will reflect the
   value passed to `--home`.
 - Bind mounts are now performed in the order of their occurrence on the command
   line, or within the value of the `SINGULARITY_BIND` environment variable.
