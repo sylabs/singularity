@@ -1,5 +1,13 @@
 # SingularityCE Changelog
 
+## 4.3.6 \[2025-12-16\]
+
+### Security Related Fixes
+
+- Updates bundled CNI plugins to v1.9.0, to fix
+  [CVE-2025-67499](https://github.com/containernetworking/plugins/security/advisories/GHSA-jv3w-x3r3-g6rm)
+  Portmap nftables backend can intercept non-local traffic.
+
 ## 4.3.5 \[2025-12-02\]
 
 ### Security Related Fixes
