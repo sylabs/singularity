@@ -31,7 +31,7 @@ require (
 	github.com/google/go-containerregistry v0.20.6
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.15.0
-	github.com/moby/buildkit v0.26.2
+	github.com/moby/buildkit v0.26.3
 	github.com/moby/go-archive v0.1.0
 	github.com/moby/profiles/seccomp v0.1.0
 	github.com/moby/sys/sequential v0.6.0
