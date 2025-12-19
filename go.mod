@@ -20,7 +20,7 @@ require (
 	github.com/containernetworking/plugins v1.9.0
 	github.com/containers/image/v5 v5.36.2
 	github.com/coreos/go-systemd/v22 v22.6.0
-	github.com/cyphar/filepath-securejoin v0.6.0
+	github.com/cyphar/filepath-securejoin v0.6.1
 	github.com/docker/cli v29.1.3+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/docker/docker v28.5.2+incompatible
@@ -38,10 +38,10 @@ require (
 	github.com/moby/sys/user v0.4.0
 	github.com/moby/sys/userns v0.1.0
 	github.com/moby/term v0.5.2
-	github.com/opencontainers/cgroups v0.0.5
+	github.com/opencontainers/cgroups v0.0.6
 	github.com/opencontainers/image-spec v1.1.1
-	github.com/opencontainers/runc v1.3.3
-	github.com/opencontainers/runtime-spec v1.2.1
+	github.com/opencontainers/runc v1.4.0
+	github.com/opencontainers/runtime-spec v1.3.0
 	github.com/opencontainers/runtime-tools v0.9.1-0.20250523060157-0ea5ed0382a2
 	github.com/opencontainers/selinux v1.13.1
 	github.com/opencontainers/umoci v0.6.0
