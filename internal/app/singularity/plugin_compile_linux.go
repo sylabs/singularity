@@ -84,7 +84,13 @@ func checkGoVersion(goPath string) error {
 	cmd.Stdout = &out
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("while executing go version: %s", err)
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			sylog.Errorf("stdout: %s", out.String())
+			sylog.Errorf("stderr: %s", string(exitErr.Stderr))
+			sylog.Errorf("%v: %v", exitErr.Error(), exitErr.ExitCode())
+		}
+		return fmt.Errorf("while executing '%s run %s' : %s", goPath, path, err)
 	}
 
 	output := out.String()
