@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -180,10 +180,10 @@ func (c *ctx) instanceApply(t *testing.T, profile e2e.Profile) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if profile.Privileged() && !tt.rootfull {
-				t.Skip()
+				t.Skip("Test doesn't apply to rootfull mode")
 			}
 			if !profile.Privileged() && !tt.rootless {
-				t.Skip()
+				t.Skip("Test doesn't apply to rootless mode")
 			}
 
 			createExitFunc := []e2e.SingularityCmdResultOp{}
@@ -351,16 +351,16 @@ func (c *ctx) actionApply(t *testing.T, profile e2e.Profile, imageRef string) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if profile.Privileged() && !tt.rootfull {
-				t.Skip()
+				t.Skip("Test doesn't apply to rootfull mode")
 			}
 			if !profile.Privileged() && !tt.rootless {
-				t.Skip()
+				t.Skip("Test doesn't apply to rootless mode")
 			}
 			if profile.OCI() && tt.skipOCI {
-				t.Skip()
+				t.Skip("Test doesn't apply to OCI mode")
 			}
 			if !profile.OCI() && tt.onlyOCI {
-				t.Skip()
+				t.Skip("Test doesn't apply to native mode")
 			}
 
 			exitFunc := []e2e.SingularityCmdResultOp{}
@@ -747,7 +747,7 @@ func (c *ctx) actionFlagV1(t *testing.T, tt resourceFlagTest, profile e2e.Profil
 
 func (c *ctx) actionFlagV2(t *testing.T, tt resourceFlagTest, profile e2e.Profile, imageRef string) {
 	if tt.skipV2 {
-		t.Skip()
+		t.Skip("Test doesn't apply to cgroups v2")
 	}
 	// Don't try to test a resource that doesn't exist in our caller cgroup.
 	// E.g. some systems don't have io.bfq.*
@@ -877,7 +877,7 @@ func (c *ctx) instanceFlagV1(t *testing.T, tt resourceFlagTest, profile e2e.Prof
 
 func (c *ctx) instanceFlagV2(t *testing.T, tt resourceFlagTest, profile e2e.Profile) {
 	if tt.skipV2 {
-		t.Skip()
+		t.Skip("Test doesn't apply to cgroups v2")
 	}
 	// Don't try to test a resource that doesn't exist in our caller cgroup.
 	// E.g. some systems don't have io.bfq.*
