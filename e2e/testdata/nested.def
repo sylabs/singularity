@@ -31,6 +31,10 @@ From: ubuntu:25.04
     wget -O /tmp/go.tar.gz https://go.dev/dl/{{ GOVERSION }}.{{ GOOS }}-{{ GOARCH }}.tar.gz && tar -C /usr/local -xzf /tmp/go.tar.gz
     export PATH="/usr/local/go/bin:$PATH"
 
+    # Workaround for lack of gold linker on arm64
+    # See https://github.com/golang/go/issues/22040
+    singularity-src/e2e/testdata/gold_workaround.sh
+
     cd /singularity-src
     git clean -fdx || true
     ./mconfig 
