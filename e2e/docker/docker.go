@@ -275,10 +275,11 @@ func (c ctx) testDockerCredsPriority(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	privImgNoPrefix := strings.TrimPrefix(c.env.TestRegistryPrivImage, "docker://")
-	simpleDef := e2e.PrepareDefFile(e2e.DefFileDetails{
-		Bootstrap: "docker",
-		From:      privImgNoPrefix,
-	})
+	simpleDef := e2e.PrepareDefFile(c.env.TestDir,
+		e2e.DefFileDetails{
+			Bootstrap: "docker",
+			From:      privImgNoPrefix,
+		})
 	t.Cleanup(func() {
 		if !t.Failed() {
 			os.Remove(simpleDef)
@@ -762,10 +763,11 @@ func (c ctx) testDockerDefFile(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		defFile := e2e.PrepareDefFile(e2e.DefFileDetails{
-			Bootstrap: "docker",
-			From:      tt.from,
-		})
+		defFile := e2e.PrepareDefFile(c.env.TestDir,
+			e2e.DefFileDetails{
+				Bootstrap: "docker",
+				From:      tt.from,
+			})
 
 		c.env.RunSingularity(
 			t,
@@ -840,7 +842,7 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		defFile := e2e.PrepareDefFile(tt.dfd)
+		defFile := e2e.PrepareDefFile(c.env.TestDir, tt.dfd)
 
 		c.env.RunSingularity(
 			t,
