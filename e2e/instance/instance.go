@@ -248,7 +248,7 @@ func (c *ctx) testContain(t *testing.T) {
 	cmdList := [2]string{"instance start", "instance run"}
 
 	// Create a temporary directory to serve as a contain directory.
-	dir, err := os.MkdirTemp("", "TestInstance")
+	dir, err := os.MkdirTemp(c.env.TestDir, "TestInstance")
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
