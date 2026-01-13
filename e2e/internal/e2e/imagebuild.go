@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -74,13 +74,13 @@ type FilePair struct {
 
 // PrepareDefFile reads a template from a file, applies data to it, writes the
 // contents to disk, and returns the path.
-func PrepareDefFile(dfd DefFileDetails) (outputPath string) {
+func PrepareDefFile(tmpDir string, dfd DefFileDetails) (outputPath string) {
 	tmpl, err := template.ParseFiles(path.Join("testdata", "deffile.tmpl"))
 	if err != nil {
 		log.Fatalf("failed to parse template: %v", err)
 	}
 
-	f, err := os.CreateTemp("", "TestTemplate-")
+	f, err := os.CreateTemp(tmpDir, "TestTemplate-")
 	if err != nil {
 		log.Fatalf("failed to open temp file: %v", err)
 	}
@@ -95,7 +95,7 @@ func PrepareDefFile(dfd DefFileDetails) (outputPath string) {
 
 // PrepareMultiStageDefFile reads a template from a file, applies data to it for each definition,
 // concatenates them all together, writes them to a file and returns the path.
-func PrepareMultiStageDefFile(dfd []DefFileDetails) (outputPath string) {
+func PrepareMultiStageDefFile(tmpdir string, dfd []DefFileDetails) (outputPath string) {
 	var b bytes.Buffer
 	for _, d := range dfd {
 		tmpl, err := template.ParseFiles(path.Join("testdata", "deffile.tmpl"))
@@ -108,7 +108,7 @@ func PrepareMultiStageDefFile(dfd []DefFileDetails) (outputPath string) {
 		}
 	}
 
-	f, err := os.CreateTemp("", "TestTemplate-")
+	f, err := os.CreateTemp(tmpdir, "TestTemplate-")
 	if err != nil {
 		log.Fatalf("failed to open temp file: %v", err)
 	}

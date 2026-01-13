@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -19,8 +19,8 @@ type ctx struct {
 	e2e.TestEnv
 }
 
-func getImage(t *testing.T) string {
-	dst, err := os.CreateTemp("", "e2e-sign-keyring-*")
+func (c *ctx) getImage(t *testing.T) string {
+	dst, err := os.CreateTemp(c.TestDir, "e2e-sign-keyring-*")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func (c *ctx) sign(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		imgPath := getImage(t)
+		imgPath := c.getImage(t)
 		defer os.Remove(imgPath)
 
 		c.RunSingularity(t,
@@ -176,7 +176,7 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			var err error
 
 			// Create a temporary PGP keyring.
-			c.KeyringDir, err = os.MkdirTemp("", "e2e-sign-keyring-")
+			c.KeyringDir, err = os.MkdirTemp(c.TestDir, "e2e-sign-keyring-")
 			if err != nil {
 				t.Fatalf("failed to create temporary directory: %s", err)
 			}

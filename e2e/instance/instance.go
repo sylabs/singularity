@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -248,7 +248,7 @@ func (c *ctx) testContain(t *testing.T) {
 	cmdList := [2]string{"instance start", "instance run"}
 
 	// Create a temporary directory to serve as a contain directory.
-	dir, err := os.MkdirTemp("", "TestInstance")
+	dir, err := os.MkdirTemp(c.env.TestDir, "TestInstance")
 	if err != nil {
 		t.Fatalf("Failed to create temporary directory: %v", err)
 	}
