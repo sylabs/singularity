@@ -911,7 +911,7 @@ func (c ctx) testPullOCIOverlay(t *testing.T) {
 			dest := filepath.Join(tmpDir, "pull.sif")
 			defer os.Remove(dest)
 
-			args := []string{}
+			args := make([]string, 0, 2)
 			if tt.keepLayers {
 				args = []string{"--keep-layers"}
 			}
