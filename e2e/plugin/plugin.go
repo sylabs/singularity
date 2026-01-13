@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -23,7 +23,11 @@ func (c ctx) testPluginBasic(t *testing.T) {
 
 	// plugin code directory
 	pluginDir, cleanup := e2e.MakeTempDir(t, "testdata", "e2e-plugin-dir-", "")
-	defer cleanup(t)
+	t.Cleanup(func() { cleanup(t) })
+
+	// temporary GOCACHE dir - isolate from any existing Go build cache etc.
+	tmpGoCache, cleanupHome := e2e.MakeTempDir(t, c.env.TestDir, "e2e-plugin-GOCACHE-", "")
+	t.Cleanup(func() { cleanupHome(t) })
 
 	// plugin sif file
 	sifFile := filepath.Join(pluginDir, "plugin.sif")
@@ -168,6 +172,7 @@ func (c ctx) testPluginBasic(t *testing.T) {
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(tt.profile),
+			e2e.WithEnv(append(os.Environ(), "GOCACHE="+tmpGoCache)),
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.args...),
 			e2e.ExpectExit(tt.expectExit, tt.expectOp),
@@ -181,7 +186,11 @@ func (c ctx) testCLICallbacks(t *testing.T) {
 
 	// plugin sif file
 	sifFile := filepath.Join(c.env.TestDir, "plugin.sif")
-	defer os.Remove(sifFile)
+	t.Cleanup(func() { os.Remove(sifFile) })
+
+	// temporary GOCACHE dir - isolate from any existing Go build cache etc.
+	tmpGoCache, cleanupHome := e2e.MakeTempDir(t, c.env.TestDir, "e2e-plugin-GOCACHE-", "")
+	t.Cleanup(func() { cleanupHome(t) })
 
 	tests := []struct {
 		name       string
@@ -232,6 +241,7 @@ func (c ctx) testCLICallbacks(t *testing.T) {
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(tt.profile),
+			e2e.WithEnv(append(os.Environ(), "GOCACHE="+tmpGoCache)),
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.args...),
 			e2e.ExpectExit(tt.expectExit),
@@ -247,7 +257,11 @@ func (c ctx) testSingularityCallbacks(t *testing.T) {
 
 	// plugin sif file
 	sifFile := filepath.Join(c.env.TestDir, "plugin.sif")
-	defer os.Remove(sifFile)
+	t.Cleanup(func() { os.Remove(sifFile) })
+
+	// temporary GOCACHE dir - isolate from any existing Go build cache etc.
+	tmpGoCache, cleanupHome := e2e.MakeTempDir(t, c.env.TestDir, "e2e-plugin-GOCACHE-", "")
+	t.Cleanup(func() { cleanupHome(t) })
 
 	tests := []struct {
 		name       string
@@ -298,6 +312,7 @@ func (c ctx) testSingularityCallbacks(t *testing.T) {
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithProfile(tt.profile),
+			e2e.WithEnv(append(os.Environ(), "GOCACHE="+tmpGoCache)),
 			e2e.WithCommand(tt.command),
 			e2e.WithArgs(tt.args...),
 			e2e.ExpectExit(tt.expectExit),

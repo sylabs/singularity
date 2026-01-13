@@ -1,4 +1,4 @@
-// Copyright (c) 2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2025-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,6 +6,7 @@
 package nested
 
 import (
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
@@ -52,7 +53,7 @@ func dockerBuild(t *testing.T, dockerFile, dockerRef, contextPath, homeDir strin
 			"--build-arg", "GOOS="+runtime.GOOS,
 			"--build-arg", "GOARCH="+runtime.GOARCH,
 			"-t", dockerRef, "-f", dockerFile, contextPath)
-		cmd.Env = append(cmd.Env, "HOME="+homeDir)
+		cmd.Env = append(os.Environ(), "HOME="+homeDir)
 		out, err := cmd.CombinedOutput()
 		t.Log(cmd.Args)
 		if err != nil {
@@ -64,7 +65,7 @@ func dockerBuild(t *testing.T, dockerFile, dockerRef, contextPath, homeDir strin
 func dockerRMI(t *testing.T, dockerRef, homeDir string) {
 	t.Run("rmi/"+dockerRef, e2e.Privileged(func(t *testing.T) {
 		cmd := exec.Command("docker", "rmi", dockerRef)
-		cmd.Env = append(cmd.Env, "HOME="+homeDir)
+		cmd.Env = append(os.Environ(), "HOME="+homeDir)
 		out, err := cmd.CombinedOutput()
 		t.Log(cmd.Args)
 		if err != nil {
@@ -78,7 +79,7 @@ func dockerRunPrivileged(t *testing.T, name, dockerRef, homeDir string, args ...
 		cmdArgs := []string{"run", "-i", "--rm", "--privileged", "--network=host", dockerRef}
 		cmdArgs = append(cmdArgs, args...)
 		cmd := exec.Command("docker", cmdArgs...)
-		cmd.Env = append(cmd.Env, "HOME="+homeDir)
+		cmd.Env = append(os.Environ(), "HOME="+homeDir)
 		out, err := cmd.CombinedOutput()
 		t.Log(cmd.Args)
 		if err != nil {
@@ -118,7 +119,7 @@ func podmanBuild(t *testing.T, dockerFile, dockerRef, contextPath, homeDir strin
 			"--build-arg", "GOOS="+runtime.GOOS,
 			"--build-arg", "GOARCH="+runtime.GOARCH,
 			"-t", dockerRef, "-f", dockerFile, contextPath)
-		cmd.Env = append(cmd.Env, "HOME="+homeDir)
+		cmd.Env = append(os.Environ(), "HOME="+homeDir)
 		out, err := cmd.CombinedOutput()
 		t.Log(cmd.Args)
 		if err != nil {
@@ -130,7 +131,7 @@ func podmanBuild(t *testing.T, dockerFile, dockerRef, contextPath, homeDir strin
 func podmanRMI(t *testing.T, dockerRef, homeDir string) {
 	t.Run("rmi/"+dockerRef, func(t *testing.T) {
 		cmd := exec.Command("podman", "rmi", dockerRef)
-		cmd.Env = append(cmd.Env, "HOME="+homeDir)
+		cmd.Env = append(os.Environ(), "HOME="+homeDir)
 		out, err := cmd.CombinedOutput()
 		t.Log(cmd.Args)
 		if err != nil {
@@ -144,7 +145,7 @@ func podmanRun(t *testing.T, name, dockerRef, homeDir string, args ...string) { 
 		cmdArgs := []string{"run", "-i", "--rm", "--privileged", "--network=host", dockerRef}
 		cmdArgs = append(cmdArgs, args...)
 		cmd := exec.Command("podman", cmdArgs...)
-		cmd.Env = append(cmd.Env, "HOME="+homeDir)
+		cmd.Env = append(os.Environ(), "HOME="+homeDir)
 		out, err := cmd.CombinedOutput()
 		t.Log(cmd.Args)
 		if err != nil {

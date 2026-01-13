@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -40,7 +40,7 @@ func (c ctx) testNvidiaLegacy(t *testing.T) {
 	// Use Ubuntu 20.04 as this is a recent distro officially supported by Nvidia CUDA.
 	// We can't use our test image as it's alpine based and we need a compatible glibc.
 	imageURL := "docker://ubuntu:20.04"
-	imageFile, err := fs.MakeTmpFile("", "test-nvidia-legacy-", 0o755)
+	imageFile, err := fs.MakeTmpFile(c.env.TestDir, "test-nvidia-legacy-", 0o755)
 	if err != nil {
 		t.Fatalf("Could not create test file: %v", err)
 	}
@@ -147,7 +147,7 @@ func (c ctx) testNvCCLI(t *testing.T) {
 	// Use Ubuntu 20.04 as this is a recent distro officially supported by Nvidia CUDA.
 	// We can't use our test image as it's alpine based and we need a compatible glibc.
 	imageURL := "docker://ubuntu:20.04"
-	imageFile, err := fs.MakeTmpFile("", "test-nvccli-", 0o755)
+	imageFile, err := fs.MakeTmpFile(c.env.TestDir, "test-nvccli-", 0o755)
 	if err != nil {
 		t.Fatalf("Could not create test file: %v", err)
 	}
@@ -257,7 +257,7 @@ func (c ctx) testRocm(t *testing.T) {
 	// Use Ubuntu 22.04 as this is the most recent distro officially supported by ROCm.
 	// We can't use our test image as it's alpine based and we need a compatible glibc.
 	imageURL := "docker://ubuntu:22.04"
-	imageFile, err := fs.MakeTmpFile("", "test-rocm-", 0o755)
+	imageFile, err := fs.MakeTmpFile(c.env.TestDir, "test-rocm-", 0o755)
 	if err != nil {
 		t.Fatalf("Could not create test file: %v", err)
 	}

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -26,11 +26,6 @@ import (
 
 // source file that should be present in a valid Singularity source tree
 const canaryFile = "pkg/plugin/plugin.go"
-
-const goVersionFile = `package main
-import "fmt"
-import "runtime"
-func main() { fmt.Printf(runtime.Version()) }`
 
 type buildToolchain struct {
 	workPath  string
@@ -67,31 +62,23 @@ func getSingularitySrcDir() (string, error) {
 func checkGoVersion(goPath string) error {
 	var out bytes.Buffer
 
-	tmpDir, err := os.MkdirTemp("", "plugin-")
-	if err != nil {
-		return errors.New("temporary directory creation failed")
-	}
-	defer os.RemoveAll(tmpDir)
-
-	path := filepath.Join(tmpDir, "rt_version.go")
-	if err := os.WriteFile(path, []byte(goVersionFile), 0o600); err != nil {
-		return fmt.Errorf("while writing go file %s: %s", path, err)
-	}
-	defer os.Remove(path)
-
-	cmd := exec.Command(goPath, "run", path)
-	cmd.Dir = tmpDir
+	cmd := exec.Command(goPath, "env", "GOVERSION")
 	cmd.Stdout = &out
 
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("while executing go version: %s", err)
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			sylog.Errorf("stdout: %s", out.String())
+			sylog.Errorf("stderr: %s", string(exitErr.Stderr))
+			sylog.Errorf("%v: %v", exitErr.Error(), exitErr.ExitCode())
+		}
+		return fmt.Errorf("while executing '%s env GOVERSION' : %s", goPath, err)
 	}
 
-	output := out.String()
-
-	runtimeVersion := runtime.Version()
-	if output != runtimeVersion {
-		return fmt.Errorf("plugin compilation requires Go runtime %q, current is %q", runtimeVersion, output)
+	currentVersion := strings.TrimSpace(out.String())
+	buildVersion := runtime.Version()
+	if currentVersion != buildVersion {
+		return fmt.Errorf("plugin compilation requires Go runtime %q, current is %q", buildVersion, currentVersion)
 	}
 
 	return nil

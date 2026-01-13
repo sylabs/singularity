@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -283,10 +283,11 @@ func (c imgBuildTests) buildLocalImage(t *testing.T) {
 		}
 	})
 
-	liDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
-		Bootstrap: "localimage",
-		From:      c.env.ImagePath,
-	})
+	liDefFile := e2e.PrepareDefFile(c.env.TestDir,
+		e2e.DefFileDetails{
+			Bootstrap: "localimage",
+			From:      c.env.ImagePath,
+		})
 	t.Cleanup(func() {
 		if !t.Failed() {
 			os.Remove(liDefFile)
@@ -295,11 +296,12 @@ func (c imgBuildTests) buildLocalImage(t *testing.T) {
 
 	labels := make(map[string]string)
 	labels["FOO"] = "bar"
-	liLabelDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
-		Bootstrap: "localimage",
-		From:      c.env.ImagePath,
-		Labels:    labels,
-	})
+	liLabelDefFile := e2e.PrepareDefFile(c.env.TestDir,
+		e2e.DefFileDetails{
+			Bootstrap: "localimage",
+			From:      c.env.ImagePath,
+			Labels:    labels,
+		})
 	t.Cleanup(func() {
 		if !t.Failed() {
 			os.Remove(liLabelDefFile)
@@ -319,11 +321,12 @@ func (c imgBuildTests) buildLocalImage(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 
-	localSandboxDefFile := e2e.PrepareDefFile(e2e.DefFileDetails{
-		Bootstrap: "localimage",
-		From:      sandboxImage,
-		Labels:    labels,
-	})
+	localSandboxDefFile := e2e.PrepareDefFile(c.env.TestDir,
+		e2e.DefFileDetails{
+			Bootstrap: "localimage",
+			From:      sandboxImage,
+			Labels:    labels,
+		})
 	t.Cleanup(func() {
 		if !t.Failed() {
 			os.Remove(localSandboxDefFile)
@@ -586,7 +589,7 @@ func (c imgBuildTests) buildMultiStageDefinition(t *testing.T) {
 
 		imagePath := path.Join(dn, "container")
 
-		defFile := e2e.PrepareMultiStageDefFile(tt.dfd)
+		defFile := e2e.PrepareMultiStageDefFile(c.env.TestDir, tt.dfd)
 
 		// sandboxes take less time to build
 		args := []string{"--sandbox", imagePath, defFile}
@@ -892,7 +895,7 @@ func (c imgBuildTests) buildDefinition(t *testing.T) {
 
 				imagePath := path.Join(dn, "container")
 
-				defFile := e2e.PrepareDefFile(dfd)
+				defFile := e2e.PrepareDefFile(c.env.TestDir, dfd)
 
 				c.env.RunSingularity(
 					t,
@@ -2274,10 +2277,11 @@ func (c imgBuildTests) buildWithAuthTester(t *testing.T, withCustomAuthFile bool
 	e2e.EnsureImage(t, c.env)
 
 	privImgNoPrefix := strings.TrimPrefix(c.env.TestRegistryPrivImage, "docker://")
-	simpleDef := e2e.PrepareDefFile(e2e.DefFileDetails{
-		Bootstrap: "docker",
-		From:      privImgNoPrefix,
-	})
+	simpleDef := e2e.PrepareDefFile(c.env.TestDir,
+		e2e.DefFileDetails{
+			Bootstrap: "docker",
+			From:      privImgNoPrefix,
+		})
 	t.Cleanup(func() {
 		if !t.Failed() {
 			os.Remove(simpleDef)

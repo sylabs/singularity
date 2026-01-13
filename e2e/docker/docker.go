@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2024 Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -152,7 +152,7 @@ func (c ctx) testDockerHost(t *testing.T) {
 	e2e.Privileged(func(t *testing.T) {
 		cmd := exec.Command("docker", "build", "-t", dockerRef, tmpPath)
 		cmd.Dir = tmpPath
-		cmd.Env = append(cmd.Env, "HOME="+tmpHome)
+		cmd.Env = append(os.Environ(), "HOME="+tmpHome)
 		out, err := cmd.CombinedOutput()
 		t.Log(cmd.Args)
 		if err != nil {
@@ -261,7 +261,7 @@ func (c ctx) testDockerHost(t *testing.T) {
 	// Clean up docker image
 	e2e.Privileged(func(t *testing.T) {
 		cmd := exec.Command("docker", "rmi", dockerRef)
-		cmd.Env = append(cmd.Env, "HOME="+tmpHome)
+		cmd.Env = append(os.Environ(), "HOME="+tmpHome)
 		_, err = cmd.Output()
 		if err != nil {
 			t.Fatalf("Unexpected error while cleaning up docker image.\n%s", err)
@@ -275,10 +275,11 @@ func (c ctx) testDockerCredsPriority(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	privImgNoPrefix := strings.TrimPrefix(c.env.TestRegistryPrivImage, "docker://")
-	simpleDef := e2e.PrepareDefFile(e2e.DefFileDetails{
-		Bootstrap: "docker",
-		From:      privImgNoPrefix,
-	})
+	simpleDef := e2e.PrepareDefFile(c.env.TestDir,
+		e2e.DefFileDetails{
+			Bootstrap: "docker",
+			From:      privImgNoPrefix,
+		})
 	t.Cleanup(func() {
 		if !t.Failed() {
 			os.Remove(simpleDef)
@@ -762,10 +763,11 @@ func (c ctx) testDockerDefFile(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		defFile := e2e.PrepareDefFile(e2e.DefFileDetails{
-			Bootstrap: "docker",
-			From:      tt.from,
-		})
+		defFile := e2e.PrepareDefFile(c.env.TestDir,
+			e2e.DefFileDetails{
+				Bootstrap: "docker",
+				From:      tt.from,
+			})
 
 		c.env.RunSingularity(
 			t,
@@ -840,7 +842,7 @@ func (c ctx) testDockerRegistry(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		defFile := e2e.PrepareDefFile(tt.dfd)
+		defFile := e2e.PrepareDefFile(c.env.TestDir, tt.dfd)
 
 		c.env.RunSingularity(
 			t,

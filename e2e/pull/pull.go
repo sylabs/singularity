@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -662,7 +662,7 @@ func orasPushNoCheck(path, ref, layerMediaType string) error {
 }
 
 func (c ctx) testPullDisableCacheCmd(t *testing.T) {
-	cacheDir, err := os.MkdirTemp("", "e2e-imgcache-")
+	cacheDir, err := os.MkdirTemp(c.env.TestDir, "e2e-imgcache-")
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %s", err)
 	}

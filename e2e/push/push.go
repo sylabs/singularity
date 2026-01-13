@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -200,7 +200,7 @@ func (c ctx) testPushOCITarLayers(t *testing.T) {
 		e2e.Privileged(func(t *testing.T) {
 			dockerRef := strings.TrimPrefix(imgRef, "docker://")
 			cmd := exec.Command("docker", "run", "-i", "--rm", dockerRef, "/bin/true")
-			cmd.Env = append(cmd.Env, "HOME="+tmpHome)
+			cmd.Env = append(os.Environ(), "HOME="+tmpHome)
 			out, err := cmd.CombinedOutput()
 			if err != nil {
 				t.Fatalf("Unexpected error while running command.\n%s: %s", err, string(out))
