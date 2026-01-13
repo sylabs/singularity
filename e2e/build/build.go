@@ -2224,7 +2224,8 @@ func (c imgBuildTests) buildDockerfile(t *testing.T) {
 			for _, tt := range tests {
 				t.Run(tt.name, func(t *testing.T) {
 					if tt.dockerfile != "" {
-						buildArgs := []string{"-F"}
+						buildArgs := make([]string, 0, 1+len(tt.buildArgs)+2)
+						buildArgs = append(buildArgs, "-F")
 						buildArgs = append(buildArgs, tt.buildArgs...)
 						buildArgs = append(buildArgs, tt.imgPath, tt.dockerfile)
 						c.env.RunSingularity(

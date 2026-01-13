@@ -76,7 +76,8 @@ func dockerRMI(t *testing.T, dockerRef, homeDir string) {
 
 func dockerRunPrivileged(t *testing.T, name, dockerRef, homeDir string, args ...string) { //nolint:unparam
 	t.Run(name, e2e.Privileged(func(t *testing.T) {
-		cmdArgs := []string{"run", "-i", "--rm", "--privileged", "--network=host", dockerRef}
+		cmdArgs := make([]string, 0, 6+len(args))
+		cmdArgs = append(cmdArgs, "run", "-i", "--rm", "--privileged", "--network=host", dockerRef)
 		cmdArgs = append(cmdArgs, args...)
 		cmd := exec.Command("docker", cmdArgs...)
 		cmd.Env = append(os.Environ(), "HOME="+homeDir)
@@ -142,7 +143,8 @@ func podmanRMI(t *testing.T, dockerRef, homeDir string) {
 
 func podmanRun(t *testing.T, name, dockerRef, homeDir string, args ...string) { //nolint:unparam
 	t.Run(name, func(t *testing.T) {
-		cmdArgs := []string{"run", "-i", "--rm", "--privileged", "--network=host", dockerRef}
+		cmdArgs := make([]string, 0, 6+len(args))
+		cmdArgs = append(cmdArgs, "run", "-i", "--rm", "--privileged", "--network=host", dockerRef)
 		cmdArgs = append(cmdArgs, args...)
 		cmd := exec.Command("podman", cmdArgs...)
 		cmd.Env = append(os.Environ(), "HOME="+homeDir)
