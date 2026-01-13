@@ -1,5 +1,11 @@
 # SingularityCE Changelog
 
+## Unreleased
+
+### Requirements / Packaging
+
+- Requires Go 1.25.0 or above, due to various dependencies.
+
 ## 4.3.6 \[2025-12-16\]
 
 ### Security Related Fixes
