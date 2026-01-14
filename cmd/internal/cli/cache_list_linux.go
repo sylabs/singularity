@@ -6,7 +6,7 @@
 package cli
 
 import (
-	"os"
+	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -54,7 +54,7 @@ var CacheListCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	Run: func(_ *cobra.Command, _ []string) {
 		if err := cacheListCmd(); err != nil {
-			os.Exit(2)
+			sylog.Fatalf("%v", err)
 		}
 	},
 
@@ -68,13 +68,12 @@ func cacheListCmd() error {
 	// A get a handle for the current image cache
 	imgCache := getCacheHandle(cache.Config{})
 	if imgCache == nil {
-		sylog.Fatalf("failed to create image cache handle")
+		return fmt.Errorf("failed to create image cache handle")
 	}
 
 	err := singularity.ListSingularityCache(imgCache, cacheListTypes, cacheListVerbose)
 	if err != nil {
-		sylog.Fatalf("An error occurred while listing cache: %v", err)
-		return err
+		return fmt.Errorf("an error occurred while listing cache: %v", err)
 	}
 	return nil
 }

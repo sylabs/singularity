@@ -256,7 +256,7 @@ func (c ctx) testPushOCIOverlay(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		args := []string{}
+		args := make([]string, 0, 2)
 		if tt.layerFormat != "" {
 			args = []string{"--layer-format", tt.layerFormat}
 		}

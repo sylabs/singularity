@@ -126,7 +126,8 @@ func (c actionTests) actionOciRun(t *testing.T) {
 	for _, profile := range e2e.OCIProfiles {
 		t.Run(profile.String(), func(t *testing.T) {
 			for _, tt := range tests {
-				cmdArgs := []string{tt.imageRef}
+				cmdArgs := make([]string, 0, 1+len(tt.argv))
+				cmdArgs = append(cmdArgs, tt.imageRef)
 				cmdArgs = append(cmdArgs, tt.argv...)
 				c.env.RunSingularity(
 					t,
@@ -2061,7 +2062,7 @@ func (c actionTests) actionOciNoMount(t *testing.T) {
 			expectOp = e2e.ExpectError(e2e.ContainMatch, tt.warnMatch)
 		}
 
-		args := []string{}
+		args := make([]string, 0, 4)
 		if tt.noCompat {
 			args = []string{"--no-compat"}
 		}
