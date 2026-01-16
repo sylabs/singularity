@@ -1,5 +1,11 @@
 # SingularityCE Changelog
 
+## Unreleased
+
+### Bug Fixes
+
+- Don't attempt to set `relatime` on workdir / scratch mounts in OCI-Mode.
+
 ## 4.3.6 \[2025-12-16\]
 
 ### Security Related Fixes
