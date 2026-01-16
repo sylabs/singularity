@@ -3,7 +3,8 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
-package util //nolint:revive
+//revive:disable:var-naming
+package util
 
 import (
 	"net/url"
