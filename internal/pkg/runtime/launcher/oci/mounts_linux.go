@@ -139,7 +139,6 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
 
 		opts := []string{
 			"rbind",
-			"relatime",
 		}
 		if !l.cfg.AllowSUID {
 			opts = append(opts, "nosuid")
@@ -503,7 +502,6 @@ func (l *Launcher) addScratchMounts(mounts *[]specs.Mount) error {
 
 			opts := []string{
 				"rbind",
-				"relatime",
 				"nodev",
 			}
 			if !l.cfg.AllowSUID {
