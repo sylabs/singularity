@@ -5,6 +5,7 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+//revive:disable:var-naming
 package types
 
 import (
