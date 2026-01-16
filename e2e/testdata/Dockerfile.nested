@@ -1,6 +1,6 @@
 FROM ubuntu:25.04
 
-ARG GOVERSION="go1.25.5"
+ARG GOVERSION="go1.25.6"
 ARG GOOS="linux"
 ARG GOARCH="amd64"
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/go/bin
