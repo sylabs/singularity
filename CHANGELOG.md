@@ -1,6 +1,6 @@
 # SingularityCE Changelog
 
-## Unreleased
+## 4.3.7 \[2026-01-16\]
 
 ### Bug Fixes
 
