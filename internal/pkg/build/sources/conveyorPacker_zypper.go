@@ -323,7 +323,8 @@ func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) error 
 		}
 	}
 
-	args := []string{`--non-interactive`, `-c`, filepath.Join(cp.b.RootfsPath, zypperConf), `--root`, cp.b.RootfsPath, `--releasever=` + osversion, `-n`, `install`, `--auto-agree-with-licenses`, `--download-in-advance`}
+	args := make([]string, 0, 10+len(strings.Fields(include)))
+	args = append(args, `--non-interactive`, `-c`, filepath.Join(cp.b.RootfsPath, zypperConf), `--root`, cp.b.RootfsPath, `--releasever=`+osversion, `-n`, `install`, `--auto-agree-with-licenses`, `--download-in-advance`)
 	args = append(args, strings.Fields(include)...)
 
 	// Zypper install command

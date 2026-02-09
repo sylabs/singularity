@@ -1,5 +1,11 @@
 # SingularityCE Changelog
 
+## Unreleased
+
+### Requirements / Packaging
+
+- Requires Go 1.25.0 or above, due to various dependencies.
+
 ## 4.3.7 \[2026-01-16\]
 
 ### Bug Fixes

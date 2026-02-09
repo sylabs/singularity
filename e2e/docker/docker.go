@@ -583,7 +583,7 @@ func (c ctx) aufsTest(t *testing.T, profile e2e.Profile, keepLayers bool) {
 	})
 	imagePath := filepath.Join(imageDir, "container")
 
-	args := []string{}
+	args := make([]string, 0, 2)
 	if keepLayers {
 		args = []string{"--keep-layers"}
 	}

@@ -129,14 +129,15 @@ func New(r io.Reader, name string, args []string, envs []string, runnerOptions .
 	}
 
 	// TODO - update to ExecHandlers, as ExecHandler is deprecated.
-	opts := []interp.RunnerOption{
+	opts := make([]interp.RunnerOption, 0, 6+len(runnerOptions))
+	opts = append(opts,
 		interp.StdIO(os.Stdin, os.Stdout, os.Stderr),
 		interp.ExecHandler(s.internalExecHandler()), //nolint:staticcheck
 		interp.OpenHandler(s.internalOpenHandler()),
 		interp.Params("--"),
 		interp.Env(expand.ListEnviron(envs...)),
 		interp.Dir(dir),
-	}
+	)
 	opts = append(opts, runnerOptions...)
 	s.runner, err = interp.New(opts...)
 	if err != nil {
