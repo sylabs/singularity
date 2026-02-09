@@ -83,7 +83,7 @@ func NewAuthProvider(authConf *authn.AuthConfig, reqAuthFile string) session.Att
 	}
 
 	return authprovider.NewDockerAuthProvider(authprovider.DockerAuthProviderConfig{
-		ConfigFile: cf,
+		AuthConfigProvider: authprovider.LoadAuthConfig(cf),
 	})
 }
 
