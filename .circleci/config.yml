@@ -1,17 +1,17 @@
 version: 2.1
 
 orbs:
-  go: circleci/go@1.7
+  go: circleci/go@3.0.3
 
 parameters:
   go-version:
     type: string
-    default: '1.25.7'
+    default: '1.26.0'
 
 executors:
   node:
     docker:
-      - image: node:20-slim
+      - image: node:24-slim
   golang:
     parameters:
       variant:
@@ -38,13 +38,13 @@ executors:
       - image: ubuntu:24.04
   golangci-lint:
     docker:
-      - image: golangci/golangci-lint:v2.8
+      - image: golangci/golangci-lint:v2.9
   ubuntu-machine:
     machine:
-      image: ubuntu-2404:2024.11.1
+      image: ubuntu-2404:current
   ubuntu-machine-large:
     machine:
-      image: ubuntu-2404:2024.11.1
+      image: ubuntu-2404:current
     resource_class: large
 
 commands:
