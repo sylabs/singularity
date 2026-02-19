@@ -43,9 +43,9 @@ import (
 	"github.com/containerd/containerd/v2/pkg/oci"
 	"github.com/containerd/containerd/v2/plugins/content/local"
 	"github.com/containerd/containerd/v2/plugins/diff/walking"
-	"github.com/containerd/continuity/fs"
 	runc "github.com/containerd/go-runc"
 	"github.com/containerd/platforms"
+	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/moby/buildkit/cache"
 	"github.com/moby/buildkit/cache/metadata"
 	"github.com/moby/buildkit/executor"
@@ -455,7 +455,7 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 		spec.Root.Readonly = true
 	}
 
-	newp, err := fs.RootPath(rootFSPath, meta.Cwd)
+	newp, err := securejoin.SecureJoin(rootFSPath, meta.Cwd)
 	if err != nil {
 		return nil, errors.Wrapf(err, "working dir %s points to invalid target", newp)
 	}
