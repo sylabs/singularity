@@ -72,7 +72,6 @@ require (
 	golang.org/x/term v0.40.0
 	golang.org/x/text v0.34.0
 	google.golang.org/grpc v1.79.1
-	gotest.tools v2.2.0+incompatible
 	gotest.tools/v3 v3.5.2
 	mvdan.cc/sh/v3 v3.12.0
 	tags.cncf.io/container-device-interface v1.1.0

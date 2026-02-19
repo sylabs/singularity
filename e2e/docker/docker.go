@@ -32,7 +32,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/tmpl"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"golang.org/x/sys/unix"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 type ctx struct {
