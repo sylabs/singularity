@@ -35,7 +35,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ccoveille/go-safecast"
+	"github.com/ccoveille/go-safecast/v2"
 	"github.com/containerd/containerd/v2/core/diff/apply"
 	ctdmetadata "github.com/containerd/containerd/v2/core/metadata"
 	"github.com/containerd/containerd/v2/core/mount"

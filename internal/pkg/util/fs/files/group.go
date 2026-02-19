@@ -13,7 +13,7 @@ import (
 	"os"
 	"slices"
 
-	"github.com/ccoveille/go-safecast"
+	"github.com/ccoveille/go-safecast/v2"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 	"github.com/sylabs/singularity/v4/pkg/sylog"

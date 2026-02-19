@@ -16,7 +16,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/ccoveille/go-safecast"
+	"github.com/ccoveille/go-safecast/v2"
 	securejoin "github.com/cyphar/filepath-securejoin"
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"

@@ -15,7 +15,7 @@ import (
 	"slices"
 	"syscall"
 
-	"github.com/ccoveille/go-safecast"
+	"github.com/ccoveille/go-safecast/v2"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/fakeroot"

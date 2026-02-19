@@ -10,7 +10,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/ccoveille/go-safecast"
+	"github.com/ccoveille/go-safecast/v2"
 )
 
 type readerError string
