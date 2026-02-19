@@ -181,10 +181,7 @@ func copyConfigToEnv(data []byte) ([]string, error) {
 		offset := uint64(0)
 		length := uint64(len(data))
 		for i <= buildcfg.MAX_ENGINE_CONFIG_CHUNK {
-			end := offset + buildcfg.MAX_CHUNK_SIZE
-			if end > length {
-				end = length
-			}
+			end := min(offset+buildcfg.MAX_CHUNK_SIZE, length)
 			configEnv = append(configEnv, fmt.Sprintf(envConfigFormat, i, string(data[offset:end])))
 			if end == length {
 				break

@@ -169,7 +169,7 @@ func StartRegistry(t *testing.T, env TestEnv) string {
 
 	addr := net.JoinHostPort("localhost", port)
 
-	for i := 0; i < 30; i++ {
+	for range 30 {
 		resp, err := http.Get(fmt.Sprintf("http://%s/", addr))
 		resp.Body.Close()
 		if err != nil || resp.StatusCode != 200 {

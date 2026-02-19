@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -147,10 +148,8 @@ func TestInterpreter(t *testing.T) {
 				fn: func(_ *Shell) ShellBuiltin {
 					return func(ctx context.Context, _ []string) error {
 						hc := interp.HandlerCtx(ctx)
-						for _, env := range GetEnv(hc) {
-							if env == "FOO=bar" {
-								return nil
-							}
+						if slices.Contains(GetEnv(hc), "FOO=bar") {
+							return nil
 						}
 						return fmt.Errorf("no FOO environment variable")
 					}

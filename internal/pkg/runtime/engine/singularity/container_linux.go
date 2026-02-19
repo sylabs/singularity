@@ -16,6 +16,7 @@ import (
 	osuser "os/user"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -521,10 +522,8 @@ func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err
 	}
 
 	if remount || propagation {
-		for _, skipped := range c.skippedMount {
-			if skipped == mnt.Destination {
-				return nil
-			}
+		if slices.Contains(c.skippedMount, mnt.Destination) {
+			return nil
 		}
 		sylog.Debugf("Remounting %s\n", dest)
 	} else {
@@ -2365,7 +2364,7 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 		}
 		// Is/are the requested network(s) in the list of networks allowed for unpriv CNI?
 		allowedNetNetwork := false
-		for _, n := range strings.Split(net, ",") {
+		for n := range strings.SplitSeq(net, ",") {
 			// Allowed in singularity.conf
 			adminPermitted := slice.ContainsString(c.engine.EngineConfig.File.AllowNetNetworks, n)
 			// 'fakeroot' network is always allowed in --fakeroot mode
@@ -2422,7 +2421,7 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 	return func(ctx context.Context) error {
 		if fakeroot || allowedNetUnpriv {
 			// prevent port hijacking between user processes
-			for _, n := range strings.Split(net, ",") {
+			for n := range strings.SplitSeq(net, ",") {
 				if err := networkSetup.SetPortProtection(n, 0); err != nil {
 					return err
 				}

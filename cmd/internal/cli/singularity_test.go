@@ -14,7 +14,7 @@ import (
 func TestCreateConfDir(t *testing.T) {
 	// create a random name for a directory
 	bytes := make([]byte, 8)
-	for i := 0; i < 8; i++ {
+	for i := range 8 {
 		//#nosec G404
 		bytes[i] = byte(65 + rand.Intn(25))
 	}

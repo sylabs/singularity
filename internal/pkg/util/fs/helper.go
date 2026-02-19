@@ -220,10 +220,10 @@ func walkSymRelative(path string, root string, maxLinks uint) string {
 				d = filepath.Join("/", d)
 				dest = filepath.Join(absRoot, d)
 			} else {
-				if strings.HasPrefix(dest, parentDest) {
+				if after, ok := strings.CutPrefix(dest, parentDest); ok {
 					// trivial case where the resulting path is
 					// within the current path
-					d = strings.TrimPrefix(dest, parentDest)
+					d = after
 					newDest = parentDest
 				} else {
 					// we go back in the hierarchy and take a

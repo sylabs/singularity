@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -382,13 +383,7 @@ func (e *EngineOperations) prepareRootCaps() error {
 		sylog.Warningf("won't add unknown capability: %s", strings.Join(ignoredCaps, ","))
 	}
 	for _, cap := range caps {
-		found := false
-		for _, c := range commonCaps {
-			if c == cap {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(commonCaps, cap)
 		if !found {
 			sylog.Debugf("Root capability %s added", cap)
 			commonCaps = append(commonCaps, cap)

@@ -175,7 +175,7 @@ func newBindPath(bind string) (Path, error) {
 	if len(splitted) > 2 {
 		bp.Options = make(map[string]*Option)
 
-		for _, value := range strings.Split(splitted[2], ",") {
+		for value := range strings.SplitSeq(splitted[2], ",") {
 			valid := false
 			for optName, isFlag := range bindOptions {
 				if isFlag && optName == value {

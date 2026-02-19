@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"syscall"
 	"testing"
 
@@ -153,11 +154,8 @@ func TestGetMountInfo(t *testing.T) {
 			continue
 		}
 		for parent := range expectedMap {
-			for _, child := range expectedMap[parent] {
-				if e.Point == child {
-					found = true
-					break
-				}
+			if slices.Contains(expectedMap[parent], e.Point) {
+				found = true
 			}
 		}
 		if !found {

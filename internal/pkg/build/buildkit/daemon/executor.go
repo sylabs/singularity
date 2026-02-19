@@ -26,6 +26,7 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -170,9 +171,7 @@ func NewWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFacto
 		xlabels[wlabel.ApparmorProfile] = apparmorProfile
 	}
 
-	for k, v := range labels {
-		xlabels[k] = v
-	}
+	maps.Copy(xlabels, labels)
 	lm := leaseutil.WithNamespace(ctdmetadata.NewLeaseManager(mdb), "buildkit")
 	snap := containerdsnapshot.NewSnapshotter(snFactory.Name, mdb.Snapshotter(snFactory.Name), "buildkit", idmap)
 	if err := cache.MigrateV2(

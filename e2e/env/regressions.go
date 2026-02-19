@@ -73,7 +73,7 @@ func (c ctx) issue5057(t *testing.T) {
 	maxChunkSize := uint64(buildcfg.MAX_CHUNK_SIZE)
 
 	big := make([]byte, maxChunkSize)
-	for i := uint64(0); i < maxChunkSize; i++ {
+	for i := range maxChunkSize {
 		big[i] = 'A'
 	}
 	bigEnv := make([]string, buildcfg.MAX_ENGINE_CONFIG_CHUNK)

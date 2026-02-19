@@ -67,7 +67,7 @@ type debugError string
 
 func (e debugError) Error() string { return string(e) }
 
-func debugErrorf(format string, a ...interface{}) error {
+func debugErrorf(format string, a ...any) error {
 	e := fmt.Sprintf(format, a...)
 	return debugError(e)
 }

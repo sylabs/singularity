@@ -22,7 +22,7 @@ import (
 func testImage(t *testing.T) ggcrv1.Image {
 	addenda := []mutate.Addendum{}
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		filename := "file" + strconv.Itoa(i)
 		content := []byte("LAYER " + strconv.Itoa(i))
 

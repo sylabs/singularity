@@ -595,8 +595,8 @@ func (l *Launcher) prepareResolvConf(bundlePath string) (*specs.Mount, error) {
 	var err error
 	if len(l.cfg.DNS) > 0 {
 		dns := strings.ReplaceAll(l.cfg.DNS, " ", "")
-		ips := strings.Split(dns, ",")
-		for _, ip := range ips {
+		ips := strings.SplitSeq(dns, ",")
+		for ip := range ips {
 			if net.ParseIP(ip) == nil {
 				return nil, fmt.Errorf("DNS nameserver %v is not a valid IP address", ip)
 			}

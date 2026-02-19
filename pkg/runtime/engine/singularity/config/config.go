@@ -139,7 +139,7 @@ type JSONConfig struct {
 	XdgRuntimeDir         string            `json:"xdgRuntimeDir,omitempty"`
 	DbusSessionBusAddress string            `json:"dbusSessionBusAddress,omitempty"`
 	NoEval                bool              `json:"noEval,omitempty"`
-	UserInfo              UserInfo          `json:"userInfo,omitempty"`
+	UserInfo              UserInfo          `json:"userInfo"`
 	NoSetgroups           bool              `json:"noSetgroups,omitempty"`
 }
 

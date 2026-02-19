@@ -14,24 +14,24 @@ import (
 
 // Fatalf is a dummy function exiting with code 255. This
 // function must not be used in public packages.
-func Fatalf(format string, a ...interface{}) {
+func Fatalf(format string, a ...any) {
 	os.Exit(255)
 }
 
 // Errorf is a dummy function doing nothing.
-func Errorf(format string, a ...interface{}) {}
+func Errorf(format string, a ...any) {}
 
 // Warningf is a dummy function doing nothing.
-func Warningf(format string, a ...interface{}) {}
+func Warningf(format string, a ...any) {}
 
 // Infof is a dummy function doing nothing.
-func Infof(format string, a ...interface{}) {}
+func Infof(format string, a ...any) {}
 
 // Verbosef is a dummy function doing nothing.
-func Verbosef(format string, a ...interface{}) {}
+func Verbosef(format string, a ...any) {}
 
 // Debugf is a dummy function doing nothing
-func Debugf(format string, a ...interface{}) {}
+func Debugf(format string, a ...any) {}
 
 // SetLevel is a dummy function doing nothing.
 func SetLevel(l int, color bool) {}
@@ -64,7 +64,7 @@ func SetWriter(io.Writer) {}
 type DebugLogger struct{}
 
 // Log is a dummy function doing nothing.
-func (t DebugLogger) Log(v ...interface{}) {}
+func (t DebugLogger) Log(v ...any) {}
 
 // Logf is a dummy function doing nothing.
-func (t DebugLogger) Logf(format string, v ...interface{}) {}
+func (t DebugLogger) Logf(format string, v ...any) {}

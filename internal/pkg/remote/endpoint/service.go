@@ -171,7 +171,7 @@ func (ep *Config) GetAllServices() (map[string][]Service, error) {
 		return nil, fmt.Errorf("while reading response body: %v", err)
 	}
 
-	var a map[string]map[string]interface{}
+	var a map[string]map[string]any
 
 	if err := json.Unmarshal(b, &a); err != nil {
 		return nil, fmt.Errorf("jsonresp: failed to unmarshal response: %v", err)

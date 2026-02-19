@@ -147,7 +147,7 @@ func (c *ctx) testCreateManyInstances(t *testing.T) {
 	const n = 10
 
 	// Start n instances.
-	for i := 0; i < n; i++ {
+	for i := range n {
 		port := instanceStartPort + i
 		instanceName := "echo" + strconv.Itoa(i+1)
 

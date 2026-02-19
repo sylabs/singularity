@@ -297,7 +297,7 @@ func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) error 
 		}
 		if slemodulesOk {
 			array := strings.Split(slemodules, ",")
-			for i := 0; i < len(array); i++ {
+			for i := range array {
 				array[i] = strings.TrimSpace(array[i])
 				cmd := exec.Command(suseconnectPath, `--root`, cp.b.RootfsPath,
 					`--product`, array[i]+`/`+suseconnectModver)

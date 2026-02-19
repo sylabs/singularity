@@ -71,7 +71,7 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 		loop.Shared = false
 	}
 
-	for i := 0; i < maxRetries; i++ {
+	for range maxRetries {
 		err = loop.attachLoop(image, mode, number)
 		if err == nil {
 			return nil

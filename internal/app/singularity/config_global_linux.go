@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
@@ -31,12 +32,7 @@ const (
 )
 
 func contains(slice []string, val string) bool {
-	for _, s := range slice {
-		if s == val {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(slice, val)
 }
 
 func generateConfig(path string, directives singularityconf.Directives, dry bool) error {
@@ -105,7 +101,7 @@ func GlobalConfig(args []string, configFile string, dry bool, op GlobalConfigOp)
 
 	values := []string{}
 	if value != "" {
-		for _, v := range strings.Split(value, ",") {
+		for v := range strings.SplitSeq(value, ",") {
 			va := strings.TrimSpace(v)
 			if va != "" {
 				if contains(values, va) {

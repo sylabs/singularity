@@ -7,6 +7,7 @@ package callback
 
 import (
 	"fmt"
+	"slices"
 	"unsafe"
 
 	pluginapi "github.com/sylabs/singularity/v4/pkg/plugin"
@@ -17,7 +18,7 @@ import (
 var pluginCallbacks = make(map[string][]pluginapi.Callback)
 
 // sameType compares if the two interfaces have the same type.
-func sameType(a interface{}, b interface{}) bool {
+func sameType(a any, b any) bool {
 	ptrA := unsafe.Pointer(&a)
 	ptrB := unsafe.Pointer(&b)
 	return *(*unsafe.Pointer)(ptrA) == *(*unsafe.Pointer)(ptrB)
@@ -56,13 +57,7 @@ func Names(callbacks []pluginapi.Callback) []string {
 	for _, c := range callbacks {
 		hookName := Name(c)
 		// get rid of duplicated hook name
-		found := false
-		for _, name := range s {
-			if name == hookName {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(s, hookName)
 		if !found {
 			s = append(s, hookName)
 		}

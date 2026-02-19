@@ -128,9 +128,7 @@ func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter, dropC
 
 	wg := new(sync.WaitGroup)
 
-	wg.Add(1)
-
-	go func() {
+	wg.Go(func() {
 		for scanner.Scan() {
 			// this section is locked to ensure that log file is
 			// not being written while ReOpenFile is called
@@ -148,8 +146,7 @@ func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter, dropC
 			l.fm.Unlock()
 		}
 		pr.Close()
-		wg.Done()
-	}()
+	})
 
 	// closer function
 	return func() {

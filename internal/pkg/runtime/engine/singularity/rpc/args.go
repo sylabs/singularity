@@ -150,7 +150,7 @@ type fileInfo struct {
 	S  int64
 	M  os.FileMode
 	T  time.Time
-	Sy interface{}
+	Sy any
 }
 
 func (fi fileInfo) Name() string {
@@ -176,7 +176,7 @@ func (fi fileInfo) IsDir() bool {
 	return fi.M.IsDir()
 }
 
-func (fi fileInfo) Sys() interface{} {
+func (fi fileInfo) Sys() any {
 	return fi.Sy
 }
 

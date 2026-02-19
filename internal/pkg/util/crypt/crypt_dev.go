@@ -290,7 +290,7 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 		return "", fmt.Errorf("%s must be owned by root", cryptsetup)
 	}
 
-	for i := 0; i < maxRetries; i++ {
+	for range maxRetries {
 		nextCrypt, err := getNextAvailableCryptDevice()
 		if err != nil {
 			return "", err

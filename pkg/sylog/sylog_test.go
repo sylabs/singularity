@@ -286,7 +286,7 @@ func TestGetenv(t *testing.T) {
 
 const testStr = "test message"
 
-type fnOut func(format string, a ...interface{})
+type fnOut func(format string, a ...any)
 
 func runTestLogFn(t *testing.T, errFd *os.File, fn fnOut) {
 	if errFd != nil {

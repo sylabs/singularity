@@ -61,4 +61,4 @@ type Plugin struct {
 
 // Callback defines a plugin callback. Available callbacks are
 // defined in pkg/plugin/callback.
-type Callback interface{}
+type Callback any

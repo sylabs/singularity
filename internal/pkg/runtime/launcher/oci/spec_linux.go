@@ -7,6 +7,7 @@ package oci
 
 import (
 	"fmt"
+	"maps"
 	"path/filepath"
 	"strings"
 	"time"
@@ -166,9 +167,7 @@ func addAnnotations(rSpec *runtimespec.Spec, iSpec *imgspecv1.Image) error {
 	}
 
 	// Note: Explicit Config.Labels take precedence over the above.
-	for k, v := range iSpec.Config.Labels {
-		rSpec.Annotations[k] = v
-	}
+	maps.Copy(rSpec.Annotations, iSpec.Config.Labels)
 
 	return nil
 }

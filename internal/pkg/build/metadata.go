@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -220,9 +221,7 @@ func insertLabelsJSON(b *types.Bundle) (err error) {
 		if err := os.Remove(filepath.Join(b.RootfsPath, sLabelsPath)); err != nil {
 			return err
 		}
-		for k, v := range parser.GetLabels(string(content)) {
-			labels[k] = v
-		}
+		maps.Copy(labels, parser.GetLabels(string(content)))
 	} else if !os.IsNotExist(err) {
 		return fmt.Errorf("while reading %s: %s", buildLabels, err)
 	}

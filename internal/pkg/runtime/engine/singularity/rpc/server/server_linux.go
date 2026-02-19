@@ -249,8 +249,8 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) (err error) {
 	loopdev.Info = &arguments.Info
 	loopdev.Shared = arguments.Shared
 
-	if strings.HasPrefix(arguments.Image, "/proc/self/fd/") {
-		strFd := strings.TrimPrefix(arguments.Image, "/proc/self/fd/")
+	if after, ok := strings.CutPrefix(arguments.Image, "/proc/self/fd/"); ok {
+		strFd := after
 		fd, err := strconv.ParseUint(strFd, 10, 32)
 		if err != nil {
 			return fmt.Errorf("failed to convert image file descriptor: %v", err)

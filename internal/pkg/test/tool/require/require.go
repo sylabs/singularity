@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -327,10 +328,8 @@ func Arch(t *testing.T, arch string) {
 func ArchIn(t *testing.T, archs []string) {
 	if len(archs) > 0 {
 		b := runtime.GOARCH
-		for _, a := range archs {
-			if b == a {
-				return
-			}
+		if slices.Contains(archs, b) {
+			return
 		}
 		t.Skipf("test requires architecture %s", strings.Join(archs, "|"))
 	}

@@ -30,7 +30,7 @@ import (
 )
 
 func cosignPayload(digest v1.Hash) ([]byte, error) {
-	opt := make(map[string]interface{}, 2)
+	opt := make(map[string]any, 2)
 	opt["creator"] = useragent.Value()
 	opt["timestamp"] = time.Now().Unix()
 

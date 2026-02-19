@@ -176,9 +176,9 @@ func NVCLIEnvToFlags(nvidiaEnv []string) (flags []string, err error) {
 		// Driver capabilities have a default, but can be overridden.
 		if pair[0] == "NVIDIA_DRIVER_CAPABILITIES" && pair[1] != "" {
 			defaultDriverCaps = false
-			caps := strings.Split(pair[1], ",")
+			caps := strings.SplitSeq(pair[1], ",")
 
-			for _, cap := range caps {
+			for cap := range caps {
 				if slice.ContainsString(nVDriverCapabilities, cap) {
 					flags = append(flags, "--"+cap)
 				} else {

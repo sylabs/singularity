@@ -6,6 +6,8 @@
 package e2e
 
 import (
+	"maps"
+	"slices"
 	"strings"
 	"testing"
 
@@ -167,12 +169,8 @@ var OCIProfiles = map[string]Profile{
 // AllProfiles is initialized to the union of NativeProfiles and OCIProfiles
 func AllProfiles() map[string]Profile {
 	ap := map[string]Profile{}
-	for k, p := range NativeProfiles {
-		ap[k] = p
-	}
-	for k, p := range OCIProfiles {
-		ap[k] = p
-	}
+	maps.Copy(ap, NativeProfiles)
+	maps.Copy(ap, OCIProfiles)
 	return ap
 }
 
@@ -205,10 +203,8 @@ func (p Profile) args(cmd []string) []string {
 
 	command := strings.Join(cmd, " ")
 
-	for _, c := range p.optionForCommands {
-		if c == command {
-			return strings.Split(p.singularityOption, " ")
-		}
+	if slices.Contains(p.optionForCommands, command) {
+		return strings.Split(p.singularityOption, " ")
 	}
 
 	return nil
