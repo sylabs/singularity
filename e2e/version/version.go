@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/blang/semver/v4"
-	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 )
@@ -63,19 +62,16 @@ func (c ctx) testEqualVersion(t *testing.T) {
 			outputVer = strings.TrimSpace(outputVer)
 			semanticVersion, err := semver.Make(outputVer)
 			if err != nil {
-				err = errors.Wrapf(err, "creating semver version from %q", outputVer)
-				t.Fatalf("Creating semver version: %+v", err)
+				t.Fatalf("Creating semver version from %q: %v", outputVer, err)
 			}
 			if tmpVersion != "" {
 				versionTmp, err := semver.Make(tmpVersion)
 				if err != nil {
-					err = errors.Wrapf(err, "creating semver version from %q", tmpVersion)
-					t.Fatalf("Creating semver version: %+v", err)
+					t.Fatalf("Creating semver version from %q: %v", tmpVersion, err)
 				}
 				// compare versions and see if they are equal
 				if semanticVersion.Compare(versionTmp) != 0 {
-					err = errors.Wrapf(err, "comparing versions %q and %q", outputVer, tmpVersion)
-					t.Fatalf("singularity version command and singularity --version give a non-matching version result: %+v", err)
+					t.Fatalf("singularity version (%s) and singularity --version (%s) do not match: %v", outputVer, tmpVersion, err)
 				}
 			} else {
 				tmpVersion = outputVer

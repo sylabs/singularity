@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 )
@@ -43,19 +42,16 @@ func SetupHomeDirectories(t *testing.T) {
 
 		// want the already resolved current working directory
 		cwd, err := os.Readlink("/proc/self/cwd")
-		err = errors.Wrap(err, "getting current working directory from /proc/self/cwd")
 		if err != nil {
-			t.Fatalf("could not readlink /proc/self/cwd: %+v", err)
+			t.Fatalf("could not readlink /proc/self/cwd: %v", err)
 		}
 		unprivResolvedHome, err := filepath.EvalSymlinks(unprivUser.Dir)
-		err = errors.Wrapf(err, "resolving home from %q", unprivUser.Dir)
 		if err != nil {
-			t.Fatalf("could not resolve home directory: %+v", err)
+			t.Fatalf("could not resolve home from %q: %v", unprivUser.Dir, err)
 		}
 		privResolvedHome, err := filepath.EvalSymlinks(privUser.Dir)
-		err = errors.Wrapf(err, "resolving home from %q", privUser.Dir)
 		if err != nil {
-			t.Fatalf("could not resolve home directory: %+v", err)
+			t.Fatalf("could not resolve home directory from %q: %v", privUser.Dir, err)
 		}
 
 		// prepare user temporary homes
@@ -66,16 +62,13 @@ func SetupHomeDirectories(t *testing.T) {
 		defer syscall.Umask(oldUmask)
 
 		if err := os.Mkdir(unprivSessionHome, 0o700); err != nil {
-			err = errors.Wrapf(err, "creating temporary home directory at %s", unprivSessionHome)
-			t.Fatalf("failed to create temporary home: %+v", err)
+			t.Fatalf("failed to create temporary home %s: %v", unprivSessionHome, err)
 		}
 		if err := os.Chown(unprivSessionHome, int(unprivUser.UID), int(unprivUser.GID)); err != nil {
-			err = errors.Wrapf(err, "changing temporary home directory ownership at %s", unprivSessionHome)
-			t.Fatalf("failed to set temporary home owner: %+v", err)
+			t.Fatalf("failed to set temporary home ownership at %s: %v", unprivSessionHome, err)
 		}
 		if err := os.Mkdir(privSessionHome, 0o700); err != nil {
-			err = errors.Wrapf(err, "changing temporary home directory %s", privSessionHome)
-			t.Fatalf("failed to create temporary home: %+v", err)
+			t.Fatalf("failed to create temporary home %s: %v", privSessionHome, err)
 		}
 
 		sourceDir := buildcfg.SOURCEDIR
@@ -87,19 +80,16 @@ func SetupHomeDirectories(t *testing.T) {
 			trimmedSourceDir := after
 			sessionSourceDir := filepath.Join(unprivSessionHome, trimmedSourceDir)
 			if err := os.MkdirAll(sessionSourceDir, 0o755); err != nil {
-				err = errors.Wrapf(err, "creating temporary source directory at %q", sessionSourceDir)
-				t.Fatalf("failed to create temporary home source directory: %+v", err)
+				t.Fatalf("failed to create temporary home source directory %q: %v", sessionSourceDir, err)
 			}
 			if err := syscall.Mount(sourceDir, sessionSourceDir, "", syscall.MS_BIND, ""); err != nil {
-				err = errors.Wrapf(err, "bind mounting source directory from %q to %q", sourceDir, sessionSourceDir)
-				t.Fatalf("failed to bind mount source directory: %+v", err)
+				t.Fatalf("failed to bind mount source directory %q to %q: %v", sourceDir, sessionSourceDir, err)
 			}
 			// fix go directory permission for unprivileged user
 			goDir := filepath.Join(unprivSessionHome, "go")
 			if _, err := os.Stat(goDir); err == nil {
 				if err := os.Chown(goDir, int(unprivUser.UID), int(unprivUser.GID)); err != nil {
-					err = errors.Wrapf(err, "changing temporary home go directory ownership at %s", goDir)
-					t.Fatalf("failed to set owner: %+v", err)
+					t.Fatalf("failed to set temporary home go dir ownership at %s: %v", goDir, err)
 				}
 			}
 		}
@@ -108,18 +98,15 @@ func SetupHomeDirectories(t *testing.T) {
 		// in order to not screw them by accident during e2e
 		// tests execution
 		if err := syscall.Mount(unprivSessionHome, unprivResolvedHome, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
-			err = errors.Wrapf(err, "bind mounting source directory from %q to %q", unprivSessionHome, unprivResolvedHome)
-			t.Fatalf("failed to bind mount home directory: %+v", err)
+			t.Fatalf("failed to bind mount home directory %q to %q: %v", unprivSessionHome, unprivResolvedHome, err)
 		}
 		if err := syscall.Mount(privSessionHome, privResolvedHome, "", syscall.MS_BIND, ""); err != nil {
-			err = errors.Wrapf(err, "bind mounting source directory from %q to %q", privSessionHome, privResolvedHome)
-			t.Fatalf("failed to bind mount home directory: %+v", err)
+			t.Fatalf("failed to bind mount home directory %q to %q: %v", privSessionHome, privResolvedHome, err)
 		}
 		// change to the "new" working directory if above mount override
 		// the current working directory
 		if err := os.Chdir(cwd); err != nil {
-			err = errors.Wrapf(err, "change working directory to %s", cwd)
-			t.Fatalf("failed to change working directory: %+v", err)
+			t.Fatalf("failed to change working directory to %s: %v", cwd, err)
 		}
 	})(t)
 }

@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2020-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -11,12 +11,12 @@ import (
 	"crypto"
 	"crypto/x509"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
-	"github.com/pkg/errors"
 	"github.com/sigstore/sigstore/pkg/signature"
 	"github.com/sylabs/scs-key-client/client"
 	"github.com/sylabs/sif/v2/pkg/integrity"

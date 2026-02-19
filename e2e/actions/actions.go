@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -21,7 +21,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/exec"
@@ -365,9 +364,8 @@ func (c actionTests) actionShell(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	hostname, err := os.Hostname()
-	err = errors.Wrap(err, "getting hostname")
 	if err != nil {
-		t.Fatalf("could not get hostname: %+v", err)
+		t.Fatalf("could not get hostname: %v", err)
 	}
 
 	tests := []struct {

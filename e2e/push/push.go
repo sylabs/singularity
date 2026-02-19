@@ -14,7 +14,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
@@ -63,14 +62,12 @@ func (c ctx) testPushCmd(t *testing.T) {
 	// setup file and dir to use as invalid sources
 	invalidDir, err := os.MkdirTemp(c.env.TestDir, "push_dir-")
 	if err != nil {
-		err = errors.Wrap(err, "creating temporary directory")
-		t.Fatalf("unable to create src dir for push tests: %+v", err)
+		t.Fatalf("unable to create src dir for push tests: %v", err)
 	}
 
 	invalidFile, err := e2e.WriteTempFile(invalidDir, "invalid_image-", "Invalid Image Contents")
 	if err != nil {
-		err = errors.Wrap(err, "creating temporary file")
-		t.Fatalf("unable to create src file for push tests: %+v", err)
+		t.Fatalf("unable to create src file for push tests: %v", err)
 	}
 
 	tests := []struct {

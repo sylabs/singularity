@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,7 +13,6 @@ import (
 
 	"github.com/google/uuid"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
@@ -39,8 +38,7 @@ func (c *ctx) checkOciState(t *testing.T, containerID string, state specs.Contai
 	checkStateFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
 		s := &specs.State{}
 		if err := json.Unmarshal(r.Stdout, s); err != nil {
-			err = errors.Wrapf(err, "unmarshaling OCI state from JSON: %s", r.Stdout)
-			t.Errorf("can't unmarshal oci state output: %+v", err)
+			t.Errorf("can't unmarshal OCI state from JSON: %s: %v", r.Stdout, err)
 			return
 		}
 		if s.Status != specs.ContainerState(state) {
@@ -85,8 +83,7 @@ func genericOciMount(t *testing.T, c *ctx) (string, func()) {
 
 	bundleDir, err := os.MkdirTemp(c.env.TestDir, "bundle-")
 	if err != nil {
-		err = errors.Wrapf(err, "creating temporary bundle directory at %q", c.env.TestDir)
-		t.Fatalf("failed to create bundle directory: %+v", err)
+		t.Fatalf("failed to create bundle directory at %q: %v", c.env.TestDir, err)
 	}
 	c.env.RunSingularity(
 		t,
