@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -249,8 +249,8 @@ func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) (err error) {
 	loopdev.Info = &arguments.Info
 	loopdev.Shared = arguments.Shared
 
-	if strings.HasPrefix(arguments.Image, "/proc/self/fd/") {
-		strFd := strings.TrimPrefix(arguments.Image, "/proc/self/fd/")
+	if after, ok := strings.CutPrefix(arguments.Image, "/proc/self/fd/"); ok {
+		strFd := after
 		fd, err := strconv.ParseUint(strFd, 10, 32)
 		if err != nil {
 			return fmt.Errorf("failed to convert image file descriptor: %v", err)

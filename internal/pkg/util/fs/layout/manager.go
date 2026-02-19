@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,6 +10,7 @@ import (
 	iofs "io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"syscall"
 
@@ -120,7 +121,7 @@ type Manager struct {
 	DirMode  os.FileMode
 	FileMode os.FileMode
 	rootPath string
-	entries  map[string]interface{}
+	entries  map[string]any
 	dirs     []*dir
 
 	// each entries can contain multiple directories, the first
@@ -183,7 +184,7 @@ func (m *Manager) SetRootPath(path string) error {
 	}
 	m.rootPath = filepath.Clean(path)
 	if m.entries == nil {
-		m.entries = make(map[string]interface{})
+		m.entries = make(map[string]any)
 	} else {
 		return fmt.Errorf("root path is already set")
 	}
@@ -244,10 +245,8 @@ func (m *Manager) AddSymlink(path string, target string) error {
 // to directory located by path. When called multiple times subsequent
 // path are used to store directories to be created for nested binds.
 func (m *Manager) overrideDir(path string, realpath string) {
-	for _, ovDir := range m.ovDirs[path] {
-		if ovDir == realpath {
-			return
-		}
+	if slices.Contains(m.ovDirs[path], realpath) {
+		return
 	}
 	m.ovDirs[path] = append(m.ovDirs[path], realpath)
 }

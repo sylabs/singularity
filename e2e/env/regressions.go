@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -73,7 +73,7 @@ func (c ctx) issue5057(t *testing.T) {
 	maxChunkSize := uint64(buildcfg.MAX_CHUNK_SIZE)
 
 	big := make([]byte, maxChunkSize)
-	for i := uint64(0); i < maxChunkSize; i++ {
+	for i := range maxChunkSize {
 		big[i] = 'A'
 	}
 	bigEnv := make([]string, buildcfg.MAX_ENGINE_CONFIG_CHUNK)

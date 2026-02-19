@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,12 +9,12 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
-	"github.com/sylabs/singularity/v4/pkg/util/slice"
 	"golang.org/x/sys/unix"
 )
 
@@ -115,7 +115,7 @@ func currentEnvNoSingularity(permitted []string) []string {
 			envs = append(envs, e)
 		} else {
 			envKey := strings.SplitN(e, "=", 2)
-			if slice.ContainsString(permitted, strings.TrimPrefix(envKey[0], env.SingularityPrefix)) {
+			if slices.Contains(permitted, strings.TrimPrefix(envKey[0], env.SingularityPrefix)) {
 				sylog.Debugf("Passing through env var %s to singularity", e)
 				envs = append(envs, e)
 			}

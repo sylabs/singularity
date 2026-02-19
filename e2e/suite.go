@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2025 Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026 Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -16,6 +16,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -58,7 +59,6 @@ import (
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/v4/pkg/util/slice"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
@@ -279,7 +279,7 @@ func Run(t *testing.T) {
 	}
 
 	for key, val := range e2eGroups {
-		if len(groups) == 0 || slice.ContainsString(groups, key) {
+		if len(groups) == 0 || slices.Contains(groups, key) {
 			suite.AddGroup(key, val)
 		}
 	}

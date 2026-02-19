@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -171,7 +171,7 @@ func (ep *Config) GetAllServices() (map[string][]Service, error) {
 		return nil, fmt.Errorf("while reading response body: %v", err)
 	}
 
-	var a map[string]map[string]interface{}
+	var a map[string]map[string]any
 
 	if err := json.Unmarshal(b, &a); err != nil {
 		return nil, fmt.Errorf("jsonresp: failed to unmarshal response: %v", err)

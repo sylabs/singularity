@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"slices"
 	"strings"
 	"syscall"
 
@@ -148,10 +149,8 @@ func newBuild(defs []types.Definition, conf Config) (*Build, error) {
 				if err != nil {
 					return nil, fmt.Errorf("failed to find mount point for %s: %v", rootfsParent, err)
 				}
-				for _, opt := range destEntry.Options {
-					if opt == "noexec" {
-						return nil, fmt.Errorf("'noexec' mount option set on %s, sandbox %s won't be usable at this location", destEntry.Point, conf.Dest)
-					}
+				if slices.Contains(destEntry.Options, "noexec") {
+					return nil, fmt.Errorf("'noexec' mount option set on %s, sandbox %s won't be usable at this location", destEntry.Point, conf.Dest)
 				}
 			}
 		}

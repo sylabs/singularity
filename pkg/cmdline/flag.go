@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -17,8 +18,8 @@ import (
 // Flag holds information about a command flag
 type Flag struct {
 	ID           string
-	Value        interface{}
-	DefaultValue interface{}
+	Value        any
+	DefaultValue any
 	Name         string
 	ShortHand    string
 	Usage        string
@@ -296,11 +297,11 @@ func (m *flagManager) updateCmdFlagFromEnv(cmd *cobra.Command, prefix string) er
 	// visit each child commands
 	cmd.Flags().VisitAll(fn)
 	if len(errs) > 0 {
-		errStr := ""
+		var errStr strings.Builder
 		for _, e := range errs {
-			errStr += fmt.Sprintf("\n%s", e.Error())
+			errStr.WriteString(fmt.Sprintf("\n%s", e.Error()))
 		}
-		return fmt.Errorf("while updating flags from environment: %v", errStr)
+		return fmt.Errorf("while updating flags from environment: %v", errStr.String())
 	}
 
 	return nil

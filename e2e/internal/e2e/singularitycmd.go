@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -157,7 +157,7 @@ func ExpectOutput(mt MatchType, pattern string) SingularityCmdResultOp {
 
 // ExpectOutputf tests if the command output stream match the
 // formatted string pattern based on the type of match.
-func ExpectOutputf(mt MatchType, formatPattern string, a ...interface{}) SingularityCmdResultOp {
+func ExpectOutputf(mt MatchType, formatPattern string, a ...any) SingularityCmdResultOp {
 	return func(t *testing.T, r *SingularityCmdResult) {
 		t.Helper()
 
@@ -186,7 +186,7 @@ func ExpectError(mt MatchType, pattern string) SingularityCmdResultOp {
 
 // ExpectErrorf tests if the command error stream match the
 // pattern string based on the type of match.
-func ExpectErrorf(mt MatchType, formatPattern string, a ...interface{}) SingularityCmdResultOp {
+func ExpectErrorf(mt MatchType, formatPattern string, a ...any) SingularityCmdResultOp {
 	return func(t *testing.T, r *SingularityCmdResult) {
 		t.Helper()
 
@@ -215,7 +215,7 @@ type SingularityConsoleOp func(*testing.T, *expect.Console)
 
 // ConsoleExpectf reads from the console until the provided formatted string
 // is read or an error occurs.
-func ConsoleExpectf(format string, args ...interface{}) SingularityConsoleOp {
+func ConsoleExpectf(format string, args ...any) SingularityConsoleOp {
 	return func(t *testing.T, c *expect.Console) {
 		t.Helper()
 
@@ -692,11 +692,9 @@ func (env TestEnv) RunSingularity(t *testing.T, cmdOps ...SingularityCmdOp) {
 		// in order to not mess up with privileges if a subsequent
 		// RunSingularity is executed without being a sub-test in
 		// PostRun
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			fn(t)
-		}()
+		})
 		wg.Wait()
 	}
 }

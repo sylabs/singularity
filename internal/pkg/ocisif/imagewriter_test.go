@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Sylabs Inc. All rights reserved.
+// Copyright (c) 2024-2026 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -20,9 +20,9 @@ import (
 )
 
 func testImage(t *testing.T) ggcrv1.Image {
-	addenda := []mutate.Addendum{}
+	addenda := make([]mutate.Addendum, 0, 3)
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		filename := "file" + strconv.Itoa(i)
 		content := []byte("LAYER " + strconv.Itoa(i))
 

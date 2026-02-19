@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -27,7 +28,6 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/bind"
-	"github.com/sylabs/singularity/v4/pkg/util/slice"
 )
 
 const (
@@ -105,7 +105,7 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
 		sylog.Debugf("Skipping mount of /tmp due to singularity.conf")
 		return nil
 	}
-	if slice.ContainsString(l.cfg.NoMount, "tmp") {
+	if slices.Contains(l.cfg.NoMount, "tmp") {
 		sylog.Debugf("Skipping mount of /tmp due to --no-mount")
 		return nil
 	}
@@ -218,7 +218,7 @@ func (l *Launcher) addDevMounts(mounts *[]specs.Mount) error {
 	if l.singularityConf.MountDev == "no" {
 		return fmt.Errorf("OCI-mode requires /dev to be mounted, but 'mount dev = no' in singularity.conf")
 	}
-	if slice.ContainsString(l.cfg.NoMount, "dev") {
+	if slices.Contains(l.cfg.NoMount, "dev") {
 		return fmt.Errorf("OCI-mode requires /dev to be mounted, but '--no-mount dev' was requested")
 	}
 
@@ -279,7 +279,7 @@ func (l *Launcher) addDevPtsMount(mounts *[]specs.Mount) error {
 	if !l.singularityConf.MountDevPts {
 		return fmt.Errorf("OCI-mode requires /dev/pts to be mounted, but 'mount devpts = no' in singularity.conf")
 	}
-	if slice.ContainsString(l.cfg.NoMount, "devpts") {
+	if slices.Contains(l.cfg.NoMount, "devpts") {
 		return fmt.Errorf("OCI-mode requires /dev/pts to be mounted, but '--no-mount devpts' was requested")
 	}
 
@@ -332,7 +332,7 @@ func (l *Launcher) addProcMount(mounts *[]specs.Mount) error {
 		sylog.Debugf("Skipping mount of /proc due to singularity.conf")
 		return nil
 	}
-	if slice.ContainsString(l.cfg.NoMount, "proc") {
+	if slices.Contains(l.cfg.NoMount, "proc") {
 		sylog.Debugf("Skipping mount of /proc due to --no-mount")
 		return nil
 	}
@@ -362,7 +362,7 @@ func (l *Launcher) addSysMount(mounts *[]specs.Mount) error {
 		sylog.Debugf("Skipping mount of /sys due to singularity.conf")
 		return nil
 	}
-	if slice.ContainsString(l.cfg.NoMount, "sys") {
+	if slices.Contains(l.cfg.NoMount, "sys") {
 		sylog.Debugf("Skipping mount of /sys due to --no-mount")
 		return nil
 	}
@@ -418,7 +418,7 @@ func (l *Launcher) addHomeMount(mounts *[]specs.Mount) error {
 		sylog.Debugf("Skipping mount of $HOME due to --no-home")
 		return nil
 	}
-	if slice.ContainsString(l.cfg.NoMount, "home") {
+	if slices.Contains(l.cfg.NoMount, "home") {
 		sylog.Debugf("Skipping mount of /home due to --no-mount")
 		return nil
 	}
@@ -543,7 +543,7 @@ func (l *Launcher) addScratchMounts(mounts *[]specs.Mount) error {
 }
 
 func (l *Launcher) addSystemBindMounts(mounts *[]specs.Mount) error {
-	if slice.ContainsString(l.cfg.NoMount, "bind-paths") {
+	if slices.Contains(l.cfg.NoMount, "bind-paths") {
 		sylog.Debugf("Skipping singularity.conf bind path entries due to --no-mount bind-paths")
 		return nil
 	}
@@ -562,7 +562,7 @@ func (l *Launcher) addSystemBindMounts(mounts *[]specs.Mount) error {
 	}
 
 	for _, b := range binds {
-		if slice.ContainsString(l.cfg.NoMount, b.Destination) {
+		if slices.Contains(l.cfg.NoMount, b.Destination) {
 			continue
 		}
 		if err := l.addBindMount(mounts, b, l.cfg.AllowSUID); err != nil {
@@ -623,7 +623,7 @@ func (l *Launcher) addUserBindMounts(mounts *[]specs.Mount) error {
 
 // addCwdMount adds the CWD to the container.
 func (l *Launcher) addCwdMount(mounts *[]specs.Mount) error {
-	if slice.ContainsString(l.cfg.NoMount, "cwd") {
+	if slices.Contains(l.cfg.NoMount, "cwd") {
 		sylog.Debugf("Skipping mount of cwd due to --no-mount")
 		return nil
 	}

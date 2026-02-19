@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -139,7 +139,7 @@ type JSONConfig struct {
 	XdgRuntimeDir         string            `json:"xdgRuntimeDir,omitempty"`
 	DbusSessionBusAddress string            `json:"dbusSessionBusAddress,omitempty"`
 	NoEval                bool              `json:"noEval,omitempty"`
-	UserInfo              UserInfo          `json:"userInfo,omitempty"`
+	UserInfo              UserInfo          `json:"userInfo"`
 	NoSetgroups           bool              `json:"noSetgroups,omitempty"`
 }
 

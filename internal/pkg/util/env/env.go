@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -8,6 +8,7 @@ package env
 import (
 	"context"
 	"fmt"
+	"maps"
 	"os"
 	"strings"
 
@@ -96,8 +97,6 @@ func FileMap(ctx context.Context, f string, args []string, hostEnv []string) (ma
 // MergeMap merges two maps of environment variables, with values in b replacing
 // values also set in a.
 func MergeMap(a map[string]string, b map[string]string) map[string]string {
-	for k, v := range b {
-		a[k] = v
-	}
+	maps.Copy(a, b)
 	return a
 }

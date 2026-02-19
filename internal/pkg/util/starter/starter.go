@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -181,10 +181,7 @@ func copyConfigToEnv(data []byte) ([]string, error) {
 		offset := uint64(0)
 		length := uint64(len(data))
 		for i <= buildcfg.MAX_ENGINE_CONFIG_CHUNK {
-			end := offset + buildcfg.MAX_CHUNK_SIZE
-			if end > length {
-				end = length
-			}
+			end := min(offset+buildcfg.MAX_CHUNK_SIZE, length)
 			configEnv = append(configEnv, fmt.Sprintf(envConfigFormat, i, string(data[offset:end])))
 			if end == length {
 				break

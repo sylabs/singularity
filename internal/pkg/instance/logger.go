@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -128,9 +128,7 @@ func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter, dropC
 
 	wg := new(sync.WaitGroup)
 
-	wg.Add(1)
-
-	go func() {
+	wg.Go(func() {
 		for scanner.Scan() {
 			// this section is locked to ensure that log file is
 			// not being written while ReOpenFile is called
@@ -148,8 +146,7 @@ func (l *Logger) scan(stream string, pr *io.PipeReader, pw *io.PipeWriter, dropC
 			l.fm.Unlock()
 		}
 		pr.Close()
-		wg.Done()
-	}()
+	})
 
 	// closer function
 	return func() {

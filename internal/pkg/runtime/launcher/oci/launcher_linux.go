@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -17,6 +17,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -45,7 +46,6 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
-	"github.com/sylabs/singularity/v4/pkg/util/slice"
 	"golang.org/x/sys/unix"
 	"tags.cncf.io/container-device-interface/pkg/cdi"
 )
@@ -153,7 +153,7 @@ func checkOpts(lo launcher.Options) error {
 	}
 
 	for _, nm := range lo.NoMount {
-		if strings.HasPrefix(nm, "/") || slice.ContainsString(unsupportedNoMount, nm) {
+		if strings.HasPrefix(nm, "/") || slices.Contains(unsupportedNoMount, nm) {
 			sylog.Warningf("--no-mount %s is not supported in OCI mode, ignoring.", nm)
 		}
 	}
@@ -586,7 +586,7 @@ func (l *Launcher) prepareResolvConf(bundlePath string) (*specs.Mount, error) {
 		return nil, nil
 	}
 
-	if slice.ContainsString(l.cfg.NoMount, hostResolvConfPath) {
+	if slices.Contains(l.cfg.NoMount, hostResolvConfPath) {
 		sylog.Debugf("Skipping mount of %s due to --no-mount", hostResolvConfPath)
 		return nil, nil
 	}
@@ -595,8 +595,8 @@ func (l *Launcher) prepareResolvConf(bundlePath string) (*specs.Mount, error) {
 	var err error
 	if len(l.cfg.DNS) > 0 {
 		dns := strings.ReplaceAll(l.cfg.DNS, " ", "")
-		ips := strings.Split(dns, ",")
-		for _, ip := range ips {
+		ips := strings.SplitSeq(dns, ",")
+		for ip := range ips {
 			if net.ParseIP(ip) == nil {
 				return nil, fmt.Errorf("DNS nameserver %v is not a valid IP address", ip)
 			}

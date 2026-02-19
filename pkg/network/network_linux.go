@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -160,7 +161,7 @@ func NewSetupFromConfig(networkConfList []*libcni.NetworkConfigList, containerID
 			ContainerID:    containerID,
 			NetNS:          netNS,
 			IfName:         fmt.Sprintf("eth%d", ifIndex),
-			CapabilityArgs: make(map[string]interface{}),
+			CapabilityArgs: make(map[string]any),
 			Args:           make([][2]string, 0),
 		}
 
@@ -183,8 +184,8 @@ func NewSetupFromConfig(networkConfList []*libcni.NetworkConfigList, containerID
 func parseArg(arg string) ([][2]string, error) {
 	argList := make([][2]string, 0)
 
-	pairs := strings.Split(arg, ";")
-	for _, pair := range pairs {
+	pairs := strings.SplitSeq(arg, ";")
+	for pair := range pairs {
 		keyVal := strings.Split(pair, "=")
 		if len(keyVal) != 2 {
 			return nil, fmt.Errorf("invalid argument: %s", pair)
@@ -196,7 +197,7 @@ func parseArg(arg string) ([][2]string, error) {
 
 // SetCapability sets capability arguments for the corresponding network plugin
 // uses by a configured network
-func (m *Setup) SetCapability(network string, capName string, args interface{}) error {
+func (m *Setup) SetCapability(network string, capName string, args any) error {
 	for i := range m.networks {
 		if m.networks[i] == network {
 			hasCap := false
@@ -263,13 +264,7 @@ func (m *Setup) SetArgs(args []string) error {
 		} else {
 			networkName = splitted[0]
 		}
-		hasNetwork := false
-		for _, network := range m.networks {
-			if network == networkName {
-				hasNetwork = true
-				break
-			}
-		}
+		hasNetwork := slices.Contains(m.networks, networkName)
 		if !hasNetwork {
 			return fmt.Errorf("network %s wasn't specified in --network option", networkName)
 		}

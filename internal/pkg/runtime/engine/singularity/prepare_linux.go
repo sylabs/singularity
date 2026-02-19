@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -44,7 +45,6 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/v4/pkg/util/namespaces"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
-	"github.com/sylabs/singularity/v4/pkg/util/slice"
 	"golang.org/x/sys/unix"
 )
 
@@ -382,13 +382,7 @@ func (e *EngineOperations) prepareRootCaps() error {
 		sylog.Warningf("won't add unknown capability: %s", strings.Join(ignoredCaps, ","))
 	}
 	for _, cap := range caps {
-		found := false
-		for _, c := range commonCaps {
-			if c == cap {
-				found = true
-				break
-			}
-		}
+		found := slices.Contains(commonCaps, cap)
 		if !found {
 			sylog.Debugf("Root capability %s added", cap)
 			commonCaps = append(commonCaps, cap)
@@ -582,7 +576,7 @@ func (e *EngineOperations) joinNetns(starterConfig *starter.Config) error {
 		return err
 	}
 	// Is the netns path permitted in singularity conf?
-	permittedPath := slice.ContainsString(e.EngineConfig.File.AllowNetnsPaths, netnsPath)
+	permittedPath := slices.Contains(e.EngineConfig.File.AllowNetnsPaths, netnsPath)
 
 	if !permittedPath {
 		return fmt.Errorf("%q is not an allowed netns path in singularity.conf", netnsPath)

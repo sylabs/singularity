@@ -1,4 +1,4 @@
-// Copyright (c) 2020, Sylabs, Inc. All rights reserved.
+// Copyright (c) 2020-2026, Sylabs, Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license.  Please
 // consult LICENSE.md file distributed with the sources of this project regarding
 // your rights to use or distribute this software.
@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"reflect"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -147,10 +148,8 @@ func TestInterpreter(t *testing.T) {
 				fn: func(_ *Shell) ShellBuiltin {
 					return func(ctx context.Context, _ []string) error {
 						hc := interp.HandlerCtx(ctx)
-						for _, env := range GetEnv(hc) {
-							if env == "FOO=bar" {
-								return nil
-							}
+						if slices.Contains(GetEnv(hc), "FOO=bar") {
+							return nil
 						}
 						return fmt.Errorf("no FOO environment variable")
 					}

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -175,7 +175,7 @@ func newBindPath(bind string) (Path, error) {
 	if len(splitted) > 2 {
 		bp.Options = make(map[string]*Option)
 
-		for _, value := range strings.Split(splitted[2], ",") {
+		for value := range strings.SplitSeq(splitted[2], ",") {
 			valid := false
 			for optName, isFlag := range bindOptions {
 				if isFlag && optName == value {

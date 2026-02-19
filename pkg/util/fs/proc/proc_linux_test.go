@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"syscall"
 	"testing"
 
@@ -153,11 +154,8 @@ func TestGetMountInfo(t *testing.T) {
 			continue
 		}
 		for parent := range expectedMap {
-			for _, child := range expectedMap[parent] {
-				if e.Point == child {
-					found = true
-					break
-				}
+			if slices.Contains(expectedMap[parent], e.Point) {
+				found = true
 			}
 		}
 		if !found {

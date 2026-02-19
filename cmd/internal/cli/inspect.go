@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -381,8 +381,8 @@ func (c *command) getMetadata() (*inspect.Metadata, error) {
 		}
 		sectionStr := strings.TrimSpace(string(section))
 
-		if strings.HasPrefix(sectionStr, sectionDelim) {
-			sectionStr = strings.TrimSpace(strings.TrimPrefix(sectionStr, sectionDelim))
+		if after, ok := strings.CutPrefix(sectionStr, sectionDelim); ok {
+			sectionStr = strings.TrimSpace(after)
 			parts := strings.SplitN(sectionStr, ":", 2)
 			if len(parts) < 1 {
 				return nil, fmt.Errorf("badly formatted content, can't recover: %v", parts)

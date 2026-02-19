@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 
 	"github.com/ccoveille/go-safecast"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
@@ -66,11 +67,8 @@ func Group(path string, uid int, gids []int, customLookup UserGroupLookup) (cont
 	} else {
 		groups = gids
 	}
-	for _, gid := range groups {
-		if gid == int(pwInfo.GID) {
-			duplicate = true
-			break
-		}
+	if slices.Contains(groups, int(pwInfo.GID)) {
+		duplicate = true
 	}
 	if !duplicate {
 		if len(gids) == 0 {

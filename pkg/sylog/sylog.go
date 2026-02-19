@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -70,7 +70,7 @@ func prefix(logLevel, msgLevel messageLevel) string {
 	return fmt.Sprintf("%s%-8s%s%-19s%-30s", messageColor, msgLevel, colorReset, uidStr, funcName)
 }
 
-func writef(msgLevel messageLevel, format string, a ...interface{}) {
+func writef(msgLevel messageLevel, format string, a ...any) {
 	logLevel := getLoggerLevel()
 	if logLevel < msgLevel {
 		return
@@ -93,36 +93,36 @@ func getLoggerLevel() messageLevel {
 
 // Fatalf is equivalent to a call to Errorf followed by os.Exit(255). Code that
 // may be imported by other projects should NOT use Fatalf.
-func Fatalf(format string, a ...interface{}) {
+func Fatalf(format string, a ...any) {
 	writef(FatalLevel, format, a...)
 	os.Exit(255)
 }
 
 // Errorf writes an ERROR level message to the log but does not exit. This
 // should be called when an error is being returned to the calling thread
-func Errorf(format string, a ...interface{}) {
+func Errorf(format string, a ...any) {
 	writef(ErrorLevel, format, a...)
 }
 
 // Warningf writes a WARNING level message to the log.
-func Warningf(format string, a ...interface{}) {
+func Warningf(format string, a ...any) {
 	writef(WarnLevel, format, a...)
 }
 
 // Infof writes an INFO level message to the log. By default, INFO level messages
 // will always be output (unless running in silent)
-func Infof(format string, a ...interface{}) {
+func Infof(format string, a ...any) {
 	writef(InfoLevel, format, a...)
 }
 
 // Verbosef writes a VERBOSE level message to the log. This should probably be
 // deprecated since the granularity is often too fine to be useful.
-func Verbosef(format string, a ...interface{}) {
+func Verbosef(format string, a ...any) {
 	writef(VerboseLevel, format, a...)
 }
 
 // Debugf writes a DEBUG level message to the log.
-func Debugf(format string, a ...interface{}) {
+func Debugf(format string, a ...any) {
 	writef(DebugLevel, format, a...)
 }
 
@@ -172,11 +172,11 @@ func SetWriter(w io.Writer) {
 type DebugLogger struct{}
 
 // Log outputs a log message via sylog.Debugf
-func (t DebugLogger) Log(v ...interface{}) {
+func (t DebugLogger) Log(v ...any) {
 	writef(DebugLevel, "%s", fmt.Sprint(v...))
 }
 
 // Logf outputs a formatted log message via sylog.Debugf
-func (t DebugLogger) Logf(format string, v ...interface{}) {
+func (t DebugLogger) Logf(format string, v ...any) {
 	writef(DebugLevel, format, v...)
 }

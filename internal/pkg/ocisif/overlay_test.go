@@ -1,4 +1,4 @@
-// Copyright (c) 2024-2025 Sylabs Inc. All rights reserved.
+// Copyright (c) 2024-2026 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -95,8 +95,8 @@ func TestHasOverlay(t *testing.T) {
 func randomImage(t *testing.T, size int64, layers int) string {
 	imgFile := filepath.Join(t.TempDir(), "image.oci.sif")
 
-	addenda := []mutate.Addendum{}
-	for i := 0; i < layers; i++ {
+	addenda := make([]mutate.Addendum, 0, 3)
+	for range layers {
 		layer, err := random.Layer(size, SquashfsLayerMediaType)
 		if err != nil {
 			t.Fatal(err)

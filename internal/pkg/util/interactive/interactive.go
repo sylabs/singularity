@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -73,14 +73,14 @@ func askQuestionUsingGenericDescr(f *os.File) (string, error) {
 }
 
 // AskQuestion prompts the user with a question and return the response
-func AskQuestion(format string, a ...interface{}) (string, error) {
+func AskQuestion(format string, a ...any) (string, error) {
 	fmt.Printf(format, a...)
 	return askQuestionUsingGenericDescr(os.Stdin)
 }
 
 // AskYNQuestion prompts the user expecting an answer that's either "y",
 // "n" or a blank, in which case defaultAnswer is returned.
-func AskYNQuestion(defaultAnswer, format string, a ...interface{}) (string, error) {
+func AskYNQuestion(defaultAnswer, format string, a ...any) (string, error) {
 	ans, err := AskQuestion(format, a...)
 	if err != nil {
 		return "", err
@@ -103,7 +103,7 @@ func AskYNQuestion(defaultAnswer, format string, a ...interface{}) (string, erro
 
 // AskNumberInRange prompts the user expecting an answer that is a number
 // between start and end.
-func AskNumberInRange(start, end int, format string, a ...interface{}) (int, error) {
+func AskNumberInRange(start, end int, format string, a ...any) (int, error) {
 	ans, err := AskQuestion(format, a...)
 	if err != nil {
 		return 0, err
@@ -124,7 +124,7 @@ func AskNumberInRange(start, end int, format string, a ...interface{}) (int, err
 }
 
 // AskQuestionNoEcho works like AskQuestion() except it doesn't echo user's input
-func AskQuestionNoEcho(format string, a ...interface{}) (string, error) {
+func AskQuestionNoEcho(format string, a ...any) (string, error) {
 	fmt.Printf(format, a...)
 
 	var response string
@@ -174,7 +174,7 @@ func GetPassphrase(message string, retries int) (string, error) {
 		return pass1, nil
 	}
 
-	for i := 0; i < retries; i++ {
+	for range retries {
 		switch passphrase, err := ask(); err {
 		case nil:
 			// we got it!

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -17,6 +17,7 @@ import (
 	"os"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/sylabs/singularity/v4/pkg/build/types"
@@ -151,8 +152,8 @@ func parseTokenSection(tok string, sections map[string]*types.Script, files *[]t
 
 		// Files are parsed as a map[string]string
 		filesSections := strings.TrimSpace(split[1])
-		subs := strings.Split(filesSections, "\n")
-		for _, line := range subs {
+		subs := strings.SplitSeq(filesSections, "\n")
+		for line := range subs {
 			if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
 				continue
 			}
@@ -199,13 +200,7 @@ func parseTokenSection(tok string, sections map[string]*types.Script, files *[]t
 		// Record the order in which we came across each app... since we have
 		// to process their appinstall sections in that order.
 		appName := sectionSplit[1]
-		appKnown := false
-		for _, a := range *appOrder {
-			if a == appName {
-				appKnown = true
-				break
-			}
-		}
+		appKnown := slices.Contains(*appOrder, appName)
 		if !appKnown {
 			*appOrder = append(*appOrder, appName)
 		}
@@ -389,8 +384,8 @@ func doHeader(h string, d *types.Definition) error {
 		if strings.HasSuffix(val, "\\") {
 			keyCont = key
 			valCont = strings.TrimSuffix(val, "\\")
-			if strings.HasSuffix(valCont, "\\n") {
-				valCont = strings.TrimSuffix(valCont, "\\n") + "\n"
+			if before, ok := strings.CutSuffix(valCont, "\\n"); ok {
+				valCont = before + "\n"
 			}
 			continue
 		}

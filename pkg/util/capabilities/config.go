@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"slices"
 
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
@@ -204,12 +205,9 @@ func (c *Config) ListAllCaps() (Caplist, Caplist) {
 func (c *Config) CheckUserCaps(user string, caps []string) (authorized []string, unauthorized []string) {
 	for _, ca := range caps {
 		present := false
-		for _, userCap := range c.ListUserCaps(user) {
-			if userCap == ca {
-				authorized = append(authorized, ca)
-				present = true
-				break
-			}
+		if slices.Contains(c.ListUserCaps(user), ca) {
+			authorized = append(authorized, ca)
+			present = true
 		}
 		if !present {
 			unauthorized = append(unauthorized, ca)
@@ -225,12 +223,9 @@ func (c *Config) CheckUserCaps(user string, caps []string) (authorized []string,
 func (c *Config) CheckGroupCaps(group string, caps []string) (authorized []string, unauthorized []string) {
 	for _, ca := range caps {
 		present := false
-		for _, groupCap := range c.ListGroupCaps(group) {
-			if groupCap == ca {
-				authorized = append(authorized, ca)
-				present = true
-				break
-			}
+		if slices.Contains(c.ListGroupCaps(group), ca) {
+			authorized = append(authorized, ca)
+			present = true
 		}
 		if !present {
 			unauthorized = append(unauthorized, ca)

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -153,7 +153,7 @@ var (
 
 	// registerEngineRPCMethods contains a map relating an Engine name to a set
 	// of RPC methods served by RPC server.
-	registeredRPCMethods = make(map[string]interface{})
+	registeredRPCMethods = make(map[string]any)
 )
 
 // ServeRPCRequests serves runtime engine RPC requests with
@@ -172,6 +172,6 @@ func RegisterOperations(name string, operations Operations) {
 }
 
 // RegisterRPCMethods registers engine RPC methods served by RPC server.
-func RegisterRPCMethods(name string, methods interface{}) {
+func RegisterRPCMethods(name string, methods any) {
 	registeredRPCMethods[name] = methods
 }

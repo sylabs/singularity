@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -17,6 +17,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
@@ -248,11 +249,8 @@ func unsquashfsSandboxCmd(squashfs *Squashfs, dest string, filename string, filt
 		// If dir of lib not already in the LD_LIBRARY_PATH, add it.
 		has := false
 		libraryDir := filepath.Dir(l.dest)
-		for _, lp := range libraryPath {
-			if lp == libraryDir {
-				has = true
-				break
-			}
+		if slices.Contains(libraryPath, libraryDir) {
+			has = true
 		}
 		if !has {
 			libraryPath = append(libraryPath, libraryDir)

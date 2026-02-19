@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,6 +12,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -28,7 +29,6 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rpm"
 	"github.com/sylabs/singularity/v4/pkg/network"
 	"github.com/sylabs/singularity/v4/pkg/util/fs/proc"
-	"github.com/sylabs/singularity/v4/pkg/util/slice"
 )
 
 var (
@@ -164,7 +164,7 @@ func CgroupsFreezer(t *testing.T) {
 	if err != nil {
 		t.Skipf("couldn't get cgroups subsystems: %v", err)
 	}
-	if !slice.ContainsString(subsystems, "freezer") {
+	if !slices.Contains(subsystems, "freezer") {
 		t.Skipf("no cgroups freezer subsystem available")
 	}
 }
@@ -327,10 +327,8 @@ func Arch(t *testing.T, arch string) {
 func ArchIn(t *testing.T, archs []string) {
 	if len(archs) > 0 {
 		b := runtime.GOARCH
-		for _, a := range archs {
-			if b == a {
-				return
-			}
+		if slices.Contains(archs, b) {
+			return
 		}
 		t.Skipf("test requires architecture %s", strings.Join(archs, "|"))
 	}

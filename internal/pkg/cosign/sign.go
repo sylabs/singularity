@@ -1,4 +1,4 @@
-// Copyright (c) 2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2025-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -30,7 +30,7 @@ import (
 )
 
 func cosignPayload(digest v1.Hash) ([]byte, error) {
-	opt := make(map[string]interface{}, 2)
+	opt := make(map[string]any, 2)
 	opt["creator"] = useragent.Value()
 	opt["timestamp"] = time.Now().Unix()
 

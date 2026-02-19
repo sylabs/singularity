@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -297,7 +297,7 @@ func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) error 
 		}
 		if slemodulesOk {
 			array := strings.Split(slemodules, ",")
-			for i := 0; i < len(array); i++ {
+			for i := range array {
 				array[i] = strings.TrimSpace(array[i])
 				cmd := exec.Command(suseconnectPath, `--root`, cp.b.RootfsPath,
 					`--product`, array[i]+`/`+suseconnectModver)

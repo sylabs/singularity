@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -150,7 +150,7 @@ type fileInfo struct {
 	S  int64
 	M  os.FileMode
 	T  time.Time
-	Sy interface{}
+	Sy any
 }
 
 func (fi fileInfo) Name() string {
@@ -176,7 +176,7 @@ func (fi fileInfo) IsDir() bool {
 	return fi.M.IsDir()
 }
 
-func (fi fileInfo) Sys() interface{} {
+func (fi fileInfo) Sys() any {
 	return fi.Sy
 }
 

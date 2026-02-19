@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,6 +7,7 @@ package oci
 
 import (
 	"fmt"
+	"maps"
 	"path/filepath"
 	"strings"
 	"time"
@@ -166,9 +167,7 @@ func addAnnotations(rSpec *runtimespec.Spec, iSpec *imgspecv1.Image) error {
 	}
 
 	// Note: Explicit Config.Labels take precedence over the above.
-	for k, v := range iSpec.Config.Labels {
-		rSpec.Annotations[k] = v
-	}
+	maps.Copy(rSpec.Annotations, iSpec.Config.Labels)
 
 	return nil
 }

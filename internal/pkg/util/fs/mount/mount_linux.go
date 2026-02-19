@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"strings"
 	"syscall"
 
@@ -312,8 +313,8 @@ func GetSizeLimit(options []string) (uint64, error) {
 // GetKey returns key value for image options
 func GetKey(options []string) ([]byte, error) {
 	for _, opt := range options {
-		if strings.HasPrefix(opt, "key=") {
-			keyB64 := strings.TrimPrefix(opt, "key=")
+		if after, ok := strings.CutPrefix(opt, "key="); ok {
+			keyB64 := after
 			return base64.StdEncoding.DecodeString(keyB64)
 		}
 	}
@@ -322,12 +323,7 @@ func GetKey(options []string) ([]byte, error) {
 
 // SkipOnError returns whether the skip-on-error internal option is set for the mount
 func SkipOnError(options []string) bool {
-	for _, opt := range options {
-		if opt == "skip-on-error" {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(options, "skip-on-error")
 }
 
 // HasRemountFlag checks if remount flag is set or not.
@@ -396,7 +392,7 @@ func (p *Points) add(tag AuthorizedTag, source string, dest string, fstype strin
 		}
 	}
 	setContext := true
-	for _, option := range strings.Split(options, ",") {
+	for option := range strings.SplitSeq(options, ",") {
 		o := strings.TrimSpace(option)
 		if o != "" {
 			keyVal := strings.SplitN(o, "=", 2)
@@ -549,8 +545,8 @@ func (p *Points) Import(points map[AuthorizedTag][]Point) error {
 				if strings.HasPrefix(option, "sizelimit=") {
 					fmt.Sscanf(option, "sizelimit=%d", &sizelimit)
 				}
-				if strings.HasPrefix(option, "key=") {
-					keyB64 := strings.TrimPrefix(option, "key=")
+				if after, ok := strings.CutPrefix(option, "key="); ok {
+					keyB64 := after
 					key, err = base64.StdEncoding.DecodeString(keyB64)
 					if err != nil {
 						return err

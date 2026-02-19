@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"slices"
 	"syscall"
 
 	"github.com/ccoveille/go-safecast"
@@ -283,18 +284,12 @@ func (e *EngineOperations) StartProcess(_ net.Conn) error {
 	if err != nil {
 		return fmt.Errorf("while parsing %s: %s", mountInfo, err)
 	}
-	for _, m := range mounts["/sys"] {
-		// In Linux <5.9 this is required so that in the chroot, selinux is seen as ro, i.e.
-		// disabled, and errors getting security labels do not occur.
-		// In 5.9 the remount will now fail, but it is not needed due to changes in label handling.
-		if m == selinuxMount {
-			flags := uintptr(syscall.MS_BIND | syscall.MS_REMOUNT | syscall.MS_RDONLY)
-			err = syscall.Mount("", selinuxMount, "", flags, "")
-			if err != nil {
-				sylog.Debugf("while remount %s read-only: %s", selinuxMount, err)
-				sylog.Debugf("note %s remount failure is expected on kernel 5.9+", selinuxMount)
-			}
-			break
+	if slices.Contains(mounts["/sys"], selinuxMount) {
+		flags := uintptr(syscall.MS_BIND | syscall.MS_REMOUNT | syscall.MS_RDONLY)
+		err = syscall.Mount("", selinuxMount, "", flags, "")
+		if err != nil {
+			sylog.Debugf("while remount %s read-only: %s", selinuxMount, err)
+			sylog.Debugf("note %s remount failure is expected on kernel 5.9+", selinuxMount)
 		}
 	}
 

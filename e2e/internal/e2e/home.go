@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -83,8 +83,8 @@ func SetupHomeDirectories(t *testing.T) {
 		// re-create the current source directory if it's located in the user
 		// home directory and bind it. Root home directory is not checked because
 		// the whole test suite can not run from there as we are dropping privileges
-		if strings.HasPrefix(sourceDir, unprivResolvedHome) {
-			trimmedSourceDir := strings.TrimPrefix(sourceDir, unprivResolvedHome)
+		if after, ok := strings.CutPrefix(sourceDir, unprivResolvedHome); ok {
+			trimmedSourceDir := after
 			sessionSourceDir := filepath.Join(unprivSessionHome, trimmedSourceDir)
 			if err := os.MkdirAll(sessionSourceDir, 0o755); err != nil {
 				err = errors.Wrapf(err, "creating temporary source directory at %q", sessionSourceDir)

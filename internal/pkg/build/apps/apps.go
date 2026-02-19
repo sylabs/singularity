@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -215,7 +215,7 @@ func (pl *BuildApp) HandleBundle(b *types.Bundle) {
 }
 
 func (pl *BuildApp) createAllApps(b *types.Bundle) error {
-	globalEnv94 := ""
+	var globalEnv94 strings.Builder
 
 	for _, name := range b.Recipe.AppOrder {
 		app, ok := pl.Apps[name]
@@ -256,10 +256,10 @@ func (pl *BuildApp) createAllApps(b *types.Bundle) error {
 			return err
 		}
 
-		globalEnv94 += globalAppEnv(b, app)
+		globalEnv94.WriteString(globalAppEnv(b, app))
 	}
 
-	return os.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/env/94-appsbase.sh"), []byte(globalEnv94), 0o755)
+	return os.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/env/94-appsbase.sh"), []byte(globalEnv94.String()), 0o755)
 }
 
 func createAppRoot(b *types.Bundle, a *App) error {
@@ -374,7 +374,7 @@ func copyFiles(b *types.Bundle, a *App) error {
 	}
 
 	appBase := filepath.Join(b.RootfsPath, "/scif/apps/", a.Name)
-	for _, line := range strings.Split(a.Files, "\n") {
+	for line := range strings.SplitSeq(a.Files, "\n") {
 		// skip empty or comment lines
 		if line = strings.TrimSpace(line); line == "" || strings.Index(line, "#") == 0 {
 			continue
@@ -472,7 +472,7 @@ func copyWithfLr(src, dst string) error {
 
 // HandlePost returns a script that should run after %post
 func (pl *BuildApp) HandlePost(b *types.Bundle) (string, error) {
-	post := ""
+	var post strings.Builder
 	for _, name := range b.Recipe.AppOrder {
 		sylog.Debugf("Fetching app[%s] post script section", name)
 		app, ok := pl.Apps[name]
@@ -482,10 +482,10 @@ func (pl *BuildApp) HandlePost(b *types.Bundle) (string, error) {
 
 		sylog.Debugf("Building app[%s] post script section", name)
 
-		post += buildPost(app)
+		post.WriteString(buildPost(app))
 	}
 
-	return post, nil
+	return post.String(), nil
 }
 
 func buildPost(a *App) string {

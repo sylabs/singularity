@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -953,7 +953,8 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 
 					// Generate the command to be executed in the container
 					// Start by printing all environment variables, to test using e2e.ContainMatch conditions later
-					execCmd := "/usr/bin/env"
+					var execCmd strings.Builder
+					execCmd.WriteString("/usr/bin/env")
 
 					// Add commands to test the presence of mapped devices.
 					for _, d := range tt.DeviceNodes {
@@ -962,13 +963,13 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 						case "c":
 							testFlag = "-c"
 						}
-						execCmd += fmt.Sprintf(" && test %s %s", testFlag, d.Path)
+						execCmd.WriteString(fmt.Sprintf(" && test %s %s", testFlag, d.Path))
 					}
 
 					// Add commands to test the presence, and functioning, of mounts.
 					for i, m := range tt.Mounts {
 						// Add a separate teststring echo statement for each mount
-						execCmd += fmt.Sprintf(" && echo %s > %s/testfile_%d", testfileStrings[i], m.ContainerPath, i)
+						execCmd.WriteString(fmt.Sprintf(" && echo %s > %s/testfile_%d", testfileStrings[i], m.ContainerPath, i))
 					}
 
 					// Create a postRun function to check that the testfiles written to the container mounts made their way to the right host temporary directories
@@ -1005,7 +1006,7 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 							"--cdi-dirs",
 							stws.jsonsDir,
 							imageRef,
-							"/bin/sh", "-c", execCmd),
+							"/bin/sh", "-c", execCmd.String()),
 						e2e.WithProfile(profile),
 						e2e.ExpectExit(tt.wantExit, envExpects...),
 						e2e.PostRun(tt.postRun),
@@ -1136,7 +1137,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 		})
 
 		// Create a few writable overlay subdirs under testDir
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			dirName := fmt.Sprintf("my_rw_ol_dir%d", i)
 			fullPath := filepath.Join(testDir, dirName)
 			dirs.MkdirOrFatal(t, fullPath, 0o755)
@@ -1151,7 +1152,7 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 		}
 
 		// Create a few read-only overlay subdirs under testDir
-		for i := 0; i < 3; i++ {
+		for i := range 3 {
 			dirName := fmt.Sprintf("my_ro_ol_dir%d", i)
 			fullPath := filepath.Join(testDir, dirName)
 			dirs.MkdirOrFatal(t, fullPath, 0o755)
@@ -1165,13 +1166,13 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 			})
 			if err = os.WriteFile(
 				filepath.Join(upperPath, fmt.Sprintf("testfile.%d", i)),
-				[]byte(fmt.Sprintf("test_string_%d\n", i)),
+				fmt.Appendf(nil, "test_string_%d\n", i),
 				0o644); err != nil {
 				t.Fatal(err)
 			}
 			if err = os.WriteFile(
 				filepath.Join(upperPath, "maskable_testfile"),
-				[]byte(fmt.Sprintf("maskable_string_%d\n", i)),
+				fmt.Appendf(nil, "maskable_string_%d\n", i),
 				0o644); err != nil {
 				t.Fatal(err)
 			}

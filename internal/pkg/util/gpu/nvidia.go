@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 	"syscall"
 
@@ -18,7 +19,6 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/capabilities"
-	"github.com/sylabs/singularity/v4/pkg/util/slice"
 )
 
 var (
@@ -176,10 +176,10 @@ func NVCLIEnvToFlags(nvidiaEnv []string) (flags []string, err error) {
 		// Driver capabilities have a default, but can be overridden.
 		if pair[0] == "NVIDIA_DRIVER_CAPABILITIES" && pair[1] != "" {
 			defaultDriverCaps = false
-			caps := strings.Split(pair[1], ",")
+			caps := strings.SplitSeq(pair[1], ",")
 
-			for _, cap := range caps {
-				if slice.ContainsString(nVDriverCapabilities, cap) {
+			for cap := range caps {
+				if slices.Contains(nVDriverCapabilities, cap) {
 					flags = append(flags, "--"+cap)
 				} else {
 					return nil, fmt.Errorf("unknown NVIDIA_DRIVER_CAPABILITIES value: %s", cap)

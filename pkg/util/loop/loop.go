@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) 2021, Genomics plc.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -71,7 +71,7 @@ func (loop *Device) AttachFromFile(image *os.File, mode int, number *int) error 
 		loop.Shared = false
 	}
 
-	for i := 0; i < maxRetries; i++ {
+	for range maxRetries {
 		err = loop.attachLoop(image, mode, number)
 		if err == nil {
 			return nil

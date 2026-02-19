@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -169,7 +169,7 @@ func StartRegistry(t *testing.T, env TestEnv) string {
 
 	addr := net.JoinHostPort("localhost", port)
 
-	for i := 0; i < 30; i++ {
+	for range 30 {
 		resp, err := http.Get(fmt.Sprintf("http://%s/", addr))
 		resp.Body.Close()
 		if err != nil || resp.StatusCode != 200 {
