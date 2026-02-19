@@ -95,7 +95,7 @@ func TestHasOverlay(t *testing.T) {
 func randomImage(t *testing.T, size int64, layers int) string {
 	imgFile := filepath.Join(t.TempDir(), "image.oci.sif")
 
-	addenda := []mutate.Addendum{}
+	addenda := make([]mutate.Addendum, 0, 3)
 	for range layers {
 		layer, err := random.Layer(size, SquashfsLayerMediaType)
 		if err != nil {

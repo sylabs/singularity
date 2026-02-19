@@ -20,7 +20,7 @@ import (
 )
 
 func testImage(t *testing.T) ggcrv1.Image {
-	addenda := []mutate.Addendum{}
+	addenda := make([]mutate.Addendum, 0, 3)
 
 	for i := range 3 {
 		filename := "file" + strconv.Itoa(i)
