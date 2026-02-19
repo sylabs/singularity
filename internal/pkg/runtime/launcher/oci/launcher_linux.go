@@ -22,7 +22,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/ccoveille/go-safecast"
+	"github.com/ccoveille/go-safecast/v2"
 	"github.com/google/uuid"
 	lccgroups "github.com/opencontainers/cgroups"
 	"github.com/opencontainers/runtime-spec/specs-go"

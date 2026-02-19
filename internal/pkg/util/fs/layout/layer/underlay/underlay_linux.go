@@ -13,7 +13,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/ccoveille/go-safecast"
+	"github.com/ccoveille/go-safecast/v2"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/layout"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/mount"
 	"github.com/sylabs/singularity/v4/pkg/sylog"

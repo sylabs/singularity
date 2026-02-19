@@ -14,7 +14,7 @@ import (
 	"os"
 	"syscall"
 
-	"github.com/ccoveille/go-safecast"
+	"github.com/ccoveille/go-safecast/v2"
 	mseccomp "github.com/moby/profiles/seccomp"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	lseccomp "github.com/seccomp/libseccomp-golang"

@@ -18,7 +18,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/ccoveille/go-safecast"
+	"github.com/ccoveille/go-safecast/v2"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/spf13/cobra"
 	keyclient "github.com/sylabs/scs-key-client/client"

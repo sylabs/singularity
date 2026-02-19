@@ -11,7 +11,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/ccoveille/go-safecast"
+	"github.com/ccoveille/go-safecast/v2"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/machine"
 	"github.com/sylabs/singularity/v4/pkg/sylog"

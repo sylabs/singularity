@@ -23,7 +23,7 @@ import (
 	"time"
 
 	"github.com/buger/goterm"
-	"github.com/ccoveille/go-safecast"
+	"github.com/ccoveille/go-safecast/v2"
 	units "github.com/docker/go-units"
 	libcgroups "github.com/opencontainers/cgroups"
 	"github.com/sylabs/singularity/v4/internal/pkg/cgroups"

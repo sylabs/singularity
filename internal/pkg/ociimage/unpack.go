@@ -12,7 +12,7 @@ import (
 	"os"
 
 	apexlog "github.com/apex/log"
-	"github.com/ccoveille/go-safecast"
+	"github.com/ccoveille/go-safecast/v2"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	umocilayer "github.com/opencontainers/umoci/oci/layer"
