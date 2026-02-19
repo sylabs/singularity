@@ -8,10 +8,10 @@ package singularity
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
-	"github.com/sylabs/singularity/v4/pkg/util/slice"
 )
 
 var errInvalidCacheHandle = errors.New("invalid cache handle")
@@ -41,7 +41,7 @@ func CleanSingularityCache(imgCache *cache.Handle, dryRun bool, cacheCleanTypes 
 
 	// If specified caches, and we don't have 'all' specified then clean the specified
 	// ones only.
-	if len(cacheCleanTypes) > 0 && !slice.ContainsString(cacheCleanTypes, "all") {
+	if len(cacheCleanTypes) > 0 && !slices.Contains(cacheCleanTypes, "all") {
 		cachesToClean = cacheCleanTypes
 	}
 

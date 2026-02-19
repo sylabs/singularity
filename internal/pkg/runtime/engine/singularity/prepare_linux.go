@@ -45,7 +45,6 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/v4/pkg/util/namespaces"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
-	"github.com/sylabs/singularity/v4/pkg/util/slice"
 	"golang.org/x/sys/unix"
 )
 
@@ -577,7 +576,7 @@ func (e *EngineOperations) joinNetns(starterConfig *starter.Config) error {
 		return err
 	}
 	// Is the netns path permitted in singularity conf?
-	permittedPath := slice.ContainsString(e.EngineConfig.File.AllowNetnsPaths, netnsPath)
+	permittedPath := slices.Contains(e.EngineConfig.File.AllowNetnsPaths, netnsPath)
 
 	if !permittedPath {
 		return fmt.Errorf("%q is not an allowed netns path in singularity.conf", netnsPath)

@@ -9,11 +9,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/v4/pkg/util/slice"
 )
 
 // listTypeCache will list a cache type with given name (cacheType). The options are 'library', and 'oci'.
@@ -76,7 +76,7 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 	blobsShown := false
 
 	// If types requested includes "all" then we don't want to filter anything
-	if slice.ContainsString(cacheListTypes, "all") {
+	if slices.Contains(cacheListTypes, "all") {
 		cacheListTypes = []string{}
 	}
 
@@ -84,7 +84,7 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 		// the type blob is special: 1. there's a
 		// separate counter for it; 2. the cache entries
 		// are actually one level deeper
-		if len(cacheListTypes) > 0 && !slice.ContainsString(cacheListTypes, cacheType) {
+		if len(cacheListTypes) > 0 && !slices.Contains(cacheListTypes, cacheType) {
 			continue
 		}
 		cacheDir, err := imgCache.GetOciCacheDir(cacheType)
@@ -103,7 +103,7 @@ func ListSingularityCache(imgCache *cache.Handle, cacheListTypes []string, cache
 		blobsShown = true
 	}
 	for _, cacheType := range cache.FileCacheTypes {
-		if len(cacheListTypes) > 0 && !slice.ContainsString(cacheListTypes, cacheType) {
+		if len(cacheListTypes) > 0 && !slices.Contains(cacheListTypes, cacheType) {
 			continue
 		}
 		cacheDir, err := imgCache.GetFileCacheDir(cacheType)

@@ -44,7 +44,6 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/util/fs/proc"
 	"github.com/sylabs/singularity/v4/pkg/util/namespaces"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
-	"github.com/sylabs/singularity/v4/pkg/util/slice"
 	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 )
@@ -1452,7 +1451,7 @@ func (c *container) addBindsMount(system *mount.System) error {
 	)
 
 	skipBinds := c.engine.EngineConfig.GetSkipBinds()
-	skipAllBinds := slice.ContainsString(skipBinds, "*")
+	skipAllBinds := slices.Contains(skipBinds, "*")
 
 	if c.engine.EngineConfig.GetContain() {
 		hosts := hostsPath
@@ -1473,7 +1472,7 @@ func (c *container) addBindsMount(system *mount.System) error {
 			hosts, _ = c.session.GetPath(hostsPath)
 		}
 
-		if !skipAllBinds && !slice.ContainsString(skipBinds, hostsPath) {
+		if !skipAllBinds && !slices.Contains(skipBinds, hostsPath) {
 			// #5465 If hosts/localtime mount fails, it should not be fatal so skip-on-error
 			if err := system.Points.AddBind(mount.BindsTag, hosts, hostsPath, flags, "skip-on-error"); err != nil {
 				return fmt.Errorf("unable to add %s to mount list: %s", hosts, err)
@@ -1482,7 +1481,7 @@ func (c *container) addBindsMount(system *mount.System) error {
 				return fmt.Errorf("unable to add %s for remount: %s", hostsPath, err)
 			}
 		}
-		if !skipAllBinds && !slice.ContainsString(skipBinds, localtimePath) {
+		if !skipAllBinds && !slices.Contains(skipBinds, localtimePath) {
 			if err := system.Points.AddBind(mount.BindsTag, localtimePath, localtimePath, flags, "skip-on-error"); err != nil {
 				return fmt.Errorf("unable to add %s to mount list: %s", localtimePath, err)
 			}
@@ -1505,7 +1504,7 @@ func (c *container) addBindsMount(system *mount.System) error {
 
 		sylog.Verbosef("Found 'bind path' = %s, %s", src, dst)
 
-		if skipAllBinds || slice.ContainsString(skipBinds, dst) {
+		if skipAllBinds || slices.Contains(skipBinds, dst) {
 			sylog.Debugf("Skipping bind to %s at user request", dst)
 			continue
 		}
@@ -2366,7 +2365,7 @@ func (c *container) prepareNetworkSetup(system *mount.System, pid int) (func(con
 		allowedNetNetwork := false
 		for n := range strings.SplitSeq(net, ",") {
 			// Allowed in singularity.conf
-			adminPermitted := slice.ContainsString(c.engine.EngineConfig.File.AllowNetNetworks, n)
+			adminPermitted := slices.Contains(c.engine.EngineConfig.File.AllowNetNetworks, n)
 			// 'fakeroot' network is always allowed in --fakeroot mode
 			fakerootPermitted := fakeroot && net == fakerootNet
 			allowedNetNetwork = adminPermitted || fakerootPermitted

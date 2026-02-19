@@ -17,6 +17,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"syscall"
@@ -45,7 +46,6 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/ocibundle/tools"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
-	"github.com/sylabs/singularity/v4/pkg/util/slice"
 	"golang.org/x/sys/unix"
 	"tags.cncf.io/container-device-interface/pkg/cdi"
 )
@@ -153,7 +153,7 @@ func checkOpts(lo launcher.Options) error {
 	}
 
 	for _, nm := range lo.NoMount {
-		if strings.HasPrefix(nm, "/") || slice.ContainsString(unsupportedNoMount, nm) {
+		if strings.HasPrefix(nm, "/") || slices.Contains(unsupportedNoMount, nm) {
 			sylog.Warningf("--no-mount %s is not supported in OCI mode, ignoring.", nm)
 		}
 	}
@@ -586,7 +586,7 @@ func (l *Launcher) prepareResolvConf(bundlePath string) (*specs.Mount, error) {
 		return nil, nil
 	}
 
-	if slice.ContainsString(l.cfg.NoMount, hostResolvConfPath) {
+	if slices.Contains(l.cfg.NoMount, hostResolvConfPath) {
 		sylog.Debugf("Skipping mount of %s due to --no-mount", hostResolvConfPath)
 		return nil, nil
 	}

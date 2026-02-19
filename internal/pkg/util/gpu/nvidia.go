@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 	"syscall"
 
@@ -18,7 +19,6 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/capabilities"
-	"github.com/sylabs/singularity/v4/pkg/util/slice"
 )
 
 var (
@@ -179,7 +179,7 @@ func NVCLIEnvToFlags(nvidiaEnv []string) (flags []string, err error) {
 			caps := strings.SplitSeq(pair[1], ",")
 
 			for cap := range caps {
-				if slice.ContainsString(nVDriverCapabilities, cap) {
+				if slices.Contains(nVDriverCapabilities, cap) {
 					flags = append(flags, "--"+cap)
 				} else {
 					return nil, fmt.Errorf("unknown NVIDIA_DRIVER_CAPABILITIES value: %s", cap)

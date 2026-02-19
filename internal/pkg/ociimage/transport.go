@@ -8,12 +8,12 @@ package ociimage
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/containers/image/v5/types"
 	"github.com/google/go-containerregistry/pkg/authn"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/sylabs/singularity/v4/pkg/util/slice"
 )
 
 var ociTransports = []string{"docker", "docker-archive", "docker-daemon", "oci", "oci-archive"}
@@ -23,7 +23,7 @@ var errUnsupportedTransport = errors.New("unsupported transport")
 // SupportedTransport returns whether or not the transport given is supported. To fit within a switch/case
 // statement, this function will return transport if it is supported
 func SupportedTransport(transport string) string {
-	if slice.ContainsString(ociTransports, transport) {
+	if slices.Contains(ociTransports, transport) {
 		return transport
 	}
 	return ""

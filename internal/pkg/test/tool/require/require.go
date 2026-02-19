@@ -29,7 +29,6 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rpm"
 	"github.com/sylabs/singularity/v4/pkg/network"
 	"github.com/sylabs/singularity/v4/pkg/util/fs/proc"
-	"github.com/sylabs/singularity/v4/pkg/util/slice"
 )
 
 var (
@@ -165,7 +164,7 @@ func CgroupsFreezer(t *testing.T) {
 	if err != nil {
 		t.Skipf("couldn't get cgroups subsystems: %v", err)
 	}
-	if !slice.ContainsString(subsystems, "freezer") {
+	if !slices.Contains(subsystems, "freezer") {
 		t.Skipf("no cgroups freezer subsystem available")
 	}
 }

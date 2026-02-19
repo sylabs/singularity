@@ -1,15 +1,18 @@
-// Copyright (c) 2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
 package slice
 
-import "slices"
+import (
+	"slices"
 
-import "github.com/samber/lo"
+	"github.com/samber/lo"
+)
 
 // ContainsString returns true if string slice s contains match
+// Deprecated: use Go slices package.
 func ContainsString(s []string, match string) bool {
 	return slices.Contains(s, match)
 }
@@ -25,6 +28,7 @@ func ContainsAnyString(s []string, matches []string) bool {
 }
 
 // ContainsInt returns true if int slice s contains match
+// Deprecated: use Go slices package.
 func ContainsInt(s []int, match int) bool {
 	return slices.Contains(s, match)
 }
