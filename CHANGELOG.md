@@ -11,6 +11,17 @@
   been included at least since singularity-2.
 - Avoid a fatal error when starting fakeroot from suid mode while in an
   NFS directory.
+- Support hosts that have `/etc/resolv.conf` pointing to a symlink under
+  `/run`, such as those hosts that are running `systemd-resolved`.  In
+  this case, the symlink is copied into the container and the parent
+  directory of the target of the symlink is bind-mounted from the host.
+  The result is that even if the target of the symlink is replaced with
+  a new file, the container sees the update in `/etc/resolv.conf`.
+
+### New Features & Functionality
+
+- Add `/etc/resolv.conf` to the list of host paths that can be prevented
+  from automatic import into the container with the `--no-mount` option.
 
 ### Requirements / Packaging
 
