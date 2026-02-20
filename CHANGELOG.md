@@ -17,6 +17,8 @@
   directory of the target of the symlink is bind-mounted from the host.
   The result is that even if the target of the symlink is replaced with
   a new file, the container sees the update in `/etc/resolv.conf`.
+- Correctly escape ENV vars when importing OCI containers to native SIF, so that
+  they match podman / docker behaviour.
 
 ### New Features & Functionality
 
