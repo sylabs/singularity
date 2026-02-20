@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/sylabs/singularity/v4/internal/pkg/sypgp"
 
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -56,13 +56,13 @@ func Test_collectInput_flags(t *testing.T) {
 	}
 
 	o, err := collectInput(&c)
-	assert.NilError(t, err)
-	assert.DeepEqual(t, expectedOpts, o)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedOpts, o)
 }
 
 func TestCollectInput(t *testing.T) {
 	tf, err := os.CreateTemp(t.TempDir(), "collect-test-")
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	defer tf.Close()
 
 	oldStdin := os.Stdin
@@ -116,22 +116,22 @@ func TestCollectInput(t *testing.T) {
 	c := &cobra.Command{}
 	for _, tt := range tests {
 		t.Run(tt.Name, func(t *testing.T) {
-			assert.NilError(t, tf.Truncate(0))
+			assert.NoError(t, tf.Truncate(0))
 			_, err := tf.Seek(0, 0)
-			assert.NilError(t, err)
+			assert.NoError(t, err)
 			_, err = tf.WriteString(tt.Input)
-			assert.NilError(t, err)
+			assert.NoError(t, err)
 			_, err = tf.Seek(0, 0)
-			assert.NilError(t, err)
+			assert.NoError(t, err)
 
 			o, err := collectInput(c)
 			if tt.Error != nil {
 				assert.ErrorContains(t, err, tt.Error.Error())
 			} else {
-				assert.NilError(t, err)
+				assert.NoError(t, err)
 			}
 
-			assert.DeepEqual(t, tt.Options, o)
+			assert.Equal(t, tt.Options, o)
 		})
 	}
 }

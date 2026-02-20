@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	// Tests imports
+
 	"github.com/sylabs/singularity/v4/e2e/actions"
 	"github.com/sylabs/singularity/v4/e2e/build"
 	e2ebuildcfg "github.com/sylabs/singularity/v4/e2e/buildcfg"

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,8 +12,8 @@ import (
 	ggcrempty "github.com/google/go-containerregistry/pkg/v1/empty"
 	ggcrmutate "github.com/google/go-containerregistry/pkg/v1/mutate"
 	ggcrrandom "github.com/google/go-containerregistry/pkg/v1/random"
+	"github.com/stretchr/testify/assert"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
-	"gotest.tools/v3/assert"
 )
 
 func imageWithManifest(t *testing.T) (rawManifest []byte, imageDigest ggcrv1.Hash) {

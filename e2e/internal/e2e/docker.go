@@ -15,7 +15,7 @@ import (
 	"net"
 	"net/http"
 	"os"
-	osexec "os/exec"
+	"os/exec"
 	"path/filepath"
 	"testing"
 	"text/template"
@@ -30,8 +30,6 @@ import (
 	_ "github.com/docker/distribution/registry/storage/driver/inmemory"
 	_ "github.com/docker/distribution/registry/storage/driver/middleware/redirect"
 	"github.com/sirupsen/logrus"
-
-	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/exec"
 )
 
 const registryConfigTemplate = `
@@ -79,7 +77,7 @@ func StartRegistry(t *testing.T, env TestEnv) string {
 		t.Fatalf("could not create %s: %s", certsDir, err)
 	}
 
-	if _, err := osexec.LookPath("openssl"); err != nil {
+	if _, err := exec.LookPath("openssl"); err != nil {
 		t.Fatalf("openssl binary is required to be installed on host")
 	}
 
@@ -88,16 +86,16 @@ func StartRegistry(t *testing.T, env TestEnv) string {
 		"req", "-x509", "-nodes", "-new", "-sha256", "-days", "1024", "-newkey", "rsa:2048",
 		"-keyout", keyFile, "-out", pemFile, "-subj", "/C=US/CN=localhost",
 	)
-	if res := cmd.Run(t); res.Error != nil {
-		t.Fatalf("openssl command failed: %s: error output:\n%s", res.Error, res.Stderr())
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("openssl command failed: %v\nOutput: %s", err, out)
 	}
 
 	cmd = exec.Command(
 		"openssl",
 		"x509", "-outform", "pem", "-in", pemFile, "-out", certFile,
 	)
-	if res := cmd.Run(t); res.Error != nil {
-		t.Fatalf("openssl command failed: %s: error output:\n%s", res.Error, res.Stderr())
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("openssl command failed: %v\nOutput: %s", err, out)
 	}
 
 	go func() {

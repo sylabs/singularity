@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,11 +11,10 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/ProtonMail/go-crypto/openpgp"
-	"gotest.tools/v3/golden"
+	"github.com/sebdah/goldie/v2"
 )
 
 const (
@@ -110,8 +109,8 @@ func TestAPutConfig(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			filename := filepath.Join(strings.Split(t.Name(), "/")...) + ".golden"
-			golden.AssertBytes(t, b, filename)
+			g := goldie.New(t)
+			g.Assert(t, t.Name(), b)
 		})
 	}
 }

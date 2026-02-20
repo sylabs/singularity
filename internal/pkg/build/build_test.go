@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestProcessDefsSingleDef(t *testing.T) {
@@ -17,7 +17,7 @@ func TestProcessDefsSingleDef(t *testing.T) {
 		},
 	)
 
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, d[0].Header["from"], "alpine:1")
 	assert.Equal(t, strings.TrimSpace(d[0].Help.Script), "This is a demo for templating definition file")
 	assert.Equal(t, d[0].Labels["Author"], "jason")
@@ -33,7 +33,7 @@ func TestProcessDefsMultipleDef(t *testing.T) {
 		},
 	)
 
-	assert.NilError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, d[0].Header["from"], "golang:1.12.3-alpine3.9")
 	rt := strings.Contains(d[0].BuildData.Post.Script, "export HOME=/root")
 	assert.Equal(t, rt, true)
