@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sync"
@@ -20,7 +21,6 @@ import (
 
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
-	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/exec"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 )
 
@@ -319,9 +319,9 @@ func EnsureOCIArchive(t *testing.T, env TestEnv) {
 
 	t.Logf("Tarring %s to %s", env.OCILayoutPath, "oci-archive:"+env.OCIArchivePath)
 	cmd := exec.Command("tar", "-cf", env.OCIArchivePath, "-C", env.OCILayoutPath, "index.json", "oci-layout", "blobs")
-	err := cmd.Run(t)
-	if err.ExitCode != 0 {
-		t.Fatalf("Error tarring oci layout to archive: %v", err)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("Error tarring oci layout to archive: %v\nOutput: %s", err, out)
 	}
 }
 

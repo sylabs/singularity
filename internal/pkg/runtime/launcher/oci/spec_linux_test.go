@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,10 +10,10 @@ import (
 	"testing"
 
 	"github.com/opencontainers/runtime-spec/specs-go"
+	"github.com/stretchr/testify/assert"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
-	"gotest.tools/v3/assert"
 )
 
 func Test_addNamespaces(t *testing.T) {
@@ -109,7 +109,7 @@ func Test_noSetgroupsAnnotation(t *testing.T) {
 		if err != nil {
 			t.Errorf("noSetgroupsAnnotation returned unexpected error when crun available: %s", err)
 		}
-		assert.DeepEqual(t, ms.Annotations,
+		assert.Equal(t, ms.Annotations,
 			map[string]string{
 				"run.oci.keep_original_groups": "1",
 			},

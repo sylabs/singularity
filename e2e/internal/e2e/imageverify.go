@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -11,12 +11,12 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/buger/jsonparser"
-	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/exec"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
@@ -358,16 +358,14 @@ func verifyEnv(t *testing.T, cmdPath, imagePath string, env []string, flags []st
 	args = append(args, imagePath, "env")
 
 	cmd := exec.Command(cmdPath, args...)
-	res := cmd.Run(t)
-
-	if res.Error != nil {
-		t.Fatalf("Error running command.\n%s", res)
+	out, err := cmd.Output()
+	if err != nil {
+		t.Fatalf("Error running command: %v", err)
 	}
 
-	out := res.Stdout()
-
+	strOut := string(out)
 	for _, e := range env {
-		if !strings.Contains(out, e) {
+		if !strings.Contains(strOut, e) {
 			return fmt.Errorf("environment is missing: %v", e)
 		}
 	}

@@ -14,6 +14,7 @@ import (
 	"io"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -23,7 +24,6 @@ import (
 
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
-	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/exec"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
@@ -777,14 +777,14 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 		t.Fatalf("Unable to find 'mksquashfs' binary even though require.Command() was called: %v", err)
 	}
 	cmd := exec.Command(mksquashfsCmd, squashDir, squashfsImage, "-noappend", "-all-root")
-	if res := cmd.Run(t); res.Error != nil {
-		t.Fatalf("Unexpected error while running command.\n%s", res)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("Unexpected error while running mksquashfs command: %v\nOutput: %s", err, out)
 	}
 
 	// create the overlay ext3 image
 	cmd = exec.Command("dd", "if=/dev/zero", "of="+ext3Img, "bs=1M", "count=64", "status=none")
-	if res := cmd.Run(t); res.Error != nil {
-		t.Fatalf("Unexpected error while running command.\n%s", res)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("Unexpected error while running dd command: %v\nOutput: %s", err, out)
 	}
 
 	mkfsExt3Cmd, err := bin.FindBin("mkfs.ext3")
@@ -792,8 +792,8 @@ func (c actionTests) PersistentOverlay(t *testing.T) {
 		t.Fatalf("Unable to find 'mkfs.ext3' binary even though require.Command() was called: %v", err)
 	}
 	cmd = exec.Command(mkfsExt3Cmd, "-q", "-F", ext3Img)
-	if res := cmd.Run(t); res.Error != nil {
-		t.Fatalf("Unexpected error while running command.\n%s", res)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("Unexpected error while running mkfs.ext3 command: %v\nOutput: %s", err, out)
 	}
 
 	// create a sandbox image from test image
@@ -1167,8 +1167,8 @@ func (c actionTests) actionNetnsPath(t *testing.T) {
 	e2e.Privileged(func(t *testing.T) {
 		t.Log("Creating netns")
 		cmd := exec.Command("ip", "netns", "add", nsName)
-		if res := cmd.Run(t); res.Error != nil {
-			t.Fatalf("While creating network namespace: %s", res)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("While creating network namespace: %v\nOutput: %s", err, out)
 		}
 		fi, err := os.Stat(nsPath)
 		if err != nil {
@@ -1185,8 +1185,8 @@ func (c actionTests) actionNetnsPath(t *testing.T) {
 	defer e2e.Privileged(func(t *testing.T) {
 		t.Log("Deleting netns")
 		cmd := exec.Command("ip", "netns", "delete", nsName)
-		if res := cmd.Run(t); res.Error != nil {
-			t.Fatalf("While deleting network namespace: %s", res)
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("While deleting network namespace: %v\nOutput: %s", err, out)
 		}
 	})(t)
 
@@ -2045,14 +2045,14 @@ func (c actionTests) bindImage(t *testing.T) {
 		t.Fatalf("Unable to find 'mksquashfs' binary even though require.Command() was called: %v", err)
 	}
 	cmd := exec.Command(mksquashfsCmd, squashDir, squashfsImage, "-noappend", "-all-root")
-	if res := cmd.Run(t); res.Error != nil {
-		t.Fatalf("Unexpected error while running command.\n%s", res)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("Unexpected error while running mksquashfs command: %v\nOutput: %s", err, out)
 	}
 
 	// create the overlay ext3 image
 	cmd = exec.Command("dd", "if=/dev/zero", "of="+ext3Img, "bs=1M", "count=64", "status=none")
-	if res := cmd.Run(t); res.Error != nil {
-		t.Fatalf("Unexpected error while running command.\n%s", res)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("Unexpected error while running dd command: %v\nOutput: %s", err, out)
 	}
 
 	mkfsExt3Cmd, err := bin.FindBin("mkfs.ext3")
@@ -2060,8 +2060,8 @@ func (c actionTests) bindImage(t *testing.T) {
 		t.Fatalf("Unable to find 'mkfs.ext3' binary even though require.Command() was called: %v", err)
 	}
 	cmd = exec.Command(mkfsExt3Cmd, "-q", "-F", ext3Img)
-	if res := cmd.Run(t); res.Error != nil {
-		t.Fatalf("Unexpected error while running command.\n%s", res)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("Unexpected error while running mkfs.ext3 command: %v\nOutput: %s", err, out)
 	}
 
 	// create new SIF images

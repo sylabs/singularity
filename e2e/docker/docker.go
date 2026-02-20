@@ -23,6 +23,7 @@ import (
 
 	dockerclient "github.com/docker/docker/client"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/stretchr/testify/assert"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
@@ -31,7 +32,6 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/tmpl"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"golang.org/x/sys/unix"
-	"gotest.tools/v3/assert"
 )
 
 type ctx struct {

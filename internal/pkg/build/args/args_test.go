@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"gotest.tools/v3/assert"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sylabs/singularity/v4/pkg/build/types/parser"
 )
@@ -223,7 +223,7 @@ func TestReadDefaults(t *testing.T) {
 	}
 	assert.Equal(t, len(defs), 1)
 	defaultArgsMap := ReadDefaults(defs[0])
-	assert.DeepEqual(t, defaultArgsMap, map[string]string{
+	assert.Equal(t, defaultArgsMap, map[string]string{
 		"OS_VER": "3.17",
 		"DEMO":   "a demo",
 		"AUTHOR": "jason",
@@ -241,11 +241,11 @@ func TestReadDefaults(t *testing.T) {
 	}
 	assert.Equal(t, len(defs), 2)
 	defaultArgsMap = ReadDefaults(defs[0])
-	assert.DeepEqual(t, defaultArgsMap, map[string]string{
+	assert.Equal(t, defaultArgsMap, map[string]string{
 		"HOME": "/root",
 	})
 	defaultArgsMap = ReadDefaults(defs[1])
-	assert.DeepEqual(t, defaultArgsMap, map[string]string{
+	assert.Equal(t, defaultArgsMap, map[string]string{
 		"FINAL_IMAGE": "alpine:3.17",
 		"HOME":        "/root",
 	})

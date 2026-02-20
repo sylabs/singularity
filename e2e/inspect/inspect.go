@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
-	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/exec"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/pkg/image"
@@ -80,8 +80,8 @@ func (c ctx) singularityInspect(t *testing.T) {
 	}
 
 	cmd := exec.Command(unsquashfsPath, "-user-xattrs", "-d", sandboxImage, squashImage)
-	if res := cmd.Run(t); res.Error != nil {
-		t.Fatalf("Unexpected error while running command.\n%s", res)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("Unexpected error while running command: %v\nOutput: %s", err, out)
 	}
 
 	compareLabel := func(label, out string, appName string) func(*testing.T, *inspect.Metadata) {

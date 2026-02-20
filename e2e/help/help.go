@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,15 +9,11 @@
 package help
 
 import (
-	"fmt"
-	"path/filepath"
-	"strings"
 	"testing"
 
+	"github.com/sebdah/goldie/v2"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
-	"gotest.tools/v3/assert"
-	"gotest.tools/v3/golden"
 )
 
 type ctx struct {
@@ -46,13 +42,13 @@ var helpOciContentTests = []struct {
 }
 
 func (c ctx) testHelpOciContent(t *testing.T) {
-	for _, tc := range helpOciContentTests {
-		name := fmt.Sprintf("help-%s.txt", strings.Join(tc.cmds, "-"))
+	g := goldie.New(t,
+		goldie.WithTestNameForDir(true),
+		goldie.WithSubTestNameForDir(true))
 
+	for _, tc := range helpOciContentTests {
 		testHelpOciContentFn := func(t *testing.T, r *e2e.SingularityCmdResult) {
-			path := filepath.Join("help", name)
-			got := string(r.Stdout)
-			assert.Assert(t, golden.String(got, path))
+			g.Assert(t, "StdOut", r.Stdout)
 		}
 
 		c.env.RunSingularity(

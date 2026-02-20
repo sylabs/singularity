@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,11 +12,11 @@ import (
 	imgspecv1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/samber/lo"
+	"github.com/stretchr/testify/assert"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
 	"github.com/sylabs/singularity/v4/pkg/util/capabilities"
-	"gotest.tools/v3/assert"
 )
 
 func TestGetProcessArgs(t *testing.T) {
@@ -360,7 +360,7 @@ func TestGetProcessEnvOCI(t *testing.T) {
 			}
 
 			env := l.getProcessEnv(imgSpec, tt.hostEnv, tt.userEnv)
-			assert.DeepEqual(t, tt.wantEnv, env)
+			assert.Equal(t, tt.wantEnv, env)
 		})
 	}
 }
@@ -436,7 +436,7 @@ func TestGetProcessEnvNative(t *testing.T) {
 				},
 			}
 			env := l.getProcessEnv(imgSpec, tt.hostEnv, tt.userEnv)
-			assert.DeepEqual(t, tt.wantEnv, env)
+			assert.Equal(t, tt.wantEnv, env)
 		})
 	}
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,9 +13,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
-	"gotest.tools/v3/assert"
 )
 
 func TestScanDefinitionFile(t *testing.T) {
@@ -218,7 +218,7 @@ func TestParseDefinitionFile(t *testing.T) {
 				t.Fatal("failed to parse JSON:", err)
 			}
 
-			assert.DeepEqual(t, defTest, defCorrect)
+			assert.Equal(t, defTest, defCorrect)
 		}))
 	}
 }
@@ -437,7 +437,7 @@ func TestParseAll(t *testing.T) {
 				t.Fatal("failed to parse JSON:", err)
 			}
 
-			assert.DeepEqual(t, defTest, defCorrect)
+			assert.Equal(t, defTest, defCorrect)
 		}))
 	}
 }
