@@ -77,12 +77,14 @@ func TestItemMissing(t *testing.T) {
 
 func verifyAutoParentDir(t *testing.T, item *Item) {
 	const autoParentDirStr string = "overlay-parent-"
-	if parentDir, err := item.GetParentDir(); err != nil {
+	if parentDir, cleanup, err := item.GetParentDir(); err != nil {
 		t.Fatalf("unexpected error while calling Item.GetParentDir(): %s", err)
 	} else if !strings.Contains(parentDir, autoParentDirStr) {
 		t.Errorf("auto-generated parent dir %q does not contain expected identifier string %q", parentDir, autoParentDirStr)
 	} else if !strings.HasPrefix(parentDir, "/tmp/") {
 		t.Errorf("auto-generated parent dir %q is not in expected location", parentDir)
+	} else if cleanup == nil {
+		t.Errorf("parentDir did not return a cleanup function")
 	}
 }
 
@@ -106,10 +108,12 @@ func TestAutofillParentDir(t *testing.T) {
 
 func verifyExplicitParentDir(t *testing.T, item *Item, dir string) {
 	item.SetParentDir(dir)
-	if parentDir, err := item.GetParentDir(); err != nil {
+	if parentDir, cleanup, err := item.GetParentDir(); err != nil {
 		t.Fatalf("unexpected error while calling Item.GetParentDir(): %s", err)
 	} else if parentDir != dir {
 		t.Errorf("item returned parent dir %q (expected: %q)", parentDir, dir)
+	} else if cleanup != nil {
+		t.Errorf("parentDir returned cleanup function unexpectedly")
 	}
 }
 
