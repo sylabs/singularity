@@ -196,7 +196,8 @@ func (c ctx) testOverlayOCI(t *testing.T) {
 	require.MkfsExt3(t)
 	e2e.EnsureOCISIF(t, c.env)
 
-	tmpDir := t.TempDir()
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "nested-singularity-", "")
+	defer cleanup(t)
 	pgpDir, _ := e2e.MakeSyPGPDir(t, tmpDir)
 	c.env.KeyringDir = pgpDir
 	ocisifSigned := filepath.Join(tmpDir, "signed.sif")

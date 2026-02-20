@@ -1,4 +1,4 @@
-// Copyright (c) 2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2025-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -20,7 +20,9 @@ func (c *ctx) verifyOCICosign(t *testing.T) {
 	signedSIF := corpus.SIF(t, "hello-world-cosign-manifest")
 	unsignedSIF := corpus.SIF(t, "hello-world-docker-v2-manifest")
 	goodKeyPath := filepath.Join("..", "test", "keys", "cosign.pub")
-	badKeyPath := filepath.Join(t.TempDir(), "bad.pub")
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.TestDir, "verify-oci-cosign-", "")
+	defer cleanup(t)
+	badKeyPath := filepath.Join(tmpDir, "bad.pub")
 	kb, err := cosign.GenerateKeyPair(nil)
 	if err != nil {
 		t.Fatal(err)

@@ -1,4 +1,4 @@
-// Copyright (c) 2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2025-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -17,7 +17,9 @@ import (
 
 func (c *ctx) signOCICosign(t *testing.T) {
 	e2e.EnsureOCISIF(t, c.TestEnv)
-	testSif := filepath.Join(t.TempDir(), "test.sif")
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.TestDir, "sign-oci-cosign-", "")
+	defer cleanup(t)
+	testSif := filepath.Join(tmpDir, "test.sif")
 	if err := fs.CopyFile(c.OCISIFPath, testSif, 0o755); err != nil {
 		t.Fatal(err)
 	}
