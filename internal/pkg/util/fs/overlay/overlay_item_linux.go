@@ -51,6 +51,10 @@ type Item struct {
 
 	// allowDev is set to true to mount the overlay item without the "nodev" option.
 	allowDev bool
+
+	// cleanup is an optional function that will be called on unmount, to e.g.
+	// remove an automatically created parent dir.
+	cleanup func()
 }
 
 // NewItemFromString takes a string argument, as passed to --overlay, and
@@ -129,20 +133,26 @@ func (i *Item) SetAllowSetuid(a bool) {
 // GetParentDir gets a parent-dir in which to create overlay-specific mount
 // directories. If one has not been set using SetParentDir(), one will be
 // created using os.MkdirTemp().
-func (i *Item) GetParentDir() (string, error) {
+func (i *Item) GetParentDir() (string, func(), error) {
 	// Check if we've already been given a parentDir value; if not, create
 	// one using os.MkdirTemp()
 	if len(i.parentDir) > 0 {
-		return i.parentDir, nil
+		return i.parentDir, nil, nil
 	}
 
 	d, err := os.MkdirTemp("", "overlay-parent-")
 	if err != nil {
-		return d, err
+		return d, nil, err
+	}
+	cleanup := func() {
+		sylog.Debugf("Cleanup overlay item %s, removing %s", i.SourcePath, d)
+		if err := os.Remove(d); err != nil {
+			sylog.Errorf("Failed to remove temporary parent dir %s for overlay item %s: %s", d, i.SourcePath, err)
+		}
 	}
 
 	i.parentDir = d
-	return i.parentDir, nil
+	return i.parentDir, cleanup, nil
 }
 
 // Mount performs the necessary steps to mount an individual Item. Note that
@@ -242,10 +252,11 @@ func (i *Item) mountDir() error {
 
 // mountWithFuse mounts an image to a temporary directory
 func (i *Item) mountWithFuse(ctx context.Context) error {
-	parentDir, err := i.GetParentDir()
+	parentDir, cleanup, err := i.GetParentDir()
 	if err != nil {
 		return err
 	}
+	i.cleanup = cleanup
 
 	im := fsfuse.ImageMount{
 		Type:         i.Type,
@@ -273,6 +284,10 @@ func (i *Item) mountWithFuse(ctx context.Context) error {
 // this method does not unmount the overlay itself. That happens in
 // Set.Unmount().
 func (i Item) Unmount(ctx context.Context) error {
+	if i.cleanup != nil {
+		defer i.cleanup()
+	}
+
 	switch i.Type {
 	case image.SANDBOX:
 		return i.unmountDir(ctx)
