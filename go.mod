@@ -1,6 +1,6 @@
 module github.com/sylabs/singularity/v4
 
-go 1.25.0
+go 1.25.6
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
@@ -28,7 +28,7 @@ require (
 	github.com/fatih/color v1.18.0
 	github.com/go-log/log v0.2.0
 	github.com/gofrs/flock v0.13.0
-	github.com/google/go-containerregistry v0.20.7
+	github.com/google/go-containerregistry v0.21.0
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.15.0
 	github.com/moby/buildkit v0.27.1
@@ -63,7 +63,7 @@ require (
 	github.com/sylabs/scs-library-client v1.4.14
 	github.com/sylabs/sif/v2 v2.23.0
 	github.com/sylabs/squashfs v1.0.4
-	github.com/vbauerster/mpb/v8 v8.11.3
+	github.com/vbauerster/mpb/v8 v8.12.0
 	go.etcd.io/bbolt v1.4.3
 	golang.org/x/crypto v0.48.0
 	golang.org/x/sync v0.19.0
@@ -98,8 +98,7 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cilium/ebpf v0.17.3 // indirect
-	github.com/clipperhouse/stringish v0.1.1 // indirect
-	github.com/clipperhouse/uax29/v2 v2.3.0 // indirect
+	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/containerd/accelerated-container-image v1.3.0 // indirect
 	github.com/containerd/cgroups/v3 v3.1.2 // indirect
@@ -111,7 +110,7 @@ require (
 	github.com/containerd/go-cni v1.1.13 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/nydus-snapshotter v0.15.10 // indirect
-	github.com/containerd/stargz-snapshotter/estargz v0.18.1 // indirect
+	github.com/containerd/stargz-snapshotter/estargz v0.18.2 // indirect
 	github.com/containerd/ttrpc v1.2.7 // indirect
 	github.com/containerd/typeurl/v2 v2.2.3 // indirect
 	github.com/containers/storage v1.59.1 // indirect
@@ -183,12 +182,12 @@ require (
 	github.com/insomniacslk/dhcp v0.0.0-20240829085014-a3a4c1f04475 // indirect
 	github.com/jedisct1/go-minisign v0.0.0-20230811132847-661be99b8267 // indirect
 	github.com/josharian/native v1.1.0 // indirect
-	github.com/klauspost/compress v1.18.3 // indirect
+	github.com/klauspost/compress v1.18.4 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/letsencrypt/boulder v0.20251110.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.19 // indirect
+	github.com/mattn/go-runewidth v0.0.20 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
 	github.com/mdlayher/packet v1.1.2 // indirect
 	github.com/mdlayher/socket v0.5.1 // indirect
@@ -278,9 +277,9 @@ require (
 	go.uber.org/zap v1.27.1 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/mod v0.32.0 // indirect
+	golang.org/x/mod v0.33.0 // indirect
 	golang.org/x/net v0.49.0 // indirect
-	golang.org/x/oauth2 v0.34.0 // indirect
+	golang.org/x/oauth2 v0.35.0 // indirect
 	golang.org/x/time v0.14.0 // indirect
 	google.golang.org/genproto v0.0.0-20251213004720-97cd9d5aeac2 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20251202230838-ff82c1b0f217 // indirect
