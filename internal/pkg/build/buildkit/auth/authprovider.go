@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Copyright (c) 2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2023-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -28,6 +28,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -47,7 +48,6 @@ import (
 	"github.com/moby/buildkit/session/auth"
 	"github.com/moby/buildkit/session/auth/authprovider"
 	"github.com/moby/buildkit/util/progress/progresswriter"
-	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/maps"
@@ -140,7 +140,9 @@ func (ap *authProvider) FetchToken(ctx context.Context, req *auth.FetchTokenRequ
 			return err
 		}
 		defer func() {
-			err = errors.Wrap(err, "failed to fetch oauth token")
+			if err != nil {
+				err = fmt.Errorf("failed to fetch oauth token: %w", err)
+			}
 		}()
 		ap.mu.Lock()
 		name := fmt.Sprintf("[auth] %v token for %s", strings.Join(trimScopePrefix(req.Scopes), " "), req.Host)
@@ -171,7 +173,7 @@ func (ap *authProvider) FetchToken(ctx context.Context, req *auth.FetchTokenRequ
 	// do request anonymously
 	resp, err := authutil.FetchToken(ctx, http.DefaultClient, nil, to)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch anonymous token")
+		return nil, fmt.Errorf("failed to fetch anonymous token: %w", err)
 	}
 	return toTokenResponse(resp.Token, resp.IssuedAt, resp.ExpiresInSeconds), nil
 }

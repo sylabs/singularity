@@ -23,7 +23,6 @@ import (
 
 	dockerclient "github.com/docker/docker/client"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/pkg/errors"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
@@ -43,9 +42,8 @@ func (c ctx) testDockerPulls(t *testing.T) {
 	const tmpContainerFile = "test_container.sif"
 
 	tmpPath, err := fs.MakeTmpDir(c.env.TestDir, "docker-", 0o755)
-	err = errors.Wrapf(err, "creating temporary directory in %q for docker pull test", c.env.TestDir)
 	if err != nil {
-		t.Fatalf("failed to create temporary directory: %+v", err)
+		t.Fatalf("failed creating temporary directory in %q for docker pull test: %v", c.env.TestDir, err)
 	}
 	t.Cleanup(func() {
 		if !t.Failed() {
@@ -725,13 +723,11 @@ func (c ctx) testDockerDefFile(t *testing.T) {
 	getKernelMajor := func(t *testing.T) (major int) {
 		var buf unix.Utsname
 		if err := unix.Uname(&buf); err != nil {
-			err = errors.Wrap(err, "getting current kernel information")
 			t.Fatalf("uname failed: %+v", err)
 		}
 		n, err := fmt.Sscanf(string(buf.Release[:]), "%d.", &major)
-		err = errors.Wrap(err, "getting current kernel release")
 		if err != nil {
-			t.Fatalf("Sscanf failed, n=%d: %+v", n, err)
+			t.Fatalf("kernel release Sscanf failed, n=%d: %+v", n, err)
 		}
 		if n != 1 {
 			t.Fatalf("Unexpected result while getting major release number: n=%d", n)

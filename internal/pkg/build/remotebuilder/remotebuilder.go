@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -20,7 +20,6 @@ import (
 	"strings"
 
 	golog "github.com/go-log/log"
-	"github.com/pkg/errors"
 	buildclient "github.com/sylabs/scs-build-client/client"
 	client "github.com/sylabs/scs-library-client/client"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/library"
@@ -142,7 +141,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 		buildclient.OptBuildContext(contextDigest),
 	)
 	if err != nil {
-		return errors.Wrap(err, "failed to post request to remote build service")
+		return fmt.Errorf("failed to post request to remote build service: %w", err)
 	}
 	sylog.Debugf("Build response - id: %s, libref: %s", bi.ID(), bi.LibraryRef())
 
@@ -160,21 +159,21 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	// We're doing an attached build, stream output and then download the resulting file
 	err = rb.BuildClient.GetOutput(ctx, bi.ID(), os.Stdout)
 	if err != nil {
-		return errors.Wrap(err, "failed to stream output from remote build service")
+		return fmt.Errorf("failed to stream output from remote build service: %w", err)
 	}
 
 	// Get build status
 	bi, err = rb.BuildClient.GetStatus(ctx, bi.ID())
 	if err != nil {
-		return errors.Wrap(err, "failed to get status from remote build service")
+		return fmt.Errorf("failed to get status from remote build service: %w", err)
 	}
 
 	// Do not try to download image if not complete or image size is 0
 	if !bi.IsComplete() {
-		return errors.New("build has not completed")
+		return fmt.Errorf("build has not completed")
 	}
 	if bi.ImageSize() <= 0 {
-		return errors.New("build image size <= 0")
+		return fmt.Errorf("build image size <= 0")
 	}
 
 	// Now that the build is complete, delete the build context (if applicable.)
@@ -188,7 +187,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 	if !strings.HasPrefix(rb.ImagePath, "library://") {
 		f, err := os.OpenFile(rb.ImagePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o777)
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("unable to open file %s for writing", rb.ImagePath))
+			return fmt.Errorf("unable to open file %s for writing: %w", rb.ImagePath, err)
 		}
 		defer f.Close()
 
@@ -198,16 +197,16 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 			Logger:    (golog.Logger)(sylog.DebugLogger{}),
 		})
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("error initializing library client: %v", err))
+			return fmt.Errorf("error initializing library client: %w", err)
 		}
 
 		imageRef, err := library.NormalizeLibraryRef(bi.LibraryRef())
 		if err != nil {
-			return errors.Wrap(err, fmt.Sprintf("error parsing library reference: %v", err))
+			return fmt.Errorf("error parsing library reference: %w", err)
 		}
 
 		if err = library.DownloadImageNoProgress(ctx, c, rb.ImagePath, rb.Arch, imageRef); err != nil {
-			return errors.Wrap(err, "failed to pull image file")
+			return fmt.Errorf("failed to pull image file: %w", err)
 		}
 	}
 

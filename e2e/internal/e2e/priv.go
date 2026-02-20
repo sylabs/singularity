@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -10,8 +10,6 @@ import (
 	"runtime"
 	"syscall"
 	"testing"
-
-	"github.com/pkg/errors"
 )
 
 var (
@@ -61,22 +59,18 @@ func Privileged(f func(*testing.T)) func(*testing.T) {
 		runtime.LockOSThread()
 
 		if err := ThreadSetresuid(0, 0, origUID); err != nil {
-			err = errors.Wrap(err, "changing user ID to 0")
-			t.Fatalf("privileges escalation failed: %+v", err)
+			t.Fatalf("privilege escalation failed changing uid to 0: %v", err)
 		}
 		if err := ThreadSetresgid(0, 0, origGID); err != nil {
-			err = errors.Wrap(err, "changing group ID to 0")
-			t.Fatalf("privileges escalation failed: %+v", err)
+			t.Fatalf("privilege escalation failed changing gid to 0: %+v", err)
 		}
 
 		defer func() {
 			if err := ThreadSetresgid(origGID, origGID, 0); err != nil {
-				err = errors.Wrapf(err, "changing group ID to %d", origUID)
-				t.Fatalf("privileges drop failed: %+v", err)
+				t.Fatalf("privilege drop failed changing gid to %d: %v", origUID, err)
 			}
 			if err := ThreadSetresuid(origUID, origUID, 0); err != nil {
-				err = errors.Wrapf(err, "changing group ID to %d", origGID)
-				t.Fatalf("privileges drop failed: %+v", err)
+				t.Fatalf("privilege drop failed changing uid to %d: %v", origUID, err)
 			}
 			runtime.UnlockOSThread()
 		}()

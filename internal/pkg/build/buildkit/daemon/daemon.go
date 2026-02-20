@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Copyright (c) 2023-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2023-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -63,7 +63,6 @@ import (
 	"github.com/moby/buildkit/worker/base"
 	"github.com/moby/sys/user"
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher/oci"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
@@ -122,7 +121,7 @@ func waitLock(ctx context.Context, lockPath string) (*flock.Flock, error) {
 	if err != nil {
 		return nil, fmt.Errorf("could not create/lock lockfile: %v", err)
 	}
-	if locked && err == nil {
+	if locked {
 		return lock, nil
 	}
 
@@ -138,7 +137,7 @@ func waitLock(ctx context.Context, lockPath string) (*flock.Flock, error) {
 			if err != nil {
 				return nil, fmt.Errorf("could not create/lock lockfile: %v", err)
 			}
-			if locked && err == nil {
+			if locked {
 				return lock, nil
 			}
 		case <-ctx.Done():
@@ -184,7 +183,7 @@ func Run(ctx context.Context, opts *Opts, socketPath string) error {
 	cfg.Root = root
 
 	if err := os.MkdirAll(root, 0o700); err != nil {
-		return errors.Wrapf(err, "failed to create %s", root)
+		return fmt.Errorf("failed to create %s: %w", root, err)
 	}
 
 	lockPath := filepath.Join(root, DaemonName+".lock")
@@ -305,7 +304,7 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 			sylog.Fatalf("%s: trying to run with NoProcessSandbox enabled without being in a user namespace; this is insecure, and therefore blocked.", DaemonName)
 		}
 		if !cfg.Rootless {
-			return nil, errors.New("can't enable NoProcessSandbox without Rootless")
+			return nil, fmt.Errorf("can't enable NoProcessSandbox without Rootless")
 		}
 		processMode = bkoci.NoProcessSandbox
 	}
@@ -346,7 +345,7 @@ func ociWorkerInitializer(ctx context.Context, common workerInitializerOpt) ([]w
 	if platformsStr := cfg.Platforms; len(platformsStr) != 0 {
 		platforms, err := parsePlatforms(platformsStr)
 		if err != nil {
-			return nil, errors.Wrap(err, "invalid platforms")
+			return nil, fmt.Errorf("invalid platforms: %w", err)
 		}
 		opt.Platforms = platforms
 	}
@@ -364,7 +363,7 @@ func snapshotterFactory(_ context.Context, cfg config.OCIConfig) (BkSnapshotterF
 		Name: name,
 	}
 	if name != "overlayfs" {
-		return snFactory, errors.Errorf("unsupported snapshotter name: %q", name)
+		return snFactory, fmt.Errorf("unsupported snapshotter name: %q", name)
 	}
 
 	snFactory.New = func(root string) (ctdsnapshot.Snapshotter, error) {
@@ -381,7 +380,7 @@ func parseIdentityMapping(str string) (*user.IdentityMapping, error) {
 
 	idparts := strings.SplitN(str, ":", 3)
 	if len(idparts) > 2 {
-		return nil, errors.Errorf("invalid userns remap specification in %q", str)
+		return nil, fmt.Errorf("invalid userns remap specification in %q", str)
 	}
 
 	username := idparts[0]
@@ -390,7 +389,7 @@ func parseIdentityMapping(str string) (*user.IdentityMapping, error) {
 
 	mappings, err := user.LoadIdentityMapping(username)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create ID mappings")
+		return nil, fmt.Errorf("failed to create ID mappings: %w", err)
 	}
 	return &mappings, nil
 }
@@ -398,7 +397,7 @@ func parseIdentityMapping(str string) (*user.IdentityMapping, error) {
 func serveGRPC(cfg config.GRPCConfig, server *grpc.Server, errCh chan error) error {
 	addrs := cfg.Address
 	if len(addrs) == 0 {
-		return errors.New("cfg.Address cannot be empty")
+		return fmt.Errorf("cfg.Address cannot be empty")
 	}
 	eg, _ := errgroup.WithContext(context.Background())
 	listeners := make([]net.Listener, 0, len(addrs))
@@ -446,7 +445,7 @@ func setDefaultNetworkConfig(nc config.NetworkConfig) config.NetworkConfig {
 func getListener(addr string, uid, gid int, tlsConfig *tls.Config) (net.Listener, error) {
 	addrSlice := strings.SplitN(addr, "://", 2)
 	if len(addrSlice) < 2 {
-		return nil, errors.Errorf("address %s does not contain proto, you meant unix://%s ?",
+		return nil, fmt.Errorf("address %s does not contain proto, you meant unix://%s ?",
 			addr, addr)
 	}
 	proto := addrSlice[0]
@@ -458,7 +457,7 @@ func getListener(addr string, uid, gid int, tlsConfig *tls.Config) (net.Listener
 		}
 		return sys.GetLocalListener(listenAddr, uid, gid)
 	default:
-		return nil, errors.Errorf("we do not support protocol %q addresses (%q)", proto, addr)
+		return nil, fmt.Errorf("we do not support protocol %q addresses (%q)", proto, addr)
 	}
 }
 
@@ -541,7 +540,7 @@ func newWorkerController(ctx context.Context, wiOpt workerInitializerOpt) (*work
 		}
 	}
 	if nWorkers == 0 {
-		return nil, errors.New("no worker found, rebuild the buildkit daemon?")
+		return nil, fmt.Errorf("no worker found, rebuild the buildkit daemon?")
 	}
 	_, err := wc.GetDefault()
 	if err != nil {

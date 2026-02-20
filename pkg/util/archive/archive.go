@@ -22,6 +22,7 @@ package archive
 
 import (
 	"archive/tar"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -37,7 +38,6 @@ import (
 	"github.com/moby/sys/sequential"
 	"github.com/moby/sys/user"
 	"github.com/moby/sys/userns"
-	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
@@ -287,7 +287,7 @@ func createTarFile(path, extractDir, extractRoot string, hdr *tar.Header, reader
 			if errors.Is(err, syscall.EINVAL) && userns.RunningInUserNS() {
 				msg += " (try increasing the number of subordinate IDs in /etc/subuid and /etc/subgid)"
 			}
-			return errors.Wrapf(err, msg, path, hdr.Uid, hdr.Gid)
+			return fmt.Errorf("%s %s %d %d: %w", msg, path, hdr.Uid, hdr.Gid, err)
 		}
 	}
 

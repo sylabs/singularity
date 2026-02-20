@@ -45,7 +45,6 @@ require (
 	github.com/opencontainers/selinux v1.13.1
 	github.com/opencontainers/umoci v0.6.0
 	github.com/pelletier/go-toml/v2 v2.2.4
-	github.com/pkg/errors v0.9.1
 	github.com/samber/lo v1.52.0
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/seccomp/libseccomp-golang v0.11.1
@@ -212,6 +211,7 @@ require (
 	github.com/petermattis/goid v0.0.0-20250721140440-ea1c0173183e // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240319094008-0393e58bdf10 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.23.2 // indirect

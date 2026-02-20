@@ -10,6 +10,7 @@ package oci
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -17,7 +18,6 @@ import (
 	"path/filepath"
 
 	"github.com/moby/term"
-	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/sys/unix"
 )
@@ -138,7 +138,7 @@ func redirectResponseToOutputStreams(outputStream, errorStream io.Writer, writeO
 				sylog.Infof("Received unexpected attach type %+d", buf[0])
 			}
 			if dst == nil {
-				return errors.New("output destination cannot be nil")
+				return fmt.Errorf("output destination cannot be nil")
 			}
 
 			if doWrite {

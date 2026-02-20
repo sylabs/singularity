@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
 )
 
@@ -83,7 +82,7 @@ func TestEncryptKey(t *testing.T) {
 			name:          "invalid pem",
 			keyInfo:       KeyInfo{Format: PEM, Path: invalidPemPath},
 			plaintext:     []byte(""),
-			expectedError: errors.Wrap(fmt.Errorf("open nothing: no such file or directory"), "loading public key for key encryption"),
+			expectedError: fmt.Errorf("loading public key for key encryption: open nothing: no such file or directory"),
 		},
 	}
 

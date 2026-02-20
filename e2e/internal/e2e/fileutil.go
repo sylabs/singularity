@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -9,7 +9,6 @@ import (
 	"os"
 	"testing"
 
-	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
@@ -40,9 +39,8 @@ func WriteTempFile(dir, pattern, content string) (string, error) {
 // image cache location since it would create thread safety problems.
 func MakeTempDir(t *testing.T, baseDir string, prefix string, context string) (string, func(t *testing.T)) {
 	dir, err := fs.MakeTmpDir(baseDir, prefix, 0o755)
-	err = errors.Wrapf(err, "creating temporary %s at %s", context, baseDir)
 	if err != nil {
-		t.Fatalf("failed to create temporary directory: %+v", err)
+		t.Fatalf("failed to create temporary directory %s at %s: %v", context, baseDir, err)
 	}
 
 	return dir, func(t *testing.T) {

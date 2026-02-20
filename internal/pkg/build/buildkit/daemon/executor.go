@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Copyright (c) 2023-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2023-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -25,6 +25,8 @@ package daemon
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"maps"
 	"os"
@@ -67,7 +69,6 @@ import (
 	wlabel "github.com/moby/buildkit/worker/label"
 	"github.com/moby/sys/user"
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pkg/errors"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	bolt "go.etcd.io/bbolt"
 	"golang.org/x/sync/errgroup"
@@ -272,13 +273,13 @@ func NewBuildExecutor(opt WorkerOpt, networkProviders map[pb.NetMode]bknet.Provi
 		}
 	}
 	if !found {
-		return nil, errors.Errorf("failed to find %s binary", cmd)
+		return nil, fmt.Errorf("failed to find %s binary", cmd)
 	}
 
 	root := opt.Root
 
 	if err := os.MkdirAll(root, 0o711); err != nil {
-		return nil, errors.Wrapf(err, "failed to create %s", root)
+		return nil, fmt.Errorf("failed to create %s: %w", root, err)
 	}
 
 	root, err := filepath.Abs(root)
@@ -350,7 +351,7 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 
 	provider, ok := w.networkProviders[meta.NetMode]
 	if !ok {
-		return nil, errors.Errorf("unknown network mode %s", meta.NetMode)
+		return nil, fmt.Errorf("unknown network mode %s", meta.NetMode)
 	}
 	namespace, err := provider.New(ctx, meta.Hostname)
 	if err != nil {
@@ -410,10 +411,10 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 
 	rootFSPath := filepath.Join(bundle, "rootfs")
 	if err := user.MkdirAllAndChown(rootFSPath, 0o700, rootUID, rootGID); err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
 	if err := mount.All(rootMount, rootFSPath); err != nil {
-		return nil, errors.WithStack(err)
+		return nil, err
 	}
 	defer mount.Unmount(rootFSPath, 0)
 
@@ -457,11 +458,11 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 
 	newp, err := securejoin.SecureJoin(rootFSPath, meta.Cwd)
 	if err != nil {
-		return nil, errors.Wrapf(err, "working dir %s points to invalid target", newp)
+		return nil, fmt.Errorf("working dir %s points to invalid target: %w", newp, err)
 	}
 	if _, err := os.Stat(newp); err != nil {
 		if err := user.MkdirAllAndChown(newp, 0o755, rootUID, rootGID); err != nil {
-			return nil, errors.Wrapf(err, "failed to create working directory %s", newp)
+			return nil, fmt.Errorf("failed to create working directory %s: %w", newp, err)
 		}
 	}
 
@@ -536,7 +537,7 @@ func exitError(ctx context.Context, err error) error {
 		}
 		select {
 		case <-ctx.Done():
-			exitErr.Err = errors.Wrap(ctx.Err(), exitErr.Error())
+			exitErr.Err = fmt.Errorf("%w: %v", ctx.Err(), exitErr.Error())
 			return exitErr
 		default:
 			return stack.Enable(exitErr)
@@ -630,23 +631,23 @@ func (k procKiller) Kill(ctx context.Context) (err error) {
 			if os.IsNotExist(err) {
 				select {
 				case <-ctx.Done():
-					return errors.New("context canceled before runc wrote pidfile")
+					return fmt.Errorf("context canceled before runc wrote pidfile")
 				case <-time.After(10 * time.Millisecond):
 					continue
 				}
 			}
-			return errors.Wrap(err, "failed to read pidfile from runc")
+			return fmt.Errorf("failed to read pidfile from runc: %w", err)
 		}
 		break
 	}
 	pid, err := strconv.Atoi(string(pidData))
 	if err != nil {
-		return errors.Wrap(err, "read invalid pid from pidfile")
+		return fmt.Errorf("read invalid pid from pidfile: %w", err)
 	}
 	process, err := os.FindProcess(pid)
 	if err != nil {
 		// error only possible on non-unix hosts
-		return errors.Wrapf(err, "failed to find process for pid %d from pidfile", pid)
+		return fmt.Errorf("failed to find process for pid %d from pidfile: %w", pid, err)
 	}
 	defer process.Release()
 	return process.Signal(syscall.SIGKILL)
@@ -754,10 +755,10 @@ func (p *procHandle) WaitForStart(ctx context.Context, startedCh <-chan int, sta
 	defer timeout()
 	select {
 	case <-startedCtx.Done():
-		return errors.New("go-runc started message never received")
+		return fmt.Errorf("go-runc started message never received")
 	case runcPid, ok := <-startedCh:
 		if !ok {
-			return errors.New("go-runc failed to send pid")
+			return fmt.Errorf("go-runc failed to send pid")
 		}
 		if started != nil {
 			started()
@@ -766,7 +767,7 @@ func (p *procHandle) WaitForStart(ctx context.Context, startedCh <-chan int, sta
 		p.monitorProcess, err = os.FindProcess(runcPid)
 		if err != nil {
 			// error only possible on non-unix hosts
-			return errors.Wrapf(err, "failed to find runc process %d", runcPid)
+			return fmt.Errorf("failed to find runc process %d: %w", runcPid, err)
 		}
 		close(p.ready)
 	}
