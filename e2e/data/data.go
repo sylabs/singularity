@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2024-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -23,7 +23,8 @@ type ctx struct {
 func (c ctx) testDataPackage(t *testing.T) {
 	e2e.EnsureOCISIF(t, c.env)
 	// <tmpdir>/innner/file
-	outerDir := t.TempDir()
+	outerDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "data-package-", "")
+	defer cleanup(t)
 	innerDir := filepath.Join(outerDir, "inner")
 	innerFile := filepath.Join(innerDir, "file")
 	content := []byte("TEST")

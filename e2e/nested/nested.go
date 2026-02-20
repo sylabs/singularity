@@ -161,7 +161,13 @@ func (c ctx) singularity(t *testing.T) {
 	e2e.EnsureRegistryOCISIF(t, c.env)
 
 	nestedDef := "e2e/testdata/nested.def"
-	nestedSIF := filepath.Join(t.TempDir(), "nested.sif")
+	testDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "nested-singularity-", "")
+	t.Cleanup(func() {
+		if !t.Failed() {
+			e2e.Privileged(cleanup)(t)
+		}
+	})
+	nestedSIF := filepath.Join(testDir, "nested.sif")
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("build"),
@@ -177,7 +183,7 @@ func (c ctx) singularity(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 
-	tmpBuildSIF := filepath.Join(t.TempDir(), "build.sif")
+	tmpBuildSIF := filepath.Join(testDir, "build.sif")
 
 	tests := []struct {
 		name         string

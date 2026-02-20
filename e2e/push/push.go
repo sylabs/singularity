@@ -213,7 +213,8 @@ func (c ctx) testPushOCIOverlay(t *testing.T) {
 	imgRef := fmt.Sprintf("docker://%s/docker_oci-overlay:test", c.env.TestRegistry)
 
 	// OCI-SIF image with overlay
-	tmpDir := t.TempDir()
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "push-oci-overlay-", "")
+	defer cleanup(t)
 	overlaySIF := filepath.Join(tmpDir, "overlay.sif")
 	if err := fs.CopyFile(c.env.OCISIFPath, overlaySIF, 0o755); err != nil {
 		t.Fatal(err)
@@ -275,7 +276,9 @@ func (c ctx) testPushOCICosign(t *testing.T) {
 
 	imgRef := fmt.Sprintf("docker://%s/docker_oci-cosign:test", c.env.TestRegistry)
 
-	testSif := filepath.Join(t.TempDir(), "signed.sif")
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "push-oci-cosign-", "")
+	defer cleanup(t)
+	testSif := filepath.Join(tmpDir, "signed.sif")
 	if err := fs.CopyFile(c.env.OCISIFPath, testSif, 0o755); err != nil {
 		t.Fatal(err)
 	}

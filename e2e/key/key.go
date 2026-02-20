@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -729,7 +729,8 @@ func (c ctx) singularityKeyCmd(t *testing.T) {
 }
 
 func (c *ctx) generateCosignKeypair(t *testing.T) {
-	testDir := t.TempDir()
+	testDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "cosign-keypair-", "")
+	defer cleanup(t)
 
 	tests := []struct {
 		name          string

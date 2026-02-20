@@ -917,9 +917,12 @@ func (c ctx) testPullOCIOverlay(t *testing.T) {
 			}
 			args = append(args, dest, imgRef)
 
+			tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "pull-oci-overlay-", "")
+			defer cleanup(t)
+
 			c.env.RunSingularity(
 				t,
-				e2e.WithDir(t.TempDir()),
+				e2e.WithDir(tmpDir),
 				e2e.WithProfile(e2e.OCIUserProfile),
 				e2e.WithCommand("pull"),
 				e2e.WithArgs(args...),
@@ -945,8 +948,11 @@ func (c ctx) testCosignRoundTrip(t *testing.T) {
 	priKeyPath := filepath.Join("..", "test", "keys", "cosign.key")
 	pubKeyPath := filepath.Join("..", "test", "keys", "cosign.pub")
 
+	tmpDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "cosign-round-trip-", "")
+	defer cleanup(t)
+
 	// Create a signed OCI-SIF
-	pushedSIF := filepath.Join(t.TempDir(), "signed.sif")
+	pushedSIF := filepath.Join(tmpDir, "signed.sif")
 	if err := fs.CopyFile(c.env.OCISIFPath, pushedSIF, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -971,7 +977,7 @@ func (c ctx) testCosignRoundTrip(t *testing.T) {
 	)
 
 	// Pull from local registry
-	pulledSIF := filepath.Join(t.TempDir(), "signed.sif")
+	pulledSIF := filepath.Join(tmpDir, "signed.sif")
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("pull"),
