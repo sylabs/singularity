@@ -48,7 +48,6 @@ import (
 	runc "github.com/containerd/go-runc"
 	"github.com/containerd/platforms"
 	securejoin "github.com/cyphar/filepath-securejoin"
-	"github.com/moby/buildkit/cache"
 	"github.com/moby/buildkit/cache/metadata"
 	"github.com/moby/buildkit/executor"
 	bkoci "github.com/moby/buildkit/executor/oci"
@@ -173,18 +172,6 @@ func NewWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFacto
 	}
 
 	maps.Copy(xlabels, labels)
-	lm := leaseutil.WithNamespace(ctdmetadata.NewLeaseManager(mdb), "buildkit")
-	snap := containerdsnapshot.NewSnapshotter(snFactory.Name, mdb.Snapshotter(snFactory.Name), "buildkit", idmap)
-	if err := cache.MigrateV2(
-		ctx,
-		filepath.Join(root, "metadata.db"),
-		filepath.Join(root, "metadata_v2.db"),
-		c,
-		snap,
-		lm,
-	); err != nil {
-		return opt, err
-	}
 
 	md, err := metadata.NewStore(filepath.Join(root, "metadata_v2.db"))
 	if err != nil {
@@ -197,14 +184,14 @@ func NewWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFacto
 		MetadataStore:    md,
 		NetworkProviders: np,
 		Executor:         exe,
-		Snapshotter:      snap,
+		Snapshotter:      containerdsnapshot.NewSnapshotter(snFactory.Name, mdb.Snapshotter(snFactory.Name), "buildkit", idmap),
 		ContentStore:     c,
 		Applier:          winlayers.NewFileSystemApplierWithWindows(c, apply.NewFileSystemApplier(c)),
 		Differ:           winlayers.NewWalkingDiffWithWindows(c, walking.NewWalkingDiff(c)),
 		ImageStore:       nil, // explicitly
 		Platforms:        []ocispecs.Platform{platforms.Normalize(platforms.DefaultSpec())},
 		IdentityMapping:  idmap,
-		LeaseManager:     lm,
+		LeaseManager:     leaseutil.WithNamespace(ctdmetadata.NewLeaseManager(mdb), "buildkit"),
 		GarbageCollect:   mdb.GarbageCollect,
 		ParallelismSem:   parallelismSem,
 		MountPoolRoot:    filepath.Join(root, "cachemounts"),
