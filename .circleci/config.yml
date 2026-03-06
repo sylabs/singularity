@@ -39,13 +39,14 @@ executors:
   golangci-lint:
     docker:
       - image: golangci/golangci-lint:v2.9
-  ubuntu-machine:
-    machine:
-      image: ubuntu-2404:current
   ubuntu-machine-large:
     machine:
       image: ubuntu-2404:current
     resource_class: large
+  ubuntu-machine-xlarge:
+    machine:
+      image: ubuntu-2404:current
+    resource_class: xlarge
 
 commands:
   update-submodules:
@@ -157,9 +158,11 @@ commands:
   build-singularity:
     steps:
       - configure-singularity
-      - run:
-          name: Build Singularity
-          command: make -C ./builddir all
+      - go/with-cache:
+          steps:
+            - run:
+                name: Build Singularity
+                command: make -C ./builddir all
   install-singularity:
     steps:
       - build-singularity
@@ -254,7 +257,7 @@ jobs:
       - check-pkg-no-buildcfg
 
   short-unit-tests:
-    executor: ubuntu-machine
+    executor: ubuntu-machine-large
     steps:
       - checkout
       - go/install:
@@ -268,7 +271,7 @@ jobs:
           command: make -C ./builddir short-unit-test
 
   integration-tests:
-    executor: ubuntu-machine
+    executor: ubuntu-machine-large
     steps:
       - checkout
       - go/install:
@@ -283,7 +286,11 @@ jobs:
           command: make -C ./builddir integration-test
 
   e2e-tests:
-    executor: ubuntu-machine-large
+    parameters:
+      target:
+        type: string
+        default: "e2e-test"
+    executor: ubuntu-machine-xlarge
     steps:
       - checkout
       - go/install:
@@ -312,9 +319,9 @@ jobs:
               export E2E_PARALLEL=8 && \
               export E2E_DOCKER_USERNAME=$CIRCLE_CI_DOCKER_USERNAME && \
               export E2E_DOCKER_PASSWORD=$CIRCLE_CI_DOCKER_PASSWORD && \
-              make -C ./builddir e2e-test'
+              make -C ./builddir << parameters.target >>'
       - store_artifacts:
-          path: builddir/e2e-cmd-report.txt
+          path: builddir/e2e-par-cmd-report.txt
 
   build-rpm:
     parameters:
@@ -419,7 +426,10 @@ workflows:
       - lint-source
       - short-unit-tests
       - integration-tests
-      - e2e-tests
+      - e2e-tests:
+          matrix:
+            parameters:
+              target: ["e2e-test-seq", "e2e-test-par"]
       - build-rpm:
           matrix:
             parameters:
