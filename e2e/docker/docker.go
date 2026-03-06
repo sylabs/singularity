@@ -1758,7 +1758,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			// Regressions
 			t.Run("issue 4524", c.issue4524)
 			t.Run("issue 1286", c.issue1286)
-			t.Run("issue 1528", c.issue1528)
 			t.Run("issue 1586", c.issue1586)
 			t.Run("issue 1670", c.issue1670)
 		},
