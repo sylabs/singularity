@@ -660,5 +660,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"oci environment file":           c.ociEnvFile,
 		"oci native env eval":            c.ociNativeEnvEval,
 		"oci nocompat host":              c.ociNoCompatHost,
+		"issue 1528":                     c.issue1528,
 	}
 }

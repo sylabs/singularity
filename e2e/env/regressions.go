@@ -148,3 +148,37 @@ func (c ctx) issue1263(t *testing.T) {
 		),
 	)
 }
+
+// https://github.com/sylabs/singularity/issues/1528
+// Check that host's TERM value gets passed to OCI container.
+func (c ctx) issue1528(t *testing.T) {
+	e2e.EnsureOCISIF(t, c.env)
+
+	imageRef := "oci-sif:" + c.env.OCISIFPath
+
+	for _, profile := range e2e.OCIProfiles {
+		t.Run(profile.String()+"/TERM", func(t *testing.T) {
+			c.env.RunSingularity(
+				t,
+				e2e.WithProfile(profile),
+				e2e.WithCommand("exec"),
+				e2e.WithArgs(imageRef, "sh", "-c", "echo $TERM"),
+				e2e.WithEnv(append(os.Environ(), "TERM=xterm")),
+				e2e.ExpectExit(0, e2e.ExpectOutput(e2e.ExactMatch, "xterm")),
+			)
+		})
+	}
+
+	for _, profile := range e2e.OCIProfiles {
+		t.Run(profile.String()+"/SINGULARITYENV_TERM", func(t *testing.T) {
+			c.env.RunSingularity(
+				t,
+				e2e.WithProfile(profile),
+				e2e.WithCommand("exec"),
+				e2e.WithArgs(imageRef, "sh", "-c", "echo $TERM"),
+				e2e.WithEnv(append(os.Environ(), "TERM=xterm", "SINGULARITYENV_TERM=xterm-override")),
+				e2e.ExpectExit(0, e2e.ExpectOutput(e2e.ExactMatch, "xterm-override")),
+			)
+		})
+	}
+}
