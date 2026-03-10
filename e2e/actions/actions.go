@@ -2857,6 +2857,8 @@ func (c actionTests) actionAuth(t *testing.T) {
 }
 
 func (c actionTests) actionAuthTester(t *testing.T, withCustomAuthFile bool, profile e2e.Profile) {
+	e2e.EnsureImage(t, c.env)
+
 	tmpdir, tmpdirCleanup := e2e.MakeTempDir(t, c.env.TestDir, "action-auth", "")
 	t.Cleanup(func() {
 		if !t.Failed() {
