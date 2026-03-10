@@ -42,6 +42,8 @@ type ctx struct {
 // Test that a basic echo server instance can be started, communicated with,
 // and stopped.
 func (c *ctx) testBasicEchoServer(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	const instanceName = "echo1"
 
 	args := []string{c.env.ImagePath, instanceName, strconv.Itoa(instanceStartPort)}
@@ -67,6 +69,8 @@ func (c *ctx) testBasicEchoServer(t *testing.T) {
 // Test that a basic reverse-echo server defined in an appstart script can be started,
 // communicated with, and stopped.
 func (c *ctx) testAppEchoServer(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	const instanceName = "echoApp"
 
 	args := []string{
@@ -97,6 +101,8 @@ func (c *ctx) testAppEchoServer(t *testing.T) {
 
 // Test that instance run command executes the runscript
 func (c *ctx) testInstanceRun(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	const instanceName = "testtrue"
 
 	args := []string{c.env.ImagePath, instanceName, "true"}
@@ -143,6 +149,8 @@ func (c *ctx) testInstanceRun(t *testing.T) {
 
 // Test creating many instances, but don't stop them.
 func (c *ctx) testCreateManyInstances(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	const n = 10
 
 	// Start n instances.
@@ -173,6 +181,8 @@ func (c *ctx) testStopAll(t *testing.T) {
 // Test basic options like mounting a custom home directory, changing the
 // hostname, etc.
 func (c *ctx) testBasicOptions(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	const fileName = "hello"
 	const instanceName = "testbasic"
 	const testHostname = "echoserver99"
@@ -241,6 +251,8 @@ func (c *ctx) testBasicOptions(t *testing.T) {
 
 // Test that contain works.
 func (c *ctx) testContain(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	const instanceName = "testcontain"
 	const fileName = "thegreattestfile"
 	cmdList := [2]string{"instance start", "instance run"}
@@ -400,6 +412,8 @@ func (c *ctx) testInstanceAuthFile(t *testing.T) {
 // Execute an instance process, kill master process
 // and try to start another instance with same name
 func (c *ctx) testGhostInstance(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	cmdList := [2]string{"instance start", "instance run"}
 
 	for _, cmd := range cmdList {

@@ -20,6 +20,8 @@ import (
 // issue5097 - need to handle an existing directory entry present in the cache
 // from older singularity versions.
 func (c cacheTests) issue5097(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	imgCacheDir, cleanCache := e2e.MakeCacheDir(t, c.env.TestDir)
 	defer cleanCache(t)
 	c.env.UnprivCacheDir = imgCacheDir

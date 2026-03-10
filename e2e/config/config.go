@@ -133,6 +133,8 @@ func (c *configTests) prepImages(t *testing.T) (cleanup func(t *testing.T)) {
 
 //nolint:maintidx
 func (c configTests) configGlobal(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	cleanup := c.prepImages(t)
 	defer cleanup(t)
 

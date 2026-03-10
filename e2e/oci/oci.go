@@ -76,6 +76,8 @@ func (c *ctx) checkOciState(t *testing.T, containerID string, state specs.Contai
 }
 
 func genericOciMount(t *testing.T, c *ctx) (string, func()) {
+	e2e.EnsureImage(t, c.env)
+
 	require.Seccomp(t)
 	require.Command(t, "squashfuse")
 	require.Command(t, "fusermount")
