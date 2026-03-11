@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"syscall"
@@ -152,40 +153,47 @@ func New(r io.Reader, name string, args []string, envs []string, runnerOptions .
 // internalExecHandler returns an ExecHandlerFunc used by default.
 func (s *Shell) internalExecHandler() interp.ExecHandlerFunc {
 	return func(ctx context.Context, args []string) error {
+
 		if s.runner.Exited() {
 			// special path for exec builtin keyword
 			if builtin, ok := s.shellBuiltins["exec"]; ok {
 				return builtin(ctx, args)
 			}
-		} else if builtin, ok := s.shellBuiltins[args[0]]; ok {
-			return builtin(ctx, args[1:])
-		} else {
+			return defaultExecHandler(ctx, args)
+		}
+
+		// These are declared as builtins from mvdan.cc/sh v3.13.0 - but they
+		// are treated as keywords by the parser, so ensure we don't try to
+		// execute them via builtin().
+		if slices.Contains([]string{"export", "local", "declare", "nameref", "readonly", "typeset"}, args[0]) {
 			// declaration clause are normally handled by the interpreter
 			// but when a builtin prefixed with a backslash is encountered
 			// by example, the parser consider it as a call expression and
 			// we get there, so basically what we do is to create a new parser
 			// and evaluate it in the current shell interpreter
-			switch args[0] {
-			case "export", "local", "declare", "nameref", "readonly", "typeset":
-				var b bytes.Buffer
+			var b bytes.Buffer
 
-				b.WriteString(strings.Join(args, " "))
-				node, err := syntax.NewParser().Parse(&b, s.name)
-				if err != nil {
+			b.WriteString(strings.Join(args, " "))
+			node, err := syntax.NewParser().Parse(&b, s.name)
+			if err != nil {
+				return err
+			}
+
+			// We run individual syntax.Stmt rather than the parsed syntax.File as the latter
+			// implies an `exit`, and causes https://github.com/sylabs/singularity/issues/274
+			// with the exit/trap changes in https://github.com/mvdan/sh/commit/fb5052e7a0109c9ef5553a310c05f3b8c04cca5f
+			for _, stmt := range node.Stmts {
+				if err := s.runner.Run(ctx, stmt); err != nil {
 					return err
 				}
-
-				// We run individual syntax.Stmt rather than the parsed syntax.File as the latter
-				// implies an `exit`, and causes https://github.com/sylabs/singularity/issues/274
-				// with the exit/trap changes in https://github.com/mvdan/sh/commit/fb5052e7a0109c9ef5553a310c05f3b8c04cca5f
-				for _, stmt := range node.Stmts {
-					if err := s.runner.Run(ctx, stmt); err != nil {
-						return err
-					}
-				}
-				return nil
 			}
+			return nil
 		}
+
+		if builtin, ok := s.shellBuiltins[args[0]]; ok {
+			return builtin(ctx, args[1:])
+		}
+
 		return defaultExecHandler(ctx, args)
 	}
 }
