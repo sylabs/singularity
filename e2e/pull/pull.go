@@ -750,6 +750,8 @@ func (c ctx) testPullDisableCacheCmd(t *testing.T) {
 // testPullUmask will run some pull tests with different umasks, and
 // ensure the output file has the correct permissions.
 func (c ctx) testPullUmask(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, c.env.ImagePath)
 	}))
