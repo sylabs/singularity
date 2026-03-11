@@ -828,6 +828,8 @@ func (c *ctx) instanceFlags(t *testing.T, profile e2e.Profile) {
 }
 
 func (c *ctx) instanceFlagV1(t *testing.T, tt resourceFlagTest, profile e2e.Profile) {
+	e2e.EnsureImage(t, c.env)
+
 	// Don't try to test a resource that doesn't exist in our caller cgroup.
 	// E.g. some systems don't have memory.memswp, and might not have blkio.bfq
 	require.CgroupsResourceExists(t, tt.controllerV1, tt.resourceV1)
@@ -876,6 +878,8 @@ func (c *ctx) instanceFlagV1(t *testing.T, tt resourceFlagTest, profile e2e.Prof
 }
 
 func (c *ctx) instanceFlagV2(t *testing.T, tt resourceFlagTest, profile e2e.Profile) {
+	e2e.EnsureImage(t, c.env)
+
 	if tt.skipV2 {
 		t.Skip("Test doesn't apply to cgroups v2")
 	}
