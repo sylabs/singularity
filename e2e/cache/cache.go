@@ -28,6 +28,8 @@ type cacheTests struct {
 const imgName = "alpine_latest.sif"
 
 func prepTest(t *testing.T, testEnv e2e.TestEnv, testName string, cacheParentDir string, imagePath string) (imageURL string, cleanup func()) {
+	e2e.EnsureImage(t, testEnv)
+
 	// We will pull images from a temporary http server
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, testEnv.ImagePath)
