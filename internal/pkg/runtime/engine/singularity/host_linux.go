@@ -66,7 +66,7 @@ func (e *EngineOperations) CleanupHost(ctx context.Context) (err error) {
 		}
 	}
 
-	if errors != nil {
+	if len(errors) > 0 {
 		return fmt.Errorf("encountered errors during CleanupHost: %v", errors)
 	}
 
