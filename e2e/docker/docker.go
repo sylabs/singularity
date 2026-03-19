@@ -22,8 +22,8 @@ import (
 	"strings"
 	"testing"
 
-	dockerclient "github.com/docker/docker/client"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	dockerclient "github.com/moby/moby/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"

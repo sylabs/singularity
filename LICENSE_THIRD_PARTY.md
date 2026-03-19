@@ -420,13 +420,17 @@ Contain code from the docker cli project, under the Apache License, Version 2.0.
    limitations under the License.
 ```
 
-## github.com/docker/docker
+## github.com/moby/moby
 
 The source files:
 
-* `internal/pkg/archive/archive.go`
+* `pkg/util/archive/archive.go`
+* `pkg/util/archive/pools.go`
+* `pkg/util/archive/pools_test.go`
+* `pkg/util/archive/system.go`
+* `pkg/util/archive/system_test.go`
 
-Contain code from the docker project, under the Apache License, Version 2.0.
+Contain code from the moby project, under the Apache License, Version 2.0.
 
 ```text
    Copyright 2013-2018 Docker, Inc.
