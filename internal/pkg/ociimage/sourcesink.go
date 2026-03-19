@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/docker/docker/client"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/daemon"
@@ -18,6 +17,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
+	"github.com/moby/moby/client"
 	cosignoci "github.com/sigstore/cosign/v2/pkg/oci"
 	cosignremote "github.com/sigstore/cosign/v2/pkg/oci/remote"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/progress"
@@ -150,7 +150,7 @@ func getDaemonImage(ctx context.Context, src string, tOpts *TransportOptions) (v
 	}
 
 	if tOpts != nil && tOpts.DockerDaemonHost != "" {
-		dc, err := client.NewClientWithOpts(client.WithHost(tOpts.DockerDaemonHost))
+		dc, err := client.New(client.WithHost(tOpts.DockerDaemonHost))
 		if err != nil {
 			return nil, err
 		}
