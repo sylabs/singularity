@@ -3023,7 +3023,8 @@ func (c actionTests) actionCleanup(t *testing.T) {
 				e2e.WithCommand("exec"),
 				e2e.WithArgs(append(tt.flags, "--disable-cache", c.env.OrasTestImage, "/bin/true")...),
 				e2e.WithEnv(append(os.Environ(), tempEnv)),
-				e2e.ExpectExit(0),
+				// Check no ERROR logs on stderr from cleanup process.
+				e2e.ExpectExit(0, e2e.ExpectError(e2e.UnwantedContainMatch, "ERROR")),
 			)
 
 			entries, err := os.ReadDir(tempDir)
