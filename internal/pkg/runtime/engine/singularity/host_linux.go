@@ -9,10 +9,12 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"slices"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/fuse"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/sylabs/singularity/v4/pkg/util/fs/proc"
 )
 
 // PostStartHost cleans up a SIF FUSE image mount and the temporary directory
@@ -58,13 +60,13 @@ func (e *EngineOperations) CleanupHost(ctx context.Context) (err error) {
 	if tmpDir := e.EngineConfig.GetDeletePullTempDir(); tmpDir != "" {
 		sylog.Debugf("Cleaning up image pull temporary directory %s", tmpDir)
 		err := os.RemoveAll(tmpDir)
-		if err != nil {
+		if err != nil && !os.IsNotExist(err) {
 			sylog.Errorf("Failed to delete image pull temporary directory %s: %s", tmpDir, err)
 			errors = append(errors, fmt.Errorf("failed to delete image pull temporary directory %s: %w", tmpDir, err))
 		}
 	}
 
-	if errors != nil {
+	if len(errors) > 0 {
 		return fmt.Errorf("encountered errors during CleanupHost: %v", errors)
 	}
 
@@ -72,16 +74,36 @@ func (e *EngineOperations) CleanupHost(ctx context.Context) (err error) {
 }
 
 func cleanFUSETempDir(ctx context.Context, e *EngineOperations) error {
-	sylog.Debugf("Lazy Unmounting SIF with FUSE...")
+	sylog.Debugf("Lazy Unmounting SIF with FUSE: %s", e.EngineConfig.GetImage())
 	if err := fuse.UnmountWithFuseLazy(ctx, e.EngineConfig.GetImage()); err != nil {
-		return fmt.Errorf("while unmounting fuse directory: %s: %w", e.EngineConfig.GetImage(), err)
+		// Don't error out if the mount is already gone.
+		mounted, mErr := mounted(e.EngineConfig.GetImage())
+		if mErr != nil {
+			return fmt.Errorf("while checking if fuse directory is still mounted: %w", mErr)
+		}
+		if mounted {
+			return fmt.Errorf("while unmounting fuse directory: %s: %w", e.EngineConfig.GetImage(), err)
+		}
 	}
+
 	tmpDir := e.EngineConfig.GetDeleteTempDir()
 	if tmpDir != "" {
+		sylog.Debugf("Removing FUSE mount temporary directory: %s", tmpDir)
 		err := os.RemoveAll(tmpDir)
-		if err != nil {
+		if err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("failed to delete temporary directory %s: %s", tmpDir, err)
 		}
 	}
 	return nil
+}
+
+func mounted(path string) (bool, error) {
+	entries, miErr := proc.GetMountInfoEntry("/proc/self/mountinfo")
+	if miErr != nil {
+		return false, fmt.Errorf("while parsing mountinfo: %w", miErr)
+	}
+	matchFn := func(entry proc.MountInfoEntry) bool {
+		return entry.Point == path
+	}
+	return slices.ContainsFunc(entries, matchFn), nil
 }
