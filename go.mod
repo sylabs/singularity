@@ -10,7 +10,7 @@ require (
 	github.com/astromechza/etcpwdparse v0.0.0-20170319193008-f0e5f0779716
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buger/goterm v1.0.4
-	github.com/buger/jsonparser v1.1.1
+	github.com/buger/jsonparser v1.1.2
 	github.com/ccoveille/go-safecast/v2 v2.0.0
 	github.com/containerd/containerd/v2 v2.2.2
 	github.com/containerd/go-runc v1.1.0
