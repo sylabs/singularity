@@ -1,12 +1,19 @@
 # SingularityCE Changelog
 
-## Unreleased Changes
+## 4.4.1 \[2026-03-23\]
 
 ### Bug Fixes
 
 - Use lazy unmount for overlay items that are FUSE mounted, to prevent errors if
   unmount takes time due to the device being busy. We already use lazy
   (MNT_DETACH) for kernel mounted overlay items.
+- Address FUSE unmount error that can occur with short-lived containers on busy
+  systems.
+- Fix spurious cleanup error message when cleanup is successful.
+
+### Requirements / Packaging
+
+- Requires Go 1.25.7 or above, due to various dependencies.
 
 ## 4.4.0 \[2026-02-26\]
 
