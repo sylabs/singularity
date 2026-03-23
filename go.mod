@@ -23,7 +23,7 @@ require (
 	github.com/docker/cli v29.3.0+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/docker/go-units v0.5.0
-	github.com/fatih/color v1.18.0
+	github.com/fatih/color v1.19.0
 	github.com/go-log/log v0.2.0
 	github.com/gofrs/flock v0.13.0
 	github.com/google/go-containerregistry v0.21.3
