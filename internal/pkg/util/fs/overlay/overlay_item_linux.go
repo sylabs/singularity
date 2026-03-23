@@ -309,7 +309,7 @@ func (i Item) unmountDir(ctx context.Context) error {
 // unmountFuse unmounts FUSE-based Items.
 func (i Item) unmountFuse(ctx context.Context) error {
 	defer os.Remove(i.StagingDir)
-	err := fsfuse.UnmountWithFuse(ctx, i.StagingDir)
+	err := fsfuse.UnmountWithFuseLazy(ctx, i.StagingDir)
 	if err != nil {
 		return fmt.Errorf("error while trying to unmount image %q from %s: %w", i.SourcePath, i.StagingDir, err)
 	}
