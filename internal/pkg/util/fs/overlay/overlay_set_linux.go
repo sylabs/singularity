@@ -82,7 +82,7 @@ func (s Set) Unmount(ctx context.Context, rootFsDir string) error {
 	if useKernelMount {
 		err = DetachMount(ctx, rootFsDir)
 	} else {
-		err = fsfuse.UnmountWithFuse(ctx, rootFsDir)
+		err = fsfuse.UnmountWithFuseLazy(ctx, rootFsDir)
 	}
 
 	if err != nil {

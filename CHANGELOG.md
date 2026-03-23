@@ -1,5 +1,13 @@
 # SingularityCE Changelog
 
+## Unreleased Changes
+
+### Bug Fixes
+
+- Use lazy unmount for overlay items that are FUSE mounted, to prevent errors if
+  unmount takes time due to the device being busy. We already use lazy
+  (MNT_DETACH) for kernel mounted overlay items.
+
 ## 4.4.0 \[2026-02-26\]
 
 ### Bug Fixes
