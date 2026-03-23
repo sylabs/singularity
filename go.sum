@@ -750,8 +750,8 @@ github.com/sylabs/scs-library-client v1.4.14 h1:T2ANR5fWm6sGfsSgx1bsFc4zsu1VB3TI
 github.com/sylabs/scs-library-client v1.4.14/go.mod h1:rylcxfSvj4o3fNlmC6qQmHdALxypL7lmAKuNWxUnAFg=
 github.com/sylabs/sif/v2 v2.24.0 h1:1wB5uMDUQYjk8AckTySaDcP9YnpMb1LyDRr1Jt9A10w=
 github.com/sylabs/sif/v2 v2.24.0/go.mod h1:DbXWqWZ1hdLSU+K9ipdds5AmZeHWsyxCOj/oQakBa88=
-github.com/sylabs/squashfs v1.0.4 h1:uFSw7WXv7zjutPvU+JzY0nY494Vw8s4FAf4+7DhoMdI=
-github.com/sylabs/squashfs v1.0.4/go.mod h1:PDgf8YmCntvN4d9Y8hBUBDCZL6qZOzOQwRGxnIdbERk=
+github.com/sylabs/squashfs v1.0.6 h1:PvJcDzxr+vIm2kH56mEMbaOzvGu79gK7P7IX+R7BDZI=
+github.com/sylabs/squashfs v1.0.6/go.mod h1:DlDeUawVXLWAsSRa085Eo0ZenGzAB32JdAUFaB0LZfE=
 github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d h1:vfofYNRScrDdvS342BElfbETmL1Aiz3i2t0zfRj16Hs=
 github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d/go.mod h1:RRCYJbIwD5jmqPI9XoAFR0OcDxqUctll6zUj/+B4S48=
 github.com/therootcompany/xz v1.0.1 h1:CmOtsn1CbtmyYiusbfmhmkpAAETj0wBIH6kCYaX+xzw=

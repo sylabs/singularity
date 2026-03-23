@@ -61,7 +61,7 @@ require (
 	github.com/sylabs/scs-key-client v0.7.9
 	github.com/sylabs/scs-library-client v1.4.14
 	github.com/sylabs/sif/v2 v2.24.0
-	github.com/sylabs/squashfs v1.0.4
+	github.com/sylabs/squashfs v1.0.6
 	github.com/vbauerster/mpb/v8 v8.12.0
 	go.etcd.io/bbolt v1.4.3
 	go.yaml.in/yaml/v4 v4.0.0-rc.4
