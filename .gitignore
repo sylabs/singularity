@@ -126,3 +126,6 @@ __debug_bin
 */*/*/*/__debug_bin
 */*/*/*/*/__debug_bin
 */*/*/*/*/*/__debug_bin
+
+ci-cache-checksum.txt
+
