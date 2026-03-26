@@ -8,13 +8,18 @@
  *
  */
 
+/* When modifying this file, you must run `go clean -cache` before building for
+ * changes to be picked up. 
+ * See: https://pkg.go.dev/cmd/go#hdr-Build_and_test_caching
+ */
 
 #ifndef __SINGULARITY_CAPABILITY_H_
 #define __SINGULARITY_CAPABILITY_H_
 
 #include <linux/capability.h>
 
-/* 2.6.32 kernel is the minimal kernel version supported where latest cap is 33 */
+/* 2.6.32 kernel is the minimal kernel version supported where latest cap is 33
+*/
 #define CAPSET_MIN  33
 /* 40 is the latest cap since kernel 5.9 */
 #define CAPSET_MAX  40

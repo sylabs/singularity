@@ -158,7 +158,9 @@ commands:
   build-singularity:
     steps:
       - configure-singularity
+      - ci-cache-checksum
       - go/with-cache:
+          checksum: '{{ checksum "ci-cache-checksum.txt" }}'
           steps:
             - run:
                 name: Build Singularity
@@ -169,6 +171,12 @@ commands:
       - run:
           name: Install Singularity
           command: sudo make -C ./builddir install
+
+  ci-cache-checksum:
+    steps:
+      - run:
+          name: Generate build cache checksum file
+          command: sha256sum go.sum cmd/starter/c/*.c cmd/starter/c/include/*.h | sort >ci-cache-checksum.txt
 
 jobs:
   lint-markdown:
