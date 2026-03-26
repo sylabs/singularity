@@ -30,6 +30,10 @@ all your interactions with the project members and users.
 1. Follow the existing code style precedent, especially for C. For Go, you
    will mostly conform to the style and form enforced by the "go fmt" and
    "golint" tools for proper formatting.
+1. If you modify the starter C code, make sure to run `go clean -cache` before
+   building. The Go toolchain does not automatically detect changes to C code,
+   so you must clear the cache to ensure that the changes are included in the
+   build.
 1. For any new functionality, please write appropriate go tests that will run as
    part of the Continuous Integration (Circle CI) system.
 1. Make sure that the project's default copyright and header have been included

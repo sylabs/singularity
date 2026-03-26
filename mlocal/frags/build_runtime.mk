@@ -10,20 +10,11 @@ $(starter_deps): $(GO_MODFILES)
 	@echo " GEN GO DEP" $@
 	$(V)cd $(SOURCEDIR) && ./makeit/gengodep -v3 "$(GO)" "starter_SOURCE" "$(GO_TAGS)" "$@" "$(SOURCEDIR)/cmd/starter"
 
-starter_CSOURCE := $(wildcard $(SOURCEDIR)/cmd/starter/c/*.c)
-starter_CSOURCE += $(wildcard $(SOURCEDIR)/cmd/starter/c/include/*.h)
-
-$(BUILDDIR_ABSPATH)/.clean-starter: $(starter_CSOURCE)
-	@echo " GO clean -cache"
-	-$(V)$(GO) clean -cache 2>/dev/null
-	$(V)touch $@
-
-
 # starter
 # Look at dependencies file changes via starter_deps
 # because it means that a module was updated.
 starter := $(BUILDDIR_ABSPATH)/cmd/starter/c/starter
-$(starter): $(BUILDDIR_ABSPATH)/.clean-starter $(singularity_build_config) $(starter_deps) $(starter_SOURCE)
+$(starter): $(singularity_build_config) $(starter_deps) $(starter_SOURCE)
 	@echo " GO" $@
 	$(V)cd $(SOURCEDIR) && $(GO) build $(GO_MODFLAGS) $(GO_BUILDMODE) -tags "$(GO_TAGS)" $(GO_LDFLAGS) \
 		-o $@ cmd/starter/main_linux.go
