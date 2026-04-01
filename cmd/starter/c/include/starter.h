@@ -6,6 +6,11 @@
   your rights to use or distribute this software.
 */
 
+/* When modifying this file, you must run `go clean -cache` before building for
+ * changes to be picked up. 
+ * See: https://pkg.go.dev/cmd/go#hdr-Build_and_test_caching
+ */
+
 #ifndef _SINGULARITY_STARTER_H
 #define _SINGULARITY_STARTER_H
 
