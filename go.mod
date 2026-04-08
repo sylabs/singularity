@@ -14,7 +14,7 @@ require (
 	github.com/ccoveille/go-safecast/v2 v2.0.0
 	github.com/containerd/containerd/v2 v2.2.2
 	github.com/containerd/go-runc v1.1.0
-	github.com/containerd/platforms v1.0.0-rc.3
+	github.com/containerd/platforms v1.0.0-rc.4
 	github.com/containernetworking/cni v1.3.0
 	github.com/containernetworking/plugins v1.9.1
 	github.com/containers/image/v5 v5.36.2
