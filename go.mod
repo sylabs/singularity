@@ -49,7 +49,7 @@ require (
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/seccomp/libseccomp-golang v0.11.1
 	github.com/shopspring/decimal v1.4.0
-	github.com/sigstore/cosign/v2 v2.6.2
+	github.com/sigstore/cosign/v2 v2.6.3
 	github.com/sigstore/sigstore v1.10.5
 	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.10.2
@@ -67,7 +67,7 @@ require (
 	go.yaml.in/yaml/v4 v4.0.0-rc.4
 	golang.org/x/crypto v0.49.0
 	golang.org/x/sync v0.20.0
-	golang.org/x/sys v0.42.0
+	golang.org/x/sys v0.43.0
 	golang.org/x/term v0.41.0
 	golang.org/x/text v0.35.0
 	google.golang.org/grpc v1.80.0
