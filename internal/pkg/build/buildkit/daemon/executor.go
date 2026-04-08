@@ -355,15 +355,23 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 		sylog.Infof("enabling HostNetworking")
 	}
 
-	resolvConf, err := bkoci.GetResolvConf(ctx, w.root, w.idmap, w.dns, meta.NetMode)
+	stateDirRoot, err := os.OpenRoot(w.root)
 	if err != nil {
 		return nil, err
 	}
+	defer stateDirRoot.Close()
 
-	hostsFile, clean, err := bkoci.GetHostsFile(ctx, w.root, meta.ExtraHosts, w.idmap, meta.Hostname)
+	resolvConfName, err := bkoci.GetResolvConf(ctx, stateDirRoot, w.idmap, w.dns, meta.NetMode)
 	if err != nil {
 		return nil, err
 	}
+	resolvConf := filepath.Join(w.root, resolvConfName)
+
+	hostsName, clean, err := bkoci.GetHostsFile(ctx, stateDirRoot, meta.ExtraHosts, w.idmap, meta.Hostname)
+	if err != nil {
+		return nil, err
+	}
+	hostsFile := filepath.Join(w.root, hostsName)
 	if clean != nil {
 		defer clean()
 	}
