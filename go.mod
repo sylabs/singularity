@@ -65,11 +65,11 @@ require (
 	github.com/vbauerster/mpb/v8 v8.12.0
 	go.etcd.io/bbolt v1.4.3
 	go.yaml.in/yaml/v4 v4.0.0-rc.4
-	golang.org/x/crypto v0.49.0
+	golang.org/x/crypto v0.50.0
 	golang.org/x/sync v0.20.0
 	golang.org/x/sys v0.43.0
-	golang.org/x/term v0.41.0
-	golang.org/x/text v0.35.0
+	golang.org/x/term v0.42.0
+	golang.org/x/text v0.36.0
 	google.golang.org/grpc v1.80.0
 	mvdan.cc/sh/v3 v3.13.0
 	tags.cncf.io/container-device-interface v1.1.0
