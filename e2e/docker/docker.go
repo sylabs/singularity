@@ -132,14 +132,29 @@ func (c ctx) testDockerHost(t *testing.T) {
 	tmpHome, cleanupHome := e2e.MakeTempDir(t, c.env.TestDir, "docker-", "")
 	t.Cleanup(func() { e2e.Privileged(cleanupHome)(t) })
 
+	// ggcr doesn't currently support daemon interaction with a version of
+	// docker using the containerd snapshotter. Skip tests if that's the case,
+	// until ggcr supports this.
+	// See: https://github.com/sylabs/singularity/issues/4088
+	e2e.Privileged(func(t *testing.T) {
+		cmd := exec.Command("docker", "info", "-f", "{{ .DriverStatus }}")
+		cmd.Env = append(os.Environ(), "HOME="+tmpHome)
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.Contains(string(out), "containerd") {
+			t.Skip("docker using containerd snapshotter, skipping DOCKER_HOST tests")
+		}
+	})(t)
+
 	// Create a Dockerfile for a small image we can build locally
 	tmpPath, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "docker-", "")
 	t.Cleanup(func() { cleanup(t) })
 
 	dockerfile := filepath.Join(tmpPath, "Dockerfile")
 	dockerfileContent := []byte("FROM alpine:latest\n")
-	err := os.WriteFile(dockerfile, dockerfileContent, 0o644)
-	if err != nil {
+	if err := os.WriteFile(dockerfile, dockerfileContent, 0o644); err != nil {
 		t.Fatalf("failed to create temporary Dockerfile: %+v", err)
 	}
 
@@ -261,7 +276,7 @@ func (c ctx) testDockerHost(t *testing.T) {
 	e2e.Privileged(func(t *testing.T) {
 		cmd := exec.Command("docker", "rmi", dockerRef)
 		cmd.Env = append(os.Environ(), "HOME="+tmpHome)
-		_, err = cmd.Output()
+		_, err := cmd.Output()
 		if err != nil {
 			t.Fatalf("Unexpected error while cleaning up docker image.\n%s", err)
 		}
