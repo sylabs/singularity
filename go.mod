@@ -20,7 +20,7 @@ require (
 	github.com/containers/image/v5 v5.36.2
 	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/cyphar/filepath-securejoin v0.6.1
-	github.com/docker/cli v29.4.0+incompatible
+	github.com/docker/cli v29.4.1+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/fatih/color v1.19.0
@@ -31,7 +31,7 @@ require (
 	github.com/gosimple/slug v1.15.0
 	github.com/moby/buildkit v0.29.0
 	github.com/moby/go-archive v0.2.0
-	github.com/moby/moby/client v0.4.0
+	github.com/moby/moby/client v0.4.1
 	github.com/moby/profiles/seccomp v0.1.0
 	github.com/moby/sys/sequential v0.6.0
 	github.com/moby/sys/user v0.4.0
@@ -121,7 +121,7 @@ require (
 	github.com/digitorus/timestamp v0.0.0-20250524132541-c45532741eea // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/docker/docker-credential-helpers v0.9.5 // indirect
-	github.com/docker/go-connections v0.6.0 // indirect
+	github.com/docker/go-connections v0.7.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
@@ -193,7 +193,7 @@ require (
 	github.com/mitchellh/hashstructure/v2 v2.0.2 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/locker v1.0.1 // indirect
-	github.com/moby/moby/api v1.54.1 // indirect
+	github.com/moby/moby/api v1.54.2 // indirect
 	github.com/moby/patternmatcher v0.6.1 // indirect
 	github.com/moby/policy-helpers v0.0.0-20260324161837-b7c0b994300b // indirect
 	github.com/moby/sys/capability v0.4.0 // indirect
