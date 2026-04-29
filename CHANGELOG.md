@@ -1,5 +1,26 @@
 # SingularityCE Changelog
 
+## Unreleased
+
+## Change Defaults / Behaviours
+
+Although SingularityCE does not aim to contain execution / prevent host
+modification when started as the host root user, the following changes have been
+adopted to permit finer control over the use of external binaries, with a
+modified default search path when `singularity` is run as the host root user:
+
+- When started as host root, external binaries (except those with explicit
+  configuration entries) are now found using the `root search path` in
+  `singularity.conf`. By default this excludes searching the environment
+  `$PATH`. Add `$PATH:` to the start of `root search path` in `singularity.conf`
+  to restore previous behavior.
+- When started as non-root / fake root, external binaries (except those with
+  explicit configuration entires) are now found using the `user search path` in
+  `singularity.conf`. By default this includes `$PATH`, so there is no effective
+  behaviour change vs previous versions.
+
+Thank you to @KoseceMehmet for suggesting this change.
+
 ## 4.4.1 \[2026-03-23\]
 
 ### Bug Fixes

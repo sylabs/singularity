@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -82,6 +82,8 @@ type File struct {
 	SIFFUSE                 bool     `default:"no" authorized:"yes,no" directive:"sif fuse"`
 	OCIMode                 bool     `default:"no" authorized:"yes,no" directive:"oci mode"`
 	TmpSandboxAllowed       bool     `default:"yes" authorized:"yes,no" directive:"tmp sandbox"`
+	RootSearchPath          string   `default:"/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" directive:"root search path"`
+	UserSearchPath          string   `default:"$PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" directive:"user search path"`
 }
 
 const TemplateAsset = `# SINGULARITY.CONF
@@ -456,6 +458,24 @@ root default capabilities = {{ .RootDefaultCapabilities }}
 # use tmpfs, so on affected version it's recommended to set this value to ramfs to avoid
 # kernel panic
 memory fs type = {{ .MemoryFSType }}
+
+# ROOT SEARCH PATH: [STRING]
+# DEFAULT: /usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# When run as host root (not as a fake root user in a user namespace),
+# singularity will search for external executables in this list of paths.
+# The string "$PATH" will be replaced with the PATH environment variable of
+# the calling user. Note that executables with explicit path settings below
+# will always be found using those settings.
+root search path = {{ .RootSearchPath }}
+
+# USER SEARCH PATH: [STRING]
+# DEFAULT: $PATH:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# When run as a non-root user (including as a fake root user in a user
+# namespace), singularity will search for external executables in this list of
+# paths. The string "$PATH" will be replaced with the PATH environment variable
+# of the calling user. Note that executables with explicit path settings below
+# will always be found using those settings.
+user search path = {{ .UserSearchPath }}
 
 # CNI CONFIGURATION PATH: [STRING]
 # DEFAULT: Undefined
