@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -141,10 +141,10 @@ func (c ctx) issue274(t *testing.T) {
 	defer cleanup(t)
 	imagePath := filepath.Join(imageDir, "container")
 
-	// Create a minimal conda environment on the current miniconda3 base.
+	// Create a minimal conda environment on the current anaconda/miniconda base.
 	// Source the conda profile.d code and activate the env from `%environment`.
 	def := `Bootstrap: docker
-From: continuumio/miniconda3:latest
+From: condaforge/miniforge3:latest
 
 %post
 
