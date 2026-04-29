@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -795,6 +795,23 @@ func (c configTests) configGlobal(t *testing.T) {
 			directiveValue: "no",
 			exit:           0,
 			resultOp:       e2e.ExpectError(e2e.UnwantedContainMatch, "Running a non-OCI SIF in OCI mode."),
+		},
+		// Setting search paths to nonsense should result in failure to find external binaries (runc/crun here).
+		{
+			name:           "UserSearchPathFail",
+			argv:           []string{c.env.ImagePath, "which", "true"},
+			profile:        e2e.OCIUserProfile,
+			directive:      "user search path",
+			directiveValue: "/nonsense",
+			exit:           255,
+		},
+		{
+			name:           "RootSearchPathFail",
+			argv:           []string{c.env.ImagePath, "which", "true"},
+			profile:        e2e.OCIRootProfile,
+			directive:      "root search path",
+			directiveValue: "/nonsense",
+			exit:           255,
 		},
 	}
 
