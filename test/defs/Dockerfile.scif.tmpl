@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3
+FROM condaforge/miniforge3:latest
 
 RUN pip install scif
 
@@ -6,4 +6,5 @@ ADD ./{{ .SCIFRecipeFilename }} /
 
 RUN scif install /{{ .SCIFRecipeFilename }}
 
+ENTRYPOINT []
 CMD ["scif"]
