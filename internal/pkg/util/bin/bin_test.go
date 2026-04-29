@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -20,9 +20,8 @@ import (
 )
 
 func TestFindOnPath(t *testing.T) {
-	// findOnPath should give same as exec.LookPath, but additionally work
-	// in the case where $PATH doesn't include default sensible directories
-	// as these are added to $PATH before the lookup.
+	// Ensure that, by default, TestFindOnPath can always find cp ... i.e it is
+	// looking in a sensible search path even when $PATH is not sensible.
 
 	// Find the true path of 'cp' under a sensible PATH=env.DefaultPath
 	// Forcing this avoid issues with PATH across sudo calls for the tests,
