@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -12,24 +12,44 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
-	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
 )
 
-// findOnPath performs a simple search on PATH for the named executable, returning its full path.
-// env.DefaultPath` is appended to PATH to ensure standard locations are searched. This
-// is necessary as some distributions don't include sbin on user PATH etc.
+// findOnPath performs a search for the given executable name within the search path
+// values specified for host root / non-root in singularity.conf.
 func findOnPath(name string) (path string, err error) {
+	cfg := singularityconf.GetCurrentConfig()
+	if cfg == nil {
+		cfg, err = singularityconf.Parse(buildcfg.SINGULARITY_CONF_FILE)
+		if err != nil {
+			return "", fmt.Errorf("unable to parse singularity configuration file: %w", err)
+		}
+	}
+
+	// Search paths for host root and non-root / fake root differ.
+	u, err := user.CurrentOriginal()
+	if err != nil {
+		return "", fmt.Errorf("while retrieving current user information: %w", err)
+	}
+	searchPath := cfg.UserSearchPath
+	if u.UID == 0 {
+		searchPath = cfg.RootSearchPath
+	}
+
+	// Handle $PATH if present in path config.
+	searchPath = parsePath(searchPath)
+
 	oldPath := os.Getenv("PATH")
 	defer os.Setenv("PATH", oldPath)
-	os.Setenv("PATH", oldPath+":"+env.DefaultPath)
-
+	os.Setenv("PATH", searchPath)
 	path, err = exec.LookPath(name)
 	if err == nil {
-		sylog.Debugf("Found %q at %q", name, path)
+		sylog.Debugf("Found %q at %q, searching %q", name, path, searchPath)
 	}
 	return path, err
 }
@@ -118,4 +138,23 @@ func findSquashfuse(name string) (path string, err error) {
 func FindSingularityBuildkitd() (path string, err error) {
 	bkd := filepath.Join(buildcfg.LIBEXECDIR, "singularity", "bin", "singularity-buildkitd")
 	return exec.LookPath(bkd)
+}
+
+// parsePath parses a path string, replacing $PATH with PATH from the environment
+func parsePath(p string) string {
+	if strings.Contains(p, "$PATH") {
+		envPath := os.Getenv("PATH")
+		p = strings.Replace(p, "$PATH", envPath, 1)
+	}
+
+	// Drop any empty PATH elements, which would be treated as CWD. os.LookPath
+	// will return ErrDot on these, but let's avoid CWD lookup entirely.
+	parts := filepath.SplitList(p)
+	validParts := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if part != "" {
+			validParts = append(validParts, part)
+		}
+	}
+	return strings.Join(validParts, string(os.PathListSeparator))
 }
