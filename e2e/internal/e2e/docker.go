@@ -21,14 +21,14 @@ import (
 	"text/template"
 	"time"
 
+	dcontext "github.com/distribution/distribution/context"
+	"github.com/distribution/distribution/registry/handlers"
 	"github.com/docker/distribution/configuration"
-	dcontext "github.com/docker/distribution/context"
-	"github.com/docker/distribution/registry/handlers"
 
 	// necessary imports for registry drivers
-	_ "github.com/docker/distribution/registry/storage/driver/filesystem"
-	_ "github.com/docker/distribution/registry/storage/driver/inmemory"
-	_ "github.com/docker/distribution/registry/storage/driver/middleware/redirect"
+	_ "github.com/distribution/distribution/registry/storage/driver/filesystem"
+	_ "github.com/distribution/distribution/registry/storage/driver/inmemory"
+	_ "github.com/distribution/distribution/registry/storage/driver/middleware/redirect"
 	"github.com/sirupsen/logrus"
 )
 
