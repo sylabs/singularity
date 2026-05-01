@@ -540,8 +540,8 @@ github.com/moby/patternmatcher v0.6.1 h1:qlhtafmr6kgMIJjKJMDmMWq7WLkKIo23hsrpR3x
 github.com/moby/patternmatcher v0.6.1/go.mod h1:hDPoyOpDY7OrrMDLaYoY3hf52gNCR/YOUYxkhApJIxc=
 github.com/moby/policy-helpers v0.0.0-20260324161837-b7c0b994300b h1:lvBBM2ACrsG5/O1G1caEwlh0XeqA89IQK3xq0Sh/5NI=
 github.com/moby/policy-helpers v0.0.0-20260324161837-b7c0b994300b/go.mod h1:Cbc1brDwYl1K294MmZB+6WhQR9Tr24hfhgSGND4UlL0=
-github.com/moby/profiles/seccomp v0.2.0 h1:JCLyeOwIcPn83QBZlPD/UAsZfQkbwvUfWD7n0wB6B0E=
-github.com/moby/profiles/seccomp v0.2.0/go.mod h1:8m3qkkWZXrRsMqlUUN2zyccnYmBf3EAdQYPMVJ3NBhk=
+github.com/moby/profiles/seccomp v0.2.2 h1:T1AiR9bmVoP6NHic7hXvlp/JNZuMwGC484axRwmPUyQ=
+github.com/moby/profiles/seccomp v0.2.2/go.mod h1:8m3qkkWZXrRsMqlUUN2zyccnYmBf3EAdQYPMVJ3NBhk=
 github.com/moby/sys/capability v0.4.0 h1:4D4mI6KlNtWMCM1Z/K0i7RV1FkX+DBDHKVJpCndZoHk=
 github.com/moby/sys/capability v0.4.0/go.mod h1:4g9IK291rVkms3LKCDOoYlnV8xKwoDTpIrNEE35Wq0I=
 github.com/moby/sys/mount v0.3.4 h1:yn5jq4STPztkkzSKpZkLcmjue+bZJ0u2AuQY1iNI1Ww=
