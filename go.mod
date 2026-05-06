@@ -43,7 +43,7 @@ require (
 	github.com/opencontainers/runc v1.4.2
 	github.com/opencontainers/runtime-spec v1.3.0
 	github.com/opencontainers/runtime-tools v0.9.1-0.20251205004911-5e639034dcdc
-	github.com/opencontainers/selinux v1.13.1
+	github.com/opencontainers/selinux v1.14.0
 	github.com/opencontainers/umoci v0.6.0
 	github.com/pelletier/go-toml/v2 v2.3.1
 	github.com/samber/lo v1.53.0
