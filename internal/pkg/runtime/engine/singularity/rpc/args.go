@@ -7,28 +7,12 @@ package rpc
 
 import (
 	"encoding/gob"
-	"io/fs"
 	"os"
 	"syscall"
 	"time"
 
 	"golang.org/x/sys/unix"
 )
-
-// MkdirArgs defines the arguments to mkdir.
-type MkdirArgs struct {
-	Path string
-	Perm os.FileMode
-}
-
-// LoopArgs defines the arguments to create a loop device.
-type LoopArgs struct {
-	Image      string
-	Mode       int
-	Info       unix.LoopInfo64
-	MaxDevices int
-	Shared     bool
-}
 
 // MountArgs defines the arguments to mount.
 type MountArgs struct {
@@ -39,18 +23,33 @@ type MountArgs struct {
 	Data       string
 }
 
-// CryptArgs defines the arguments to mount.
-type CryptArgs struct {
+// DecryptArgs defines the arguments to decrypt.
+type DecryptArgs struct {
 	Offset    uint64
 	Loopdev   string
 	Key       []byte
 	MasterPid int
 }
 
+// MkdirArgs defines the arguments to mkdir.
+type MkdirArgs struct {
+	Path string
+	Perm os.FileMode
+}
+
 // ChrootArgs defines the arguments to chroot.
 type ChrootArgs struct {
 	Root   string
 	Method string
+}
+
+// LoopArgs defines the arguments to create a loop device.
+type LoopArgs struct {
+	Image      string
+	Mode       int
+	Info       unix.LoopInfo64
+	MaxDevices int
+	Shared     bool
 }
 
 // HostnameArgs defines the arguments to sethostname.
@@ -78,52 +77,6 @@ type StatArgs struct {
 type SendFuseFdArgs struct {
 	Socket int
 	Fds    []int
-}
-
-// SymlinkArgs defines the arguments to symlink.
-type SymlinkArgs struct {
-	Target string
-	Link   string
-}
-
-// ReadDirArgs defines the arguments to readdir.
-type ReadDirArgs struct {
-	Dir string
-}
-
-// ReadDirReply defines the reply for readdir.
-type ReadDirReply struct {
-	Files []fs.DirEntry
-}
-
-// ChownArgs defines the arguments to chown/lchown.
-type ChownArgs struct {
-	Name string
-	UID  int
-	GID  int
-}
-
-// EvalRelativeArgs defines the arguments to evalrelative.
-type EvalRelativeArgs struct {
-	Name string
-	Root string
-}
-
-// ReadlinkArgs defines the arguments to readlink.
-type ReadlinkArgs struct {
-	Name string
-}
-
-// UmaskArgs defines the arguments to umask.
-type UmaskArgs struct {
-	Mask int
-}
-
-// WriteFileArgs defines the arguments to writefile.
-type WriteFileArgs struct {
-	Filename string
-	Data     []byte
-	Perm     os.FileMode
 }
 
 // NvCCLIArgs defines the arguments to NvCCLI.
@@ -180,35 +133,9 @@ func (fi fileInfo) Sys() any {
 	return fi.Sy
 }
 
-// DirEntry returns DirEntry interface to be passed as RPC argument.
-func DirEntry(en fs.DirEntry) (fs.DirEntry, error) {
-	fi, err := en.Info()
-	if err != nil {
-		return nil, err
-	}
-
-	return &dirEntry{
-		name: en.Name(),
-		mode: en.Type(),
-		info: FileInfo(fi),
-	}, nil
-}
-
-type dirEntry struct {
-	name string
-	mode fs.FileMode
-	info fs.FileInfo
-}
-
-func (en dirEntry) Name() string               { return en.name }
-func (en dirEntry) IsDir() bool                { return en.mode.IsDir() }
-func (en dirEntry) Type() fs.FileMode          { return en.mode }
-func (en dirEntry) Info() (fs.FileInfo, error) { return en.info, nil }
-
 func init() {
 	gob.Register(syscall.Errno(0))
 	gob.Register((*fileInfo)(nil))
-	gob.Register((*dirEntry)(nil))
 	gob.Register((*syscall.Stat_t)(nil))
 	gob.Register((*os.PathError)(nil))
 	gob.Register((*os.SyscallError)(nil))
