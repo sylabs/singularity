@@ -70,7 +70,7 @@ func New(imagePath, libraryURL string, d types.Definition, isDetached, force boo
 func pathsFromDefinition(d types.Definition) ([]string, error) {
 	var paths []string
 
-	// There may be mutiple files sections. We only consider files that do not originate from a
+	// There may be multiple files sections. We only consider files that do not originate from a
 	// stage of the build.
 	for _, f := range d.BuildData.Files {
 		if f.Stage() == "" {

@@ -313,18 +313,18 @@ func TestExtractPid(t *testing.T) {
 	}
 }
 
-func TestCountChilds(t *testing.T) {
+func TestCountChildren(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
 
-	childs, err := CountChilds(1)
+	children, err := CountChildren(1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if childs == 0 {
+	if children == 0 {
 		t.Fatal("init have no child processes")
 	}
-	_, err = CountChilds(0)
+	_, err = CountChildren(0)
 	if err == nil {
 		t.Fatal("no error reported with PID 0")
 	}

@@ -100,7 +100,7 @@ func getDefaultErrno(config *specs.LinuxSeccomp) (errnoRet *uint, err error) {
 	return nil, fmt.Errorf("defaultAction: %w", ErrUnsupportedErrno)
 }
 
-// getAction returns the approriate libseccomp action for a given containers/common seccomp action
+// getAction returns the appropriate libseccomp action for a given containers/common seccomp action
 func getAction(specAction specs.LinuxSeccompAction, errnoRet *uint, defaultErrNoRet uint) (scmpAction lseccomp.ScmpAction, err error) {
 	scmpAction, ok := scmpActionMap[specAction]
 	if !ok {

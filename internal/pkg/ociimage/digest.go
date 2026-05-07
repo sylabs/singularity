@@ -138,7 +138,7 @@ func digestFromManifestOrIndex(tOpts *TransportOptions, manifestOrIndex []byte) 
 	}
 
 	// mediaType is only a SHOULD for manifests and image indexes,so we can't
-	// rely on it to distinguish betweeen a manifest and image index via ggcr
+	// rely on it to distinguish between a manifest and image index via ggcr
 	// mediaType.IsIndex()/IsImage()
 	//
 	// Check for an image manifest first, where a Config.Digest is REQUIRED.

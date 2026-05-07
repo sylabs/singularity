@@ -269,7 +269,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 				signal := s.(syscall.Signal)
 				// EPERM and EINVAL are deliberately ignored because they can't be
 				// returned in this context, this process is PID 1, so it has the
-				// permissions to send signals to its childs and EINVAL would
+				// permissions to send signals to its children and EINVAL would
 				// mean to update the Go runtime or the kernel to something more
 				// stable :)
 				if isInstance && cmdPid > 0 {

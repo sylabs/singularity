@@ -156,12 +156,12 @@ func (i ImageMount) generateMountOpts() ([]string, error) {
 	// Create a map of the extra mount options that have been requested, so we
 	// can catch attempts to overwrite builtin struct fields.
 	extraOptsMap := lo.SliceToMap(i.ExtraOpts, func(s string) (string, *string) {
-		splitted := strings.SplitN(s, "=", 2)
-		if len(splitted) < 2 {
+		parts := strings.SplitN(s, "=", 2)
+		if len(parts) < 2 {
 			return strings.ToLower(s), nil
 		}
 
-		return strings.ToLower(splitted[0]), &splitted[1]
+		return strings.ToLower(parts[0]), &parts[1]
 	})
 
 	opts := []string{}

@@ -56,12 +56,12 @@ func Configure(config *specs.Spec) error {
 // for the security feature
 func GetParam(security []string, feature string) string {
 	for _, param := range security {
-		splitted := strings.SplitN(param, ":", 2)
-		if splitted[0] == feature {
-			if len(splitted) != 2 {
+		parts := strings.SplitN(param, ":", 2)
+		if parts[0] == feature {
+			if len(parts) != 2 {
 				sylog.Warningf("bad format for parameter %s (format is <security>:<arg>)", param)
 			}
-			return splitted[1]
+			return parts[1]
 		}
 	}
 	return ""

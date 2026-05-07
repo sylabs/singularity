@@ -15,7 +15,7 @@ modified default search path when `singularity` is run as the host root user:
   `$PATH`. Add `$PATH:` to the start of `root search path` in `singularity.conf`
   to restore previous behavior.
 - When started as non-root / fake root, external binaries (except those with
-  explicit configuration entires) are now found using the `user search path` in
+  explicit configuration entries) are now found using the `user search path` in
   `singularity.conf`. By default this includes `$PATH`, so there is no effective
   behaviour change vs previous versions.
 
@@ -349,7 +349,7 @@ Thank you to @KoseceMehmet for suggesting this change.
 - Honor `WORKDIR` by default for OCI images in `--oci` mode, as required by OCI
   image-spec.
 - Restore previous `--writable` behaviour when running a container image from
-  SIF/SquashFS in user namepace mode. The image will be extracted to a temporary
+  SIF/SquashFS in user namespace mode. The image will be extracted to a temporary
   sandbox, which is writable at runtime. Note that any changes are not made to
   the original image.
 - Fix `target: no such file or directory` error in native mode when extracting
@@ -619,7 +619,7 @@ requirements of OCI-mode and usage information.
   line, or within the value of the `SINGULARITY_BIND` environment variable.
   (Previously, image-mounts were always performed first, regardless of order.)
 - Default OCI config generated with `singularity mount` no longer sets any
-  inheritable / ambient capabilites, matching other OCI runtimes.
+  inheritable / ambient capabilities, matching other OCI runtimes.
 - `singularity oci mount` now uses, and requires, `squashfuse_ll` or
   `squashfuse` to mount a SIF image to an OCI bundle. Note that `squashfuse_ll`
   is built with singularity unless `--without-squashfuse` is passed to
@@ -811,13 +811,13 @@ requirements of OCI-mode and usage information.
   `setopt` value is passed to `yum / dnf` using the `--setopt` flag. This
   permits setting e.g. `install_weak_deps=False` to bootstrap recent versions of
   Fedora, where `systemd` (a weak dependency) cannot install correctly in the
-  container. See `examples/Fedora` for an example defintion file.
+  container. See `examples/Fedora` for an example definition file.
 - Warn user that a `yum` bootstrap of an older distro may fail if the host rpm
   `_db_backend` is not `bdb`.
 
 ### Bug Fixes
 
-- Fix implied `--writable-tmpfs` with `--nvccli`, to avoid r/o filesytem
+- Fix implied `--writable-tmpfs` with `--nvccli`, to avoid r/o filesystem
   error.
 - Avoid incorrect error when requesting fakeroot network.
 - Pass computed `LD_LIBRARY_PATH` to wrapped unsquashfs. Fixes issues where

@@ -23,7 +23,7 @@ func TestEnsureFileWithPermission(t *testing.T) {
 
 	//
 	// First test: Ensure a already-existing file is the
-	// correct permssion.
+	// correct permission.
 	//
 
 	existFile := filepath.Join(tmpDir, "already-exists")
@@ -90,7 +90,7 @@ func TestEnsureFileWithPermission(t *testing.T) {
 
 	//
 	// Second test: Ensure a non-existing file is the
-	// correct permssion.
+	// correct permission.
 	//
 
 	nonExistFile := filepath.Join(tmpDir, "non-exists")

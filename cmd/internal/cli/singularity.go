@@ -735,7 +735,7 @@ func singularityExec(image string, args []string) (string, error) {
 		return "", fmt.Errorf("while determining absolute path for %s: %v", image, err)
 	}
 
-	// re-use singularity exec to grab image file content,
+	// reuse singularity exec to grab image file content,
 	// we reduce binds to the bare minimum with options below
 	cmdArgs := make([]string, 0, 6+len(args))
 	cmdArgs = append(cmdArgs, "exec", "--contain", "--no-home", "--no-nv", "--no-rocm", abspath)

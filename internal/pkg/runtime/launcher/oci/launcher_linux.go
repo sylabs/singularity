@@ -935,7 +935,7 @@ func CrunNestCgroup() error {
 	}
 
 	// If rootless cgroup management is not possible for any reason, don't attempt to apply the workaround.
-	// It won't generally be needed in this case, as crun can't do any cgroups hanling either.
+	// It won't generally be needed in this case, as crun can't do any cgroups handling either.
 	if !cgroups.CanUseCgroups(c.SystemdCgroups, false) {
 		sylog.Debugf("Skipping crun workaround - system configuration does not support cgroup management.")
 		return nil

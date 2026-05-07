@@ -356,7 +356,7 @@ func killInstance(i *instance.File, sig syscall.Signal, stoppedPID chan<- int) {
 			stoppedPID <- i.Pid
 			break
 		}
-		if childs, err := proc.CountChilds(i.Pid); childs == 0 {
+		if childs, err := proc.CountChildren(i.Pid); childs == 0 {
 			if err == nil {
 				syscall.Kill(i.Pid, syscall.SIGKILL)
 			}

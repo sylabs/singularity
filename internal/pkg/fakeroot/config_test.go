@@ -21,9 +21,9 @@ import (
 func getUserFn(username string) (*user.User, error) {
 	var prefix string
 
-	splitted := strings.Split(username, "_")
-	prefix = splitted[0]
-	uid, err := strconv.ParseUint(splitted[1], 10, 32)
+	parts := strings.Split(username, "_")
+	prefix = parts[0]
+	uid, err := strconv.ParseUint(parts[1], 10, 32)
 	if err != nil {
 		return nil, err
 	}

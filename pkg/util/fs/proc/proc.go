@@ -212,9 +212,9 @@ func ExtractPid(path string) (pid uint, err error) {
 	return
 }
 
-// CountChilds returns the number of child processes for a given process id
-func CountChilds(pid int) (int, error) {
-	childs := 0
+// CountChildren returns the number of child processes for a given process id
+func CountChildren(pid int) (int, error) {
+	children := 0
 
 	parentProc := fmt.Sprintf("/proc/%d", pid)
 	if _, err := os.Stat(parentProc); os.IsNotExist(err) {
@@ -233,13 +233,13 @@ func CountChilds(pid int) (int, error) {
 		scanner := bufio.NewScanner(r)
 		for scanner.Scan() {
 			if scanner.Text() == parentLine {
-				childs++
+				children++
 				break
 			}
 		}
 		r.Close()
 	}
-	return childs, nil
+	return children, nil
 }
 
 // ReadIDMap reads uid_map or gid_map and returns both container ID

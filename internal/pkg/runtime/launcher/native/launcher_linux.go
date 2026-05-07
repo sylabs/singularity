@@ -130,7 +130,7 @@ func (l *Launcher) Exec(ctx context.Context, ep launcher.ExecParams) error {
 	l.generator.SetProcessArgs(args)
 
 	// NoEval means we will not shell evaluate args / env in action scripts and environment processing.
-	// This replicates OCI behavior and differes from historic Singularity behavior.
+	// This replicates OCI behavior and differs from historic Singularity behavior.
 	if l.cfg.NoEval {
 		l.engineConfig.SetNoEval(true)
 		l.generator.AddProcessEnv("SINGULARITY_NO_EVAL", "1")

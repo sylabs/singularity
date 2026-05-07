@@ -145,7 +145,7 @@ func (c actionTests) actionOciRun(t *testing.T) {
 	}
 }
 
-// exec tests min fuctionality for singularity exec
+// exec tests min functionality for singularity exec
 func (c actionTests) actionOciExec(t *testing.T) {
 	e2e.EnsureOCISIF(t, c.env)
 

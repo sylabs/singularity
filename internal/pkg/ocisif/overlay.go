@@ -160,7 +160,7 @@ func SyncOverlay(imagePath string) error {
 	}
 
 	// Update overlay OCI.Blob digest in SIF. This must be done before the
-	// oci-tools Update is called, so that it re-uses the existing overlay
+	// oci-tools Update is called, so that it reuses the existing overlay
 	// descriptor, with the updated digest.
 	if err := fi.SetOCIBlobDigest(desc.ID(), newDigest); err != nil {
 		return fmt.Errorf("while updating descriptor digest: %v", err)

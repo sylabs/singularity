@@ -72,7 +72,7 @@ func TestMain(m *testing.M) {
 	for s := range sigCh {
 		switch s {
 		case syscall.SIGCHLD:
-			// reap all childs
+			// reap all children
 			for {
 				var status syscall.WaitStatus
 
@@ -81,7 +81,7 @@ func TestMain(m *testing.M) {
 					break
 				}
 				if childPid == cmdPid {
-					killAllChilds()
+					killAllChildren()
 					os.Exit(status.ExitStatus())
 				}
 			}
@@ -96,8 +96,8 @@ func TestMain(m *testing.M) {
 	}
 }
 
-// kill all direct childs
-func killAllChilds() {
+// kill all direct children
+func killAllChildren() {
 	currentPid := os.Getpid()
 
 	matches, err := filepath.Glob("/proc/*/stat")

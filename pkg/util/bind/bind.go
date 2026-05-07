@@ -159,23 +159,23 @@ func ParseBindPath(bindpaths string) ([]Path, error) {
 func newBindPath(bind string) (Path, error) {
 	var bp Path
 
-	splitted := strings.SplitN(bind, ":", 3)
+	parts := strings.SplitN(bind, ":", 3)
 
-	bp.Source = splitted[0]
+	bp.Source = parts[0]
 	if bp.Source == "" {
 		return bp, fmt.Errorf("empty bind source for bind path %q", bind)
 	}
 
 	bp.Destination = bp.Source
 
-	if len(splitted) > 1 {
-		bp.Destination = splitted[1]
+	if len(parts) > 1 {
+		bp.Destination = parts[1]
 	}
 
-	if len(splitted) > 2 {
+	if len(parts) > 2 {
 		bp.Options = make(map[string]*Option)
 
-		for value := range strings.SplitSeq(splitted[2], ",") {
+		for value := range strings.SplitSeq(parts[2], ",") {
 			valid := false
 			for optName, isFlag := range bindOptions {
 				if isFlag && optName == value {
@@ -203,17 +203,17 @@ var dataBindOptions = map[string]*Option{"image-src": {"/"}}
 // <src_sif>:<dest> format into an image bind specification, with image-src=/
 func ParseDataBindPath(dataBind string) (Path, error) {
 	var bp Path
-	splitted := strings.Split(dataBind, ":")
-	if len(splitted) != 2 {
+	parts := strings.Split(dataBind, ":")
+	if len(parts) != 2 {
 		return bp, fmt.Errorf("data container bind %q not in <src sif>:<dest> format", dataBind)
 	}
 
-	bp.Source = splitted[0]
+	bp.Source = parts[0]
 	if bp.Source == "" {
 		return bp, fmt.Errorf("empty source for data container bind %q", dataBind)
 	}
 
-	bp.Destination = splitted[1]
+	bp.Destination = parts[1]
 	if bp.Destination == "" {
 		return bp, fmt.Errorf("empty destination for data container bind %q", dataBind)
 	}

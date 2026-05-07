@@ -115,7 +115,7 @@ begins by branching, and then issuing, a release candidate for broader testing.
    from the CircleCI workflow for the tag.
 1. Create a tarball locally, via
    `git clean -fdx && ./mconfig -v && make -C builddir dist`.
-1. Test intallation locally from the tarball.
+1. Test installation locally from the tarball.
 1. Create a GitHub pre-release, using the previous release as a guide and
    incorporating `CHANGELOG.md` information. Make sure it is clear to users that
    the release candidate is not for production use. Attach the tarball, rpms,
@@ -144,7 +144,7 @@ release of a new major or minor version. Each new RC follows step 5 and above.
    from the CircleCI workflow for the tag.
 1. Create a tarball locally, via
    `git clean -fdx && ./mconfig -v && make -C builddir dist`.
-1. Test intallation locally from the tarball.
+1. Test installation locally from the tarball.
 1. Create a GitHub release, using the previous release as a guide and
    incorporating `CHANGELOG.md` information. Attach the tarball, rpms, and debs
    to it.
