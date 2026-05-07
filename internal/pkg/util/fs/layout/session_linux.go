@@ -7,6 +7,7 @@ package layout
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"syscall"
 
@@ -38,7 +39,6 @@ func NewSession(path string, fstype string, size int, system *mount.System, laye
 		return nil, err
 	}
 	session := &Session{Manager: manager}
-
 	if err := manager.AddDir(rootFsDir); err != nil {
 		return nil, err
 	}
@@ -49,8 +49,7 @@ func NewSession(path string, fstype string, size int, system *mount.System, laye
 	if size > 0 {
 		options = fmt.Sprintf("mode=1777,size=%dm", size)
 	}
-	err = system.Points.AddFS(mount.SessionTag, path, fstype, syscall.MS_NOSUID, options)
-	if err != nil {
+	if err := system.Points.AddFS(mount.SessionTag, path, fstype, syscall.MS_NOSUID, options); err != nil {
 		return nil, err
 	}
 	if err := system.RunAfterTag(mount.SessionTag, session.createLayout); err != nil {
@@ -128,8 +127,10 @@ func (s *Session) createLayout(system *mount.System) error {
 				continue
 			}
 
-			// check if the bind source exists
-			fi, err := s.VFS.Stat(point.Source)
+			// check if the bind source exists. point.Source is the
+			// user-supplied host path, outside the session directory, so it
+			// must be statted directly rather than via the session-rooted VFS.
+			fi, err := os.Stat(point.Source)
 			if err != nil {
 				sylog.Warningf("skipping mount of: %s: %s", point.Source, err)
 				continue
