@@ -261,7 +261,7 @@ func TestSubtract(t *testing.T) {
 		},
 	}
 
-	convertor := func(x int, _ int) string {
+	converter := func(x int, _ int) string {
 		return fmt.Sprintf("Have an int whose value is %#v, why don't you", x)
 	}
 
@@ -273,9 +273,9 @@ func TestSubtract(t *testing.T) {
 		})
 
 		strArgs := args[string]{
-			a:    lo.Map(tt.args.a, convertor),
-			b:    lo.Map(tt.args.b, convertor),
-			want: lo.Map(tt.args.want, convertor),
+			a:    lo.Map(tt.args.a, converter),
+			b:    lo.Map(tt.args.b, converter),
+			want: lo.Map(tt.args.want, converter),
 		}
 		t.Run("String"+tt.name, func(t *testing.T) {
 			if got := Subtract(strArgs.a, strArgs.b); !reflect.DeepEqual(got, strArgs.want) {

@@ -33,7 +33,7 @@ type actionTests struct {
 	env e2e.TestEnv
 }
 
-// run tests min fuctionality for singularity run
+// run tests min functionality for singularity run
 func (c actionTests) actionRun(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
@@ -81,7 +81,7 @@ func (c actionTests) actionRun(t *testing.T) {
 	}
 }
 
-// actionExec tests min fuctionality for singularity exec
+// actionExec tests min functionality for singularity exec
 func (c actionTests) actionExec(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
@@ -212,7 +212,7 @@ func (c actionTests) actionExec(t *testing.T) {
 	}
 }
 
-// actionExecMultiProfile tests fuctionality using singularity exec under all native profiles that do not involve user namespaces.
+// actionExecMultiProfile tests functionality using singularity exec under all native profiles that do not involve user namespaces.
 func (c actionTests) actionExecMultiProfile(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
@@ -501,7 +501,7 @@ func (c actionTests) STDPipe(t *testing.T) {
 			input:   "false",
 			exit:    1,
 		},
-		// TODO(mem): reenable this; disabled while shub is down
+		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:    "TrueShub",
 		// 	command: "shell",
@@ -509,7 +509,7 @@ func (c actionTests) STDPipe(t *testing.T) {
 		// 	input:   "true",
 		// 	exit:    0,
 		// },
-		// TODO(mem): reenable this; disabled while shub is down
+		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:    "FalseShub",
 		// 	command: "shell",
@@ -596,7 +596,7 @@ func (c actionTests) STDPipe(t *testing.T) {
 	}
 }
 
-// RunFromURI tests min fuctionality for singularity run/exec URI://
+// RunFromURI tests min functionality for singularity run/exec URI://
 func (c actionTests) RunFromURI(t *testing.T) {
 	e2e.EnsureORASImage(t, c.env)
 
@@ -624,7 +624,7 @@ func (c actionTests) RunFromURI(t *testing.T) {
 			exit:    0,
 			profile: e2e.UserProfile,
 		},
-		// TODO(mem): reenable this; disabled while shub is down
+		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:    "RunFromShubOK",
 		// 	command: "run",
@@ -646,7 +646,7 @@ func (c actionTests) RunFromURI(t *testing.T) {
 			exit:    1,
 			profile: e2e.UserProfile,
 		},
-		// TODO(mem): reenable this; disabled while shub is down
+		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:    "RunFromShubKO",
 		// 	command: "run",
@@ -661,7 +661,7 @@ func (c actionTests) RunFromURI(t *testing.T) {
 			exit:    1,
 			profile: e2e.UserProfile,
 		},
-		// TODO(mem): reenable this; disabled while shub is down
+		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:    "ExecTrueShub",
 		// 	command: "exec",
@@ -683,7 +683,7 @@ func (c actionTests) RunFromURI(t *testing.T) {
 			exit:    1,
 			profile: e2e.UserProfile,
 		},
-		// TODO(mem): reenable this; disabled while shub is down
+		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:    "ExecFalseShub",
 		// 	command: "exec",
@@ -707,7 +707,7 @@ func (c actionTests) RunFromURI(t *testing.T) {
 			exit:    0,
 			profile: e2e.UserNamespaceProfile,
 		},
-		// TODO(mem): reenable this; disabled while shub is down
+		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:    "ExecTrueShubUserns",
 		// 	command: "exec",
@@ -729,7 +729,7 @@ func (c actionTests) RunFromURI(t *testing.T) {
 			exit:    1,
 			profile: e2e.UserNamespaceProfile,
 		},
-		// TODO(mem): reenable this; disabled while shub is down
+		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:    "ExecFalseShubUserns",
 		// 	command: "exec",

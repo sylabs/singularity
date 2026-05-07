@@ -666,7 +666,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	sylog.Debugf("Mounting loop device %s to %s of type %s\n", path, mnt.Destination, mnt.Type)
 
 	if mountType == "encrypted_squashfs" {
-		// pass the master processus ID only if a container IPC
+		// pass the master process ID only if a container IPC
 		// namespace was requested because cryptsetup requires
 		// to run in the host IPC namespace
 		masterPid := 0
@@ -1492,11 +1492,11 @@ func (c *container) addBindsMount(system *mount.System) error {
 	}
 
 	for _, bindpath := range c.engine.EngineConfig.File.BindPath {
-		splitted := strings.Split(bindpath, ":")
-		src := splitted[0]
+		parts := strings.Split(bindpath, ":")
+		src := parts[0]
 		dst := ""
-		if len(splitted) > 1 {
-			dst = splitted[1]
+		if len(parts) > 1 {
+			dst = parts[1]
 		} else {
 			dst = src
 		}
@@ -1981,7 +1981,7 @@ func (c *container) addCwdMount(system *mount.System) error {
 		sylog.Verbosef("Not mounting CWD (already mounted in container): %s", cwdHost)
 		return nil
 	} else if cwdHostSymlink && cwdContainerSymlink && cwdContainerResolved != cwdHostResolved {
-		// symlink case when both destination exists on host and in container but are differents
+		// symlink case when both destination exists on host and in container but are different
 		sylog.Verbosef("Not mounting CWD, detected symlinks with different destination between host/container")
 		return nil
 	}
@@ -2171,11 +2171,11 @@ func (c *container) addFilesMount(system *mount.System) error {
 	for _, file := range files {
 		sylog.Debugf("Adding file %s to mount list", file)
 
-		splitted := strings.Split(file, ":")
-		src := splitted[0]
-		dst := splitted[0]
-		if len(splitted) > 1 {
-			dst = splitted[1]
+		parts := strings.Split(file, ":")
+		src := parts[0]
+		dst := parts[0]
+		if len(parts) > 1 {
+			dst = parts[1]
 		}
 		err := system.Points.AddBind(mount.FilesTag, src, dst, flags)
 		if err != nil {

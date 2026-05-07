@@ -247,28 +247,28 @@ func (m *Setup) SetArgs(args []string) error {
 	}
 
 	for _, arg := range args {
-		var splitted []string
+		var parts []string
 		networkName := ""
 
 		if strings.IndexByte(arg, ':') > strings.IndexByte(arg, '=') {
-			splitted = []string{m.networks[0], arg}
+			parts = []string{m.networks[0], arg}
 		} else {
-			splitted = strings.SplitN(arg, ":", 2)
+			parts = strings.SplitN(arg, ":", 2)
 		}
-		if len(splitted) < 1 && len(splitted) > 2 {
+		if len(parts) < 1 && len(parts) > 2 {
 			return fmt.Errorf("argument must be of form '<network>:KEY1=value1;KEY2=value1' or 'KEY1=value1;KEY2=value1'")
 		}
-		n := len(splitted) - 1
+		n := len(parts) - 1
 		if n == 0 {
 			networkName = m.networks[0]
 		} else {
-			networkName = splitted[0]
+			networkName = parts[0]
 		}
 		hasNetwork := slices.Contains(m.networks, networkName)
 		if !hasNetwork {
 			return fmt.Errorf("network %s wasn't specified in --network option", networkName)
 		}
-		argList, err := parseArg(splitted[n])
+		argList, err := parseArg(parts[n])
 		if err != nil {
 			return err
 		}
@@ -279,15 +279,15 @@ func (m *Setup) SetArgs(args []string) error {
 			case "portmap":
 				pm := &PortMapEntry{}
 
-				splittedPort := strings.SplitN(value, "/", 2)
-				if len(splittedPort) != 2 {
+				portParts := strings.SplitN(value, "/", 2)
+				if len(portParts) != 2 {
 					return fmt.Errorf("badly formatted portmap argument '%s', must be of form portmap=hostPort:containerPort/protocol", value)
 				}
-				pm.Protocol = splittedPort[1]
+				pm.Protocol = portParts[1]
 				if pm.Protocol != "tcp" && pm.Protocol != "udp" {
 					return fmt.Errorf("only tcp and udp protocol can be specified")
 				}
-				ports := strings.Split(splittedPort[0], ":")
+				ports := strings.Split(portParts[0], ":")
 				if len(ports) != 1 && len(ports) != 2 {
 					return fmt.Errorf("portmap port argument is badly formatted")
 				}

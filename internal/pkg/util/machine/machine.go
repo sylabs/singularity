@@ -267,14 +267,14 @@ func canEmulate(arch string) bool {
 			if t == "enabled" {
 				entry.enabled = true
 			} else if strings.HasPrefix(t, "magic") {
-				splitted := strings.Split(t, " ")
-				if len(splitted) > 1 {
-					entry.magic = splitted[1]
+				parts := strings.Split(t, " ")
+				if len(parts) > 1 {
+					entry.magic = parts[1]
 				}
 			} else if strings.HasPrefix(t, "flags") {
-				splitted := strings.Split(t, " ")
-				if len(splitted) > 1 {
-					entry.persistent = strings.Contains(splitted[1], "F")
+				parts := strings.Split(t, " ")
+				if len(parts) > 1 {
+					entry.persistent = strings.Contains(parts[1], "F")
 				}
 			}
 		}

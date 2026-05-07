@@ -329,7 +329,7 @@ func (l *Launcher) getProcessEnv(imageSpec imgspecv1.Image, hostEnv []string, us
 		}
 	}
 
-	// Apply user requested env vars, except PATH and LD_LIBRARY_PATH releated.
+	// Apply user requested env vars, except PATH and LD_LIBRARY_PATH related.
 	for k, v := range userEnv {
 		switch k {
 		case "PATH":
@@ -359,7 +359,7 @@ func (l *Launcher) getProcessEnv(imageSpec imgspecv1.Image, hostEnv []string, us
 		}
 	}
 
-	// Handle PATH differently beteween OCI and native images
+	// Handle PATH differently between OCI and native images
 	if l.nativeSIF {
 		setNativePath(g, prependPath, path, appendPath)
 	} else {

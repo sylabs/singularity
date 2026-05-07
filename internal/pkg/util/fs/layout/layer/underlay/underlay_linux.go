@@ -129,11 +129,11 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 	})
 
 	for _, pl := range createdPath {
-		splitted := strings.Split(filepath.Dir(pl.path), string(os.PathSeparator))
-		l := len(splitted)
+		parts := strings.Split(filepath.Dir(pl.path), string(os.PathSeparator))
+		l := len(parts)
 		p := ""
 		for i := 1; i < l; i++ {
-			s := splitted[i : i+1][0]
+			s := parts[i : i+1][0]
 			p += "/" + s
 			if s != "" {
 				if _, err := u.session.GetPath(p); err != nil {

@@ -167,7 +167,7 @@ func (c ctx) remoteDefaultOrNot(t *testing.T) {
 // remoteRemove tests the functionality of "singularity remote remove" command.
 // 1. Adds remote endpoints
 // 2. Deletes the already added entries
-// 3. Verfies that removing an invalid entry results in a failure
+// 3. Verifies that removing an invalid entry results in a failure
 func (c ctx) remoteRemove(t *testing.T) {
 	config, err := os.CreateTemp(c.env.TestDir, "testConfig-")
 	if err != nil {

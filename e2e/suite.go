@@ -148,7 +148,7 @@ func Run(t *testing.T) {
 	}
 	testenv.TestDir = name
 
-	// Make shared cache dirs for privileged and unpriviliged E2E tests.
+	// Make shared cache dirs for privileged and unprivileged E2E tests.
 	// Individual tests that depend on specific ordered cache behavior, or
 	// directly test the cache, should override the TestEnv values within the
 	// specific test.

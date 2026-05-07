@@ -468,11 +468,11 @@ func (e *EngineOperations) prepareAutofs(starterConfig *starter.Config) error {
 
 	if !e.EngineConfig.GetContain() {
 		for _, bindpath := range e.EngineConfig.File.BindPath {
-			splitted := strings.Split(bindpath, ":")
+			parts := strings.Split(bindpath, ":")
 
-			fd, err := keepAutofsMount(splitted[0], autoFsPoints)
+			fd, err := keepAutofsMount(parts[0], autoFsPoints)
 			if err != nil {
-				sylog.Debugf("Could not keep file descriptor for bind path %s: %s", splitted[0], err)
+				sylog.Debugf("Could not keep file descriptor for bind path %s: %s", parts[0], err)
 				continue
 			}
 			fds = append(fds, fd)
@@ -604,7 +604,7 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	}
 	if !e.EngineConfig.File.AllowUserNs {
 		if buildcfg.SINGULARITY_SUID_INSTALL == 0 {
-			sylog.Fatalf("Unprivileged installation found, user namepace needed but not allowed by configuration.")
+			sylog.Fatalf("Unprivileged installation found, user namespace needed but not allowed by configuration.")
 		}
 		if n, _ := e.hasNamespace(specs.UserNamespace); n {
 			sylog.Fatalf("User namespace required but not allowed by configuration.")
@@ -1376,17 +1376,17 @@ func (e *EngineOperations) loadOverlayImages(starterConfig *starter.Config, writ
 	for _, overlayImg := range e.EngineConfig.GetOverlayImage() {
 		writableOverlay := true
 
-		splitted := strings.SplitN(overlayImg, ":", 2)
-		if len(splitted) == 2 {
-			if splitted[1] == "ro" {
+		parts := strings.SplitN(overlayImg, ":", 2)
+		if len(parts) == 2 {
+			if parts[1] == "ro" {
 				writableOverlay = false
 			}
 		}
 
-		img, err := e.loadImage(splitted[0], writableOverlay)
+		img, err := e.loadImage(parts[0], writableOverlay)
 		if err != nil {
 			if !image.IsReadOnlyFilesytem(err) {
-				return nil, fmt.Errorf("failed to open overlay image %s: %s", splitted[0], err)
+				return nil, fmt.Errorf("failed to open overlay image %s: %s", parts[0], err)
 			}
 			// let's proceed with readonly filesystem and set
 			// writableOverlay to appropriate value

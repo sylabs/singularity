@@ -129,7 +129,7 @@ func NewImageFromSIF(file string, layerMediaType types.MediaType) (*SifImage, er
 	// layer.
 	//
 	// Using the OCI manifest mediaType is important. If using ggcr's default
-	// docker schema 2 value then uploads to Quay will fail. Quay treates a
+	// docker schema 2 value then uploads to Quay will fail. Quay treats a
 	// `should normally be` condition in the spec for the config mediaType as
 	// `must be`. Non docker image config mediaTypes are only allowed for OCI
 	// manifests.

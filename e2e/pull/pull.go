@@ -396,7 +396,7 @@ func (c ctx) testPullCmd(t *testing.T) {
 		// shub:// URIs
 		// Singularity Hub (retired) and compatible.
 		//
-		// TODO(mem): reenable this; disabled while shub is down
+		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	desc:            "image from shub",
 		// 	srcURI:          "shub://GodloveD/busybox",

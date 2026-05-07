@@ -28,11 +28,11 @@ var readonlyVars = map[string]bool{
 // SetFromList sets environment variables from environ argument list.
 func SetFromList(environ []string) error {
 	for _, env := range environ {
-		splitted := strings.SplitN(env, "=", 2)
-		if len(splitted) != 2 {
+		parts := strings.SplitN(env, "=", 2)
+		if len(parts) != 2 {
 			return fmt.Errorf("can't process environment variable %s", env)
 		}
-		if err := os.Setenv(splitted[0], splitted[1]); err != nil {
+		if err := os.Setenv(parts[0], parts[1]); err != nil {
 			return err
 		}
 	}

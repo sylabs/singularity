@@ -240,7 +240,7 @@ func startBuildkitd(ctx context.Context, opts *Opts) (bkSocket string, cleanup f
 // isBuildkitdRunning tries to determine whether there's already an instance of
 // buildkitd running. The bkSocket argument is the address at which to look for
 // an already-running daemon. The reqVersion argument is an optional string
-// specifcying a minimum buildkitd version that must be satisfied.
+// specifying a minimum buildkitd version that must be satisfied.
 func isBuildkitdRunning(ctx context.Context, bkSocket, reqVersion string) (bool, error) {
 	c, err := client.New(ctx, bkSocket)
 	if err != nil {

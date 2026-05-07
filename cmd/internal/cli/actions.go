@@ -521,7 +521,7 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 	}
 
 	// Fail if the ImageURI is the same as the origImageURI ... i.e. if the
-	// image was directly specified by the user, and is not a reult of
+	// image was directly specified by the user, and is not a result of
 	// replaceURIWIthImage.
 	origImageURIPtr := cmd.Context().Value(keyOrigImageURI)
 	if origImageURIPtr == nil {

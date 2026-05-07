@@ -84,12 +84,12 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 				require.Command(t, "debootstrap")
 			},
 		},
-		// TODO(mem): reenable this; disabled while shub is down
+		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:       "ShubURI",
 		// 	buildSpec:  "shub://GodloveD/busybox",
 		// },
-		// TODO(mem): reenable this; disabled while shub is down
+		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:       "ShubDefFile",
 		// 	buildSpec:  "../examples/shub/Singularity",
@@ -1996,7 +1996,7 @@ func (c imgBuildTests) buildUseExistingBuildkitd(t *testing.T) {
 		}
 	case <-timeoutChan:
 		shutdownBk()
-		t.Skip("launching buildkitd was unsuccessful (timeout encoutered), skipping test")
+		t.Skip("launching buildkitd was unsuccessful (timeout encountered), skipping test")
 	}
 
 	t.Setenv("BUILDKIT_HOST", sockAddr)

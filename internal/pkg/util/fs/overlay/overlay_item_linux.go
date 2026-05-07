@@ -63,14 +63,14 @@ func NewItemFromString(overlayString string) (*Item, error) {
 	item := Item{Readonly: false}
 
 	var err error
-	splitted := strings.SplitN(overlayString, ":", 2)
-	item.SourcePath, err = filepath.Abs(splitted[0])
+	parts := strings.SplitN(overlayString, ":", 2)
+	item.SourcePath, err = filepath.Abs(parts[0])
 	if err != nil {
-		return nil, fmt.Errorf("error while trying to convert overlay path %q to absolute path: %w", splitted[0], err)
+		return nil, fmt.Errorf("error while trying to convert overlay path %q to absolute path: %w", parts[0], err)
 	}
 
-	if len(splitted) > 1 {
-		if splitted[1] == "ro" {
+	if len(parts) > 1 {
+		if parts[1] == "ro" {
 			item.Readonly = true
 		}
 	}

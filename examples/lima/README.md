@@ -20,7 +20,7 @@ To create a SingularityCE VM using the template:
 Configuration of the VM will take a couple of minutes.
 
 You can then enter the VM interactively, and run `singularity`
-commmands inside it:
+commands inside it:
 
 ```shell
 limactl shell singularity-ce

@@ -155,11 +155,11 @@ func (m *Manager) createParentDir(path string) {
 	uid := os.Getuid()
 	gid := os.Getgid()
 
-	splitted := strings.Split(path, string(os.PathSeparator))
-	l := len(splitted)
+	parts := strings.Split(path, string(os.PathSeparator))
+	l := len(parts)
 	p := ""
 	for i := 1; i < l; i++ {
-		s := splitted[i : i+1][0]
+		s := parts[i : i+1][0]
 		p += "/" + s
 		if s != "" {
 			if _, ok := m.entries[p]; !ok {
