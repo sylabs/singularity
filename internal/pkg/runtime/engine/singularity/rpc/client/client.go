@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,6 @@
 package client
 
 import (
-	"io/fs"
 	"net/rpc"
 	"os"
 
@@ -43,7 +42,7 @@ func (t *RPC) Mount(source string, target string, filesystem string, flags uintp
 
 // Decrypt calls the DeCrypt RPC using the supplied arguments.
 func (t *RPC) Decrypt(offset uint64, path string, key []byte, masterPid int) (string, error) {
-	arguments := &args.CryptArgs{
+	arguments := &args.DecryptArgs{
 		Offset:    offset,
 		Loopdev:   path,
 		Key:       key,
@@ -145,86 +144,6 @@ func (t *RPC) SendFuseFd(socket int, fds []int) error {
 	var reply int
 	err := t.Client.Call(t.Name+".SendFuseFd", arguments, &reply)
 	return err
-}
-
-// Symlink calls the mkdir RPC using the supplied arguments.
-func (t *RPC) Symlink(target string, link string) error {
-	arguments := &args.SymlinkArgs{
-		Target: target,
-		Link:   link,
-	}
-	return t.Client.Call(t.Name+".Symlink", arguments, nil)
-}
-
-// ReadDir calls the readdir RPC using the supplied arguments.
-func (t *RPC) ReadDir(dir string) ([]fs.DirEntry, error) {
-	arguments := &args.ReadDirArgs{
-		Dir: dir,
-	}
-	var reply args.ReadDirReply
-	err := t.Client.Call(t.Name+".ReadDir", arguments, &reply)
-	return reply.Files, err
-}
-
-// Chown calls the chown RPC using the supplied arguments.
-func (t *RPC) Chown(name string, uid int, gid int) error {
-	arguments := &args.ChownArgs{
-		Name: name,
-		UID:  uid,
-		GID:  gid,
-	}
-	return t.Client.Call(t.Name+".Chown", arguments, nil)
-}
-
-// Lchown calls the lchown RPC using the supplied arguments.
-func (t *RPC) Lchown(name string, uid int, gid int) error {
-	arguments := &args.ChownArgs{
-		Name: name,
-		UID:  uid,
-		GID:  gid,
-	}
-	return t.Client.Call(t.Name+".Lchown", arguments, nil)
-}
-
-// EvalRelative calls the evalrelative RPC using the supplied arguments.
-func (t *RPC) EvalRelative(name string, root string) string {
-	arguments := &args.EvalRelativeArgs{
-		Name: name,
-		Root: root,
-	}
-	var reply string
-	t.Client.Call(t.Name+".EvalRelative", arguments, &reply)
-	return reply
-}
-
-// Readlink calls the readlink RPC using the supplied arguments.
-func (t *RPC) Readlink(name string) (string, error) {
-	arguments := &args.ReadlinkArgs{
-		Name: name,
-	}
-	var reply string
-	err := t.Client.Call(t.Name+".Readlink", arguments, &reply)
-	return reply, err
-}
-
-// Umask calls the umask RPC using the supplied arguments.
-func (t *RPC) Umask(mask int) int {
-	arguments := &args.UmaskArgs{
-		Mask: mask,
-	}
-	var reply int
-	t.Client.Call(t.Name+".Umask", arguments, &reply)
-	return reply
-}
-
-// WriteFile calls the writefile RPC using the supplied arguments.
-func (t *RPC) WriteFile(filename string, data []byte, perm os.FileMode) error {
-	arguments := &args.WriteFileArgs{
-		Filename: filename,
-		Data:     data,
-		Perm:     perm,
-	}
-	return t.Client.Call(t.Name+".WriteFile", arguments, nil)
 }
 
 // NvCCLI will call nvidia-container-cli to configure GPU(s) for the container.
