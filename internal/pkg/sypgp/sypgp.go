@@ -90,11 +90,6 @@ func (e *KeyExistsError) Error() string {
 	return fmt.Sprintf("the key with fingerprint %X already belongs to the keyring", e.fingerprint)
 }
 
-// GetTokenFile returns a string describing the path to the stored token file
-func GetTokenFile() string {
-	return filepath.Join(syfs.ConfigDir(), "sylabs-token")
-}
-
 // dirPath returns a string describing the path to the sypgp home folder
 func dirPath() string {
 	sypgpDir := os.Getenv("SINGULARITY_SYPGPDIR")
@@ -302,11 +297,6 @@ func printEntities(w io.Writer, entities openpgp.EntityList) {
 	}
 }
 
-// PrintEntity pretty prints an entity entry
-func PrintEntity(index int, e *openpgp.Entity) {
-	printEntity(os.Stdout, index, e)
-}
-
 // PrintPubKeyring prints the public keyring read from the public local store
 func (keyring *Handle) PrintPubKeyring() error {
 	pubEntlist, err := keyring.LoadPubKeyring()
@@ -449,22 +439,6 @@ func findKeyByFingerprint(entities openpgp.EntityList, fingerprint string) *open
 	return nil
 }
 
-// CheckLocalPubKey will check if we have a local public key matching ckey string
-// returns true if there's a match.
-func (keyring *Handle) CheckLocalPubKey(ckey string) (bool, error) {
-	// read all the local public keys
-	elist, err := loadKeyring(keyring.PublicPath())
-	switch {
-	case os.IsNotExist(err):
-		return false, nil
-
-	case err != nil:
-		return false, fmt.Errorf("unable to load local keyring: %v", err)
-	}
-
-	return findKeyByFingerprint(elist, ckey) != nil, nil
-}
-
 // removeKey removes one key identified by fingerprint from list.
 //
 // removeKey returns a new list with the key removed, or nil if the key
@@ -579,20 +553,6 @@ func (keyring *Handle) GenKeyPair(opts GenKeyPairOptions) (*openpgp.Entity, erro
 	}
 
 	return entity, nil
-}
-
-// DecryptKey decrypts a private key provided a pass phrase.
-func DecryptKey(k *openpgp.Entity, message string) error {
-	if message == "" {
-		message = "Enter key passphrase : "
-	}
-
-	pass, err := interactive.AskQuestionNoEcho("%s", message)
-	if err != nil {
-		return err
-	}
-
-	return k.PrivateKey.Decrypt([]byte(pass))
 }
 
 // EncryptKey encrypts a private key using a pass phrase

@@ -7,7 +7,6 @@ package mainthread
 
 import (
 	"os"
-	"path/filepath"
 	"syscall"
 )
 
@@ -24,26 +23,10 @@ func Execute(f func()) {
 	<-done
 }
 
-// Stat retrieves file stat information from main thread
-func Stat(name string) (fi os.FileInfo, err error) {
-	Execute(func() {
-		fi, err = os.Stat(name)
-	})
-	return
-}
-
 // Readlink returns the destination of link name from main thread
 func Readlink(name string) (dest string, err error) {
 	Execute(func() {
 		dest, err = os.Readlink(name)
-	})
-	return
-}
-
-// EvalSymlinks returns the evaluated path after link resolution from main thread
-func EvalSymlinks(path string) (rpath string, err error) {
-	Execute(func() {
-		rpath, err = filepath.EvalSymlinks(path)
 	})
 	return
 }

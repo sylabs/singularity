@@ -26,8 +26,6 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
-const name = "singularity_apps"
-
 const (
 	sectionInstall = "appinstall"
 	sectionFiles   = "appfiles"
@@ -133,11 +131,6 @@ func New() *BuildApp {
 	return &BuildApp{
 		Apps: make(map[string]*App),
 	}
-}
-
-// Name returns this handler's name [singularity_apps]
-func (pl *BuildApp) Name() string {
-	return name
 }
 
 // HandleSection receives a string of each section from the deffile

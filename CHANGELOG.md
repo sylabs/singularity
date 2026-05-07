@@ -21,6 +21,17 @@ modified default search path when `singularity` is run as the host root user:
 
 Thank you to @KoseceMehmet for suggesting this change.
 
+## Developer / API
+
+The following have been removed:
+
+- `UpdateDefinitionRaw()` from `pkg/build/types`.
+- `OptSysCtx()` from `pkg/ocibundle/native/bundle_linux.go`
+- `CreateLoop()` from `pkg/ocibundle/tools/loop.go`
+- `pkg/util/copy`
+- `pkg/util/sysctl`
+- `pkg/util/unix`
+
 ## 4.4.1 \[2026-03-23\]
 
 ### Bug Fixes

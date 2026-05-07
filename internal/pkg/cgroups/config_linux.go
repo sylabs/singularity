@@ -14,11 +14,6 @@ import (
 	"github.com/pelletier/go-toml/v2"
 )
 
-func Int64ptr(i int) *int64 {
-	t := int64(i)
-	return &t
-}
-
 // LinuxHugepageLimit structure corresponds to limiting kernel hugepages
 type LinuxHugepageLimit struct {
 	// Pagesize is the hugepage size
@@ -206,16 +201,6 @@ func LoadConfig(confPath string) (config Config, err error) {
 	// Unmarshal config file
 	err = toml.Unmarshal(b, &config)
 	return
-}
-
-// SaveConfig saves a native cgroups.Config struct into a TOML file at confPath
-func SaveConfig(config Config, confPath string) (err error) {
-	data, err := toml.Marshal(config)
-	if err != nil {
-		return
-	}
-
-	return os.WriteFile(confPath, data, 0o600)
 }
 
 // LoadResources loads a cgroups config file into a LinuxResources struct
