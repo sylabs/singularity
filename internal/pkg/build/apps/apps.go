@@ -26,8 +26,6 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
-const name = "singularity_apps"
-
 const (
 	sectionInstall = "appinstall"
 	sectionFiles   = "appfiles"
