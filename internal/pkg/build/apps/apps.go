@@ -135,11 +135,6 @@ func New() *BuildApp {
 	}
 }
 
-// Name returns this handler's name [singularity_apps]
-func (pl *BuildApp) Name() string {
-	return name
-}
-
 // HandleSection receives a string of each section from the deffile
 func (pl *BuildApp) HandleSection(ident, section string) {
 	name, sect := getAppAndSection(ident)

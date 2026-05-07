@@ -84,20 +84,6 @@ func OptTransportOptions(tOpts *ociimage.TransportOptions) Option {
 	}
 }
 
-// OptSysCtx sets the OCI client SystemContext holding auth information etc.
-// Deprecated: please use OptTransportOptions
-func OptSysCtx(sc *types.SystemContext) Option {
-	return func(b *Bundle) error {
-		b.sysCtx = sc
-		if sc != nil {
-			//nolint:staticcheck
-			tOpts := ociimage.TransportOptionsFromSystemContext(sc)
-			b.transportOptions = tOpts
-		}
-		return nil
-	}
-}
-
 // OptImgCache sets the Singularity image cache used to pull through OCI blobs.
 func OptImgCache(ic *cache.Handle) Option {
 	return func(b *Bundle) error {

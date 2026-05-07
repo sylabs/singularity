@@ -86,40 +86,6 @@ func (t *TransportOptions) SystemContext() types.SystemContext {
 	return sc
 }
 
-// TransportOptionsFromSystemContext returns a TransportOptions struct
-// initialized from a containers/image SystemContext. If the SystemContext is
-// nil, then nil is returned.
-//
-// Deprecated: for containers/image compatibility only. To be removed in
-// SingularityCE v5.
-func TransportOptionsFromSystemContext(sc *types.SystemContext) *TransportOptions {
-	if sc == nil {
-		return nil
-	}
-
-	tOpts := TransportOptions{
-		AuthFilePath: sc.AuthFilePath,
-		TmpDir:       sc.BigFilesTemporaryDir,
-		UserAgent:    sc.DockerRegistryUserAgent,
-		Platform: v1.Platform{
-			OS:           sc.OSChoice,
-			Architecture: sc.ArchitectureChoice,
-			Variant:      sc.VariantChoice,
-		},
-		Insecure: sc.DockerInsecureSkipTLSVerify == types.OptionalBoolTrue || sc.DockerDaemonInsecureSkipTLSVerify || sc.OCIInsecureSkipTLSVerify,
-	}
-
-	if sc.DockerAuthConfig != nil {
-		tOpts.AuthConfig = &authn.AuthConfig{
-			Username:      sc.DockerAuthConfig.Username,
-			Password:      sc.DockerAuthConfig.Password,
-			IdentityToken: sc.DockerAuthConfig.IdentityToken,
-		}
-	}
-
-	return &tOpts
-}
-
 // URItoSourceSinkRef parses a uri-like OCI image reference into a SourceSink and ref
 func URItoSourceSinkRef(imageURI string) (SourceSink, string, error) {
 	parts := strings.SplitN(imageURI, ":", 2)

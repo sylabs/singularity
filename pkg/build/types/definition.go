@@ -176,21 +176,6 @@ func NewDefinitionFromJSON(r io.Reader) (d Definition, err error) {
 	return d, nil
 }
 
-func UpdateDefinitionRaw(defs *[]Definition) {
-	var buf []byte //nolint:prealloc
-	for i, def := range *defs {
-		var tmp bytes.Buffer
-		populateRaw(&(*defs)[i], &tmp)
-		def.Raw = tmp.Bytes()
-		buf = append(buf, tmp.Bytes()...)
-	}
-
-	for i := range *defs {
-		def := &(*defs)[i]
-		def.FullRaw = buf
-	}
-}
-
 func writeSectionIfExists(w io.Writer, ident string, s Script) {
 	if len(s.Script) > 0 {
 		fmt.Fprintf(w, "%%%s", ident)
