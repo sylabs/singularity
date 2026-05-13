@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,7 +6,6 @@
 package cgroups
 
 import (
-	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
@@ -15,6 +14,7 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 // This file contains tests that will run under cgroups v1 only.
@@ -119,7 +119,7 @@ func testNewUpdateV1(t *testing.T, systemd bool) {
 	// Write a new config with [pids] limit = 512
 	content := []byte("[pids]\nlimit = 512")
 	tmpfile := filepath.Join(t.TempDir(), "cgroups")
-	if err := os.WriteFile(tmpfile, content, 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(tmpfile, content, 0o644); err != nil {
 		t.Fatalf("While writing update file: %v", err)
 	}
 

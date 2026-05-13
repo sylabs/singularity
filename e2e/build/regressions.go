@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -217,7 +217,7 @@ func (c *imgBuildTests) issue5166(t *testing.T) {
 	sensibleDir, cleanup := e2e.MakeTempDir(t, c.env.TestDir, "sensible-dir-", "")
 
 	secret := filepath.Join(sensibleDir, "secret")
-	if err := os.WriteFile(secret, []byte("secret"), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(secret, []byte("secret"), 0o644); err != nil {
 		t.Fatalf("could not create %s: %s", secret, err)
 	}
 
@@ -502,7 +502,7 @@ from: %s
 		}
 	})
 
-	err = os.WriteFile(defFileName, []byte(defFileContents), 0o644)
+	err = fs.WriteFileNoFollow(defFileName, []byte(defFileContents), 0o644)
 	if err != nil {
 		t.Fatal(err)
 	}

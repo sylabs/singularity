@@ -15,6 +15,7 @@ import (
 
 	"github.com/sylabs/singularity/v4/internal/pkg/remote"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
+	"golang.org/x/sys/unix"
 )
 
 // RemoteAdd adds remote to configuration
@@ -34,7 +35,7 @@ func RemoteAdd(configFile, name, uri string, global, insecure, makeDefault bool)
 	}
 
 	// opening config file
-	file, err := os.OpenFile(configFile, os.O_RDWR|os.O_CREATE, perm)
+	file, err := os.OpenFile(configFile, os.O_RDWR|os.O_CREATE|unix.O_NOFOLLOW, perm)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}

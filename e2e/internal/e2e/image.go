@@ -22,6 +22,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociplatform"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -252,7 +253,7 @@ func EnsureRegistryOCISIF(t *testing.T, env TestEnv) {
 }
 
 func DownloadFile(url string, path string) error {
-	dl, err := os.Create(path)
+	dl, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return err
 	}

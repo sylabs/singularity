@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -382,7 +382,7 @@ func TestExtfsRW(t *testing.T) {
 	checkForStringInOverlay(t, "extfs", testFileStagedPath, extfsTestString)
 	otherTestFileStagedPath := item.GetMountDir() + "_other"
 	otherExtfsTestString := "another string"
-	err = os.WriteFile(otherTestFileStagedPath, []byte(otherExtfsTestString), 0o755)
+	err = fs.WriteFileNoFollow(otherTestFileStagedPath, []byte(otherExtfsTestString), 0o755)
 	if err != nil {
 		t.Errorf("could not write to file %q in extfs image %q: %s", otherTestFileStagedPath, writableExtfsImgPath, err)
 	}

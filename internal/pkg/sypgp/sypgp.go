@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -36,6 +36,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"golang.org/x/sys/unix"
 )
 
 const (
@@ -172,7 +173,7 @@ func createOrAppendFile(fn string, mode os.FileMode) (*os.File, error) {
 	oldumask := syscall.Umask(0)
 	defer syscall.Umask(oldumask)
 
-	f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY, mode)
+	f, err := os.OpenFile(fn, os.O_APPEND|os.O_CREATE|os.O_WRONLY|unix.O_NOFOLLOW, mode)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +187,7 @@ func createOrTruncateFile(fn string, mode os.FileMode) (*os.File, error) {
 	oldumask := syscall.Umask(0)
 	defer syscall.Umask(oldumask)
 
-	f, err := os.OpenFile(fn, os.O_TRUNC|os.O_CREATE|os.O_WRONLY, mode)
+	f, err := os.OpenFile(fn, os.O_TRUNC|os.O_CREATE|os.O_WRONLY|unix.O_NOFOLLOW, mode)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +217,7 @@ func (keyring *Handle) PathsCheck() error {
 }
 
 func loadKeyring(fn string) (openpgp.EntityList, error) {
-	f, err := os.Open(fn)
+	f, err := os.OpenFile(fn, os.O_RDONLY|unix.O_NOFOLLOW, 0)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return openpgp.EntityList{}, nil
@@ -921,7 +922,7 @@ func (keyring *Handle) ExportPrivateKey(kpath string, armor bool) error {
 	}
 
 	// Create the file that we will be exporting to
-	file, err := os.Create(kpath)
+	file, err := os.OpenFile(kpath, os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o600)
 	if err != nil {
 		return err
 	}
@@ -963,7 +964,7 @@ func (keyring *Handle) ExportPubKey(kpath string, armor bool) error {
 		return err
 	}
 
-	file, err := os.Create(kpath)
+	file, err := os.OpenFile(kpath, os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return fmt.Errorf("unable to create file: %v", err)
 	}

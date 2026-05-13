@@ -17,6 +17,7 @@ import (
 
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/internal/pkg/test/tool/require"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 // This test will build a sandbox, as a non-root user from a dockerhub image
@@ -97,7 +98,7 @@ func (c ctx) issue5172(t *testing.T) {
 	// add our test registry as insecure and test build/pull
 	b := new(bytes.Buffer)
 	b.WriteString("[registries.insecure]\nregistries = ['localhost']")
-	if err := os.WriteFile(regFile, b.Bytes(), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(regFile, b.Bytes(), 0o644); err != nil {
 		t.Fatalf("can't create %s: %s", regFile, err)
 	}
 	defer os.RemoveAll(regDir)

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -16,6 +16,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/remote"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
+	"golang.org/x/sys/unix"
 )
 
 // KeyserverList prints information about remote configurations
@@ -23,7 +24,7 @@ func KeyserverList(remoteName string, usrConfigFile string) (err error) {
 	c := &remote.Config{}
 
 	// opening config file
-	file, err := os.OpenFile(usrConfigFile, os.O_RDONLY|os.O_CREATE, 0o600)
+	file, err := os.OpenFile(usrConfigFile, os.O_RDONLY|os.O_CREATE|unix.O_NOFOLLOW, 0o600)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("no remote configurations")

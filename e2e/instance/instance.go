@@ -20,6 +20,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/util/fs/proc"
 )
 
@@ -198,7 +199,7 @@ func (c *ctx) testBasicOptions(t *testing.T) {
 
 	// Create and populate a temporary file.
 	tempFile := filepath.Join(dir, fileName)
-	err = os.WriteFile(tempFile, fileContents, 0o644)
+	err = fs.WriteFileNoFollow(tempFile, fileContents, 0o644)
 	if err != nil {
 		t.Fatalf("Failed to create temporary test file %s: %v", tempFile, err)
 	}

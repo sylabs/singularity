@@ -12,12 +12,13 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/remote"
+	"golang.org/x/sys/unix"
 )
 
 // RegistryLogin logs in to an OCI/Docker registry.
 func RegistryLogin(usrConfigFile string, args *LoginArgs, reqAuthFile string) (err error) {
 	// opening config file
-	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, 0o600)
+	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE|unix.O_NOFOLLOW, 0o600)
 	if err != nil {
 		return fmt.Errorf("while opening configuration file: %s", err)
 	}

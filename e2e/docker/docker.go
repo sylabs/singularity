@@ -154,7 +154,7 @@ func (c ctx) testDockerHost(t *testing.T) {
 
 	dockerfile := filepath.Join(tmpPath, "Dockerfile")
 	dockerfileContent := []byte("FROM alpine:latest\n")
-	if err := os.WriteFile(dockerfile, dockerfileContent, 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(dockerfile, dockerfileContent, 0o644); err != nil {
 		t.Fatalf("failed to create temporary Dockerfile: %+v", err)
 	}
 

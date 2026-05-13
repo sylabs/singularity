@@ -1240,7 +1240,7 @@ func (c configTests) configFile(t *testing.T) {
 			e2e.WithGlobalOptions("--config", configFile),
 			e2e.WithProfile(tt.profile),
 			e2e.PreRun(func(t *testing.T) {
-				if err := os.WriteFile(configFile, []byte(tt.conf), 0o644); err != nil {
+				if err := fs.WriteFileNoFollow(configFile, []byte(tt.conf), 0o644); err != nil {
 					t.Errorf("could not write configuration file %s: %s", configFile, err)
 				}
 			}),

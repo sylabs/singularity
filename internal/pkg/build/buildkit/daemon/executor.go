@@ -72,6 +72,7 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
+	"golang.org/x/sys/unix"
 )
 
 // BkSnapshotterFactory instantiates a snapshotter
@@ -420,7 +421,7 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 		return nil, err
 	}
 
-	f, err := os.Create(filepath.Join(bundle, "config.json"))
+	f, err := os.OpenFile(filepath.Join(bundle, "config.json"), os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return nil, err
 	}

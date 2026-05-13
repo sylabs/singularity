@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the LICENSE.md file
 // distributed with the sources of this project regarding your rights to use or distribute this
 // software.
@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 var start = time.Date(2020, 4, 1, 0, 0, 0, 0, time.UTC)
@@ -188,7 +189,7 @@ func writeCerts() error {
 			return err
 		}
 
-		if err := os.WriteFile(output.path, b, 0o644); err != nil {
+		if err := fs.WriteFileNoFollow(output.path, b, 0o644); err != nil {
 			return err
 		}
 	}

@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2026 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"golang.org/x/sys/unix"
 )
 
@@ -24,7 +25,7 @@ func SetupSystemRemoteFile(t *testing.T, testDir string) {
 		if err != nil {
 			t.Fatalf("while reading %s: %s", orig, err)
 		}
-		if err := os.WriteFile(source, data, 0o644); err != nil {
+		if err := fs.WriteFileNoFollow(source, data, 0o644); err != nil {
 			t.Fatalf("while creating %s: %s", source, err)
 		}
 		if err := unix.Mount(source, dest, "", unix.MS_BIND, ""); err != nil {

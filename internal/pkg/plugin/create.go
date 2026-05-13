@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022 Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2026 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
@@ -69,13 +70,13 @@ func Create(path, name string) error {
 	// create main.go skeleton
 	filename := filepath.Join(dir, "main.go")
 	content := fmt.Sprintf(mainGo, name)
-	if err := os.WriteFile(filename, []byte(content), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(filename, []byte(content), 0o644); err != nil {
 		return fmt.Errorf("while creating plugin %s: %s", filename, err)
 	}
 
 	// create .gitignore skeleton
 	filename = filepath.Join(dir, ".gitignore")
-	if err := os.WriteFile(filename, []byte(gitIgnore), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(filename, []byte(gitIgnore), 0o644); err != nil {
 		return fmt.Errorf("while creating plugin %s: %s", filename, err)
 	}
 

@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2020-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -26,6 +26,7 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
+	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 )
 
@@ -89,7 +90,7 @@ func DownloadImage(ctx context.Context, path, ref string, ociAuth *authn.AuthCon
 		return err
 	}
 	defer blob.Close()
-	outFile, err := os.Create(path)
+	outFile, err := os.OpenFile(path, os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o755)
 	if err != nil {
 		return err
 	}

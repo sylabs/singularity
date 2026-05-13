@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
@@ -224,7 +225,7 @@ func unsquashfsSandboxCmd(squashfs *Squashfs, dest string, filename string, filt
 		if err := os.MkdirAll(rootfsDir, 0o700); err != nil {
 			return nil, fmt.Errorf("while creating %s: %s", rootfsDir, err)
 		}
-		if err := os.WriteFile(rootfsFile, []byte(""), 0o600); err != nil {
+		if err := fs.WriteFileNoFollow(rootfsFile, []byte(""), 0o600); err != nil {
 			return nil, fmt.Errorf("while creating %s: %s", rootfsFile, err)
 		}
 		// Simple read-only bind, dest in container same as source on host
@@ -240,7 +241,7 @@ func unsquashfsSandboxCmd(squashfs *Squashfs, dest string, filename string, filt
 		if err := os.MkdirAll(rootfsDir, 0o700); err != nil {
 			return nil, fmt.Errorf("while creating %s: %s", rootfsDir, err)
 		}
-		if err := os.WriteFile(rootfsFile, []byte(""), 0o600); err != nil {
+		if err := fs.WriteFileNoFollow(rootfsFile, []byte(""), 0o600); err != nil {
 			return nil, fmt.Errorf("while creating %s: %s", rootfsFile, err)
 		}
 		// Read only bind, dest in container may not match source on host due

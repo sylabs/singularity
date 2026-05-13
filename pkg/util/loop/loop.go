@@ -104,7 +104,7 @@ func (loop *Device) shareLoop(imageIno, imageDev uint64, mode int, number *int) 
 		*number = device
 
 		// Try to open an existing loop device, but don't create a new one
-		loopFd, err := openLoopDev(device, mode, false)
+		loopFd, err := openLoopDev(device, mode|unix.O_NOFOLLOW, false)
 		if err != nil {
 			if !os.IsNotExist(err) {
 				sylog.Debugf("Couldn't open loop device %d: %v\n", device, err)
@@ -240,7 +240,7 @@ func openLoopDev(device, mode int, create bool) (loopFd int, err error) {
 func addLoopDev(device int) error {
 	const loopControl = "/dev/loop-control"
 
-	lc, err := os.OpenFile(loopControl, os.O_RDWR, 0o600)
+	lc, err := os.OpenFile(loopControl, os.O_RDWR|unix.O_NOFOLLOW, 0o600)
 	if err != nil {
 		return fmt.Errorf("while opening loop-control device: %w", err)
 	}

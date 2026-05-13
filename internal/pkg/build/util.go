@@ -26,7 +26,7 @@ func createStageFile(source string, b *types.Bundle, warnMsg string) (string, er
 	}
 
 	sessionFile := filepath.Join(b.TmpDir, filepath.Base(source))
-	stageFile, err := os.Create(sessionFile)
+	stageFile, err := os.OpenFile(sessionFile, os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return "", fmt.Errorf("failed to create staging %s file: %s", sessionFile, err)
 	}
@@ -56,7 +56,7 @@ func createStageFile(source string, b *types.Bundle, warnMsg string) (string, er
 }
 
 func createScript(path string, content []byte) error {
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o755)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY|unix.O_NOFOLLOW, 0o755)
 	if err != nil {
 		return fmt.Errorf("failed to create script: %s", err)
 	}

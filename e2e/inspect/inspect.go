@@ -21,6 +21,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/inspect"
+	"golang.org/x/sys/unix"
 )
 
 type ctx struct {
@@ -57,7 +58,7 @@ func (c ctx) singularityInspect(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to get root partition: %s", err)
 			}
-			f, err := os.Create(squashImage)
+			f, err := os.OpenFile(squashImage, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
 			if err != nil {
 				t.Fatalf("failed to create %s: %s", squashImage, err)
 			}

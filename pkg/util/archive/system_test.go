@@ -25,12 +25,14 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 // TestChtimesATime tests Chtimes access time on a tempfile.
 func TestChtimesATime(t *testing.T) {
 	file := filepath.Join(t.TempDir(), "exist")
-	if err := os.WriteFile(file, []byte("hello"), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(file, []byte("hello"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -134,7 +136,7 @@ func prepareFiles(t *testing.T) (file, invalid, symlink string) {
 	dir := t.TempDir()
 
 	file = filepath.Join(dir, "exist")
-	if err := os.WriteFile(file, []byte("hello"), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(file, []byte("hello"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 

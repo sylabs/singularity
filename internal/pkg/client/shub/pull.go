@@ -18,6 +18,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
+	"golang.org/x/sys/unix"
 )
 
 // Timeout for an image pull in seconds (2 hours)
@@ -85,7 +86,7 @@ func DownloadImage(ctx context.Context, manifest APIResponse, filePath, shubRef 
 	}
 
 	// Perms are 777 *prior* to umask
-	out, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o777)
+	out, err := os.OpenFile(filePath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY|unix.O_NOFOLLOW, 0o777)
 	if err != nil {
 		return err
 	}

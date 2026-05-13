@@ -1164,13 +1164,13 @@ func (c actionTests) actionOciOverlay(t *testing.T) {
 					os.RemoveAll(fullPath)
 				}
 			})
-			if err = os.WriteFile(
+			if err = fs.WriteFileNoFollow(
 				filepath.Join(upperPath, fmt.Sprintf("testfile.%d", i)),
 				fmt.Appendf(nil, "test_string_%d\n", i),
 				0o644); err != nil {
 				t.Fatal(err)
 			}
-			if err = os.WriteFile(
+			if err = fs.WriteFileNoFollow(
 				filepath.Join(upperPath, "maskable_testfile"),
 				fmt.Appendf(nil, "maskable_string_%d\n", i),
 				0o644); err != nil {
@@ -2222,7 +2222,7 @@ func (c actionTests) actionOciNoCompat(t *testing.T) {
 	}
 	canaryContent := "CANARY"
 	workCanary := filepath.Join(workDir, "canary")
-	if err := os.WriteFile(workCanary, []byte(canaryContent), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(workCanary, []byte(canaryContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -11,12 +11,13 @@ import (
 	"os"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/remote"
+	"golang.org/x/sys/unix"
 )
 
 // RemoteRemove deletes a remote endpoint from the configuration
 func RemoteRemove(configFile, name string) (err error) {
 	// opening config file
-	file, err := os.OpenFile(configFile, os.O_RDWR|os.O_CREATE, 0o600)
+	file, err := os.OpenFile(configFile, os.O_RDWR|os.O_CREATE|unix.O_NOFOLLOW, 0o600)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}

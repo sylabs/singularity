@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 func TestHasFilesystem(t *testing.T) {
@@ -139,7 +140,7 @@ func TestGetMountInfo(t *testing.T) {
 	}
 
 	tmpfile := filepath.Join(t.TempDir(), "mountinfo")
-	if err := os.WriteFile(tmpfile, []byte(mountInfoData), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(tmpfile, []byte(mountInfoData), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -256,7 +257,7 @@ func TestGetMountPointMap(t *testing.T) {
 	}
 
 	tmpfile := filepath.Join(t.TempDir(), "mountinfo")
-	if err := os.WriteFile(tmpfile, []byte(mountInfoData), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(tmpfile, []byte(mountInfoData), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -357,7 +358,7 @@ func TestReadIDMap(t *testing.T) {
 	//nolint:dupword
 	for _, e := range []string{"a a a", "0 a a"} {
 		fname := filepath.Join(t.TempDir(), "uid-map")
-		if err := os.WriteFile(fname, []byte(e), 0o644); err != nil {
+		if err := fs.WriteFileNoFollow(fname, []byte(e), 0o644); err != nil {
 			t.Fatalf("failed to create test file")
 		}
 

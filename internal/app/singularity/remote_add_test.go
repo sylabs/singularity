@@ -13,6 +13,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/remote"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"go.yaml.in/yaml/v4"
 )
 
@@ -39,7 +40,7 @@ func createInvalidCfgFile(t *testing.T) string {
 		t.Fatalf("cannot marshal YAML: %s\n", err)
 	}
 
-	if err := os.WriteFile(path, yaml, 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(path, yaml, 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -69,7 +70,7 @@ func createValidCfgFile(t *testing.T) string {
 		t.Fatalf("cannot marshal YAML: %s\n", err)
 	}
 
-	if err := os.WriteFile(path, yaml, 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(path, yaml, 0o644); err != nil {
 		t.Fatal(err)
 	}
 

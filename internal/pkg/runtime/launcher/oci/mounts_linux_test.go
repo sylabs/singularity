@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -18,6 +18,7 @@ import (
 
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/launcher"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 	"github.com/sylabs/singularity/v4/pkg/util/bind"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
@@ -505,10 +506,10 @@ func TestLauncher_addLibrariesMounts(t *testing.T) {
 	lib1 := filepath.Join(tmpDir, "lib1.so")
 	lib2 := filepath.Join(tmpDir, "lib2.so")
 	libInvalid := filepath.Join(tmpDir, "invalid")
-	if err := os.WriteFile(lib1, []byte("lib1"), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(lib1, []byte("lib1"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(lib2, []byte("lib2"), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(lib2, []byte("lib2"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 

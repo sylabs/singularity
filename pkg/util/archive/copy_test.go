@@ -1,4 +1,4 @@
-// Copyright (c) 2021-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -59,7 +59,7 @@ func testCopy(t *testing.T, copyFunc func(src, dst string) error) {
 
 	// Source Files
 	srcFile := filepath.Join(srcRoot, "srcFile")
-	if err := os.WriteFile(srcFile, []byte("test"), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(srcFile, []byte("test"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs
@@ -148,7 +148,7 @@ func testRelLinkTarget(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	linkTargetFile := filepath.Join(tmpDir, "target")
-	if err := os.WriteFile(linkTargetFile, []byte("test"), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(linkTargetFile, []byte("test"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 

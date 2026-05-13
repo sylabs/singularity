@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,6 +14,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/capabilities"
+	"golang.org/x/sys/unix"
 )
 
 // CapManageConfig specifies what capability set to edit in the capability file
@@ -64,7 +65,7 @@ func manageCaps(capFile string, c CapManageConfig, t manageType) error {
 	oldmask := syscall.Umask(0)
 	defer syscall.Umask(oldmask)
 
-	file, err := os.OpenFile(capFile, os.O_RDWR|os.O_CREATE, 0o644)
+	file, err := os.OpenFile(capFile, os.O_RDWR|os.O_CREATE|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return fmt.Errorf("while opening capability config file: %s", err)
 	}

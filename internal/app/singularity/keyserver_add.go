@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -14,6 +14,7 @@ import (
 
 	"github.com/sylabs/singularity/v4/internal/pkg/remote"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
+	"golang.org/x/sys/unix"
 )
 
 func KeyserverAdd(name, uri string, order uint32, insecure bool) error {
@@ -23,7 +24,7 @@ func KeyserverAdd(name, uri string, order uint32, insecure bool) error {
 	}
 
 	// opening config file
-	file, err := os.OpenFile(remote.SystemConfigPath, os.O_RDWR|os.O_CREATE, 0o644)
+	file, err := os.OpenFile(remote.SystemConfigPath, os.O_RDWR|os.O_CREATE|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}

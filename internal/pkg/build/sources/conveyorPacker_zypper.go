@@ -21,9 +21,11 @@ import (
 
 	"github.com/samber/lo/mutable"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/namespaces"
+	"golang.org/x/sys/unix"
 )
 
 const (
@@ -369,7 +371,7 @@ func (cp *ZypperConveyorPacker) insertBaseEnv() (err error) {
 }
 
 func (cp *ZypperConveyorPacker) insertRunScript() (err error) {
-	f, err := os.Create(cp.b.RootfsPath + "/.singularity.d/runscript")
+	f, err := os.OpenFile(cp.b.RootfsPath+"/.singularity.d/runscript", os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o755)
 	if err != nil {
 		return
 	}
@@ -401,7 +403,7 @@ func (cp *ZypperConveyorPacker) genZypperConfig() (err error) {
 		return fmt.Errorf("while creating %v: %v", filepath.Join(cp.b.RootfsPath, "/etc/zypp"), err)
 	}
 
-	err = os.WriteFile(filepath.Join(cp.b.RootfsPath, zypperConf), []byte("[main]\ncachedir=/val/cache/zypp-bootstrap\n\n"), 0o664)
+	err = fs.WriteFileNoFollow(filepath.Join(cp.b.RootfsPath, zypperConf), []byte("[main]\ncachedir=/val/cache/zypp-bootstrap\n\n"), 0o664)
 	if err != nil {
 		return
 	}
@@ -481,7 +483,7 @@ func (cp *ZypperConveyorPacker) prepareFakerootRpmMacros() (func(), error) {
 	if os.IsNotExist(err) {
 		// User .rpmmacros does not exist; create an empty file, just so we have
 		// a mount target
-		if err := os.WriteFile(homeRpmMacros, contents, 0o644); err != nil {
+		if err := fs.WriteFileNoFollow(homeRpmMacros, contents, 0o644); err != nil {
 			return cleanupFunc, fmt.Errorf("could not blank user .rpmmacros file %q: %w", homeRpmMacros, err)
 		}
 	} else if err != nil {
@@ -528,7 +530,7 @@ func (cp *ZypperConveyorPacker) prepareFakerootRpmMacros() (func(), error) {
 	sylog.Debugf("Custom .rpmmacros contents: %q", newContents)
 	customRpmMacros := filepath.Join(parentDir, ".rpmmacros")
 	sylog.Debugf("Writing custom .rpmmacros at: %s", customRpmMacros)
-	if err := os.WriteFile(customRpmMacros, []byte(newContents), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(customRpmMacros, []byte(newContents), 0o644); err != nil {
 		return cleanupFunc, fmt.Errorf("could not write contents to custom .rpmmacros file %q: %w", customRpmMacros, err)
 	}
 	cleanupTasks = append(cleanupTasks, func() {

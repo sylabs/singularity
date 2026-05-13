@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -17,6 +17,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/auth"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/interactive"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"golang.org/x/sys/unix"
 )
 
 type LoginArgs struct {
@@ -35,7 +36,7 @@ var ErrLoginAborted = errors.New("user aborted login")
 // to use the default remote.
 func RemoteLogin(usrConfigFile string, args *LoginArgs) (err error) {
 	// opening config file
-	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE, 0o600)
+	file, err := os.OpenFile(usrConfigFile, os.O_RDWR|os.O_CREATE|unix.O_NOFOLLOW, 0o600)
 	if err != nil {
 		return fmt.Errorf("while opening remote config file: %s", err)
 	}

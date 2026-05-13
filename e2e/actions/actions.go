@@ -1827,7 +1827,7 @@ func (c actionTests) fuseMount(t *testing.T) {
 				t.Errorf("could not read ssh private key: %s", err)
 				return
 			}
-			if err := os.WriteFile(userPrivKey, content, 0o600); err != nil {
+			if err := fs.WriteFileNoFollow(userPrivKey, content, 0o600); err != nil {
 				t.Errorf("could not write ssh user private key: %s", err)
 				return
 			}

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,6 +13,8 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+
+	"golang.org/x/sys/unix"
 )
 
 func parseLine(s string) (d Define) {
@@ -120,7 +122,7 @@ func IsReproducibleBuild() bool {
 `))
 
 func main() {
-	outFile, err := os.Create("config.go")
+	outFile, err := os.OpenFile("config.go", os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		fmt.Println(err)
 		return

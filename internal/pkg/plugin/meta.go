@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -18,6 +18,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/plugin/callback"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -109,7 +110,7 @@ func (m *Meta) install(img *image.Image) error {
 }
 
 func (m *Meta) installBinary(img *image.Image) error {
-	fh, err := os.Create(m.binaryName())
+	fh, err := os.OpenFile(m.binaryName(), os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return err
 	}
@@ -125,7 +126,7 @@ func (m *Meta) installBinary(img *image.Image) error {
 }
 
 func (m *Meta) installManifest(img *image.Image) error {
-	fh, err := os.Create(m.manifestName())
+	fh, err := os.OpenFile(m.manifestName(), os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return err
 	}
@@ -162,7 +163,7 @@ func (m *Meta) runInstall() error {
 func (m *Meta) installMeta() error {
 	fn := metaPath(m.Name)
 
-	fh, err := os.Create(fn)
+	fh, err := os.OpenFile(fn, os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return err
 	}

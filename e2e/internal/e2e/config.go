@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -30,7 +30,7 @@ func SetupDefaultConfig(t *testing.T, path string) {
 	c.UnsquashfsPath = buildcfg.UNSQUASHFS_PATH
 
 	Privileged(func(t *testing.T) {
-		f, err := os.Create(path)
+		f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
 		if err != nil {
 			t.Fatalf("while creating singularity configuration: %s", err)
 		}

@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2023-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -186,7 +186,7 @@ func performPersistentWriteTest(ctx context.Context, t *testing.T, s Set) {
 	bytes := []byte(expectStr)
 	testFilePath := "my_test_file"
 	testFileMountedPath := filepath.Join(rootfsDir, testFilePath)
-	if err := os.WriteFile(testFileMountedPath, bytes, 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(testFileMountedPath, bytes, 0o644); err != nil {
 		t.Fatalf("while trying to write file inside mounted overlay-set: %s", err)
 	}
 

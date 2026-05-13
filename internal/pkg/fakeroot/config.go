@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -19,6 +19,7 @@ import (
 
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 	"github.com/sylabs/singularity/v4/pkg/util/fs/lock"
+	"golang.org/x/sys/unix"
 )
 
 const (
@@ -84,7 +85,7 @@ func GetConfig(filename string, edit bool, getUserFn GetUserFn) (*Config, error)
 
 	flags := os.O_RDONLY
 	if !config.readOnly {
-		flags = os.O_CREATE | os.O_RDWR
+		flags = os.O_CREATE | os.O_RDWR | unix.O_NOFOLLOW
 		umask := syscall.Umask(0)
 		defer syscall.Umask(umask)
 	}
