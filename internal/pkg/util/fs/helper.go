@@ -40,7 +40,7 @@ func Abs(path string) (string, error) {
 // the specified permission, or 2. ensures a file is the specified
 // permission.
 func EnsureFileWithPermission(fn string, mode os.FileMode) error {
-	fs, err := os.OpenFile(fn, os.O_CREATE, mode)
+	fs, err := os.OpenFile(fn, os.O_CREATE|unix.O_NOFOLLOW, mode)
 	if err != nil {
 		return err
 	}
