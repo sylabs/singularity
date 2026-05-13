@@ -16,6 +16,7 @@ import (
 
 // MountArgs defines the arguments to mount.
 type MountArgs struct {
+	Root       string
 	Source     string
 	Target     string
 	Filesystem string
@@ -33,6 +34,7 @@ type DecryptArgs struct {
 
 // MkdirArgs defines the arguments to mkdir.
 type MkdirArgs struct {
+	Root string
 	Path string
 	Perm os.FileMode
 }

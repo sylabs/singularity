@@ -288,7 +288,7 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		// This *requires* that the container rootfs is a private mount, as it is a bind source.
 		// By default, the rootfs will be mounted shared due to requirements of the FUSE mount
 		// handling, so make it private here just before calling nvidia-container-cli.
-		if err := c.rpcOps.Mount("", c.session.FinalPath(), "", syscall.MS_PRIVATE, ""); err != nil {
+		if err := c.rpcOps.Mount(c.session.Path(), "", c.session.FinalPath(), "", syscall.MS_PRIVATE, ""); err != nil {
 			return err
 		}
 
@@ -443,7 +443,7 @@ func (c *container) setPropagationMount(*mount.System) error {
 		pflags |= syscall.MS_PRIVATE
 	}
 
-	return c.rpcOps.Mount("", "/", "", pflags, "")
+	return c.rpcOps.Mount("/", "", "/", "", pflags, "")
 }
 
 // addMountinfo handles the case where hidepid is set on /proc mount
@@ -461,7 +461,7 @@ func (c *container) addMountInfo(*mount.System) error {
 		return fmt.Errorf("while creating %s: %s", c.mountInfoPath, err)
 	}
 
-	if err := c.rpcOps.Mount(self, c.mountInfoPath, "", syscall.MS_BIND, ""); err != nil {
+	if err := c.rpcOps.Mount(c.session.Path(), self, c.mountInfoPath, "", syscall.MS_BIND, ""); err != nil {
 		return fmt.Errorf("while mounting %s to %s: %s", c.mountInfoPath, self, err)
 	}
 
@@ -540,8 +540,8 @@ func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err
 	}
 
 mount:
-	err = c.rpcOps.Mount(source, dest, mnt.Type, flags, optsString)
-	if os.IsNotExist(err) {
+	err = c.rpcOps.Mount(c.session.Path(), source, dest, mnt.Type, flags, optsString)
+	if errors.Is(err, os.ErrNotExist) {
 		switch tag {
 		case mount.KernelTag,
 			mount.HostfsTag,
@@ -684,7 +684,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		mountType = "squashfs"
 	}
 
-	err = c.rpcOps.Mount(path, mnt.Destination, mountType, flags, optsString)
+	err = c.rpcOps.Mount(c.session.Path(), path, mnt.Destination, mountType, flags, optsString)
 	switch err {
 	case syscall.EINVAL:
 		if mountType == "squashfs" {
@@ -784,7 +784,7 @@ func (c *container) overlayUpperWork(*mount.System) error {
 	createUpperWork := func(path, label string) error {
 		fi, err := c.rpcOps.Lstat(path)
 		if os.IsNotExist(err) {
-			if err := c.rpcOps.Mkdir(path, 0o755); err != nil {
+			if err := c.rpcOps.Mkdir(c.session.Path(), path, 0o755); err != nil {
 				return fmt.Errorf("failed to create %s directory: %s", path, err)
 			}
 		} else if err == nil && !fi.IsDir() {

@@ -65,9 +65,32 @@ func (t *Methods) Mount(arguments *args.MountArgs, mountErr *error) (err error) 
 				_, err = capabilities.SetProcessEffective(oldEffective)
 			}()
 		}
-		*mountErr = syscall.Mount(arguments.Source, arguments.Target, arguments.Filesystem, arguments.Mountflags, arguments.Data)
+
+		var root *os.Root
+		root, *mountErr = os.OpenRoot(arguments.Root)
+		if *mountErr != nil {
+			return
+		}
+
+		relTarget := ""
+		if arguments.Target == arguments.Root {
+			relTarget = "."
+		} else {
+			relTarget = strings.TrimPrefix(arguments.Target, arguments.Root)
+			relTarget = strings.TrimPrefix(relTarget, "/")
+		}
+
+		var targetFp *os.File
+		targetFp, *mountErr = root.OpenFile(relTarget, unix.O_PATH, 0)
+		if *mountErr != nil {
+			return
+		}
+		defer targetFp.Close()
+
+		targetFd := fmt.Sprintf("/proc/self/fd/%d", targetFp.Fd())
+		*mountErr = syscall.Mount(arguments.Source, targetFd, arguments.Filesystem, arguments.Mountflags, arguments.Data)
 	})
-	return
+	return err
 }
 
 // Decrypt decrypts the loop device.
@@ -140,8 +163,23 @@ func (t *Methods) Decrypt(arguments *args.DecryptArgs, reply *string) (err error
 func (t *Methods) Mkdir(arguments *args.MkdirArgs, _ *int) (err error) {
 	mainthread.Execute(func() {
 		oldmask := syscall.Umask(0)
-		err = os.Mkdir(arguments.Path, arguments.Perm)
-		syscall.Umask(oldmask)
+		defer syscall.Umask(oldmask)
+
+		var root *os.Root
+		root, err = os.OpenRoot(arguments.Root)
+		if err != nil {
+			err = fmt.Errorf("while getting root path: %s", err)
+			return
+		}
+
+		relPath, ok := strings.CutPrefix(arguments.Path, arguments.Root)
+		if !ok {
+			err = fmt.Errorf("path %s is not inside root %s", arguments.Path, arguments.Root)
+			return
+		}
+		relPath = strings.TrimPrefix(relPath, "/")
+
+		err = root.Mkdir(relPath, arguments.Perm)
 	})
 	return err
 }
