@@ -19,6 +19,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/capabilities"
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -81,10 +82,16 @@ func NVCLIConfigure(nvidiaEnv []string, rootfs string, userNS bool) error {
 	if err != nil {
 		return err
 	}
+	nvCCLIExec := nvCCLIPath
 	// If we will run nvidia-container-cli as the host root user then ensure
 	// it is trusted, i.e. owned by them.
-	if !userNS && !fs.IsOwner(nvCCLIPath, 0) {
-		return errNvCCLIInsecure
+	if !userNS {
+		var nvCCLIFd int
+		nvCCLIFd, nvCCLIExec, err = fs.OpenTrustedExecutable(nvCCLIPath, 0)
+		if err != nil {
+			return fmt.Errorf("%w: %s", errNvCCLIInsecure, err)
+		}
+		defer unix.Close(nvCCLIFd)
 	}
 
 	// Translate the passed in NVIDIA_ env vars to option flags
@@ -100,12 +107,24 @@ func NVCLIConfigure(nvidiaEnv []string, rootfs string, userNS bool) error {
 	if err != nil {
 		return err
 	}
+	ldConfigArg := ldConfig
+	var ldConfigFile *os.File
 	// If we will run nvidia-container-cli as the host root user then ensure
 	// ldconfig is trusted, i.e. owned by them.
-	if !userNS && !fs.IsOwner(ldConfig, 0) {
-		return errLdconfigInsecure
+	if !userNS {
+		ldConfigFd, _, err := fs.OpenTrustedExecutable(ldConfig, 0)
+		if err != nil {
+			return fmt.Errorf("%w: %s", errLdconfigInsecure, err)
+		}
+		ldConfigFile, err = fs.NewFileFromFd(ldConfigFd, ldConfig)
+		if err != nil {
+			unix.Close(ldConfigFd)
+			return err
+		}
+		defer ldConfigFile.Close()
+		ldConfigArg = "/proc/self/fd/3"
 	}
-	flags = append(flags, "--ldconfig=@"+ldConfig)
+	flags = append(flags, "--ldconfig=@"+ldConfigArg)
 
 	nccArgs := make([]string, 0, 1+len(flags)+1)
 	nccArgs = append(nccArgs, "configure")
@@ -119,7 +138,10 @@ func NVCLIConfigure(nvidiaEnv []string, rootfs string, userNS bool) error {
 
 	sylog.Debugf("nvidia-container-cli binary: %q args: %q", nvCCLIPath, nccArgs)
 
-	cmd := exec.Command(nvCCLIPath, nccArgs...)
+	cmd := exec.Command(nvCCLIExec, nccArgs...)
+	if ldConfigFile != nil {
+		cmd.ExtraFiles = []*os.File{ldConfigFile}
+	}
 	cmd.Env = os.Environ()
 	// We are called from the RPC server which has an empty PATH.
 	// nvidia-container-cli requires a default sensible PATH to work correctly.

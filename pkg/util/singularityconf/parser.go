@@ -172,7 +172,12 @@ func Parse(filepath string) (*File, error) {
 	}
 	defer c.Close()
 
-	directives, err := GetDirectives(c)
+	return ParseFile(c)
+}
+
+// ParseFile parses configuration from an open file.
+func ParseFile(file *os.File) (*File, error) {
+	directives, err := GetDirectives(file)
 	if err != nil {
 		return nil, fmt.Errorf("while parsing data: %s", err)
 	}

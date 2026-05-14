@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+### Behaviour Changes
+
+- In setuid mode, root-ownership checks on singularity.conf and the capabilities
+  / ecl configuration now assert that these files are not writable except by the
+  root owner. Management of these files by an administrator group is no longer
+  possible. The files cannot be relocated by symlink.
+- External helper binaries executed with elevated privileges must also be
+  root-owned, regular executable files that are not writable by group or others.
+- If `ecl.toml` is missing, SIF execution is rejected rather than assuming an
+  inactive ECL configuration. The default install ships an `activated = false`
+  template, so standard installations are unaffected; sites with custom or
+  partial installs must ensure `ecl.toml` is present and valid.
+
 ### Developer / API
 
 The following have been removed:
