@@ -23,6 +23,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -50,6 +51,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rootless"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"github.com/tonistiigi/fsutil"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -283,18 +285,8 @@ func buildImage(ctx context.Context, opts *Opts, tarFile *os.File, listenSocket,
 		return err
 	}
 
-	buildDir, err := os.MkdirTemp("", "singularity-buildkit-builddir-")
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err := os.RemoveAll(buildDir); err != nil {
-			sylog.Errorf("While trying to remove temporary build dir (%s): %v", buildDir, err)
-		}
-	}()
-
 	pipeR, pipeW := io.Pipe()
-	solveOpt, err := newSolveOpt(ctx, opts, pipeW, buildDir, spec, clientsideFrontend)
+	solveOpt, err := newSolveOpt(ctx, opts, pipeW, spec, clientsideFrontend)
 	if err != nil {
 		return err
 	}
@@ -350,17 +342,22 @@ func buildImage(ctx context.Context, opts *Opts, tarFile *os.File, listenSocket,
 	return eg.Wait()
 }
 
-func newSolveOpt(_ context.Context, opts *Opts, w io.WriteCloser, buildDir, spec string, clientsideFrontend bool) (*client.SolveOpt, error) {
-	switch buildDir {
+func newSolveOpt(_ context.Context, opts *Opts, w io.WriteCloser, spec string, clientsideFrontend bool) (*client.SolveOpt, error) {
+	switch opts.ContextDir {
 	case "":
 		return nil, fmt.Errorf("please specify build context (e.g. \".\" for the current directory)")
 	case "-":
 		return nil, fmt.Errorf("stdin not supported yet")
 	}
 
-	localDirs := map[string]string{
-		"context":    opts.ContextDir,
-		"dockerfile": filepath.Dir(spec),
+	cxtLocalMount, err := fsutil.NewFS(opts.ContextDir)
+	if err != nil {
+		return nil, errors.New("invalid buildCtx local mount dir")
+	}
+
+	dockerfileLocalMount, err := fsutil.NewFS(filepath.Dir(spec))
+	if err != nil {
+		return nil, errors.New("invalid dockerfile local mount dir")
 	}
 
 	frontend := "dockerfile.v0" // TODO: use gateway
@@ -397,7 +394,10 @@ func newSolveOpt(_ context.Context, opts *Opts, w io.WriteCloser, buildDir, spec
 				},
 			},
 		},
-		LocalDirs:     localDirs,
+		LocalMounts: map[string]fsutil.FS{
+			"context":    cxtLocalMount,
+			"dockerfile": dockerfileLocalMount,
+		},
 		Frontend:      frontend,
 		FrontendAttrs: frontendAttrs,
 		Session:       attachable,

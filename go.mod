@@ -63,6 +63,7 @@ require (
 	github.com/sylabs/scs-library-client v1.4.14
 	github.com/sylabs/sif/v2 v2.24.0
 	github.com/sylabs/squashfs v1.0.6
+	github.com/tonistiigi/fsutil v0.0.0-20251211185533-a2aa163d723f
 	github.com/vbauerster/mpb/v8 v8.12.0
 	go.etcd.io/bbolt v1.4.3
 	go.yaml.in/yaml/v4 v4.0.0-rc.4
@@ -239,7 +240,6 @@ require (
 	github.com/theupdateframework/go-tuf/v2 v2.4.1 // indirect
 	github.com/titanous/rocacheck v0.0.0-20171023193734-afe73141d399 // indirect
 	github.com/tonistiigi/dchapes-mode v0.0.0-20250318174251-73d941a28323 // indirect
-	github.com/tonistiigi/fsutil v0.0.0-20251211185533-a2aa163d723f // indirect
 	github.com/tonistiigi/go-archvariant v1.0.0 // indirect
 	github.com/tonistiigi/go-csvvalue v0.0.0-20240814133006-030d3b2625d0 // indirect
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect

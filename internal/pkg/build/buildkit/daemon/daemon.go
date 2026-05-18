@@ -263,7 +263,7 @@ func defaultConfig() config.Config {
 	appdefaults.EnsureUserAddressDir()
 
 	if sylog.GetLevel() <= int(sylog.DebugLevel) {
-		cfg.Debug = true
+		cfg.Log.Level = "debug"
 	}
 
 	return cfg
