@@ -42,7 +42,8 @@ func init() {
 type Methods int
 
 // Mount performs a mount with the specified arguments.
-func (t *Methods) Mount(arguments *args.MountArgs, mountErr *error) (err error) {
+func (t *Methods) Mount(arguments *args.MountArgs, reply *args.MountErrorReply) (err error) {
+	var mountErr error
 	mainthread.Execute(func() {
 		if arguments.Filesystem == "overlay" {
 			var oldEffective uint64
@@ -67,10 +68,11 @@ func (t *Methods) Mount(arguments *args.MountArgs, mountErr *error) (err error) 
 		}
 
 		var root *os.Root
-		root, *mountErr = os.OpenRoot(arguments.Root)
-		if *mountErr != nil {
+		root, mountErr = os.OpenRoot(arguments.Root)
+		if mountErr != nil {
 			return
 		}
+		defer root.Close()
 
 		relTarget := ""
 		if arguments.Target == arguments.Root {
@@ -81,15 +83,18 @@ func (t *Methods) Mount(arguments *args.MountArgs, mountErr *error) (err error) 
 		}
 
 		var targetFp *os.File
-		targetFp, *mountErr = root.OpenFile(relTarget, unix.O_PATH, 0)
-		if *mountErr != nil {
+		targetFp, mountErr = root.OpenFile(relTarget, unix.O_PATH, 0)
+		if mountErr != nil {
 			return
 		}
 		defer targetFp.Close()
 
 		targetFd := fmt.Sprintf("/proc/self/fd/%d", targetFp.Fd())
-		*mountErr = syscall.Mount(arguments.Source, targetFd, arguments.Filesystem, arguments.Mountflags, arguments.Data)
+		mountErr = syscall.Mount(arguments.Source, targetFd, arguments.Filesystem, arguments.Mountflags, arguments.Data)
 	})
+	if mountErr != nil {
+		*reply = *args.NewMountErrorReply(mountErr)
+	}
 	return err
 }
 

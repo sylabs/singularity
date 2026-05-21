@@ -7,6 +7,7 @@ package rpc
 
 import (
 	"encoding/gob"
+	"errors"
 	"os"
 	"syscall"
 	"time"
@@ -22,6 +23,63 @@ type MountArgs struct {
 	Filesystem string
 	Mountflags uintptr
 	Data       string
+}
+
+// MountErrorReply wraps mount syscall errors, and preserves os.Root
+// NotExist/Permission errors which are os.PathError that cannot be sent
+// directly over RPC.
+type MountErrorReply struct {
+	Message      string
+	Errno        syscall.Errno
+	IsNotExist   bool
+	IsPermission bool
+}
+
+// NewMountErrorReply converts err to a gob-safe representation.
+func NewMountErrorReply(err error) *MountErrorReply {
+	if err == nil {
+		return nil
+	}
+
+	reply := &MountErrorReply{
+		Message:      err.Error(),
+		IsNotExist:   errors.Is(err, os.ErrNotExist),
+		IsPermission: errors.Is(err, os.ErrPermission),
+	}
+	var errno syscall.Errno
+	if errors.As(err, &errno) {
+		reply.Errno = errno
+	}
+
+	return reply
+}
+
+func (e *MountErrorReply) Error() string {
+	if e == nil || e.Message == "" {
+		return ""
+	}
+	return e.Message
+}
+
+func (e *MountErrorReply) Is(target error) bool {
+	if e == nil {
+		return target == nil
+	}
+	if e.IsNotExist && target == os.ErrNotExist {
+		return true
+	}
+	if e.IsPermission && target == os.ErrPermission {
+		return true
+	}
+	return e.Errno != 0 && errors.Is(e.Errno, target)
+}
+
+// Err reconstructs an error from the gob-safe representation.
+func (e *MountErrorReply) Err() error {
+	if e == nil || e.Message == "" {
+		return nil
+	}
+	return e
 }
 
 // DecryptArgs defines the arguments to decrypt.

@@ -569,14 +569,14 @@ mount:
 			if mnt.Type == "devpts" {
 				sylog.Verbosef("Couldn't mount devpts filesystem, continuing with PTY allocation functionality disabled")
 				return nil
-			} else if mnt.Type == "overlay" && err == syscall.ESTALE {
+			} else if mnt.Type == "overlay" && errors.Is(err, syscall.ESTALE) {
 				// overlay mount can return this error when a previous mount was
 				// done with an upper layer and overlay inodes index is enabled
 				// by default, see https://github.com/sylabs/singularity/issues/4539
 				sylog.Verbosef("Overlay mount failed with %s, mounting with index=off", err)
 				optsString = fmt.Sprintf("%s,index=off", optsString)
 				goto mount
-			} else if mnt.Type == "overlay" && err == syscall.EINVAL {
+			} else if mnt.Type == "overlay" && errors.Is(err, syscall.EINVAL) {
 				sylog.Verbosef("Overlay mount failed with %s, mounting without xino option", err)
 				optsString = strings.ReplaceAll(optsString, ",xino=on", "")
 				goto mount
@@ -585,7 +585,7 @@ mount:
 			return fmt.Errorf("can't mount %s filesystem to %s: %s", mnt.Type, mnt.Destination, err)
 		}
 		if remount {
-			if os.IsPermission(err) && c.userNS {
+			if errors.Is(err, syscall.EPERM) && c.userNS {
 				// when using user namespace we always try to apply mount flags with
 				// remount, then if we get a permission denied error, we continue
 				// execution by ignoring the error and warn user if the bind mount
@@ -685,8 +685,8 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	}
 
 	err = c.rpcOps.Mount(c.session.Path(), path, mnt.Destination, mountType, flags, optsString)
-	switch err {
-	case syscall.EINVAL:
+	switch {
+	case errors.Is(err, syscall.EINVAL):
 		if mountType == "squashfs" {
 			return fmt.Errorf(
 				"kernel reported a bad superblock for %s image partition, "+
@@ -695,7 +695,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 				mountType)
 		}
 		return fmt.Errorf("%s image partition contains a bad superblock (corrupted image ?)", mountType)
-	case syscall.ENODEV:
+	case errors.Is(err, syscall.ENODEV):
 		return fmt.Errorf("%s filesystem seems not enabled and/or supported by your kernel", mountType)
 	default:
 		if err != nil {

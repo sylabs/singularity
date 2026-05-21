@@ -32,12 +32,12 @@ func (t *RPC) Mount(root, source, target string, filesystem string, flags uintpt
 		Data:       data,
 	}
 
-	var mountErr error
+	var reply args.MountErrorReply
 
-	err := t.Client.Call(t.Name+".Mount", arguments, &mountErr)
+	err := t.Client.Call(t.Name+".Mount", arguments, &reply)
 	// RPC communication will take precedence over mount error
 	if err == nil {
-		err = mountErr
+		err = reply.Err()
 	}
 
 	return err
