@@ -1,4 +1,4 @@
-// Copyright (c) 2023-2025 Sylabs Inc. All rights reserved.
+// Copyright (c) 2023-2026 Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,8 +6,6 @@
 package ocisif
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"path/filepath"
@@ -154,11 +152,9 @@ func (w *ImageWriter) Write() error {
 	}
 
 	if w.artifactType != "" {
-		// GGCR does not yet support OCI v1.1 artifacts, so wrap our image to handle that in the
-		// meantime.
-		img = &oci11Artifact{
-			Image:        img,
-			artifactType: w.artifactType,
+		img, err = ocitmutate.Apply(img, ocitmutate.SetArtifactType(w.artifactType))
+		if err != nil {
+			return fmt.Errorf("while setting artifact type: %w", err)
 		}
 	}
 
@@ -267,69 +263,4 @@ func imgLayersToSquashfs(img ggcrv1.Image, digest ggcrv1.Hash, workDir string) (
 	}
 
 	return sqfsImage, nil
-}
-
-// oci11Artifact adapts the base image to comply with the OCI v1.1 artifact specification.
-type oci11Artifact struct {
-	ggcrv1.Image
-	artifactType string
-}
-
-// Size returns the size of the manifest.
-func (w *oci11Artifact) Size() (int64, error) {
-	mf, err := w.RawManifest()
-	if err != nil {
-		return 0, err
-	}
-
-	return int64(len(mf)), nil
-}
-
-// Digest returns the sha256 of this image's manifest.
-func (w *oci11Artifact) Digest() (ggcrv1.Hash, error) {
-	mf, err := w.RawManifest()
-	if err != nil {
-		return ggcrv1.Hash{}, err
-	}
-
-	h, _, err := ggcrv1.SHA256(bytes.NewReader(mf))
-	if err != nil {
-		return ggcrv1.Hash{}, err
-	}
-	return h, nil
-}
-
-// RawManifest returns the serialized bytes of Manifest().
-func (w *oci11Artifact) RawManifest() ([]byte, error) {
-	mf, err := w.Image.RawManifest()
-	if err != nil {
-		return nil, err
-	}
-
-	var manifest struct {
-		SchemaVersion int64               `json:"schemaVersion"`
-		MediaType     types.MediaType     `json:"mediaType,omitempty"`
-		ArtifactType  string              `json:"artifactType,omitempty"`
-		Config        ggcrv1.Descriptor   `json:"config"`
-		Layers        []ggcrv1.Descriptor `json:"layers"`
-		Annotations   map[string]string   `json:"annotations,omitempty"`
-		Subject       *ggcrv1.Descriptor  `json:"subject,omitempty"`
-	}
-	if err := json.Unmarshal(mf, &manifest); err != nil {
-		return nil, fmt.Errorf("unmarshal OCI v1.1 manifest: %w", err)
-	}
-
-	// Otherwise, set artifactType based on the config mediaType.
-	manifest.ArtifactType = w.artifactType
-
-	mf, err = json.Marshal(manifest)
-	if err != nil {
-		return nil, fmt.Errorf("marshal OCI v1.1 manifest: %w", err)
-	}
-	return mf, nil
-}
-
-// ArtifactType returns the artifact type.
-func (w *oci11Artifact) ArtifactType() (string, error) {
-	return w.artifactType, nil
 }
