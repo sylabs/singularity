@@ -52,7 +52,7 @@ require (
 	github.com/seccomp/libseccomp-golang v0.11.1
 	github.com/shopspring/decimal v1.4.0
 	github.com/sigstore/cosign/v2 v2.6.3
-	github.com/sigstore/sigstore v1.10.5
+	github.com/sigstore/sigstore v1.10.8
 	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
@@ -62,7 +62,7 @@ require (
 	github.com/sylabs/scs-build-client v0.9.20
 	github.com/sylabs/scs-key-client v0.7.9
 	github.com/sylabs/scs-library-client v1.4.14
-	github.com/sylabs/sif/v2 v2.24.0
+	github.com/sylabs/sif/v2 v2.24.1
 	github.com/sylabs/squashfs v1.0.6
 	github.com/tonistiigi/fsutil v0.0.0-20251211185533-a2aa163d723f
 	github.com/vbauerster/mpb/v8 v8.12.1
@@ -184,7 +184,7 @@ require (
 	github.com/josharian/native v1.1.0 // indirect
 	github.com/klauspost/compress v1.18.6 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
-	github.com/letsencrypt/boulder v0.20260223.0 // indirect
+	github.com/letsencrypt/boulder v0.20260309.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.23 // indirect
@@ -224,7 +224,7 @@ require (
 	github.com/safchain/ethtool v0.6.2 // indirect
 	github.com/sasha-s/go-deadlock v0.3.5 // indirect
 	github.com/sassoftware/relic v7.2.1+incompatible // indirect
-	github.com/secure-systems-lab/go-securesystemslib v0.10.0 // indirect
+	github.com/secure-systems-lab/go-securesystemslib v0.11.0 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
 	github.com/sigstore/protobuf-specs v0.5.0 // indirect
@@ -254,6 +254,7 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
+	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.68.0 // indirect
