@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -33,12 +33,12 @@ type layer interface {
 
 // NewSession creates and returns a session directory layout manager
 func NewSession(path string, fstype string, size int, system *mount.System, layer layer) (*Session, error) {
-	manager := &Manager{VFS: DefaultVFS}
-	session := &Session{Manager: manager}
-
-	if err := manager.SetRootPath(path); err != nil {
+	manager, err := NewManager(path)
+	if err != nil {
 		return nil, err
 	}
+	session := &Session{Manager: manager}
+
 	if err := manager.AddDir(rootFsDir); err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func NewSession(path string, fstype string, size int, system *mount.System, laye
 	if size > 0 {
 		options = fmt.Sprintf("mode=1777,size=%dm", size)
 	}
-	err := system.Points.AddFS(mount.SessionTag, path, fstype, syscall.MS_NOSUID, options)
+	err = system.Points.AddFS(mount.SessionTag, path, fstype, syscall.MS_NOSUID, options)
 	if err != nil {
 		return nil, err
 	}
