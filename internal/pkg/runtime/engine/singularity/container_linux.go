@@ -2062,9 +2062,8 @@ func (c *container) createCwdDir(system *mount.System) error {
 		} else {
 			path = filepath.Join(path, pathComponent)
 		}
-		_, err := c.session.GetOverridePath(path)
-		existingPath = err == nil
-		if err != nil {
+		existingPath = c.session.HasOverride(path)
+		if !existingPath {
 			pathContainerResolved := fs.EvalRelative(path, c.session.RootFsPath())
 			if pathContainerResolved != path {
 				return nil

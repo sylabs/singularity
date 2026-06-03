@@ -107,7 +107,7 @@ func (s *Session) createLayout(system *mount.System) error {
 			// search until we find a parent overridden directory
 			overridden := false
 			for baseDir := filepath.Dir(point.Destination); baseDir != "/"; {
-				if _, err := s.GetOverridePath(baseDir); err == nil {
+				if s.HasOverride(baseDir) {
 					overridden = true
 					break
 				}
