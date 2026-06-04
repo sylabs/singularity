@@ -163,7 +163,7 @@ _**NOTE:** if you are updating Go from a older version, make sure you remove
 `/usr/local/go` before reinstalling it._
 
 ```sh
-export VERSION=1.26.1 OS=linux ARCH=amd64  # change this as you need
+export VERSION=1.26.4 OS=linux ARCH=amd64  # change this as you need
 
 wget -O /tmp/go${VERSION}.${OS}-${ARCH}.tar.gz \
   https://dl.google.com/go/go${VERSION}.${OS}-${ARCH}.tar.gz
@@ -228,11 +228,11 @@ git submodule update --init
 By default your clone will be on the `main` branch which is where development
 of SingularityCE happens. To build a specific version of SingularityCE, check
 out a [release tag](https://github.com/sylabs/singularity/tags) before
-compiling. E.g. to build the 4.4.1 release, checkout the
-`v4.4.1` tag:
+compiling. E.g. to build the 4.4.2 release, checkout the
+`v4.4.2` tag:
 
 ```sh
-git checkout --recurse-submodules v4.4.1
+git checkout --recurse-submodules v4.4.2
 ```
 
 ## Compiling SingularityCE

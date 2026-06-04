@@ -2,13 +2,26 @@
 
 ## Unreleased
 
+### Developer / API
+
+The following have been removed:
+
+- `UpdateDefinitionRaw()` from `pkg/build/types`.
+- `OptSysCtx()` from `pkg/ocibundle/native/bundle_linux.go`
+- `CreateLoop()` from `pkg/ocibundle/tools/loop.go`
+- `pkg/util/copy`
+- `pkg/util/sysctl`
+- `pkg/util/unix`
+
+## 4.4.2 \[2026-06-04\]
+
 ### Security Related Fixes
 
 - Fix for [CVE-2026-47215 /
   GHSA-wqcr-7rf3-f64m](https://github.com/sylabs/singularity/security/advisories/GHSA-wqcr-7rf3-f64m)
   Incorrect path matching for 'limit container paths' directive
 
-## Change Defaults / Behaviours
+### Changed Defaults / Behaviours
 
 Although SingularityCE does not aim to contain execution / prevent host
 modification when started as the host root user, the following changes have been
@@ -26,17 +39,6 @@ modified default search path when `singularity` is run as the host root user:
   behaviour change vs previous versions.
 
 Thank you to @KoseceMehmet for suggesting this change.
-
-## Developer / API
-
-The following have been removed:
-
-- `UpdateDefinitionRaw()` from `pkg/build/types`.
-- `OptSysCtx()` from `pkg/ocibundle/native/bundle_linux.go`
-- `CreateLoop()` from `pkg/ocibundle/tools/loop.go`
-- `pkg/util/copy`
-- `pkg/util/sysctl`
-- `pkg/util/unix`
 
 ## 4.4.1 \[2026-03-23\]
 
