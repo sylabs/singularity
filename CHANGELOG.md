@@ -1,8 +1,14 @@
 # SingularityCE Changelog
 
-## Unreleased
+## 4.4.2 \[2026-06-04\]
 
-## Change Defaults / Behaviours
+### Security Related Fixes
+
+- Fix for [CVE-2026-47215 /
+  GHSA-wqcr-7rf3-f64m](https://github.com/sylabs/singularity/security/advisories/GHSA-wqcr-7rf3-f64m)
+  Incorrect path matching for 'limit container paths' directive
+
+### Changed Defaults / Behaviours
 
 Although SingularityCE does not aim to contain execution / prevent host
 modification when started as the host root user, the following changes have been
