@@ -360,6 +360,26 @@ func Test_loadNativeHooksUnpriv(t *testing.T) {
 		Privileged: false,
 	}
 
+	// Symlink to the hooks dir.
+	symlinkOuterDir := t.TempDir()
+	targetDir := t.TempDir()
+	symlinkDir := filepath.Join(symlinkOuterDir, "symlinkDir")
+	if err := os.Symlink(targetDir, symlinkDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Symlink for a hook file outside escapeDir.
+
+	escapeDir := t.TempDir()
+	outsideDir := t.TempDir()
+	outsideHook := filepath.Join(outsideDir, "outside.json")
+	if err := fs.CopyFile("testdata/valid/valid.json", outsideHook, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outsideHook, filepath.Join(escapeDir, "escape.json")); err != nil {
+		t.Fatal(err)
+	}
+
 	tests := []struct {
 		name    string
 		hookDir string
@@ -382,6 +402,20 @@ func Test_loadNativeHooksUnpriv(t *testing.T) {
 			name:    "onlyUnprivileged",
 			hookDir: "testdata/privilege",
 			want:    []NativeHook{validHook},
+			wantErr: false,
+		},
+		// We refuse to open the hooks directory if it is a symlink.
+		{
+			name:    "noSymlinkDir",
+			hookDir: symlinkDir,
+			want:    nil,
+			wantErr: true,
+		},
+		// We always skip symlinks when reading hooks.
+		{
+			name:    "noSymlinkFile",
+			hookDir: escapeDir,
+			want:    []NativeHook{},
 			wantErr: false,
 		},
 	}
@@ -423,6 +457,24 @@ func Test_loadNativeHooksPriv(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Symlink to the hooks dir.
+	symlinkOuterDir := t.TempDir()
+	symlinkDir := filepath.Join(symlinkOuterDir, "symlinkDir")
+	if err := os.Symlink(rootDir, symlinkDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Symlink for a hook file outside escapeDir.
+	escapeDir := t.TempDir()
+	outsideDir := t.TempDir()
+	outsideHook := filepath.Join(outsideDir, "outside.json")
+	if err := fs.CopyFile("testdata/privilege/privileged.json", outsideHook, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outsideHook, filepath.Join(escapeDir, "escape.json")); err != nil {
+		t.Fatal(err)
+	}
+
 	tests := []struct {
 		name    string
 		hookDir string
@@ -439,6 +491,20 @@ func Test_loadNativeHooksPriv(t *testing.T) {
 			name:    "rootOwnership",
 			hookDir: rootDir,
 			want:    []NativeHook{privilegedHook},
+			wantErr: false,
+		},
+		// We refuse to open the hooks directory if it is a symlink.
+		{
+			name:    "noSymlinkDir",
+			hookDir: symlinkDir,
+			want:    nil,
+			wantErr: true,
+		},
+		// We always skip symlinks when reading hooks.
+		{
+			name:    "noSymlinkFile",
+			hookDir: escapeDir,
+			want:    []NativeHook{},
 			wantErr: false,
 		},
 	}

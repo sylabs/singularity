@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2024-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -22,6 +22,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"golang.org/x/sys/unix"
 )
 
 const nativeHooksDir = "native-hooks.d"
@@ -149,13 +150,12 @@ func LoadNativeHooks(privileged bool) ([]NativeHook, error) {
 func loadNativeHooks(hookDir string, privileged bool) ([]NativeHook, error) {
 	loadedHooks := []NativeHook{}
 
-	dir, err := os.Open(hookDir)
+	dir, err := os.OpenFile(hookDir, os.O_RDONLY|unix.O_NOFOLLOW|unix.O_DIRECTORY, 0)
 	if err != nil {
 		return nil, err
 	}
 	defer dir.Close()
-
-	if privileged && !(fs.FileHasOwner(dir, 0) && fs.FileHasGroup(dir, 0)) {
+	if privileged && (!fs.FileHasOwner(dir, 0) || !fs.FileHasGroup(dir, 0)) {
 		return nil, fmt.Errorf("%q must be owned by root:root", hookDir)
 	}
 
@@ -172,10 +172,11 @@ func loadNativeHooks(hookDir string, privileged bool) ([]NativeHook, error) {
 			continue
 		}
 
-		f, err := os.Open(filepath.Join(hookDir, de.Name()))
+		fd, err := unix.Openat(int(dir.Fd()), de.Name(), os.O_RDONLY|unix.O_NOFOLLOW, 0)
 		if err != nil {
 			return nil, err
 		}
+		f := os.NewFile(uintptr(fd), de.Name())
 		defer f.Close()
 
 		if privileged && !(fs.FileHasOwner(f, 0) && fs.FileHasGroup(f, 0)) {
