@@ -19,9 +19,12 @@ type RPC struct {
 	Name   string
 }
 
-// Mount calls the mount RPC using the supplied arguments.
-func (t *RPC) Mount(source string, target string, filesystem string, flags uintptr, data string) error {
+// Mount calls the mount RPC using the supplied arguments. Note that the mount
+// target must be inside the root. Mount ensures the target does not escape root
+// via symlink.
+func (t *RPC) Mount(root, source, target string, filesystem string, flags uintptr, data string) error {
 	arguments := &args.MountArgs{
+		Root:       root,
 		Source:     source,
 		Target:     target,
 		Filesystem: filesystem,
@@ -29,12 +32,12 @@ func (t *RPC) Mount(source string, target string, filesystem string, flags uintp
 		Data:       data,
 	}
 
-	var mountErr error
+	var reply args.MountErrorReply
 
-	err := t.Client.Call(t.Name+".Mount", arguments, &mountErr)
+	err := t.Client.Call(t.Name+".Mount", arguments, &reply)
 	// RPC communication will take precedence over mount error
 	if err == nil {
-		err = mountErr
+		err = reply.Err()
 	}
 
 	return err
@@ -55,9 +58,12 @@ func (t *RPC) Decrypt(offset uint64, path string, key []byte, masterPid int) (st
 	return reply, err
 }
 
-// Mkdir calls the mkdir RPC using the supplied arguments.
-func (t *RPC) Mkdir(path string, perm os.FileMode) error {
+// Mkdir calls the mkdir RPC using the supplied arguments. Note that the path
+// argument must be inside the root. Mkdir ensures that the operation does not
+// escape root via symlink.
+func (t *RPC) Mkdir(root, path string, perm os.FileMode) error {
 	arguments := &args.MkdirArgs{
+		Root: root,
 		Path: path,
 		Perm: perm,
 	}

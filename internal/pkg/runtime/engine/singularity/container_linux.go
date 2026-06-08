@@ -288,7 +288,7 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		// This *requires* that the container rootfs is a private mount, as it is a bind source.
 		// By default, the rootfs will be mounted shared due to requirements of the FUSE mount
 		// handling, so make it private here just before calling nvidia-container-cli.
-		if err := c.rpcOps.Mount("", c.session.FinalPath(), "", syscall.MS_PRIVATE, ""); err != nil {
+		if err := c.rpcOps.Mount(c.session.Path(), "", c.session.FinalPath(), "", syscall.MS_PRIVATE, ""); err != nil {
 			return err
 		}
 
@@ -443,7 +443,7 @@ func (c *container) setPropagationMount(*mount.System) error {
 		pflags |= syscall.MS_PRIVATE
 	}
 
-	return c.rpcOps.Mount("", "/", "", pflags, "")
+	return c.rpcOps.Mount("/", "", "/", "", pflags, "")
 }
 
 // addMountinfo handles the case where hidepid is set on /proc mount
@@ -461,7 +461,7 @@ func (c *container) addMountInfo(*mount.System) error {
 		return fmt.Errorf("while creating %s: %s", c.mountInfoPath, err)
 	}
 
-	if err := c.rpcOps.Mount(self, c.mountInfoPath, "", syscall.MS_BIND, ""); err != nil {
+	if err := c.rpcOps.Mount(c.session.Path(), self, c.mountInfoPath, "", syscall.MS_BIND, ""); err != nil {
 		return fmt.Errorf("while mounting %s to %s: %s", c.mountInfoPath, self, err)
 	}
 
@@ -540,8 +540,8 @@ func (c *container) mountGeneric(mnt *mount.Point, tag mount.AuthorizedTag) (err
 	}
 
 mount:
-	err = c.rpcOps.Mount(source, dest, mnt.Type, flags, optsString)
-	if os.IsNotExist(err) {
+	err = c.rpcOps.Mount(c.session.Path(), source, dest, mnt.Type, flags, optsString)
+	if errors.Is(err, os.ErrNotExist) {
 		switch tag {
 		case mount.KernelTag,
 			mount.HostfsTag,
@@ -569,14 +569,14 @@ mount:
 			if mnt.Type == "devpts" {
 				sylog.Verbosef("Couldn't mount devpts filesystem, continuing with PTY allocation functionality disabled")
 				return nil
-			} else if mnt.Type == "overlay" && err == syscall.ESTALE {
+			} else if mnt.Type == "overlay" && errors.Is(err, syscall.ESTALE) {
 				// overlay mount can return this error when a previous mount was
 				// done with an upper layer and overlay inodes index is enabled
 				// by default, see https://github.com/sylabs/singularity/issues/4539
 				sylog.Verbosef("Overlay mount failed with %s, mounting with index=off", err)
 				optsString = fmt.Sprintf("%s,index=off", optsString)
 				goto mount
-			} else if mnt.Type == "overlay" && err == syscall.EINVAL {
+			} else if mnt.Type == "overlay" && errors.Is(err, syscall.EINVAL) {
 				sylog.Verbosef("Overlay mount failed with %s, mounting without xino option", err)
 				optsString = strings.ReplaceAll(optsString, ",xino=on", "")
 				goto mount
@@ -585,7 +585,7 @@ mount:
 			return fmt.Errorf("can't mount %s filesystem to %s: %s", mnt.Type, mnt.Destination, err)
 		}
 		if remount {
-			if os.IsPermission(err) && c.userNS {
+			if errors.Is(err, syscall.EPERM) && c.userNS {
 				// when using user namespace we always try to apply mount flags with
 				// remount, then if we get a permission denied error, we continue
 				// execution by ignoring the error and warn user if the bind mount
@@ -684,9 +684,9 @@ func (c *container) mountImage(mnt *mount.Point) error {
 		mountType = "squashfs"
 	}
 
-	err = c.rpcOps.Mount(path, mnt.Destination, mountType, flags, optsString)
-	switch err {
-	case syscall.EINVAL:
+	err = c.rpcOps.Mount(c.session.Path(), path, mnt.Destination, mountType, flags, optsString)
+	switch {
+	case errors.Is(err, syscall.EINVAL):
 		if mountType == "squashfs" {
 			return fmt.Errorf(
 				"kernel reported a bad superblock for %s image partition, "+
@@ -695,7 +695,7 @@ func (c *container) mountImage(mnt *mount.Point) error {
 				mountType)
 		}
 		return fmt.Errorf("%s image partition contains a bad superblock (corrupted image ?)", mountType)
-	case syscall.ENODEV:
+	case errors.Is(err, syscall.ENODEV):
 		return fmt.Errorf("%s filesystem seems not enabled and/or supported by your kernel", mountType)
 	default:
 		if err != nil {
@@ -784,7 +784,7 @@ func (c *container) overlayUpperWork(*mount.System) error {
 	createUpperWork := func(path, label string) error {
 		fi, err := c.rpcOps.Lstat(path)
 		if os.IsNotExist(err) {
-			if err := c.rpcOps.Mkdir(path, 0o755); err != nil {
+			if err := c.rpcOps.Mkdir(c.session.Path(), path, 0o755); err != nil {
 				return fmt.Errorf("failed to create %s directory: %s", path, err)
 			}
 		} else if err == nil && !fi.IsDir() {
