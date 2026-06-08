@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -128,6 +128,16 @@ func TestEnsureFileWithPermission(t *testing.T) {
 	// Finally, check the file permission.
 	if currentMode := einfo.Mode(); currentMode != 0o544 {
 		t.Errorf("Unexpected file permission: expecting 544, got %o", currentMode)
+	}
+
+	// Don't allow symlink as last path part.
+	symlink := filepath.Join(tmpDir, "symlink")
+	if err := os.Symlink(existFile, symlink); err != nil {
+		t.Fatalf("Unable to create symlink: %s", err)
+	}
+	err = EnsureFileWithPermission(symlink, 0o755)
+	if err == nil {
+		t.Errorf("Didn't fail to ensure file permission through final symlink")
 	}
 }
 
