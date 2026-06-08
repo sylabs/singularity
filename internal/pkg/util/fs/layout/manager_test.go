@@ -1,4 +1,4 @@
-// Copyright (c) 2018, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -20,8 +20,6 @@ func TestLayout(t *testing.T) {
 	uid := os.Getuid()
 	gid := os.Getgid()
 
-	session := &Manager{VFS: DefaultVFS}
-
 	groups, err := os.Getgroups()
 	if err != nil {
 		t.Fatal(err)
@@ -35,92 +33,94 @@ func TestLayout(t *testing.T) {
 
 	dir := t.TempDir()
 
-	if err := session.AddDir("/etc"); err == nil {
+	// Uninitialized Manager.
+	mgr := &Manager{}
+	if err := mgr.AddDir("/etc"); err == nil {
 		t.Errorf("should have failed with uninitialized root path")
 	}
-	if err := session.AddFile("/etc/passwd", nil); err == nil {
+	if err := mgr.AddFile("/etc/passwd", nil); err == nil {
 		t.Errorf("should have failed with uninitialized root path")
 	}
-	if err := session.AddSymlink("/etc/symlink", "/etc/passwd"); err == nil {
+	if err := mgr.AddSymlink("/etc/symlink", "/etc/passwd"); err == nil {
 		t.Errorf("should have failed with uninitialized root path")
 	}
-	if err := session.Create(); err == nil {
+	if err := mgr.Create(); err == nil {
 		t.Errorf("should have failed with uninitialized root path")
 	}
 
-	if err := session.SetRootPath("/fakedirectory"); err == nil {
+	// Initialize with root.
+	_, err = NewManager("/fakedirectory")
+	if err == nil {
 		t.Error("should have failed with invalid root path directory")
 	}
-	if err := session.SetRootPath(dir); err != nil {
+	mgr, err = NewManager(dir)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := session.SetRootPath(dir); err == nil {
-		t.Error("should have failed with root path already set error")
-	}
 
-	if err := session.AddDir("etc"); err == nil {
+	if err := mgr.AddDir("etc"); err == nil {
 		t.Errorf("should have failed with non absolute path")
 	}
-	if err := session.AddDir("/etc"); err != nil {
+	if err := mgr.AddDir("/etc"); err != nil {
 		t.Error(err)
 	}
-	if err := session.AddDir("/etc"); err == nil {
+	if err := mgr.AddDir("/etc"); err == nil {
 		t.Error("should have failed with existent path")
 	}
 
-	if _, err := session.GetPath("/etcd"); err == nil {
+	if _, err := mgr.GetPath("/etcd"); err == nil {
 		t.Errorf("should have failed with non existent path")
 	}
 
-	if err := session.AddFile("/etc/passwd", []byte("hello")); err != nil {
+	if err := mgr.AddFile("/etc/passwd", []byte("hello")); err != nil {
 		t.Error(err)
 	}
-	if err := session.AddSymlink("/etc/symlink", "/etc/passwd"); err != nil {
+	if err := mgr.AddSymlink("/etc/symlink", "/etc/passwd"); err != nil {
 		t.Error(err)
 	}
 
-	if err := session.Chmod("/etc", 0o777); err != nil {
+	if err := mgr.Chmod("/etc", 0o777); err != nil {
 		t.Error(err)
 	}
-	if err := session.Chmod("/etcd", 0o777); err == nil {
+	if err := mgr.Chmod("/etcd", 0o777); err == nil {
 		t.Error("should have failed with non existent path")
 	}
 
-	if err := session.Chown("/etc", uid, gid); err != nil {
+	if err := mgr.Chown("/etc", uid, gid); err != nil {
 		t.Error(err)
 	}
-	if err := session.Chown("/etcd", uid, gid); err == nil {
+	if err := mgr.Chown("/etcd", uid, gid); err == nil {
 		t.Error("should have failed with non existent path")
 	}
 
-	if err := session.Chmod("/etc/passwd", 0o600); err != nil {
+	if err := mgr.Chmod("/etc/passwd", 0o600); err != nil {
 		t.Error(err)
 	}
-	if err := session.Chown("/etc/passwd", uid, gid); err != nil {
+	if err := mgr.Chown("/etc/passwd", uid, gid); err != nil {
 		t.Error(err)
 	}
-	if err := session.Chown("/etc/symlink", uid, gid); err != nil {
+	if err := mgr.Chown("/etc/symlink", uid, gid); err != nil {
 		t.Error(err)
 	}
 
-	if err := session.Create(); err != nil {
+	if err := mgr.Create(); err != nil {
 		t.Fatal(err)
 	}
-	if p, err := session.GetPath("/etc"); err == nil {
+	if p, err := mgr.GetPath("/etc"); err == nil {
 		if !fs.IsDir(p) {
 			t.Errorf("failed to create directory %s", p)
 		}
 	} else {
 		t.Error(err)
 	}
-	if p, err := session.GetPath("/etc/passwd"); err != nil {
+	if p, err := mgr.GetPath("/etc/passwd"); err != nil {
 		t.Error(err)
 	} else {
 		if !fs.IsFile(p) {
 			t.Errorf("failed to create file %s", p)
 		}
 	}
-	if p, err := session.GetPath("/etc/symlink"); err != nil {
+	if p, err := mgr.GetPath("/etc/symlink"); err != nil {
 		t.Error(err)
 	} else {
 		if !fs.IsLink(p) {
@@ -128,13 +128,13 @@ func TestLayout(t *testing.T) {
 		}
 	}
 
-	if err := session.AddSymlink("/etc/symlink2", "/etc/passwd"); err != nil {
+	if err := mgr.AddSymlink("/etc/symlink2", "/etc/passwd"); err != nil {
 		t.Error(err)
 	}
-	if err := session.Update(); err != nil {
+	if err := mgr.Update(); err != nil {
 		t.Fatal(err)
 	}
-	if p, err := session.GetPath("/etc/symlink2"); err != nil {
+	if p, err := mgr.GetPath("/etc/symlink2"); err != nil {
 		t.Error(err)
 	} else {
 		if !fs.IsLink(p) {

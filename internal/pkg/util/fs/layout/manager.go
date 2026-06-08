@@ -7,12 +7,10 @@ package layout
 
 import (
 	"fmt"
-	iofs "io/fs"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
-	"syscall"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
@@ -44,80 +42,9 @@ type symlink struct {
 	target  string
 }
 
-type VFS interface {
-	Chown(string, int, int) error
-	EvalRelative(string, string) string
-	Lchown(string, int, int) error
-	Mkdir(string, os.FileMode) error
-	Readlink(string) (string, error)
-	ReadDir(string) ([]iofs.DirEntry, error)
-	Stat(string) (os.FileInfo, error)
-	Symlink(string, string) error
-	Umask(int) int
-	WriteFile(string, []byte, os.FileMode) error
-}
-
-type defaultVFS struct{}
-
-func (v *defaultVFS) Chown(name string, uid, gid int) error {
-	return os.Chown(name, uid, gid)
-}
-
-func (v *defaultVFS) EvalRelative(path, root string) string {
-	return fs.EvalRelative(path, root)
-}
-
-func (v *defaultVFS) Lchown(name string, uid, gid int) error {
-	return os.Lchown(name, uid, gid)
-}
-
-func (v *defaultVFS) Mkdir(name string, perm os.FileMode) error {
-	return os.Mkdir(name, perm)
-}
-
-func (v *defaultVFS) Readlink(name string) (string, error) {
-	return os.Readlink(name)
-}
-
-func (v *defaultVFS) ReadDir(dir string) ([]iofs.DirEntry, error) {
-	return os.ReadDir(dir)
-}
-
-func (v *defaultVFS) Stat(name string) (os.FileInfo, error) {
-	return os.Stat(name)
-}
-
-func (v *defaultVFS) Symlink(oldname, newname string) error {
-	return os.Symlink(oldname, newname)
-}
-
-func (v *defaultVFS) Umask(mask int) int {
-	return syscall.Umask(mask)
-}
-
-func (v *defaultVFS) WriteFile(filename string, data []byte, perm os.FileMode) error {
-	f, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_EXCL, perm)
-	if err != nil {
-		if !os.IsExist(err) {
-			return fmt.Errorf("failed to create file %s: %s", filename, err)
-		}
-		return err
-	}
-	if len(data) > 0 {
-		_, err = f.Write(data)
-	}
-	if err1 := f.Close(); err == nil {
-		err = err1
-	}
-	return err
-}
-
-// DefaultVFS is the default VFS.
-var DefaultVFS VFS = &defaultVFS{}
-
 // Manager manages a filesystem layout in a given path
 type Manager struct {
-	VFS      VFS
+	VFS      DefaultVFS
 	DirMode  os.FileMode
 	FileMode os.FileMode
 	rootPath string
@@ -129,6 +56,14 @@ type Manager struct {
 	// directory, the others if any are the directories to create
 	// for nested binds support
 	ovDirs map[string][]string
+}
+
+func NewManager(path string) (*Manager, error) {
+	m := &Manager{VFS: DefaultVFS{}}
+	if err := m.setRootPath(path); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (m *Manager) checkPath(path string, checkExist bool) (string, error) {
@@ -177,8 +112,8 @@ func (m *Manager) createParentDir(path string) {
 	}
 }
 
-// SetRootPath sets layout root path
-func (m *Manager) SetRootPath(path string) error {
+// setRootPath sets layout root path
+func (m *Manager) setRootPath(path string) error {
 	if !fs.IsDir(path) {
 		return fmt.Errorf("%s is not a directory or doesn't exists", path)
 	}
