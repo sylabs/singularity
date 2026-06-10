@@ -31,17 +31,24 @@ import (
 
 // TestChtimesATime tests Chtimes access time on a tempfile.
 func TestChtimesATime(t *testing.T) {
-	file := filepath.Join(t.TempDir(), "exist")
+	dir := t.TempDir()
+	file := filepath.Join(dir, "exist")
+	fileRel := filepath.Base(file)
 	if err := fs.WriteFileNoFollow(file, []byte("hello"), 0o644); err != nil {
 		t.Fatal(err)
 	}
+	root, err := os.OpenRoot(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer root.Close()
 
 	beforeUnixEpochTime := unixEpochTime.Add(-100 * time.Second)
 	afterUnixEpochTime := unixEpochTime.Add(100 * time.Second)
 
 	// Test both aTime and mTime set to Unix Epoch
 	t.Run("both aTime and mTime set to Unix Epoch", func(t *testing.T) {
-		if err := Chtimes(file, unixEpochTime, unixEpochTime); err != nil {
+		if err := Chtimes(root, fileRel, unixEpochTime, unixEpochTime); err != nil {
 			t.Error(err)
 		}
 
@@ -59,7 +66,7 @@ func TestChtimesATime(t *testing.T) {
 
 	// Test aTime before Unix Epoch and mTime set to Unix Epoch
 	t.Run("aTime before Unix Epoch and mTime set to Unix Epoch", func(t *testing.T) {
-		if err := Chtimes(file, beforeUnixEpochTime, unixEpochTime); err != nil {
+		if err := Chtimes(root, fileRel, beforeUnixEpochTime, unixEpochTime); err != nil {
 			t.Error(err)
 		}
 
@@ -77,7 +84,7 @@ func TestChtimesATime(t *testing.T) {
 
 	// Test aTime set to Unix Epoch and mTime before Unix Epoch
 	t.Run("aTime set to Unix Epoch and mTime before Unix Epoch", func(t *testing.T) {
-		if err := Chtimes(file, unixEpochTime, beforeUnixEpochTime); err != nil {
+		if err := Chtimes(root, fileRel, unixEpochTime, beforeUnixEpochTime); err != nil {
 			t.Error(err)
 		}
 
@@ -95,7 +102,7 @@ func TestChtimesATime(t *testing.T) {
 
 	// Test both aTime and mTime set to after Unix Epoch (valid time)
 	t.Run("both aTime and mTime set to after Unix Epoch (valid time)", func(t *testing.T) {
-		if err := Chtimes(file, afterUnixEpochTime, afterUnixEpochTime); err != nil {
+		if err := Chtimes(root, fileRel, afterUnixEpochTime, afterUnixEpochTime); err != nil {
 			t.Error(err)
 		}
 
@@ -113,7 +120,7 @@ func TestChtimesATime(t *testing.T) {
 
 	// Test both aTime and mTime set to Unix max time
 	t.Run("both aTime and mTime set to Unix max time", func(t *testing.T) {
-		if err := Chtimes(file, unixMaxTime, unixMaxTime); err != nil {
+		if err := Chtimes(root, fileRel, unixMaxTime, unixMaxTime); err != nil {
 			t.Error(err)
 		}
 
