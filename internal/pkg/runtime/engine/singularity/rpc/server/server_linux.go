@@ -10,6 +10,7 @@ package server
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
@@ -74,12 +75,13 @@ func (t *Methods) Mount(arguments *args.MountArgs, reply *args.MountErrorReply) 
 		}
 		defer root.Close()
 
-		relTarget := ""
-		if arguments.Target == arguments.Root {
-			relTarget = "."
-		} else {
-			relTarget = strings.TrimPrefix(arguments.Target, arguments.Root)
-			relTarget = strings.TrimPrefix(relTarget, "/")
+		relTarget, mountErr := filepath.Rel(arguments.Root, arguments.Target)
+		if mountErr != nil {
+			return
+		}
+		if !filepath.IsLocal(relTarget) {
+			mountErr = fmt.Errorf("target %s is not inside root %s", arguments.Target, arguments.Root)
+			return
 		}
 
 		var targetFp *os.File
@@ -177,12 +179,14 @@ func (t *Methods) Mkdir(arguments *args.MkdirArgs, _ *int) (err error) {
 			return
 		}
 
-		relPath, ok := strings.CutPrefix(arguments.Path, arguments.Root)
-		if !ok {
+		relPath, err := filepath.Rel(arguments.Root, arguments.Path)
+		if err != nil {
+			return
+		}
+		if !filepath.IsLocal(relPath) {
 			err = fmt.Errorf("path %s is not inside root %s", arguments.Path, arguments.Root)
 			return
 		}
-		relPath = strings.TrimPrefix(relPath, "/")
 
 		err = root.Mkdir(relPath, arguments.Perm)
 	})
