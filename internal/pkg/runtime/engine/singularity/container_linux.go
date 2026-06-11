@@ -2089,6 +2089,15 @@ func (c *container) createCwdDir(system *mount.System) error {
 
 	if !existingPath && c.session.Layer != nil {
 		if c.engine.EngineConfig.GetSessionLayer() == singularity.UnderlayLayer {
+			layerCwd := filepath.Join(c.session.Layer.Dir(), cwdHost)
+			if cwdHostSymlink && c.session.PathResolvesOutsideOverride(layerCwd, cwdHostResolved) {
+				// Not possible to bind this in underlay mode. Don't attempt to,
+				// because the os.Root-ed bind mount RPC will fail with error.
+				c.skipCwd = true
+				sylog.Infof("Not mounting CWD, symlink resolves outside bind source: %s -> %s", cwdHost, cwdHostResolved)
+				return nil
+			}
+
 			flags := uintptr(syscall.MS_BIND | c.suidFlag | syscall.MS_NODEV | syscall.MS_REC)
 			if err := system.Points.AddBind(mount.CwdTag, cwdHost, cwdHost, flags); err != nil {
 				return fmt.Errorf("could not bind cwd directory %s into container: %s", cwdHost, err)

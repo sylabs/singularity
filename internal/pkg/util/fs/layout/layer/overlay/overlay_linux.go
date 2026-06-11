@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2020, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -7,10 +7,12 @@ package overlay
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"syscall"
 
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/layout"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/mount"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -125,12 +127,16 @@ func (o *Overlay) createLayer(rootFsPath string, system *mount.System) error {
 			// get rid of symlinks and resolve the path within the
 			// rootfs path to not have false positive while creating
 			// the layer with calls below
-			dest := o.session.VFS.EvalRelative(point.Destination, rootFsPath)
+			dest := fs.EvalRelative(point.Destination, rootFsPath)
 
 			// now we are (almost) sure that we will get path information
 			// for a path in the rootfs path and we would create the right
 			// destination in the layer
-			_, err := o.session.VFS.Stat(filepath.Join(rootFsPath, dest))
+			rootfsDest, err := filepath.Rel(sessionDir, filepath.Join(rootFsPath, dest))
+			if err != nil {
+				return err
+			}
+			_, err = o.session.VFS.Stat(rootfsDest)
 			if err == nil {
 				continue
 			}
@@ -147,7 +153,7 @@ func (o *Overlay) createLayer(rootFsPath string, system *mount.System) error {
 				continue
 			}
 
-			fi, err := o.session.VFS.Stat(point.Source)
+			fi, err := os.Stat(point.Source)
 			if err != nil {
 				sylog.Warningf("skipping mount of %s: %s", point.Source, err)
 				continue

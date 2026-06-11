@@ -8,6 +8,7 @@ package layout
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -60,6 +61,7 @@ func TestLayout(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Add items, create layout, verify created.
 	if err := mgr.AddDir("etc"); err == nil {
 		t.Errorf("should have failed with non absolute path")
 	}
@@ -69,32 +71,27 @@ func TestLayout(t *testing.T) {
 	if err := mgr.AddDir("/etc"); err == nil {
 		t.Error("should have failed with existent path")
 	}
-
 	if _, err := mgr.GetPath("/etcd"); err == nil {
 		t.Errorf("should have failed with non existent path")
 	}
-
 	if err := mgr.AddFile("/etc/passwd", []byte("hello")); err != nil {
 		t.Error(err)
 	}
 	if err := mgr.AddSymlink("/etc/symlink", "/etc/passwd"); err != nil {
 		t.Error(err)
 	}
-
 	if err := mgr.Chmod("/etc", 0o777); err != nil {
 		t.Error(err)
 	}
 	if err := mgr.Chmod("/etcd", 0o777); err == nil {
 		t.Error("should have failed with non existent path")
 	}
-
 	if err := mgr.Chown("/etc", uid, gid); err != nil {
 		t.Error(err)
 	}
 	if err := mgr.Chown("/etcd", uid, gid); err == nil {
 		t.Error("should have failed with non existent path")
 	}
-
 	if err := mgr.Chmod("/etc/passwd", 0o600); err != nil {
 		t.Error(err)
 	}
@@ -104,7 +101,6 @@ func TestLayout(t *testing.T) {
 	if err := mgr.Chown("/etc/symlink", uid, gid); err != nil {
 		t.Error(err)
 	}
-
 	if err := mgr.Create(); err != nil {
 		t.Fatal(err)
 	}
@@ -130,6 +126,7 @@ func TestLayout(t *testing.T) {
 		}
 	}
 
+	// Add additional items, update, verify.
 	if err := mgr.AddSymlink("/etc/symlink2", "/etc/passwd"); err != nil {
 		t.Error(err)
 	}
@@ -332,6 +329,65 @@ func TestNestedBindTargets(t *testing.T) {
 			addDirs:  []string{"/tmp/canary/dir"},
 			addFiles: []string{"/tmp/canary/dir/nested"},
 		},
+		{
+			name: "reject file through symlink outside",
+			setup: func(t *testing.T) nestedBindSetupResult {
+				hostCanaryDir := t.TempDir()
+				outsideDir := t.TempDir()
+				if err := os.Symlink(outsideDir, filepath.Join(hostCanaryDir, "dir2")); err != nil {
+					t.Fatal(err)
+				}
+				return nestedBindSetupResult{
+					overrides: []nestedBindOverride{
+						{path: "/canary", realpath: hostCanaryDir},
+					},
+					wantErr:     "path escapes",
+					wantNoFiles: []string{filepath.Join(outsideDir, "nested")},
+				}
+			},
+			addFiles: []string{"/canary/dir2/nested"},
+		},
+		{
+			name: "allow symlinked directory inside",
+			setup: func(t *testing.T) nestedBindSetupResult {
+				hostCanaryDir := t.TempDir()
+				if err := os.Mkdir(filepath.Join(hostCanaryDir, "dir"), 0o755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Symlink("dir", filepath.Join(hostCanaryDir, "symlink")); err != nil {
+					t.Fatal(err)
+				}
+				return nestedBindSetupResult{
+					overrides: []nestedBindOverride{
+						{path: "/canary", realpath: hostCanaryDir},
+					},
+					wantDirs: []string{
+						filepath.Join(hostCanaryDir, "dir", "child"),
+					},
+				}
+			},
+			addDirs: []string{"/canary/symlink/child"},
+		},
+		{
+			name: "allow symlinked directory outside for CWD",
+			setup: func(t *testing.T) nestedBindSetupResult {
+				hostCanaryDir := t.TempDir()
+				outsideDir := t.TempDir()
+				if err := os.Mkdir(filepath.Join(outsideDir, "child"), 0o755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.Symlink(outsideDir, filepath.Join(hostCanaryDir, "symlink")); err != nil {
+					t.Fatal(err)
+				}
+				return nestedBindSetupResult{
+					overrides: []nestedBindOverride{
+						{path: "/canary", realpath: hostCanaryDir},
+					},
+					wantDirs: []string{filepath.Join(outsideDir, "child")},
+				}
+			},
+			addDirs: []string{"/canary/symlink/child"},
+		},
 	}
 
 	test.DropPrivilege(t)
@@ -506,6 +562,73 @@ func TestNestedBindTarget(t *testing.T) {
 			layoutPath, target := mgr.nestedBindTargetFor(tt.path)
 			assert.Equal(t, tt.wantLayoutOverride, layoutPath, "layoutPath")
 			assert.Equal(t, tt.wantTarget, target, "target")
+		})
+	}
+}
+
+func TestPathResolvesOutsideOverride(t *testing.T) {
+	rootDir := t.TempDir()
+	mgr, err := NewManager(rootDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	source := t.TempDir()
+	outside := t.TempDir()
+	mgr.overrideDir("/underlay/tmp", source)
+
+	outsideCwd := filepath.Join(outside, "users", "abc123")
+	if err := os.MkdirAll(outsideCwd, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	outsideLink := filepath.Join(source, "outside-symlink")
+	if err := os.Symlink(outside, outsideLink); err != nil {
+		t.Fatal(err)
+	}
+
+	insideCwd := filepath.Join(source, "users", "abc123")
+	if err := os.MkdirAll(insideCwd, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	insideLink := filepath.Join(source, "inside-symlink")
+	if err := os.Symlink(filepath.Join(source, "users"), insideLink); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name string
+		path string
+		want bool
+	}{
+		{
+			name: "outside",
+			path: filepath.Join("/underlay/tmp", "outside-symlink", "users", "abc123"),
+			want: true,
+		},
+		{
+			name: "inside",
+			path: filepath.Join("/underlay/tmp", "inside-symlink", "abc123"),
+			want: false,
+		},
+		{
+			name: "no override",
+			path: "/underlay/var/tmp/example",
+			want: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hostPath := strings.TrimPrefix(tt.path, "/underlay")
+			resolved, err := filepath.EvalSymlinks(filepath.Join(source, strings.TrimPrefix(hostPath, "/tmp")))
+			if tt.name == "no override" {
+				resolved = "/var/tmp/example"
+			} else if err != nil {
+				t.Fatal(err)
+			}
+			if got := mgr.PathResolvesOutsideOverride(tt.path, resolved); got != tt.want {
+				t.Fatalf("got %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

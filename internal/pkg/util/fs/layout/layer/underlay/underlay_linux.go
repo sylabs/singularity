@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,6 +14,7 @@ import (
 	"syscall"
 
 	"github.com/ccoveille/go-safecast/v2"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/layout"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/mount"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -78,7 +79,7 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 			// get rid of symlinks and resolve the path within the
 			// rootfs path to not have false positive while creating
 			// the layer with calls below
-			dst := u.session.VFS.EvalRelative(point.Destination, rootFsPath)
+			dst := fs.EvalRelative(point.Destination, rootFsPath)
 
 			// keep track of destination mount points to not duplicate
 			// directory uselessly
@@ -87,11 +88,15 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 			// now we are (almost) sure that we will get path information
 			// for a path in the rootfs path and we would create the right
 			// destination in the layer
-			_, err := u.session.VFS.Stat(filepath.Join(rootFsPath, dst))
+			rootfsDst, err := filepath.Rel(sessionDir, filepath.Join(rootFsPath, dst))
+			if err != nil {
+				return err
+			}
+			_, err = u.session.VFS.Stat(rootfsDst)
 			if err == nil {
 				continue
 			}
-			fi, err := u.session.VFS.Stat(point.Source)
+			fi, err := os.Stat(point.Source)
 			if err != nil {
 				sylog.Warningf("skipping mount of %s: %s", point.Source, err)
 				continue
@@ -176,7 +181,11 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 func (u *Underlay) duplicateDir(dir string, system *mount.System, existingPath string) error {
 	binds := 0
 	path := filepath.Join(u.session.RootFsPath(), dir)
-	files, err := u.session.VFS.ReadDir(path)
+	name, err := filepath.Rel(u.session.Path(), path)
+	if err != nil {
+		return err
+	}
+	files, err := u.session.VFS.ReadDir(name)
 	if err != nil {
 		// directory doesn't exists, nothing to duplicate
 		return nil
@@ -199,7 +208,11 @@ func (u *Underlay) duplicateDir(dir string, system *mount.System, existingPath s
 			}
 			binds++
 		} else if file.Type()&os.ModeSymlink != 0 {
-			tgt, err := u.session.VFS.Readlink(src)
+			srcName, err := filepath.Rel(u.session.Path(), src)
+			if err != nil {
+				return err
+			}
+			tgt, err := u.session.VFS.Readlink(srcName)
 			if err != nil {
 				return fmt.Errorf("can't read symlink information for %s: %s", src, err)
 			}
