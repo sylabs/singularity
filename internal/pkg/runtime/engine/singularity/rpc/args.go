@@ -105,7 +105,7 @@ type ChrootArgs struct {
 
 // LoopArgs defines the arguments to create a loop device.
 type LoopArgs struct {
-	Image      string
+	ImageFd    uintptr
 	Mode       int
 	Info       unix.LoopInfo64
 	MaxDevices int
