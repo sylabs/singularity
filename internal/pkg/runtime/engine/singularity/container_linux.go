@@ -102,6 +102,8 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		return fmt.Errorf("no root filesystem image provided")
 	}
 
+	inUserNS, _ := namespaces.IsInsideUserNamespace(os.Getpid())
+
 	configurationFile := buildcfg.SINGULARITY_CONF_FILE
 	if buildcfg.SINGULARITY_SUID_INSTALL == 0 || os.Geteuid() == 0 {
 		configFile := engine.EngineConfig.GetConfigurationFile()
@@ -110,7 +112,17 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		}
 	}
 
-	engine.EngineConfig.File, err = singularityconf.Parse(configurationFile)
+	if inUserNS {
+		engine.EngineConfig.File, err = singularityconf.Parse(configurationFile)
+	} else {
+		var file *os.File
+		file, err = fs.OpenTrustedFile(configurationFile, 0)
+		if err != nil {
+			return fmt.Errorf("%s must be owned by root: %s", configurationFile, err)
+		}
+		defer file.Close()
+		engine.EngineConfig.File, err = singularityconf.ParseFile(file)
+	}
 	if err != nil {
 		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}
@@ -165,12 +177,10 @@ func create(ctx context.Context, engine *EngineOperations, rpcOps *client.RPC, p
 		c.suidFlag = 0
 	}
 
-	// user namespace was not requested but we need to check
-	// if we are currently running in a user namespace and set
-	// value accordingly to avoid remount errors while running
-	// inside a user namespace
+	// user namespace was not requested but if we are still currently running in
+	// a user namespace then set value accordingly to avoid remount errors.
 	if !c.userNS {
-		c.userNS, _ = namespaces.IsInsideUserNamespace(os.Getpid())
+		c.userNS = inUserNS
 	}
 
 	p := &mount.Points{}

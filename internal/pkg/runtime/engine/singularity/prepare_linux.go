@@ -84,28 +84,24 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 		}
 	}
 
-	e.EngineConfig.File, err = singularityconf.Parse(configurationFile)
+	if starterConfig.GetIsSUID() {
+		var file *os.File
+		file, err = fs.OpenTrustedFile(configurationFile, 0)
+		if err != nil {
+			return fmt.Errorf("%s must be owned by root: %s", configurationFile, err)
+		}
+		defer file.Close()
+
+		e.EngineConfig.File, err = singularityconf.ParseFile(file)
+	} else {
+		e.EngineConfig.File, err = singularityconf.Parse(configurationFile)
+	}
 	if err != nil {
 		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}
 
 	if !e.EngineConfig.File.AllowSetuid && starterConfig.GetIsSUID() {
 		return fmt.Errorf("suid workflow disabled by administrator")
-	}
-
-	if starterConfig.GetIsSUID() {
-		// check for ownership of singularity.conf
-		if !fs.IsOwner(configurationFile, 0) {
-			return fmt.Errorf("%s must be owned by root", configurationFile)
-		}
-		// check for ownership of capability.json
-		if !fs.IsOwner(buildcfg.CAPABILITY_FILE, 0) {
-			return fmt.Errorf("%s must be owned by root", buildcfg.CAPABILITY_FILE)
-		}
-		// check for ownership of ecl.toml
-		if !fs.IsOwner(buildcfg.ECL_FILE, 0) {
-			return fmt.Errorf("%s must be owned by root", buildcfg.ECL_FILE)
-		}
 	}
 
 	// Save the current working directory if not set
@@ -203,15 +199,22 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 	return nil
 }
 
+func openCapabilityFile(suid bool) (*os.File, error) {
+	if suid {
+		return fs.OpenTrustedFile(buildcfg.CAPABILITY_FILE, 0)
+	}
+	return os.OpenFile(buildcfg.CAPABILITY_FILE, os.O_RDONLY|unix.O_NOFOLLOW, 0o644)
+}
+
 // prepareUserCaps is responsible for checking that user's requested
 // capabilities are authorized.
-func (e *EngineOperations) prepareUserCaps(enforced bool) error {
+func (e *EngineOperations) prepareUserCaps(enforced, suid bool) error {
 	commonCaps := make([]string, 0)
 	commonUnauthorizedCaps := make([]string, 0)
 
 	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 
-	file, err := os.OpenFile(buildcfg.CAPABILITY_FILE, os.O_RDONLY|unix.O_NOFOLLOW, 0o644)
+	file, err := openCapabilityFile(suid)
 	if err != nil {
 		return fmt.Errorf("while opening capability config file: %s", err)
 	}
@@ -313,7 +316,7 @@ func (e *EngineOperations) prepareUserCaps(enforced bool) error {
 
 // prepareRootCaps is responsible for setting root capabilities
 // based on capability/configuration files and requested capabilities.
-func (e *EngineOperations) prepareRootCaps() error {
+func (e *EngineOperations) prepareRootCaps(suid bool) error {
 	commonCaps := make([]string, 0)
 	defaultCapabilities := e.EngineConfig.File.RootDefaultCapabilities
 
@@ -341,7 +344,7 @@ func (e *EngineOperations) prepareRootCaps() error {
 		e.EngineConfig.OciConfig.SetupPrivileged(true)
 		commonCaps = e.EngineConfig.OciConfig.Process.Capabilities.Permitted
 	case "file":
-		file, err := os.OpenFile(buildcfg.CAPABILITY_FILE, os.O_RDONLY|unix.O_NOFOLLOW, 0o644)
+		file, err := openCapabilityFile(suid)
 		if err != nil {
 			return fmt.Errorf("while opening capability config file: %s", err)
 		}
@@ -623,12 +626,12 @@ func (e *EngineOperations) prepareContainerConfig(starterConfig *starter.Config)
 	}
 
 	if os.Getuid() == 0 {
-		if err := e.prepareRootCaps(); err != nil {
+		if err := e.prepareRootCaps(starterConfig.GetIsSUID()); err != nil {
 			return err
 		}
 	} else {
 		enforced := starterConfig.GetIsSUID()
-		if err := e.prepareUserCaps(enforced); err != nil {
+		if err := e.prepareUserCaps(enforced, starterConfig.GetIsSUID()); err != nil {
 			return err
 		}
 	}
@@ -948,11 +951,11 @@ func (e *EngineOperations) prepareInstanceJoinConfig(starterConfig *starter.Conf
 	// unauthorized capabilities from current set according to capability
 	// configuration file
 	if uid == 0 {
-		if err := e.prepareRootCaps(); err != nil {
+		if err := e.prepareRootCaps(starterConfig.GetIsSUID()); err != nil {
 			return err
 		}
 	} else {
-		if err := e.prepareUserCaps(suidRequired); err != nil {
+		if err := e.prepareUserCaps(suidRequired, starterConfig.GetIsSUID()); err != nil {
 			return err
 		}
 	}
@@ -1249,7 +1252,7 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 	// SIF images have additional handling to check against ECL configuration
 	// and look for overlay partitions.
 	case image.SIF:
-		writableOverlayPath, err = e.handleSIFImage(img, rootFs)
+		writableOverlayPath, err = e.handleSIFImage(img, rootFs, starterConfig.GetIsSUID())
 		if err != nil {
 			return err
 		}
@@ -1337,34 +1340,50 @@ func (e *EngineOperations) handleSandboxImage(img *image.Image, starterConfig *s
 	return nil
 }
 
-func (e *EngineOperations) handleSIFImage(img *image.Image, rootFs *image.Section) (string, error) {
+func (e *EngineOperations) handleSIFImage(img *image.Image, rootFs *image.Section, suid bool) (string, error) {
 	writableOverlayPath := ""
 
-	// query the ECL module, proceed if an ecl config file is found
-	ecl, err := syecl.LoadConfig(buildcfg.ECL_FILE)
-	if err == nil {
-		if err = ecl.ValidateConfig(); err != nil {
-			return "", fmt.Errorf("while validating ECL configuration: %s", err)
+	// Load and validate ECL configuration. Fail if ECL config not valid.
+	var eclFile *os.File
+	var err error
+	if suid {
+		eclFile, err = fs.OpenTrustedFile(buildcfg.ECL_FILE, 0)
+		if err != nil {
+			return "", err
 		}
+	} else {
+		eclFile, err = os.OpenFile(buildcfg.ECL_FILE, os.O_RDONLY|unix.O_NOFOLLOW, 0)
+	}
+	if err != nil {
+		return "", err
+	}
+	defer eclFile.Close()
 
-		// Only try to load the global keyring here if the ECL is active.
-		// Otherwise pass through an empty keyring rather than avoiding calling
-		// the ECL functions as this keeps the logic for applying / ignoring ECL in a
-		// single location.
-		var kr openpgp.KeyRing = openpgp.EntityList{}
-		if ecl.Activated {
-			keyring := sypgp.NewHandle(buildcfg.SINGULARITY_CONFDIR, sypgp.GlobalHandleOpt())
-			kr, err = keyring.LoadPubKeyring()
-			if err != nil {
-				return "", fmt.Errorf("while obtaining keyring for ECL: %s", err)
-			}
-		}
+	ecl, err := syecl.LoadConfigFile(eclFile)
+	if err != nil {
+		return "", fmt.Errorf("while loading ECL configuration: %s", err)
+	}
+	if err = ecl.ValidateConfig(); err != nil {
+		return "", fmt.Errorf("while validating ECL configuration: %s", err)
+	}
 
-		if ok, err := ecl.ShouldRunFp(context.TODO(), img.File, kr); err != nil {
-			return "", fmt.Errorf("while checking container image with ECL: %s", err)
-		} else if !ok {
-			return "", errors.New("image prohibited by ECL")
+	// Only try to load the global keyring here if the ECL is active.
+	// Otherwise pass through an empty keyring rather than avoiding calling
+	// the ECL functions as this keeps the logic for applying / ignoring ECL in a
+	// single location.
+	var kr openpgp.KeyRing = openpgp.EntityList{}
+	if ecl.Activated {
+		keyring := sypgp.NewHandle(buildcfg.SINGULARITY_CONFDIR, sypgp.GlobalHandleOpt())
+		kr, err = keyring.LoadPubKeyring()
+		if err != nil {
+			return "", fmt.Errorf("while obtaining keyring for ECL: %s", err)
 		}
+	}
+
+	if ok, err := ecl.ShouldRunFp(context.TODO(), img.File, kr); err != nil {
+		return "", fmt.Errorf("while checking container image with ECL: %s", err)
+	} else if !ok {
+		return "", errors.New("image prohibited by ECL")
 	}
 
 	// look for potential overlay partition in SIF image

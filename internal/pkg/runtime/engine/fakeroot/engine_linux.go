@@ -69,12 +69,19 @@ func (e *EngineOperations) PrepareConfig(starterConfig *starter.Config) error {
 
 	configurationFile := buildcfg.SINGULARITY_CONF_FILE
 
-	// check for ownership of singularity.conf
-	if starterConfig.GetIsSUID() && !fs.IsOwner(configurationFile, 0) {
-		return fmt.Errorf("%s must be owned by root", configurationFile)
+	var fileConfig *singularityconf.File
+	var err error
+	if starterConfig.GetIsSUID() {
+		var file *os.File
+		file, err = fs.OpenTrustedFile(configurationFile, 0)
+		if err != nil {
+			return fmt.Errorf("%s must be owned by root: %s", configurationFile, err)
+		}
+		defer file.Close()
+		fileConfig, err = singularityconf.ParseFile(file)
+	} else {
+		fileConfig, err = singularityconf.Parse(configurationFile)
 	}
-
-	fileConfig, err := singularityconf.Parse(configurationFile)
 	if err != nil {
 		return fmt.Errorf("unable to parse singularity.conf file: %s", err)
 	}

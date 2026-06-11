@@ -12,7 +12,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ccoveille/go-safecast/v2"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	"golang.org/x/sys/unix"
 )
 
 func TestEnsureFileWithPermission(t *testing.T) {
@@ -174,6 +176,155 @@ func TestIsOwner(t *testing.T) {
 
 	if IsOwner("/etc/passwd", 0) != true {
 		t.Errorf("IsOwner returns false for /etc/passwd root ownership")
+	}
+}
+
+func TestFileIsOwner(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	f, err := os.Open("/etc/passwd")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if FileHasOwner(f, 0) != true {
+		t.Errorf("FileIsOwner returns false for /etc/passwd root ownership")
+	}
+}
+
+func TestOpenTrustedFile(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	tmpDir := t.TempDir()
+	file := filepath.Join(tmpDir, "owned")
+	if err := os.WriteFile(file, []byte("test"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	uid, err := safecast.Convert[uint32](os.Geteuid())
+	if err != nil {
+		t.Fatal(err)
+	}
+	f, err := OpenTrustedFile(file, uid)
+	if err != nil {
+		t.Fatalf("OpenTrustedFile rejected matching owner: %s", err)
+	}
+	f.Close()
+
+	wrongUID := uid + 1
+	if wrongUID == uid {
+		wrongUID = uid - 1
+	}
+	if f, err := OpenTrustedFile(file, wrongUID); err == nil {
+		f.Close()
+		t.Fatalf("OpenTrustedFile accepted wrong owner")
+	}
+
+	missing := filepath.Join(tmpDir, "missing")
+	if f, err := OpenTrustedFile(missing, uid); err == nil {
+		f.Close()
+		t.Fatalf("OpenTrustedFile accepted missing file")
+	}
+
+	link := filepath.Join(tmpDir, "link")
+	if err := os.Symlink(file, link); err != nil {
+		t.Fatal(err)
+	}
+	if f, err := OpenTrustedFile(link, uid); err == nil {
+		f.Close()
+		t.Fatalf("OpenTrustedFile followed final symlink")
+	}
+
+	writable := filepath.Join(tmpDir, "writable")
+	if err := os.WriteFile(writable, []byte("test"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(writable, 0o664); err != nil {
+		t.Fatal(err)
+	}
+	if f, err := OpenTrustedFile(writable, uid); err == nil {
+		f.Close()
+		t.Fatalf("OpenTrustedFile accepted group-writable file")
+	}
+
+	dir := filepath.Join(tmpDir, "dir")
+	if err := os.Mkdir(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if f, err := OpenTrustedFile(dir, uid); err == nil {
+		f.Close()
+		t.Fatalf("OpenTrustedFile accepted directory")
+	}
+}
+
+func TestOpenTrustedExecutable(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	tmpDir := t.TempDir()
+	file := filepath.Join(tmpDir, "executable")
+	if err := os.WriteFile(file, []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(file, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	uid, err := safecast.Convert[uint32](os.Geteuid())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fd, fdPath, err := OpenTrustedExecutable(file, uid)
+	if err != nil {
+		t.Fatalf("OpenTrustedExecutable rejected matching executable: %s", err)
+	}
+	defer unix.Close(fd)
+	if fdPath == "" {
+		t.Fatalf("OpenTrustedExecutable returned empty fd path")
+	}
+	fdPtr, err := safecast.Convert[uintptr](fd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	flags, err := unix.FcntlInt(fdPtr, unix.F_GETFD, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if flags&unix.FD_CLOEXEC != 0 {
+		t.Fatalf("OpenTrustedExecutable returned close-on-exec fd")
+	}
+
+	nonExec := filepath.Join(tmpDir, "non-executable")
+	if err := os.WriteFile(nonExec, []byte("test"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if fd, _, err := OpenTrustedExecutable(nonExec, uid); err == nil {
+		unix.Close(fd)
+		t.Fatalf("OpenTrustedExecutable accepted non-executable file")
+	}
+
+	writable := filepath.Join(tmpDir, "writable")
+	if err := os.WriteFile(writable, []byte("test"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(writable, 0o775); err != nil {
+		t.Fatal(err)
+	}
+	if fd, _, err := OpenTrustedExecutable(writable, uid); err == nil {
+		unix.Close(fd)
+		t.Fatalf("OpenTrustedExecutable accepted group-writable executable")
+	}
+
+	link := filepath.Join(tmpDir, "link")
+	if err := os.Symlink(file, link); err != nil {
+		t.Fatal(err)
+	}
+	if fd, _, err := OpenTrustedExecutable(link, uid); err == nil {
+		unix.Close(fd)
+		t.Fatalf("OpenTrustedExecutable followed final symlink")
 	}
 }
 

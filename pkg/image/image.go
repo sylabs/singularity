@@ -467,7 +467,7 @@ func Init(path string, writable bool) (*Image, error) {
 			sylog.Warningf("failed to set O_CLOEXEC flags on image")
 		}
 
-		img.Source = fmt.Sprintf("/proc/self/fd/%d", img.File.Fd())
+		img.Source = fs.ProcFdPath(img.File.Fd())
 		img.Fd = img.File.Fd()
 
 		if err := rf.format.lock(img); err != nil {

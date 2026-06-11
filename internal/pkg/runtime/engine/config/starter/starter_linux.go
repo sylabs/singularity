@@ -287,7 +287,11 @@ func (c *Config) AddGIDMappings(gids []specs.LinuxIDMapping) error {
 	return nil
 }
 
-func setNewIDMapPath(command string, pathPointer unsafe.Pointer) error {
+func (c *Config) setNewIDMapPath(command string, pathPointer unsafe.Pointer) error {
+	if c.GetIsSUID() {
+		return fmt.Errorf("%s path is not required in SUID workflow - setNewIDMapPath should not be called", command)
+	}
+
 	path, err := bin.FindBin(command)
 	if err != nil {
 		return fmt.Errorf(
@@ -296,6 +300,10 @@ func setNewIDMapPath(command string, pathPointer unsafe.Pointer) error {
 		)
 	}
 
+	// This is just a sanity check, not a security measure...
+	// newuidmap/newgidmap must be root owned for setuid bit or caps to allow it
+	// to function. The starter only calls the executable in an unprivileged
+	// non-setuid flow.
 	if !fs.IsOwner(path, 0) {
 		return fmt.Errorf("%s must be owned by the root user to setup fakeroot ID mappings in an unprivileged installation", path)
 	}
@@ -315,7 +323,7 @@ func setNewIDMapPath(command string, pathPointer unsafe.Pointer) error {
 
 // SetNewUIDMapPath sets absolute path to newuidmap binary if found.
 func (c *Config) SetNewUIDMapPath() error {
-	return setNewIDMapPath(
+	return c.setNewIDMapPath(
 		"newuidmap",
 		unsafe.Pointer(&c.config.container.privileges.newuidmapPath[0]),
 	)
@@ -323,7 +331,7 @@ func (c *Config) SetNewUIDMapPath() error {
 
 // SetNewGIDMapPath sets absolute path to newgidmap binary if found.
 func (c *Config) SetNewGIDMapPath() error {
-	return setNewIDMapPath(
+	return c.setNewIDMapPath(
 		"newgidmap",
 		unsafe.Pointer(&c.config.container.privileges.newgidmapPath[0]),
 	)
