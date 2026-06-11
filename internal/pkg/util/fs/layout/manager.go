@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
+	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 const (
@@ -42,20 +43,56 @@ type symlink struct {
 	target  string
 }
 
+type dirOverride struct {
+	source            string
+	nestedBindTargets []string
+}
+
 // Manager manages a filesystem layout in a given path
 type Manager struct {
-	VFS      DefaultVFS
+	// VFS is the virtual filesystem used to create the layout.
+	VFS DefaultVFS
+
+	// DirMode and FileMode are the default permissions for directories and
+	// files created by the manager.
 	DirMode  os.FileMode
 	FileMode os.FileMode
+
 	rootPath string
 	entries  map[string]any
 	dirs     []*dir
 
-	// each entries can contain multiple directories, the first
-	// directory of each entry is always substituted to the bound
-	// directory, the others if any are the directories to create
-	// for nested binds support
-	ovDirs map[string][]string
+	// dirOverrides accumulates binds / nested bind information. The key of the map is
+	// the session directory that will be overridden by the bind. The value is a
+	// struct containing the source of the bind and any nested bind targets that
+	// need to be created inside this bind so that additional nested binds have a valid
+	// mount target.
+	//
+	// For example, with `--bind /data:/foo --bind /tmp:/foo/bar` and an overlay
+	// layout the map will contain:
+	//
+	// "/overlay-lowerdir/foo": {
+	//    source: "/data",
+	//    nestedBindTargets: ["/data/bar"],
+	// }, "/overlay-lowerdir/foo/bar": {
+	//    source: "/tmp",
+	//    nestedBindTargets: <nil>,
+	// }
+	//
+	// With an underlay layout the map will contain:
+	//
+	// "/underlay/foo": {
+	//    source: "/data",
+	//    nestedBindTargets: ["/data/bar"],
+	// }, "/underlay/foo/bar": {
+	//    source: "/tmp",
+	//    nestedBindTargets: <nil>,
+	// }
+	//
+	// In both cases, the manager will ensure that /data/bar is created before
+	// the second bind is mounted, so that the nested bind has a valid target to
+	// mount on.
+	dirOverrides map[string]*dirOverride
 }
 
 func NewManager(path string) (*Manager, error) {
@@ -86,7 +123,10 @@ func (m *Manager) checkPath(path string, checkExist bool) (string, error) {
 	return p, nil
 }
 
-func (m *Manager) createParentDir(path string) {
+// addDirs adds path and all of its parent directories to the layout if
+// they don't exist. It also tracks nested bind targets for any directories that
+// are overridden for a bind.
+func (m *Manager) addDirs(path string) error {
 	uid := os.Getuid()
 	gid := os.Getgid()
 
@@ -101,15 +141,18 @@ func (m *Manager) createParentDir(path string) {
 				d := &dir{mode: m.DirMode, uid: uid, gid: gid}
 				m.entries[p] = d
 				m.dirs = append(m.dirs, d)
-				// check if the parent directory is part of the overridden
-				// directories to force the creation of the destination
-				// directory in the right parent directory (nested binds)
-				if ovDirs, ok := m.ovDirs[filepath.Dir(p)]; ok {
-					m.overrideDir(p, filepath.Join(ovDirs[0], filepath.Base(p)))
+				// If this directory is under an overridden directory, then ensure
+				// we track the corresponding nested bind target.
+				if layoutPath, target := m.nestedBindTargetFor(p); target != "" {
+					sylog.Debugf("Adding nested bind target %s for overridden directory %s", target, layoutPath)
+					if err := m.addNestedBindTarget(layoutPath, target); err != nil {
+						return err
+					}
 				}
 			}
 		}
 	}
+	return nil
 }
 
 // setRootPath sets layout root path
@@ -123,8 +166,8 @@ func (m *Manager) setRootPath(path string) error {
 	} else {
 		return fmt.Errorf("root path is already set")
 	}
-	if m.ovDirs == nil {
-		m.ovDirs = make(map[string][]string)
+	if m.dirOverrides == nil {
+		m.dirOverrides = map[string]*dirOverride{}
 	}
 	if m.dirs == nil {
 		m.dirs = make([]*dir, 0)
@@ -148,8 +191,7 @@ func (m *Manager) AddDir(path string) error {
 	if err != nil {
 		return err
 	}
-	m.createParentDir(p)
-	return nil
+	return m.addDirs(p)
 }
 
 // AddFile adds a file in layout, will recursively add parent
@@ -159,7 +201,9 @@ func (m *Manager) AddFile(path string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	m.createParentDir(filepath.Dir(p))
+	if err := m.addDirs(filepath.Dir(p)); err != nil {
+		return err
+	}
 	m.entries[p] = &file{mode: m.FileMode, uid: os.Getuid(), gid: os.Getgid(), content: content}
 	return nil
 }
@@ -171,30 +215,83 @@ func (m *Manager) AddSymlink(path string, target string) error {
 	if err != nil {
 		return err
 	}
-	m.createParentDir(filepath.Dir(p))
+	if err := m.addDirs(filepath.Dir(p)); err != nil {
+		return err
+	}
 	m.entries[p] = &symlink{uid: os.Getuid(), gid: os.Getgid(), target: target}
 	return nil
 }
 
-// overrideDir will substitute another directory to the one associated
-// to directory located by path. When called multiple times subsequent
-// path are used to store directories to be created for nested binds.
-func (m *Manager) overrideDir(path string, realpath string) {
-	if slices.Contains(m.ovDirs[path], realpath) {
-		return
+// overrideDir marks layoutPath in the session as being overridden by a bind from realPath.
+func (m *Manager) overrideDir(layoutPath string, realPath string) {
+	if existing, ok := m.dirOverrides[layoutPath]; ok {
+		if existing.source == realPath {
+			return
+		}
+		sylog.Warningf("path %s is already overridden by %s, replacing with %s", layoutPath, existing.source, realPath)
 	}
-	m.ovDirs[path] = append(m.ovDirs[path], realpath)
+	m.dirOverrides[layoutPath] = &dirOverride{source: realPath}
+	sylog.Debugf("Overriding layout directory %s with bind from %s", layoutPath, realPath)
 }
 
-// GetOverridePath returns the real path for the session path
-func (m *Manager) GetOverridePath(path string) (string, error) {
-	if p, ok := m.ovDirs[path]; ok {
-		return p[0], nil
+// addNestedBindTarget adds target as a nested bind target for the overridden directory layoutPath.
+func (m *Manager) addNestedBindTarget(layoutPath string, target string) error {
+	ov, ok := m.dirOverrides[layoutPath]
+	if !ok {
+		return fmt.Errorf("no override has been set for %s", layoutPath)
 	}
-	return "", fmt.Errorf("no override directory %s", path)
+	if slices.Contains(ov.nestedBindTargets, target) {
+		return nil
+	}
+	ov.nestedBindTargets = append(ov.nestedBindTargets, target)
+	sylog.Debugf("Adding nested bind target %s for overridden directory %s", target, layoutPath)
+	return nil
 }
 
-// GetPath returns the full path of layout path
+// nestedBindTargetFor checks whether the layout path p is under an overridden
+// directory. If it is, returns the overridden ancestor's path in the layout and
+// the path in the bind source on which p will be mounted.
+//
+// For example, with `/canary` overridden by a bind from `/host/canary`, p =
+// `/canary/dir2` returns layoutPath = `/canary` and target =
+// `/host/canary/dir2`. Both return values are empty when p is not under any
+// override.
+func (m *Manager) nestedBindTargetFor(p string) (layoutOverride, target string) {
+	layoutOverride, source, rel := m.overrideFor(p)
+	if layoutOverride == "" {
+		return "", ""
+	}
+	return layoutOverride, filepath.Join(source, rel)
+}
+
+// overrideFor finds the nearest ancestor of p that is overridden by a bind. It
+// walks up p's parent directories, until it finds an entry in dirOverrides. If
+// an override is found, it returns the overridden ancestor's path in the layout, the
+// source of the bind that overrides it, and the path of p relative to the
+// overridden ancestor. If p is not under any override, it returns three empty
+// strings.
+func (m *Manager) overrideFor(p string) (layoutOverride, overrideSource, pRel string) {
+	for baseDir := filepath.Dir(p); baseDir != "/"; baseDir = filepath.Dir(baseDir) {
+		ovDir, ok := m.dirOverrides[baseDir]
+		if !ok {
+			continue
+		}
+		rel, err := filepath.Rel(baseDir, p)
+		if err != nil {
+			return "", "", ""
+		}
+		return baseDir, ovDir.source, rel
+	}
+	return "", "", ""
+}
+
+// HasOverride returns true if the provided layout path is overridden by a bind, false otherwise.
+func (m *Manager) HasOverride(layoutPath string) bool {
+	_, ok := m.dirOverrides[layoutPath]
+	return ok
+}
+
+// GetPath returns the full host path, for path in the layout.
 func (m *Manager) GetPath(path string) (string, error) {
 	_, err := m.checkPath(path, false)
 	if err != nil {
@@ -269,10 +366,15 @@ func (m *Manager) sync() error {
 		for p, e := range m.entries {
 			if e == d {
 				path = m.rootPath + p
-				for _, ovDir := range m.ovDirs[p] {
-					if _, err := m.VFS.Stat(ovDir); err != nil {
-						if err := m.VFS.Mkdir(ovDir, m.DirMode); err != nil {
-							return fmt.Errorf("failed to create %s directory: %s", ovDir, err)
+				if ovDir, ok := m.dirOverrides[p]; ok {
+					for _, nbt := range ovDir.nestedBindTargets {
+						// Already exists - maybe created by a previous bind.
+						if _, err := m.VFS.Stat(nbt); err == nil {
+							continue
+						}
+						sylog.Debugf("Creating nested bind target %s for overridden directory %s", nbt, p)
+						if err := m.VFS.Mkdir(nbt, m.DirMode); err != nil && !os.IsExist(err) {
+							return fmt.Errorf("failed to create nested bind target %s: %s", nbt, err)
 						}
 					}
 				}
@@ -311,8 +413,8 @@ func (m *Manager) sync() error {
 
 	for p, e := range m.entries {
 		path := m.rootPath + p
-		if ovDir, err := m.GetOverridePath(filepath.Dir(p)); err == nil {
-			path = filepath.Join(ovDir, filepath.Base(p))
+		if _, target := m.nestedBindTargetFor(p); target != "" {
+			path = target
 		}
 		switch entry := e.(type) {
 		case *file:
