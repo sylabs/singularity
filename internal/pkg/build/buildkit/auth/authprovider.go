@@ -49,6 +49,7 @@ import (
 	"github.com/moby/buildkit/session/auth/authprovider"
 	"github.com/moby/buildkit/util/progress/progresswriter"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/maps"
 	"golang.org/x/crypto/nacl/sign"
@@ -350,7 +351,7 @@ func (ts *tokenSeeds) getSeed(host string) ([]byte, error) {
 		return nil, err
 	}
 
-	if err := os.WriteFile(fp, dt, 0o600); err != nil {
+	if err := fs.WriteFileNoFollow(fp, dt, 0o600); err != nil {
 		if !errors.Is(err, syscall.EROFS) && !errors.Is(err, os.ErrPermission) {
 			return nil, err
 		}

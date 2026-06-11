@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
@@ -252,7 +253,7 @@ func (pl *BuildApp) createAllApps(b *types.Bundle) error {
 		globalEnv94.WriteString(globalAppEnv(b, app))
 	}
 
-	return os.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/env/94-appsbase.sh"), []byte(globalEnv94.String()), 0o755)
+	return fs.WriteFileNoFollow(filepath.Join(b.RootfsPath, "/.singularity.d/env/94-appsbase.sh"), []byte(globalEnv94.String()), 0o755)
 }
 
 func createAppRoot(b *types.Bundle, a *App) error {
@@ -286,7 +287,7 @@ func createAppRoot(b *types.Bundle, a *App) error {
 // %appenv and 01-base.sh
 func writeEnvFile(b *types.Bundle, a *App) error {
 	content := fmt.Sprintf(scifEnv01Base, a.Name)
-	if err := os.WriteFile(filepath.Join(appMeta(b, a), "/env/01-base.sh"), []byte(content), 0o755); err != nil {
+	if err := fs.WriteFileNoFollow(filepath.Join(appMeta(b, a), "/env/01-base.sh"), []byte(content), 0o755); err != nil {
 		return err
 	}
 
@@ -294,7 +295,7 @@ func writeEnvFile(b *types.Bundle, a *App) error {
 		return nil
 	}
 
-	return os.WriteFile(filepath.Join(appMeta(b, a), "/env/90-environment.sh"), []byte(a.Env), 0o755)
+	return fs.WriteFileNoFollow(filepath.Join(appMeta(b, a), "/env/90-environment.sh"), []byte(a.Env), 0o755)
 }
 
 func globalAppEnv(b *types.Bundle, a *App) string {
@@ -328,7 +329,7 @@ func writeRunscriptFile(b *types.Bundle, a *App) error {
 	}
 
 	content := fmt.Sprintf(scifRunscriptBase, a.Run)
-	return os.WriteFile(filepath.Join(appMeta(b, a), "/runscript"), []byte(content), 0o755)
+	return fs.WriteFileNoFollow(filepath.Join(appMeta(b, a), "/runscript"), []byte(content), 0o755)
 }
 
 // %appstart
@@ -338,7 +339,7 @@ func writeStartscriptFile(b *types.Bundle, a *App) error {
 	}
 
 	content := fmt.Sprintf(scifStartscriptBase, a.Start)
-	return os.WriteFile(filepath.Join(appMeta(b, a), "/startscript"), []byte(content), 0o755)
+	return fs.WriteFileNoFollow(filepath.Join(appMeta(b, a), "/startscript"), []byte(content), 0o755)
 }
 
 // %apptest
@@ -348,7 +349,7 @@ func writeTestFile(b *types.Bundle, a *App) error {
 	}
 
 	content := fmt.Sprintf(scifTestBase, a.Test)
-	return os.WriteFile(filepath.Join(appMeta(b, a), "/test"), []byte(content), 0o755)
+	return fs.WriteFileNoFollow(filepath.Join(appMeta(b, a), "/test"), []byte(content), 0o755)
 }
 
 // %apphelp
@@ -357,7 +358,7 @@ func writeHelpFile(b *types.Bundle, a *App) error {
 		return nil
 	}
 
-	return os.WriteFile(filepath.Join(appMeta(b, a), "/runscript.help"), []byte(a.Help), 0o644)
+	return fs.WriteFileNoFollow(filepath.Join(appMeta(b, a), "/runscript.help"), []byte(a.Help), 0o644)
 }
 
 // %appfile
@@ -428,7 +429,7 @@ func writeLabels(b *types.Bundle, a *App) error {
 	}
 
 	appBase := filepath.Join(b.RootfsPath, "/scif/apps/", a.Name)
-	err = os.WriteFile(filepath.Join(appBase, "scif/labels.json"), text, 0o644)
+	err = fs.WriteFileNoFollow(filepath.Join(appBase, "scif/labels.json"), text, 0o644)
 	return err
 }
 

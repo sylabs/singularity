@@ -9,6 +9,8 @@ import (
 	"math/rand"
 	"os"
 	"testing"
+
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 func TestCreateConfDir(t *testing.T) {
@@ -27,7 +29,7 @@ func TestCreateConfDir(t *testing.T) {
 		t.Errorf("failed to create directory %s", dir)
 	} else {
 		// stick something in the directory and make sure it isn't deleted
-		os.WriteFile(dir+"/foo", []byte(""), 0o655)
+		fs.WriteFileNoFollow(dir+"/foo", []byte(""), 0o655)
 		handleConfDir(dir)
 		if _, err := os.Stat(dir + "/foo"); os.IsNotExist(err) {
 			t.Errorf("inadvertently overwrote existing directory %s", dir)

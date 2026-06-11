@@ -22,6 +22,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
 	pluginapi "github.com/sylabs/singularity/v4/pkg/plugin"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"golang.org/x/sys/unix"
 )
 
 // source file that should be present in a valid Singularity source tree
@@ -209,7 +210,7 @@ func generateManifest(sourceDir string, _ buildToolchain) (string, error) {
 		return "", fmt.Errorf("while loading plugin %s: %s", in, err)
 	}
 
-	f, err := os.OpenFile(out, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0o644)
+	f, err := os.OpenFile(out, os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return "", fmt.Errorf("while creating manifest %s: %s", out, err)
 	}

@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,6 +15,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,6 +24,7 @@ import (
 	toml "github.com/pelletier/go-toml/v2"
 	"github.com/sylabs/sif/v2/pkg/integrity"
 	"github.com/sylabs/sif/v2/pkg/sif"
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -56,7 +58,12 @@ type Execgroup struct {
 // LoadConfig opens an ECL config file and unmarshals it into structures
 func LoadConfig(confPath string) (ecl EclConfig, err error) {
 	// read in the ECL config file
-	b, err := os.ReadFile(confPath)
+	f, err := os.OpenFile(confPath, os.O_RDONLY|unix.O_NOFOLLOW, 0)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	b, err := io.ReadAll(f)
 	if err != nil {
 		return
 	}
@@ -73,7 +80,13 @@ func PutConfig(ecl EclConfig, confPath string) (err error) {
 		return
 	}
 
-	return os.WriteFile(confPath, data, 0o644)
+	f, err := os.OpenFile(confPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	_, err = f.Write(data)
+	return
 }
 
 // ValidateConfig makes sure paths from configs are fully resolved and that

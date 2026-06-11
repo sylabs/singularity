@@ -529,7 +529,7 @@ func (l *Launcher) preparePasswd(bundlePath string, uid uint32) (*specs.Mount, e
 		sylog.Warningf("%s", err)
 		return nil, nil
 	}
-	if err := os.WriteFile(containerPasswd, content, 0o755); err != nil {
+	if err := fs.WriteFileNoFollow(containerPasswd, content, 0o755); err != nil {
 		return nil, fmt.Errorf("while writing passwd file: %w", err)
 	}
 	passwdMount := specs.Mount{
@@ -561,7 +561,7 @@ func (l *Launcher) prepareGroup(bundlePath string, uid, gid uint32) (*specs.Moun
 		// E.g. container doesn't contain an /etc/group
 		sylog.Warningf("%s", err)
 		return nil, nil
-	} else if err := os.WriteFile(containerGroup, content, 0o755); err != nil {
+	} else if err := fs.WriteFileNoFollow(containerGroup, content, 0o755); err != nil {
 		return nil, fmt.Errorf("while writing passwd file: %w", err)
 	}
 	groupMount := specs.Mount{
@@ -610,7 +610,7 @@ func (l *Launcher) prepareResolvConf(bundlePath string) (*specs.Mount, error) {
 		}
 	}
 
-	if err := os.WriteFile(containerResolvConfPath, resolvConfData, 0o755); err != nil {
+	if err := fs.WriteFileNoFollow(containerResolvConfPath, resolvConfData, 0o755); err != nil {
 		return nil, fmt.Errorf("while writing container's resolv.conf file: %v", err)
 	}
 
@@ -672,7 +672,7 @@ fi
 		b.WriteString(fmt.Sprintf(hostEnvSnippet, k, "'"+shell.EscapeSingleQuotes(v)+"'"))
 	}
 
-	if err := os.WriteFile(hostEnvPath, b.Bytes(), 0o755); err != nil {
+	if err := fs.WriteFileNoFollow(hostEnvPath, b.Bytes(), 0o755); err != nil {
 		return specs.Mount{}, fmt.Errorf("while writing container's %s file: %v", containerEnvPath, err)
 	}
 

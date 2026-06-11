@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,12 +6,12 @@
 package env
 
 import (
-	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 func TestSetFromList(t *testing.T) {
@@ -189,7 +189,7 @@ func TestEnvFileMap(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := os.WriteFile(envFile, []byte(tt.envFile), 0o755); err != nil {
+			if err := fs.WriteFileNoFollow(envFile, []byte(tt.envFile), 0o755); err != nil {
 				t.Fatalf("Could not write test env-file: %v", err)
 			}
 

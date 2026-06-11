@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -24,11 +24,13 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/shell"
 	sytypes "github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
+	"golang.org/x/sys/unix"
 )
 
 type ociRunscriptData struct {
@@ -259,7 +261,7 @@ func (cp *OCIConveyorPacker) insertBaseEnv() (err error) {
 }
 
 func (cp *OCIConveyorPacker) insertRunScript() error {
-	f, err := os.Create(cp.b.RootfsPath + "/.singularity.d/runscript")
+	f, err := os.OpenFile(cp.b.RootfsPath+"/.singularity.d/runscript", os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o755)
 	if err != nil {
 		return err
 	}
@@ -342,7 +344,7 @@ func (cp *OCIConveyorPacker) insertRunScript() error {
 }
 
 func (cp *OCIConveyorPacker) insertEnv() error {
-	f, err := os.Create(cp.b.RootfsPath + "/.singularity.d/env/10-docker2singularity.sh")
+	f, err := os.OpenFile(cp.b.RootfsPath+"/.singularity.d/env/10-docker2singularity.sh", os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o755)
 	if err != nil {
 		return err
 	}
@@ -397,7 +399,7 @@ func (cp *OCIConveyorPacker) insertOCILabels() (err error) {
 		return err
 	}
 
-	err = os.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/labels.json"), []byte(text), 0o644)
+	err = fs.WriteFileNoFollow(filepath.Join(cp.b.RootfsPath, "/.singularity.d/labels.json"), []byte(text), 0o644)
 	return err
 }
 

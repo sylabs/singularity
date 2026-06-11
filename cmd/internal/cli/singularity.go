@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -38,6 +38,7 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
+	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 )
 
@@ -667,7 +668,7 @@ var VersionCmd = &cobra.Command{
 }
 
 func loadRemoteConf(filepath string) (*remote.Config, error) {
-	f, err := os.OpenFile(filepath, os.O_RDONLY, 0o600)
+	f, err := os.OpenFile(filepath, os.O_RDONLY|unix.O_NOFOLLOW, 0)
 	if err != nil {
 		return nil, fmt.Errorf("while opening remote config file: %s", err)
 	}

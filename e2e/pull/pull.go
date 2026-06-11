@@ -546,7 +546,7 @@ func (c ctx) testPullCmd(t *testing.T) {
 			// In order to actually test force, there must already be a file present in
 			// the expected location
 			if tt.createDst {
-				fh, err := os.Create(tt.expectedImage)
+				fh, err := os.OpenFile(tt.expectedImage, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
 				if err != nil {
 					t.Fatalf("failed to create file %q: %+v\n", tt.expectedImage, err)
 				}

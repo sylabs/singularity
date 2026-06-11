@@ -1,4 +1,4 @@
-// Copyright (c) 2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2025-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -6,8 +6,6 @@
 package cli
 
 import (
-	"os"
-
 	"github.com/sigstore/cosign/v2/pkg/cosign"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 	"github.com/spf13/cobra"
@@ -68,10 +66,10 @@ func runGenerateCosignKeyPairCmd(_ *cobra.Command, _ []string) {
 		sylog.Fatalf("%v", err)
 	}
 
-	if err := os.WriteFile(priKey, kb.PrivateBytes, 0o600); err != nil {
+	if err := fs.WriteFileNoFollow(priKey, kb.PrivateBytes, 0o600); err != nil {
 		sylog.Fatalf("%v", err)
 	}
-	if err := os.WriteFile(pubKey, kb.PublicBytes, 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(pubKey, kb.PublicBytes, 0o644); err != nil {
 		sylog.Fatalf("%v", err)
 	}
 }

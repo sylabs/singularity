@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,8 +14,10 @@ import (
 	"os/exec"
 	"path/filepath"
 
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"golang.org/x/sys/unix"
 )
 
 // BusyBoxConveyor only needs to hold the conveyor to have the needed data to pack
@@ -76,15 +78,15 @@ func (cp *BusyBoxConveyorPacker) Pack(context.Context) (b *types.Bundle, err err
 }
 
 func (c *BusyBoxConveyor) insertBaseFiles() error {
-	if err := os.WriteFile(filepath.Join(c.b.RootfsPath, "/etc/passwd"), []byte("root:!:0:0:root:/root:/bin/sh"), 0o664); err != nil {
+	if err := fs.WriteFileNoFollow(filepath.Join(c.b.RootfsPath, "/etc/passwd"), []byte("root:!:0:0:root:/root:/bin/sh"), 0o664); err != nil {
 		return err
 	}
 
-	if err := os.WriteFile(filepath.Join(c.b.RootfsPath, "/etc/group"), []byte(" root:x:0:"), 0o664); err != nil {
+	if err := fs.WriteFileNoFollow(filepath.Join(c.b.RootfsPath, "/etc/group"), []byte(" root:x:0:"), 0o664); err != nil {
 		return err
 	}
 
-	return os.WriteFile(filepath.Join(c.b.RootfsPath, "/etc/hosts"), []byte("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4"), 0o664)
+	return fs.WriteFileNoFollow(filepath.Join(c.b.RootfsPath, "/etc/hosts"), []byte("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4"), 0o664)
 }
 
 func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, err error) {
@@ -96,7 +98,7 @@ func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, e
 	}
 	defer resp.Body.Close()
 
-	f, err := os.Create(filepath.Join(c.b.RootfsPath, "/bin/busybox"))
+	f, err := os.OpenFile(filepath.Join(c.b.RootfsPath, "/bin/busybox"), os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o755)
 	if err != nil {
 		return "", err
 	}
@@ -128,7 +130,7 @@ func (c *BusyBoxConveyor) insertBaseEnv() (err error) {
 }
 
 func (cp *BusyBoxConveyorPacker) insertRunScript() error {
-	return os.WriteFile(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0o755)
+	return fs.WriteFileNoFollow(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0o755)
 }
 
 // CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem

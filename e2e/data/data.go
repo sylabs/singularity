@@ -13,6 +13,7 @@ import (
 
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 	"github.com/sylabs/singularity/v4/e2e/internal/testhelper"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 type ctx struct {
@@ -31,7 +32,7 @@ func (c ctx) testDataPackage(t *testing.T) {
 	if err := os.Mkdir(innerDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(innerFile, content, 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(innerFile, content, 0o644); err != nil {
 		t.Fatal(err)
 	}
 

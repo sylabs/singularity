@@ -17,6 +17,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/util/user"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/fs/lock"
+	"golang.org/x/sys/unix"
 )
 
 const (
@@ -436,7 +437,7 @@ func Init(path string, writable bool) (*Image, error) {
 			}
 		}
 
-		img.File, err = os.OpenFile(resolvedPath, mode, 0)
+		img.File, err = os.OpenFile(resolvedPath, mode|unix.O_NOFOLLOW, 0)
 		if err != nil {
 			continue
 		}

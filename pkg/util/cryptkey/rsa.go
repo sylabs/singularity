@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -15,6 +15,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+
+	"golang.org/x/sys/unix"
 )
 
 const (
@@ -77,7 +79,7 @@ func SavePublicPEM(fileName string, key *rsa.PrivateKey) error {
 		return err
 	}
 
-	pemfile, err := os.Create(fileName)
+	pemfile, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return fmt.Errorf("unable to create key file: %v", err)
 	}
@@ -102,7 +104,7 @@ func SavePrivatePEM(fileName string, key *rsa.PrivateKey) error {
 		return fmt.Errorf("cannot save invalid key: %v", err)
 	}
 
-	outFile, err := os.Create(fileName)
+	outFile, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o600)
 	if err != nil {
 		return fmt.Errorf("unable to create key file: %v", err)
 	}

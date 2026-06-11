@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -17,6 +17,7 @@ import (
 	"github.com/gosimple/slug"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
+	"golang.org/x/sys/unix"
 )
 
 var cacheDuration = 720 * time.Hour
@@ -100,7 +101,7 @@ func getCachedConfig(uri string) io.ReadCloser {
 	} else if fi.ModTime().Add(cacheDuration).Before(time.Now()) {
 		return nil
 	}
-	rc, err := os.Open(config)
+	rc, err := os.OpenFile(config, os.O_RDONLY|unix.O_NOFOLLOW, 0)
 	if err != nil {
 		return nil
 	}
@@ -113,5 +114,10 @@ func updateCachedConfig(uri string, data []byte) {
 		return
 	}
 	config := filepath.Join(dir, uri+".json")
-	os.WriteFile(config, data, 0o600)
+	f, err := os.OpenFile(config, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o600)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	f.Write(data)
 }

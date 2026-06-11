@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+
+	"golang.org/x/sys/unix"
 )
 
 // Directives represents the configuration directives type
@@ -164,7 +166,7 @@ func Parse(filepath string) (*File, error) {
 		return GetConfig(nil)
 	}
 
-	c, err := os.Open(filepath)
+	c, err := os.OpenFile(filepath, os.O_RDONLY|unix.O_NOFOLLOW, 0)
 	if err != nil {
 		return nil, err
 	}

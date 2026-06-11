@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -23,6 +23,7 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/namespaces"
+	"golang.org/x/sys/unix"
 )
 
 // debootstrapArchs is a map of GO Archs to official Debian ports
@@ -113,8 +114,14 @@ func (cp *DebootstrapConveyorPacker) prepareFakerootEnv(ctx context.Context) (fu
 				break
 			case <-time.After(100 * time.Millisecond):
 				if _, err := os.Stat(makedevPath); err == nil {
-					os.Truncate(makedevPath, 0)
-					os.Create(filepath.Join(cp.b.RootfsPath, "/dev/tty1"))
+					if err := os.Truncate(makedevPath, 0); err != nil {
+						sylog.Warningf("while truncating %s: %s", makedevPath, err)
+					}
+					f, err := os.OpenFile(filepath.Join(cp.b.RootfsPath, "/dev/tty1"), os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
+					if err != nil {
+						sylog.Warningf("while creating %s: %s", filepath.Join(cp.b.RootfsPath, "/dev/tty1"), err)
+					}
+					f.Close()
 					break
 				}
 			}
@@ -274,7 +281,7 @@ func (cp *DebootstrapConveyorPacker) insertBaseEnv(b *types.Bundle) (err error) 
 }
 
 func (cp *DebootstrapConveyorPacker) insertRunScript(b *types.Bundle) (err error) {
-	f, err := os.Create(b.RootfsPath + "/.singularity.d/runscript")
+	f, err := os.OpenFile(b.RootfsPath+"/.singularity.d/runscript", os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o755)
 	if err != nil {
 		return
 	}

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -85,12 +85,12 @@ func TestCopyFromHost(t *testing.T) {
 
 	// Source Files
 	srcFile := filepath.Join(dir, "srcFile")
-	if err := os.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(srcFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	srcFileGlob := filepath.Join(dir, "srcFi?*")
 	srcSpaceFile := filepath.Join(dir, "src File")
-	if err := os.WriteFile(srcSpaceFile, []byte(sourceFileContent), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(srcSpaceFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs
@@ -106,7 +106,7 @@ func TestCopyFromHost(t *testing.T) {
 	srcGlob := filepath.Join(dir, "src*")
 	// Nested File (to test multi level glob)
 	srcFileNested := filepath.Join(dir, "srcDir/srcFileNested")
-	if err := os.WriteFile(srcFileNested, []byte(sourceFileContent), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(srcFileNested, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	srcFileNestedGlob := filepath.Join(dir, "srcDi?/srcFil?Nested")
@@ -372,7 +372,7 @@ func TestCopyFromHostNested(t *testing.T) {
 	}
 	// Source Files
 	srcFile := filepath.Join(innerDir, "srcFile")
-	if err := os.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(srcFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs
@@ -472,11 +472,11 @@ func TestCopyFromStage(t *testing.T) {
 
 	// Source Files
 	srcFile := filepath.Join(srcRoot, "srcFile")
-	if err := os.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(srcFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	srcSpaceFile := filepath.Join(srcRoot, "src File")
-	if err := os.WriteFile(srcSpaceFile, []byte(sourceFileContent), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(srcSpaceFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs
@@ -490,7 +490,7 @@ func TestCopyFromStage(t *testing.T) {
 	}
 	// Nested File (to test multi level glob)
 	srcFileNested := filepath.Join(srcRoot, "srcDir/srcFileNested")
-	if err := os.WriteFile(srcFileNested, []byte(sourceFileContent), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(srcFileNested, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Symlinks
@@ -774,7 +774,7 @@ func TestCopyFromStageNested(t *testing.T) {
 	}
 	// Source Files
 	srcFile := filepath.Join(innerDir, "srcFile")
-	if err := os.WriteFile(srcFile, []byte(sourceFileContent), 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(srcFile, []byte(sourceFileContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	// Source Dirs

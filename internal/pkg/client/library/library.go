@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -17,6 +17,7 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
+	"golang.org/x/sys/unix"
 
 	scslibrary "github.com/sylabs/scs-library-client/client"
 )
@@ -111,7 +112,7 @@ func getDownloadConfig() (scslibrary.Downloader, error) {
 // DownloadImage is a helper function to wrap library image download operation
 func DownloadImage(ctx context.Context, c *scslibrary.Client, imagePath, arch string, libraryRef *scslibrary.Ref, pb scslibrary.ProgressBar) error {
 	// open destination file for writing
-	f, err := os.OpenFile(imagePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o777)
+	f, err := os.OpenFile(imagePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR|unix.O_NOFOLLOW, 0o777)
 	if err != nil {
 		return fmt.Errorf("error opening file %s for writing: %v", imagePath, err)
 	}

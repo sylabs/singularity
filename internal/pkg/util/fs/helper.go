@@ -283,7 +283,7 @@ func EvalRelative(path string, root string) string {
 
 // Touch behaves like touch command.
 func Touch(path string) error {
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0o644)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return err
 	}
@@ -344,7 +344,7 @@ func CopyFile(from, to string, mode os.FileMode) (err error) {
 		return fmt.Errorf("file %s already exists", to)
 	}
 
-	dstFile, err := os.OpenFile(to, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, mode)
+	dstFile, err := os.OpenFile(to, os.O_CREATE|os.O_TRUNC|os.O_WRONLY|unix.O_NOFOLLOW, mode)
 	if err != nil {
 		return fmt.Errorf("could not open %s: %w", to, err)
 	}
@@ -627,4 +627,17 @@ func FindSize(size int64) string {
 		unit = "TiB"
 	}
 	return fmt.Sprintf("%.2f %s", float64(size)/factor, unit)
+}
+
+// WriteFileNoFollow mimics fs.WriteFileNoFollow but with O_NOFOLLOW to avoid following
+// symlinks in the last part of the path. This prevents e.g. creating a file
+// through a dangling symlink.
+func WriteFileNoFollow(path string, data []byte, mode os.FileMode) error {
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, mode)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = f.Write(data)
+	return err
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -49,7 +49,7 @@ func TestLocalPackerSquashfs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("while reading test file: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(rootfs, testfile), data, 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(filepath.Join(rootfs, testfile), data, 0o644); err != nil {
 		t.Fatalf("while writing test file: %v", err)
 	}
 	image := filepath.Join(tempDirPath, "issue_3084.img")

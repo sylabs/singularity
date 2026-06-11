@@ -6,12 +6,12 @@
 package verify
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/sigstore/cosign/v2/pkg/cosign"
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/test/oci"
 )
 
@@ -27,7 +27,7 @@ func (c *ctx) verifyOCICosign(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(badKeyPath, kb.PublicBytes, 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(badKeyPath, kb.PublicBytes, 0o644); err != nil {
 		t.Fatal(err)
 	}
 

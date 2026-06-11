@@ -19,11 +19,13 @@ import (
 	"time"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/build/types/parser"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/inspect"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
+	"golang.org/x/sys/unix"
 )
 
 func (s *stage) insertMetadata() error {
@@ -76,13 +78,13 @@ func insertEnvScript(b *types.Bundle) error {
 		envScriptPath := filepath.Join(b.RootfsPath, "/.singularity.d/env/90-environment.sh")
 		_, err := os.Stat(envScriptPath)
 		if os.IsNotExist(err) {
-			err := os.WriteFile(envScriptPath, []byte("#!/bin/sh\n\n"+b.Recipe.Environment.Script+"\n"), 0o755)
+			err := fs.WriteFileNoFollow(envScriptPath, []byte("#!/bin/sh\n\n"+b.Recipe.Environment.Script+"\n"), 0o755)
 			if err != nil {
 				return err
 			}
 		} else {
 			// append to script if it already exists
-			f, err := os.OpenFile(envScriptPath, os.O_APPEND|os.O_WRONLY, 0o755)
+			f, err := os.OpenFile(envScriptPath, os.O_APPEND|os.O_WRONLY|unix.O_NOFOLLOW, 0o755)
 			if err != nil {
 				return err
 			}
@@ -123,7 +125,7 @@ func insertRunScript(b *types.Bundle) error {
 	if b.RunSection("runscript") && b.Recipe.Runscript.Script != "" {
 		sylog.Infof("Adding runscript")
 		shebang, script := handleShebangScript(b.Recipe.Runscript)
-		err := os.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/runscript"), []byte(shebang+"\n\n"+script+"\n"), 0o755)
+		err := fs.WriteFileNoFollow(filepath.Join(b.RootfsPath, "/.singularity.d/runscript"), []byte(shebang+"\n\n"+script+"\n"), 0o755)
 		if err != nil {
 			return err
 		}
@@ -135,7 +137,7 @@ func insertStartScript(b *types.Bundle) error {
 	if b.RunSection("startscript") && b.Recipe.Startscript.Script != "" {
 		sylog.Infof("Adding startscript")
 		shebang, script := handleShebangScript(b.Recipe.Startscript)
-		err := os.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/startscript"), []byte(shebang+"\n\n"+script+"\n"), 0o755)
+		err := fs.WriteFileNoFollow(filepath.Join(b.RootfsPath, "/.singularity.d/startscript"), []byte(shebang+"\n\n"+script+"\n"), 0o755)
 		if err != nil {
 			return err
 		}
@@ -147,7 +149,7 @@ func insertTestScript(b *types.Bundle) error {
 	if b.RunSection("test") && b.Recipe.Test.Script != "" {
 		sylog.Infof("Adding testscript")
 		shebang, script := handleShebangScript(b.Recipe.Test)
-		err := os.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/test"), []byte(shebang+"\n\n"+script+"\n"), 0o755)
+		err := fs.WriteFileNoFollow(filepath.Join(b.RootfsPath, "/.singularity.d/test"), []byte(shebang+"\n\n"+script+"\n"), 0o755)
 		if err != nil {
 			return err
 		}
@@ -160,7 +162,7 @@ func insertHelpScript(b *types.Bundle) error {
 		_, err := os.Stat(filepath.Join(b.RootfsPath, "/.singularity.d/runscript.help"))
 		if err != nil || b.Opts.Force {
 			sylog.Infof("Adding help info")
-			err := os.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/runscript.help"), []byte(b.Recipe.Help.Script+"\n"), 0o644)
+			err := fs.WriteFileNoFollow(filepath.Join(b.RootfsPath, "/.singularity.d/runscript.help"), []byte(b.Recipe.Help.Script+"\n"), 0o644)
 			if err != nil {
 				return err
 			}
@@ -198,7 +200,7 @@ func insertDefinition(b *types.Bundle) error {
 		}
 	}
 
-	err := os.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/Singularity"), b.Recipe.FullRaw, 0o644)
+	err := fs.WriteFileNoFollow(filepath.Join(b.RootfsPath, "/.singularity.d/Singularity"), b.Recipe.FullRaw, 0o644)
 	if err != nil {
 		return err
 	}
@@ -256,7 +258,7 @@ func insertLabelsJSON(b *types.Bundle) (err error) {
 		return err
 	}
 
-	err = os.WriteFile(filepath.Join(b.RootfsPath, "/.singularity.d/labels.json"), []byte(text), 0o644)
+	err = fs.WriteFileNoFollow(filepath.Join(b.RootfsPath, "/.singularity.d/labels.json"), []byte(text), 0o644)
 	return err
 }
 

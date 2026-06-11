@@ -26,6 +26,7 @@ import (
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
+	"golang.org/x/sys/unix"
 )
 
 // RemoteBuilder contains the build request and response
@@ -185,7 +186,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 
 	// If image destination is local file, pull image.
 	if !strings.HasPrefix(rb.ImagePath, "library://") {
-		f, err := os.OpenFile(rb.ImagePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o777)
+		f, err := os.OpenFile(rb.ImagePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR|unix.O_NOFOLLOW, 0o777)
 		if err != nil {
 			return fmt.Errorf("unable to open file %s for writing: %w", rb.ImagePath, err)
 		}

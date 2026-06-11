@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,6 +13,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 const testLibFile = "testdata/testliblist.conf"
@@ -73,7 +75,7 @@ func TestSoLinks(t *testing.T) {
 	aFile := filepath.Join(tmpDir, "a.so")
 	a1Link := filepath.Join(tmpDir, "a.so.1")
 	a12Link := filepath.Join(tmpDir, "a.so.1.2")
-	if err := os.WriteFile(aFile, nil, 0o644); err != nil {
+	if err := fs.WriteFileNoFollow(aFile, nil, 0o644); err != nil {
 		t.Fatalf("Could not create file: %v", err)
 	}
 	if err := os.Symlink(aFile, a1Link); err != nil {
@@ -83,7 +85,7 @@ func TestSoLinks(t *testing.T) {
 		t.Fatalf("Could not symlink: %v", err)
 	}
 	bFile := filepath.Join(tmpDir, "b.so")
-	err := os.WriteFile(bFile, nil, 0o644)
+	err := fs.WriteFileNoFollow(bFile, nil, 0o644)
 	if err != nil {
 		t.Fatalf("Could not create file: %v", err)
 	}

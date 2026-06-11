@@ -88,7 +88,7 @@ func GlobalConfig(args []string, configFile string, dry bool, op GlobalConfigOp)
 		return fmt.Errorf("%q is not a valid configuration directive", directive)
 	}
 
-	f, err := os.OpenFile(configFile, os.O_RDONLY, 0o644)
+	f, err := os.OpenFile(configFile, os.O_RDONLY|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return fmt.Errorf("while opening configuration file %s: %s", configFile, err)
 	}

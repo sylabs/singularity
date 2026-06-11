@@ -1,4 +1,4 @@
-// Copyright (c) 2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -14,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 func (c ctx) ociSingularityEnv(t *testing.T) {
@@ -420,7 +421,7 @@ func (c ctx) ociEnvFile(t *testing.T) {
 			if len(tt.envFiles) > 0 {
 				for i, envFile := range tt.envFiles {
 					filename := fmt.Sprint(p, i)
-					os.WriteFile(filename, []byte(envFile), 0o644)
+					fs.WriteFileNoFollow(filename, []byte(envFile), 0o644)
 					args = append(args, "--env-file", filename)
 				}
 			}

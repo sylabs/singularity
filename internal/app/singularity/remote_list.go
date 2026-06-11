@@ -13,6 +13,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/remote"
+	"golang.org/x/sys/unix"
 )
 
 const listLine = "%s\t%s\t%s\t%s\t%s\t%s\n"
@@ -22,7 +23,7 @@ func RemoteList(usrConfigFile string) (err error) {
 	c := &remote.Config{}
 
 	// opening config file
-	file, err := os.OpenFile(usrConfigFile, os.O_RDONLY|os.O_CREATE, 0o600)
+	file, err := os.OpenFile(usrConfigFile, os.O_RDONLY|os.O_CREATE|unix.O_NOFOLLOW, 0o600)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return fmt.Errorf("no remote configurations")

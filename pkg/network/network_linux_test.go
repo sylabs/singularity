@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -23,6 +23,7 @@ import (
 	"github.com/containernetworking/cni/libcni"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 )
 
 var confFiles = []struct {
@@ -608,7 +609,7 @@ func TestMain(m *testing.M) {
 	for _, conf := range confFiles {
 		testNetworks = append(testNetworks, conf.name)
 		path := filepath.Join(defaultCNIConfPath, conf.file)
-		if err := os.WriteFile(path, []byte(conf.content), 0o644); err != nil {
+		if err := fs.WriteFileNoFollow(path, []byte(conf.content), 0o644); err != nil {
 			os.RemoveAll(defaultCNIConfPath)
 			os.Exit(1)
 		}

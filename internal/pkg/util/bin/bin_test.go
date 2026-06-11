@@ -9,13 +9,13 @@ package bin
 
 import (
 	"fmt"
-	"os"
 	"os/exec"
 	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/env"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/util/singularityconf"
 )
 
@@ -163,7 +163,7 @@ func TestFindFromConfigOrPath(t *testing.T) {
 
 			testConf := filepath.Join(t.TempDir(), "test.conf")
 			cfg := fmt.Sprintf("%s = %s\n", tc.configKey, tc.configVal)
-			os.WriteFile(testConf, []byte(cfg), 0o644)
+			fs.WriteFileNoFollow(testConf, []byte(cfg), 0o644)
 
 			conf, err := singularityconf.Parse(testConf)
 			if err != nil {
@@ -292,7 +292,7 @@ func TestFindFromConfigOnly(t *testing.T) {
 
 			testConf := filepath.Join(t.TempDir(), "test.conf")
 			cfg := fmt.Sprintf("%s = %s\n", tc.configKey, tc.configVal)
-			os.WriteFile(testConf, []byte(cfg), 0o644)
+			fs.WriteFileNoFollow(testConf, []byte(cfg), 0o644)
 
 			conf, err := singularityconf.Parse(testConf)
 			if err != nil {

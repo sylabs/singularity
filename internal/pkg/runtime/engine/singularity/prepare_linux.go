@@ -211,7 +211,7 @@ func (e *EngineOperations) prepareUserCaps(enforced bool) error {
 
 	e.EngineConfig.OciConfig.SetProcessNoNewPrivileges(true)
 
-	file, err := os.OpenFile(buildcfg.CAPABILITY_FILE, os.O_RDONLY, 0o644)
+	file, err := os.OpenFile(buildcfg.CAPABILITY_FILE, os.O_RDONLY|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		return fmt.Errorf("while opening capability config file: %s", err)
 	}
@@ -341,7 +341,7 @@ func (e *EngineOperations) prepareRootCaps() error {
 		e.EngineConfig.OciConfig.SetupPrivileged(true)
 		commonCaps = e.EngineConfig.OciConfig.Process.Capabilities.Permitted
 	case "file":
-		file, err := os.OpenFile(buildcfg.CAPABILITY_FILE, os.O_RDONLY, 0o644)
+		file, err := os.OpenFile(buildcfg.CAPABILITY_FILE, os.O_RDONLY|unix.O_NOFOLLOW, 0o644)
 		if err != nil {
 			return fmt.Errorf("while opening capability config file: %s", err)
 		}
