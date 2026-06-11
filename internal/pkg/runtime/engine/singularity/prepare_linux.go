@@ -1239,108 +1239,19 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 		return err
 	}
 
-	// sandbox are handled differently for security reasons
 	switch img.Type {
+	// Sandboxes have additional security checks, fd handling, and overlay
+	// compatibility checks.
 	case image.SANDBOX:
-		if img.Path == "/" {
-			return fmt.Errorf("/ as sandbox is not authorized")
+		if err := e.handleSandboxImage(img, starterConfig); err != nil {
+			return err
 		}
-
-		// C starter code will position current working directory
-		starterConfig.SetWorkingDirectoryFd(int(img.Fd))
-
-		// In some flows we need to bed able to close the image Fd for successful cleanup
-		starterConfig.SetImageFd(int(img.Fd))
-
-		// If the sandbox is actually a FUSE mounted image, we won't be able to
-		// enter it as root (in the setuid starter), so use the parent dir as
-		// the initial working directory.
-		if e.EngineConfig.GetImageFuse() {
-			fParent, err := os.Open(filepath.Dir(img.Path))
-			if err != nil {
-				return fmt.Errorf("couldn't open FUSE mounted image parent directory: %w", err)
-			}
-			if err := starterConfig.KeepFileDescriptor(int(fParent.Fd())); err != nil {
-				return err
-			}
-			starterConfig.SetWorkingDirectoryFd(int(fParent.Fd()))
-		}
-
-		if e.EngineConfig.GetSessionLayer() == singularityConfig.OverlayLayer {
-			if err := overlay.CheckLower(img.Path); overlay.IsIncompatible(err) {
-				layer := singularityConfig.UnderlayLayer
-				if !e.EngineConfig.File.EnableUnderlay {
-					sylog.Warningf("Could not fallback to underlay, disabled by configuration ('enable underlay = no')")
-					layer = singularityConfig.DefaultLayer
-				}
-				e.EngineConfig.SetSessionLayer(layer)
-
-				// show a warning message if --writable-tmpfs or overlay images
-				// are requested otherwise make it verbose to not annoy users
-				if e.EngineConfig.GetWritableTmpfs() || len(e.EngineConfig.GetOverlayImage()) > 0 {
-					sylog.Warningf("Fallback to %s layer: %s", layer, err)
-
-					if e.EngineConfig.GetWritableTmpfs() {
-						e.EngineConfig.SetWritableTmpfs(false)
-						sylog.Warningf("--writable-tmpfs disabled due to sandbox filesystem incompatibility with overlay")
-					}
-					if len(e.EngineConfig.GetOverlayImage()) > 0 {
-						e.EngineConfig.SetOverlayImage(nil)
-						sylog.Warningf("overlay image(s) not loaded due to sandbox filesystem incompatibility with overlay")
-					}
-				} else {
-					sylog.Verbosef("Fallback to %s layer: %s", layer, err)
-				}
-			} else if err != nil {
-				return fmt.Errorf("while checking image compatibility with overlay: %s", err)
-			}
-		}
+	// SIF images have additional handling to check against ECL configuration
+	// and look for overlay partitions.
 	case image.SIF:
-		// query the ECL module, proceed if an ecl config file is found
-		ecl, err := syecl.LoadConfig(buildcfg.ECL_FILE)
-		if err == nil {
-			if err = ecl.ValidateConfig(); err != nil {
-				return fmt.Errorf("while validating ECL configuration: %s", err)
-			}
-
-			// Only try to load the global keyring here if the ECL is active.
-			// Otherwise pass through an empty keyring rather than avoiding calling
-			// the ECL functions as this keeps the logic for applying / ignoring ECL in a
-			// single location.
-			var kr openpgp.KeyRing = openpgp.EntityList{}
-			if ecl.Activated {
-				keyring := sypgp.NewHandle(buildcfg.SINGULARITY_CONFDIR, sypgp.GlobalHandleOpt())
-				kr, err = keyring.LoadPubKeyring()
-				if err != nil {
-					return fmt.Errorf("while obtaining keyring for ECL: %s", err)
-				}
-			}
-
-			if ok, err := ecl.ShouldRunFp(context.TODO(), img.File, kr); err != nil {
-				return fmt.Errorf("while checking container image with ECL: %s", err)
-			} else if !ok {
-				return errors.New("image prohibited by ECL")
-			}
-		}
-
-		// look for potential overlay partition in SIF image
-		if e.EngineConfig.GetSessionLayer() == singularityConfig.OverlayLayer {
-			overlays, err := img.GetOverlayPartitions()
-			if err != nil {
-				return fmt.Errorf("while getting overlay partitions in %s: %s", img.Path, err)
-			}
-			for _, p := range overlays {
-				if img.Writable && p.Type == image.EXT3 {
-					writableOverlayPath = img.Path
-				}
-			}
-		}
-
-		// SIF image open for writing without writable
-		// overlay partition, assuming that the root
-		// filesystem is squashfs or encrypted squashfs
-		if img.Writable && rootFs.Type != image.EXT3 && writableOverlayPath == "" {
-			return fmt.Errorf("no SIF writable overlay partition found in %s", img.Path)
+		writableOverlayPath, err = e.handleSIFImage(img, rootFs)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -1367,6 +1278,115 @@ func (e *EngineOperations) loadImages(starterConfig *starter.Config) error {
 	e.EngineConfig.SetImageList(images)
 
 	return nil
+}
+
+func (e *EngineOperations) handleSandboxImage(img *image.Image, starterConfig *starter.Config) error {
+	if img.Path == "/" {
+		return fmt.Errorf("/ as sandbox is not authorized")
+	}
+
+	// C starter code will position current working directory
+	starterConfig.SetWorkingDirectoryFd(int(img.Fd))
+
+	// In some flows we need to bed able to close the image Fd for successful cleanup
+	starterConfig.SetImageFd(int(img.Fd))
+
+	// If the sandbox is actually a FUSE mounted image, we won't be able to
+	// enter it as root (in the setuid starter), so use the parent dir as
+	// the initial working directory.
+	if e.EngineConfig.GetImageFuse() {
+		fParent, err := os.Open(filepath.Dir(img.Path))
+		if err != nil {
+			return fmt.Errorf("couldn't open FUSE mounted image parent directory: %w", err)
+		}
+		if err := starterConfig.KeepFileDescriptor(int(fParent.Fd())); err != nil {
+			return err
+		}
+		starterConfig.SetWorkingDirectoryFd(int(fParent.Fd()))
+	}
+
+	if e.EngineConfig.GetSessionLayer() == singularityConfig.OverlayLayer {
+		if err := overlay.CheckLower(img.Path); overlay.IsIncompatible(err) {
+			layer := singularityConfig.UnderlayLayer
+			if !e.EngineConfig.File.EnableUnderlay {
+				sylog.Warningf("Could not fallback to underlay, disabled by configuration ('enable underlay = no')")
+				layer = singularityConfig.DefaultLayer
+			}
+			e.EngineConfig.SetSessionLayer(layer)
+
+			// show a warning message if --writable-tmpfs or overlay images
+			// are requested otherwise make it verbose to not annoy users
+			if e.EngineConfig.GetWritableTmpfs() || len(e.EngineConfig.GetOverlayImage()) > 0 {
+				sylog.Warningf("Fallback to %s layer: %s", layer, err)
+
+				if e.EngineConfig.GetWritableTmpfs() {
+					e.EngineConfig.SetWritableTmpfs(false)
+					sylog.Warningf("--writable-tmpfs disabled due to sandbox filesystem incompatibility with overlay")
+				}
+				if len(e.EngineConfig.GetOverlayImage()) > 0 {
+					e.EngineConfig.SetOverlayImage(nil)
+					sylog.Warningf("overlay image(s) not loaded due to sandbox filesystem incompatibility with overlay")
+				}
+			} else {
+				sylog.Verbosef("Fallback to %s layer: %s", layer, err)
+			}
+		} else if err != nil {
+			return fmt.Errorf("while checking image compatibility with overlay: %s", err)
+		}
+	}
+	return nil
+}
+
+func (e *EngineOperations) handleSIFImage(img *image.Image, rootFs *image.Section) (string, error) {
+	writableOverlayPath := ""
+
+	// query the ECL module, proceed if an ecl config file is found
+	ecl, err := syecl.LoadConfig(buildcfg.ECL_FILE)
+	if err == nil {
+		if err = ecl.ValidateConfig(); err != nil {
+			return "", fmt.Errorf("while validating ECL configuration: %s", err)
+		}
+
+		// Only try to load the global keyring here if the ECL is active.
+		// Otherwise pass through an empty keyring rather than avoiding calling
+		// the ECL functions as this keeps the logic for applying / ignoring ECL in a
+		// single location.
+		var kr openpgp.KeyRing = openpgp.EntityList{}
+		if ecl.Activated {
+			keyring := sypgp.NewHandle(buildcfg.SINGULARITY_CONFDIR, sypgp.GlobalHandleOpt())
+			kr, err = keyring.LoadPubKeyring()
+			if err != nil {
+				return "", fmt.Errorf("while obtaining keyring for ECL: %s", err)
+			}
+		}
+
+		if ok, err := ecl.ShouldRunFp(context.TODO(), img.File, kr); err != nil {
+			return "", fmt.Errorf("while checking container image with ECL: %s", err)
+		} else if !ok {
+			return "", errors.New("image prohibited by ECL")
+		}
+	}
+
+	// look for potential overlay partition in SIF image
+	if e.EngineConfig.GetSessionLayer() == singularityConfig.OverlayLayer {
+		overlays, err := img.GetOverlayPartitions()
+		if err != nil {
+			return "", fmt.Errorf("while getting overlay partitions in %s: %s", img.Path, err)
+		}
+		for _, p := range overlays {
+			if img.Writable && p.Type == image.EXT3 {
+				writableOverlayPath = img.Path
+			}
+		}
+	}
+
+	// SIF image open for writing without writable
+	// overlay partition, assuming that the root
+	// filesystem is squashfs or encrypted squashfs
+	if img.Writable && rootFs.Type != image.EXT3 && writableOverlayPath == "" {
+		return "", fmt.Errorf("no SIF writable overlay partition found in %s", img.Path)
+	}
+	return writableOverlayPath, nil
 }
 
 // loadOverlayImages loads overlay images.
