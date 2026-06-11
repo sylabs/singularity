@@ -35,7 +35,6 @@ require (
 	github.com/moby/go-archive v0.2.0
 	github.com/moby/moby/client v0.4.1
 	github.com/moby/profiles/seccomp v0.2.3
-	github.com/moby/sys/sequential v0.6.0
 	github.com/moby/sys/user v0.4.0
 	github.com/moby/sys/userns v0.1.0
 	github.com/moby/term v0.5.2
@@ -201,6 +200,7 @@ require (
 	github.com/moby/sys/mount v0.3.4 // indirect
 	github.com/moby/sys/mountinfo v0.7.2 // indirect
 	github.com/moby/sys/reexec v0.1.0 // indirect
+	github.com/moby/sys/sequential v0.6.0 // indirect
 	github.com/moby/sys/signal v0.7.1 // indirect
 	github.com/morikuni/aec v1.1.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect

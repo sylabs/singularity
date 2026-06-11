@@ -13,7 +13,6 @@ import (
 
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
-	"github.com/sylabs/singularity/v4/pkg/sylog"
 )
 
 func TestCopyWithTar(t *testing.T) {
@@ -23,13 +22,15 @@ func TestCopyWithTar(t *testing.T) {
 
 	t.Run("privileged", func(t *testing.T) {
 		test.EnsurePrivilege(t)
-		testCopy(t, copyFunc)
+		testCopyFile(t, copyFunc)
+		testCopyDir(t, copyFunc)
 	})
 
 	t.Run("unprivileged", func(t *testing.T) {
 		test.DropPrivilege(t)
 		defer test.ResetPrivilege(t)
-		testCopy(t, copyFunc)
+		testCopyFile(t, copyFunc)
+		testCopyDir(t, copyFunc)
 	})
 }
 
@@ -40,20 +41,41 @@ func TestCopyWithTarRoot(t *testing.T) {
 
 	t.Run("privileged", func(t *testing.T) {
 		test.EnsurePrivilege(t)
-		testCopy(t, copyFunc)
+		testCopyDir(t, copyFunc)
 	})
 
 	t.Run("unprivileged", func(t *testing.T) {
 		test.DropPrivilege(t)
 		defer test.ResetPrivilege(t)
-		testCopy(t, copyFunc)
+		testCopyDir(t, copyFunc)
 	})
 
 	test.DropPrivilege(t)
 	t.Run("relLinkTarget", testRelLinkTarget)
 }
 
-func testCopy(t *testing.T, copyFunc func(src, dst string) error) {
+func testCopyFile(t *testing.T, copyFunc func(src, dst string) error) {
+	srcRoot := t.TempDir()
+	src := filepath.Join(srcRoot, "srcFile")
+	if err := fs.WriteFileNoFollow(src, []byte("test"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	dst := filepath.Join(t.TempDir(), "sub", "dstFile")
+	if err := copyFunc(src, dst); err != nil {
+		t.Fatalf("unexpected error copying single file: %v", err)
+	}
+
+	got, err := os.ReadFile(dst)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != "test" {
+		t.Fatalf("destination content = %q, want test", got)
+	}
+}
+
+func testCopyDir(t *testing.T, copyFunc func(src, dst string) error) {
 	srcRoot := t.TempDir()
 	t.Logf("srcRoot location: %s\n", srcRoot)
 
@@ -141,7 +163,7 @@ func testCopy(t *testing.T, copyFunc func(src, dst string) error) {
 }
 
 // Test that CopyWithTarWithRoot doesn't allow relative symlink targets above
-// the dstRoot, but does allow them within the dstRoot, above dst.
+// dstRoot, but does allow them within dstRoot, above dst.
 //
 // See - https://github.com/sylabs/singularity/issues/2607
 func testRelLinkTarget(t *testing.T) {
@@ -191,10 +213,10 @@ func testRelLinkTarget(t *testing.T) {
 			}
 			err := CopyWithTarWithRoot(tt.src, tt.dst, tt.dstRoot, false)
 			if err == nil && tt.expectError {
-				sylog.Errorf("expected error, but none returned")
+				t.Errorf("expected error, but none returned")
 			}
 			if err != nil && !tt.expectError {
-				sylog.Errorf("unexpected error %v", err)
+				t.Errorf("unexpected error %v", err)
 			}
 		})
 	}
