@@ -656,7 +656,17 @@ func (c *container) mountImage(mnt *mount.Point) error {
 	}
 
 	shared := c.engine.EngineConfig.File.SharedLoopDevices
-	number, err := c.rpcOps.LoopDevice(mnt.Source, attachFlag, *info, maxDevices, shared)
+
+	strFd, ok := strings.CutPrefix(mnt.Source, "/proc/self/fd/")
+	if !ok {
+		return fmt.Errorf("mountImage source %s is not a /proc/self/fd/X value", mnt.Source)
+	}
+	fd, err := strconv.ParseUint(strFd, 10, 32)
+	if err != nil {
+		return fmt.Errorf("failed to convert image file descriptor: %v", err)
+	}
+
+	number, err := c.rpcOps.LoopDevice(uintptr(fd), attachFlag, *info, maxDevices, shared)
 	if err != nil {
 		return fmt.Errorf("failed to find loop device: %s", err)
 	}

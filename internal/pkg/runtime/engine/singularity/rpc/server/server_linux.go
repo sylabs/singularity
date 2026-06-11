@@ -284,26 +284,13 @@ func (t *Methods) Chroot(arguments *args.ChrootArgs, _ *int) (err error) {
 
 // LoopDevice attaches a loop device with the specified arguments.
 func (t *Methods) LoopDevice(arguments *args.LoopArgs, reply *int) (err error) {
-	var image *os.File
-
 	loopdev := &loop.Device{}
 	loopdev.MaxLoopDevices = arguments.MaxDevices
 	loopdev.Info = &arguments.Info
 	loopdev.Shared = arguments.Shared
-
-	if after, ok := strings.CutPrefix(arguments.Image, "/proc/self/fd/"); ok {
-		strFd := after
-		fd, err := strconv.ParseUint(strFd, 10, 32)
-		if err != nil {
-			return fmt.Errorf("failed to convert image file descriptor: %v", err)
-		}
-		image = os.NewFile(uintptr(fd), "")
-	} else {
-		var err error
-		image, err = os.OpenFile(arguments.Image, arguments.Mode, 0o600)
-		if err != nil {
-			return fmt.Errorf("could not open image file: %v", err)
-		}
+	image := os.NewFile(arguments.ImageFd, "")
+	if image == nil {
+		return fmt.Errorf("invalid file descriptor: %v", arguments.ImageFd)
 	}
 
 	if diskGID == -1 {
