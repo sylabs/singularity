@@ -16,6 +16,7 @@ import (
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/passwdfile"
 )
 
@@ -72,16 +73,20 @@ func GenerateBundleConfig(bundlePath string, config *specs.Spec) (*generate.Gene
 	oldumask := syscall.Umask(0)
 	defer syscall.Umask(oldumask)
 
+	if err := fs.MkdirAll(bundlePath, 0o700); err != nil {
+		return nil, fmt.Errorf("failed to create %s: %s", bundlePath, err)
+	}
+
 	rootFsDir := RootFs(bundlePath).Path()
-	if err := os.MkdirAll(rootFsDir, 0o700); err != nil {
+	if err := fs.MkdirAllAt(bundlePath, "rootfs", 0o700); err != nil {
 		return nil, fmt.Errorf("failed to create %s: %s", rootFsDir, err)
 	}
 	volumesDir := Volumes(bundlePath).Path()
-	if err := os.MkdirAll(volumesDir, 0o755); err != nil {
+	if err := fs.MkdirAllAt(bundlePath, "volumes", 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create %s: %s", volumesDir, err)
 	}
 	layersDir := Layers(bundlePath).Path()
-	if err := os.MkdirAll(layersDir, 0o755); err != nil {
+	if err := fs.MkdirAllAt(bundlePath, "layers", 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create %s: %s", layersDir, err)
 	}
 	defer func() {

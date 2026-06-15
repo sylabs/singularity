@@ -467,7 +467,7 @@ func (l *Launcher) handleVarTmpToTmpSymlink(spec *specs.Spec) {
 // the container's existing passwd/group files. spec.Process.User.[UG]ID must be
 // set correctly before calling.
 func (l *Launcher) prepareEtc(b ocibundle.Bundle, spec *specs.Spec, containerUser bool) error {
-	if err := os.Mkdir(filepath.Join(b.Path(), "etc"), 0o755); err != nil && !os.IsExist(err) {
+	if err := fs.MkdirAt(b.Path(), "etc", 0o755); err != nil && !os.IsExist(err) {
 		return err
 	}
 

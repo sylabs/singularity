@@ -127,13 +127,15 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
 			return fmt.Errorf("can't determine absolute path of workdir %s: %s", workdir, err)
 		}
 
-		tmpSrc := filepath.Join(workdir, tmpSrcSubdir)
-		vartmpSrc := filepath.Join(workdir, vartmpSrcSubdir)
+		tmpSrcRel := filepath.Clean(tmpSrcSubdir)
+		vartmpSrcRel := filepath.Clean(vartmpSrcSubdir)
+		tmpSrc := filepath.Join(workdir, tmpSrcRel)
+		vartmpSrc := filepath.Join(workdir, vartmpSrcRel)
 
-		if err := fs.Mkdir(tmpSrc, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
+		if err := fs.MkdirAt(workdir, tmpSrcRel, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
 			return fmt.Errorf("failed to create %s: %s", tmpSrc, err)
 		}
-		if err := fs.Mkdir(vartmpSrc, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
+		if err := fs.MkdirAt(workdir, vartmpSrcRel, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
 			return fmt.Errorf("failed to create %s: %s", vartmpSrc, err)
 		}
 
@@ -489,14 +491,16 @@ func (l *Launcher) addScratchMounts(mounts *[]specs.Mount) error {
 		if err != nil {
 			return fmt.Errorf("can't determine absolute path of workdir %s: %s", workdir, err)
 		}
-		scratchContainerDirPath := filepath.Join(workdir, scratchContainerDirName)
-		if err := fs.Mkdir(scratchContainerDirPath, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
+		scratchRel := strings.TrimPrefix(filepath.Clean(scratchContainerDirName), string(os.PathSeparator))
+		scratchContainerDirPath := filepath.Join(workdir, scratchRel)
+		if err := fs.MkdirAt(workdir, scratchRel, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
 			return fmt.Errorf("failed to create %s: %s", scratchContainerDirPath, err)
 		}
 
 		for _, s := range l.cfg.ScratchDirs {
-			scratchDirPath := filepath.Join(scratchContainerDirPath, s)
-			if err := fs.Mkdir(scratchDirPath, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
+			scratchDirRel := filepath.Join(scratchRel, strings.TrimPrefix(filepath.Clean(s), string(os.PathSeparator)))
+			scratchDirPath := filepath.Join(workdir, scratchDirRel)
+			if err := fs.MkdirAt(workdir, scratchDirRel, os.ModeSticky|0o777); err != nil && !os.IsExist(err) {
 				return fmt.Errorf("failed to create %s: %s", scratchDirPath, err)
 			}
 

@@ -183,7 +183,7 @@ func (b *Bundle) Create(ctx context.Context, ociConfig *specs.Spec) error {
 	}
 
 	bundleRootfs := tools.RootFs(b.bundlePath).Path()
-	if err := os.Mkdir(bundleRootfs, 0o755); err != nil && !os.IsExist(err) {
+	if err := fs.MkdirAt(b.bundlePath, "rootfs", 0o755); err != nil && !os.IsExist(err) {
 		return err
 	}
 
