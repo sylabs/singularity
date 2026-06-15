@@ -66,7 +66,7 @@ require (
 	github.com/tonistiigi/fsutil v0.0.0-20251211185533-a2aa163d723f
 	github.com/vbauerster/mpb/v8 v8.12.1
 	go.etcd.io/bbolt v1.4.3
-	go.yaml.in/yaml/v4 v4.0.0-rc.4
+	go.yaml.in/yaml/v4 v4.0.0-rc.5
 	golang.org/x/crypto v0.53.0
 	golang.org/x/sync v0.21.0
 	golang.org/x/sys v0.46.0
