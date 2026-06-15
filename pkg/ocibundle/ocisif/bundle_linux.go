@@ -22,6 +22,7 @@ import (
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/runtime/engine/config/oci/generate"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/overlay"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs/squashfs"
 	"github.com/sylabs/singularity/v4/pkg/ocibundle"
@@ -211,7 +212,7 @@ func (b *Bundle) mountLayers(ctx context.Context, img v1.Image, imgFile string) 
 
 		layerPath := filepath.Join(tools.Layers(b.bundlePath).Path(), strconv.Itoa(i))
 		sylog.Debugf("Mounting layer %d fs from %q to %q", i, imgFile, layerPath)
-		if err := os.Mkdir(layerPath, 0o755); err != nil {
+		if err := fs.MkdirAt(tools.Layers(b.bundlePath).Path(), strconv.Itoa(i), 0o755); err != nil {
 			return fmt.Errorf("while creating layer directory: %w", err)
 		}
 

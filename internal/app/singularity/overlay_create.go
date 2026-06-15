@@ -18,6 +18,7 @@ import (
 	"github.com/sylabs/sif/v2/pkg/sif"
 	"github.com/sylabs/singularity/v4/internal/pkg/ocisif"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/image"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/sys/unix"
@@ -241,11 +242,9 @@ func createOverlayFile(path string, size int, sparse bool, overlayDirs ...string
 	}
 
 	for _, dir := range overlayDirs {
-		od := filepath.Join(upperDir, dir)
-		if !strings.HasPrefix(od, upperDir) {
-			return fmt.Errorf("overlay directory created outside of overlay layout %s", upperDir)
-		}
-		if err := os.MkdirAll(od, perm); err != nil {
+		rel := strings.TrimPrefix(filepath.Clean(dir), string(os.PathSeparator))
+		od := filepath.Join(upperDir, rel)
+		if err := fs.MkdirAllAt(upperDir, rel, perm); err != nil {
 			return fmt.Errorf("while creating %s: %s", od, err)
 		}
 	}

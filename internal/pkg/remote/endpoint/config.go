@@ -16,6 +16,7 @@ import (
 
 	"github.com/gosimple/slug"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential"
+	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"golang.org/x/sys/unix"
 )
@@ -81,7 +82,7 @@ type ServiceConfig struct {
 func cacheDir() string {
 	cacheDir := syfs.RemoteCacheDir()
 	if _, err := os.Stat(cacheDir); os.IsNotExist(err) {
-		if err := os.Mkdir(cacheDir, 0o700); err != nil {
+		if err := fs.MkdirAt(syfs.ConfigDir(), syfs.RemoteCache, 0o700); err != nil {
 			return ""
 		}
 	}

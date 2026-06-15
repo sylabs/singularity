@@ -247,6 +247,62 @@ func Mkdir(path string, mode os.FileMode) error {
 	return os.Mkdir(path, mode)
 }
 
+// MkdirAt creates a directory below rootPath using os.Root, with mode after
+// umask reset. relPath must be local, and may not escape rootPath.
+func MkdirAt(rootPath, relPath string, mode os.FileMode) error {
+	root, err := os.OpenRoot(rootPath)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+
+	relPath = filepath.Clean(relPath)
+	if !filepath.IsLocal(relPath) {
+		return fmt.Errorf("path %s is not local to root %s", relPath, rootPath)
+	}
+
+	oldmask := syscall.Umask(0)
+	defer syscall.Umask(oldmask)
+
+	if err := root.Mkdir(relPath, mode.Perm()&0o777); err != nil {
+		return err
+	}
+
+	if mode&0o777 == mode {
+		return nil
+	}
+
+	return root.Chmod(relPath, mode)
+}
+
+// MkdirAllAt creates a directory and parents below rootPath using os.Root, with
+// mode after umask reset. relPath must be local, and may not escape rootPath.
+func MkdirAllAt(rootPath, relPath string, mode os.FileMode) error {
+	root, err := os.OpenRoot(rootPath)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+
+	relPath = filepath.Clean(relPath)
+	if !filepath.IsLocal(relPath) {
+		return fmt.Errorf("path %s is not local to root %s", relPath, rootPath)
+	}
+
+	oldmask := syscall.Umask(0)
+	defer syscall.Umask(oldmask)
+
+	if err := root.MkdirAll(relPath, mode.Perm()&0o777); err != nil {
+		return err
+	}
+
+	if mode&0o777 == mode {
+		return nil
+	}
+
+	return root.Chmod(relPath, mode)
+}
+
 // RootDir returns the root directory of path (rootdir of /my/path is /my).
 // Returns "." if path is empty.
 func RootDir(path string) string {

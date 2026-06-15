@@ -426,6 +426,92 @@ func TestMkdir(t *testing.T) {
 	}
 }
 
+func TestMkdirAt(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	tests := []struct {
+		name      string
+		mkdirFn   func(string, string, os.FileMode) error
+		path      string
+		mode      os.FileMode
+		wantError bool
+	}{
+		{
+			name:    "MkdirAt",
+			mkdirFn: MkdirAt,
+			path:    "test",
+			mode:    0o777,
+		},
+		{
+			name:    "MkdirAt sticky",
+			mkdirFn: MkdirAt,
+			path:    "test",
+			mode:    os.ModeSticky | 0o777,
+		},
+		{
+			name:      "MkdirAt escape",
+			mkdirFn:   MkdirAt,
+			path:      filepath.Join("outside", "test"),
+			mode:      0o755,
+			wantError: true,
+		},
+		{
+			name:    "MkdirAllAt",
+			mkdirFn: MkdirAllAt,
+			path:    filepath.Join("test", "inner"),
+			mode:    0o777,
+		},
+		{
+			name:    "MkdirAllAt sticky",
+			mkdirFn: MkdirAllAt,
+			path:    filepath.Join("test", "inner"),
+			mode:    os.ModeSticky | 0o777,
+		},
+		{
+			name:      "MkdirAllAt escape",
+			mkdirFn:   MkdirAllAt,
+			path:      filepath.Join("outside", "test"),
+			mode:      0o755,
+			wantError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpdir := t.TempDir()
+			if tt.wantError {
+				outside := t.TempDir()
+				if err := os.Symlink(outside, filepath.Join(tmpdir, "outside")); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			err := tt.mkdirFn(tmpdir, tt.path, tt.mode)
+			if tt.wantError {
+				if err == nil {
+					t.Errorf("expected error but got nil")
+				}
+				return
+			}
+			if err != nil {
+				t.Error(err)
+			}
+
+			fullPath := filepath.Join(tmpdir, tt.path)
+			fi, err := os.Stat(fullPath)
+			if err != nil {
+				t.Error(err)
+			}
+			// Compare permission bits along with the setuid/setgid/sticky bits.
+			gotMode := fi.Mode() & (os.ModePerm | os.ModeSetuid | os.ModeSetgid | os.ModeSticky)
+			if gotMode != tt.mode {
+				t.Errorf("expected mode %v, got %v", tt.mode, gotMode)
+			}
+		})
+	}
+}
+
 func TestEvalRelative(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)
