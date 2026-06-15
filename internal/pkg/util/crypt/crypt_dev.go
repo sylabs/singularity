@@ -62,15 +62,25 @@ func createLoop(path string, offset, size uint64) (string, error) {
 	return fmt.Sprintf("/dev/loop%d", idx), nil
 }
 
+func trustedCryptsetup() (int, string, error) {
+	cryptsetup, err := bin.FindBin("cryptsetup")
+	if err != nil {
+		return -1, "", err
+	}
+	fd, trustedPath, err := fs.OpenTrustedExecutable(cryptsetup, 0)
+	if err != nil {
+		return -1, "", err
+	}
+	return fd, trustedPath, nil
+}
+
 // CloseCryptDevice closes the crypt device
 func (crypt *Device) CloseCryptDevice(path string) error {
-	cryptsetup, err := bin.FindBin("cryptsetup")
+	cryptsetupFd, cryptsetupPath, err := trustedCryptsetup()
 	if err != nil {
 		return err
 	}
-	if !fs.IsOwner(cryptsetup, 0) {
-		return fmt.Errorf("%s must be owned by root", cryptsetup)
-	}
+	defer unix.Close(cryptsetupFd)
 
 	fd, err := lock.Exclusive("/dev/mapper")
 	if err != nil {
@@ -78,7 +88,7 @@ func (crypt *Device) CloseCryptDevice(path string) error {
 	}
 	defer lock.Release(fd)
 
-	cmd := exec.Command(cryptsetup, "close", path)
+	cmd := exec.Command(cryptsetupPath, "close", path)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Credential: &syscall.Credential{Uid: 0, Gid: 0},
 	}
@@ -171,15 +181,13 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 	// investigated. To do that, at least one additional partition is required, which is
 	// not encrypted.
 
-	cryptsetup, err := bin.FindBin("cryptsetup")
+	cryptsetupFd, cryptsetupPath, err := trustedCryptsetup()
 	if err != nil {
 		return "", err
 	}
-	if !fs.IsOwner(cryptsetup, 0) {
-		return "", fmt.Errorf("%s must be owned by root", cryptsetup)
-	}
+	defer unix.Close(cryptsetupFd)
 
-	cmd := exec.Command(cryptsetup, "luksFormat", "--batch-mode", "--type", "luks2", "--key-file", "-", loop)
+	cmd := exec.Command(cryptsetupPath, "luksFormat", "--batch-mode", "--type", "luks2", "--key-file", "-", loop)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		return "", err
@@ -193,7 +201,7 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		err = checkCryptsetupVersion(cryptsetup)
+		err = checkCryptsetupVersion(cryptsetupPath)
 		if err == ErrUnsupportedCryptsetupVersion {
 			// Special case of unsupported version of cryptsetup. We return the raw error
 			// so it can propagate up and a user-friendly message be displayed. This error
@@ -211,7 +219,7 @@ func (crypt *Device) EncryptFilesystem(path string, key []byte) (string, error) 
 
 	copyDeviceContents(path, "/dev/mapper/"+nextCrypt, fSize)
 
-	cmd = exec.Command(cryptsetup, "close", nextCrypt)
+	cmd = exec.Command(cryptsetupPath, "close", nextCrypt)
 	sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
 	err = cmd.Run()
 	if err != nil {
@@ -282,13 +290,11 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 
 	maxRetries := 3 // Arbitrary number of retries.
 
-	cryptsetup, err := bin.FindBin("cryptsetup")
+	cryptsetupFd, cryptsetupPath, err := trustedCryptsetup()
 	if err != nil {
 		return "", err
 	}
-	if !fs.IsOwner(cryptsetup, 0) {
-		return "", fmt.Errorf("%s must be owned by root", cryptsetup)
-	}
+	defer unix.Close(cryptsetupFd)
 
 	for range maxRetries {
 		nextCrypt, err := getNextAvailableCryptDevice()
@@ -296,7 +302,7 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 			return "", err
 		}
 
-		cmd := exec.Command(cryptsetup, "open", "--batch-mode", "--type", "luks2", "--key-file", "-", path, nextCrypt)
+		cmd := exec.Command(cryptsetupPath, "open", "--batch-mode", "--type", "luks2", "--key-file", "-", path, nextCrypt)
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 		cmd.SysProcAttr.Credential = &syscall.Credential{Uid: 0, Gid: 0}
 		sylog.Debugf("Running %s %s", cmd.Path, strings.Join(cmd.Args, " "))
@@ -307,7 +313,7 @@ func (crypt *Device) Open(key []byte, path string) (string, error) {
 			if strings.Contains(string(out), "Device already exists") {
 				continue
 			}
-			err = checkCryptsetupVersion(cryptsetup)
+			err = checkCryptsetupVersion(cryptsetupPath)
 			if err == ErrUnsupportedCryptsetupVersion {
 				// Special case of unsupported version of cryptsetup. We return the raw error
 				// so it can propagate up and a user-friendly message be displayed. This error

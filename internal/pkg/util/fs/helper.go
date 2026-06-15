@@ -100,6 +100,102 @@ func IsOwner(name string, uid uint32) bool {
 	return info.Sys().(*syscall.Stat_t).Uid == uid
 }
 
+// FileHasOwner checks if passed os.File is owned by user identified with uid.
+func FileHasOwner(f *os.File, uid uint32) bool {
+	if f == nil {
+		return false
+	}
+	info, err := f.Stat()
+	if err != nil {
+		return false
+	}
+
+	//nolint:forcetypeassert
+	return info.Sys().(*syscall.Stat_t).Uid == uid
+}
+
+func validateOwnedRegularFile(name string, owner, mode, uid uint32, executable bool) error {
+	if owner != uid {
+		return fmt.Errorf("%s must be owned by uid %d", name, uid)
+	}
+	if mode&syscall.S_IFMT != syscall.S_IFREG {
+		return fmt.Errorf("%s must be a regular file", name)
+	}
+	if mode&0o022 != 0 {
+		return fmt.Errorf("%s must not be writable by group or other", name)
+	}
+	if executable && mode&0o111 == 0 {
+		return fmt.Errorf("%s must be executable", name)
+	}
+
+	return nil
+}
+
+// OpenTrustedFile opens name without following a final symlink and returns
+// the open file only if it is owned by user identified with uid, is regular,
+// and is not writable by group or other.
+func OpenTrustedFile(name string, uid uint32) (*os.File, error) {
+	f, err := os.OpenFile(name, os.O_RDONLY|unix.O_NOFOLLOW, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	info, err := f.Stat()
+	if err != nil {
+		f.Close()
+		return nil, err
+	}
+
+	//nolint:forcetypeassert
+	st := info.Sys().(*syscall.Stat_t)
+	if err := validateOwnedRegularFile(name, st.Uid, st.Mode, uid, false); err != nil {
+		f.Close()
+		return nil, err
+	}
+
+	return f, nil
+}
+
+// ProcFdPath returns a /proc/self/fd path for fd.
+func ProcFdPath(fd uintptr) string {
+	return fmt.Sprintf("/proc/self/fd/%d", fd)
+}
+
+// OpenTrustedExecutable opens name without following a final symlink and
+// returns a file descriptor path only if the opened file is owned by uid, is
+// regular, is not writable by group or other, and has an executable bit set.
+// The returned descriptor does not have close-on-exec set, so callers must
+// close it when it is no longer needed or intentionally keep it open for a
+// later exec.
+func OpenTrustedExecutable(name string, uid uint32) (int, string, error) {
+	fd, err := unix.Open(name, unix.O_PATH|unix.O_NOFOLLOW, 0)
+	if err != nil {
+		return -1, "", err
+	}
+
+	var st unix.Stat_t
+	if err := unix.Fstat(fd, &st); err != nil {
+		unix.Close(fd)
+		return -1, "", err
+	}
+
+	if err := validateOwnedRegularFile(name, st.Uid, st.Mode, uid, true); err != nil {
+		unix.Close(fd)
+		return -1, "", err
+	}
+
+	return fd, fmt.Sprintf("/proc/self/fd/%d", fd), nil
+}
+
+// NewFileFromFd wraps fd in an *os.File.
+func NewFileFromFd(fd int, name string) (*os.File, error) {
+	fdPtr, err := safecast.Convert[uintptr](fd)
+	if err != nil {
+		return nil, err
+	}
+	return os.NewFile(fdPtr, name), nil
+}
+
 // IsGroup checks if named file is owned by group identified with gid.
 func IsGroup(name string, gid uint32) bool {
 	info, err := os.Stat(name)

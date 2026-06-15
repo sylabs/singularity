@@ -1224,26 +1224,35 @@ func (c configTests) configFile(t *testing.T) {
 		},
 	}
 
-	// Create a temp testfile
-	f, err := fs.MakeTmpFile(c.env.TestDir, "config-", 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
-	configFile := f.Name()
-	defer os.Remove(configFile)
-	f.Close()
+	// Create a temp configfile, owned by root.
+	configFile := ""
+	e2e.Privileged(func(t *testing.T) {
+		f, err := fs.MakeTmpFile(c.env.TestDir, "config-", 0o644)
+		if err != nil {
+			t.Fatal(err)
+		}
+		configFile = f.Name()
+		f.Close()
+	})(t)
+	cleanup := e2e.Privileged(func(t *testing.T) {
+		if err := os.Remove(configFile); err != nil {
+			t.Errorf("could not remove temporary file %s: %s", configFile, err)
+		}
+	})
+	defer cleanup(t)
 
 	for _, tt := range tests {
+		e2e.Privileged(func(t *testing.T) {
+			if err := fs.WriteFileNoFollow(configFile, []byte(tt.conf), 0o644); err != nil {
+				t.Errorf("could not write configuration file %s: %s", configFile, err)
+			}
+		})(t)
+
 		c.env.RunSingularity(
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithGlobalOptions("--config", configFile),
 			e2e.WithProfile(tt.profile),
-			e2e.PreRun(func(t *testing.T) {
-				if err := fs.WriteFileNoFollow(configFile, []byte(tt.conf), 0o644); err != nil {
-					t.Errorf("could not write configuration file %s: %s", configFile, err)
-				}
-			}),
 			e2e.WithCommand("exec"),
 			e2e.WithArgs(tt.argv...),
 			e2e.ExpectExit(tt.exit),

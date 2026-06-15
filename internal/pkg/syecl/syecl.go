@@ -63,6 +63,12 @@ func LoadConfig(confPath string) (ecl EclConfig, err error) {
 		return
 	}
 	defer f.Close()
+
+	return LoadConfigFile(f)
+}
+
+// LoadConfigFile unmarshals an ECL config from an open file.
+func LoadConfigFile(f *os.File) (ecl EclConfig, err error) {
 	b, err := io.ReadAll(f)
 	if err != nil {
 		return
