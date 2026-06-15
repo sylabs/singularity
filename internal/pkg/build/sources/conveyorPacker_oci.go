@@ -24,7 +24,6 @@ import (
 	"github.com/sylabs/singularity/v4/internal/pkg/cache"
 	"github.com/sylabs/singularity/v4/internal/pkg/ociimage"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/credential/ociauth"
-	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/shell"
 	sytypes "github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/image"
@@ -254,14 +253,14 @@ func (cp *OCIConveyorPacker) unpackRootfs(ctx context.Context) error {
 }
 
 func (cp *OCIConveyorPacker) insertBaseEnv() (err error) {
-	if err = makeBaseEnv(cp.b.RootfsPath, true); err != nil {
+	if err = makeBaseEnv(cp.b, true); err != nil {
 		sylog.Errorf("%v", err)
 	}
 	return
 }
 
 func (cp *OCIConveyorPacker) insertRunScript() error {
-	f, err := os.OpenFile(cp.b.RootfsPath+"/.singularity.d/runscript", os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o755)
+	f, err := cp.b.Rootfs.OpenFile(filepath.Join(".singularity.d", "runscript"), os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o755)
 	if err != nil {
 		return err
 	}
@@ -335,7 +334,7 @@ func (cp *OCIConveyorPacker) insertRunScript() error {
 
 	f.Sync()
 
-	err = os.Chmod(cp.b.RootfsPath+"/.singularity.d/runscript", 0o755)
+	err = f.Chmod(0o755)
 	if err != nil {
 		return err
 	}
@@ -344,7 +343,7 @@ func (cp *OCIConveyorPacker) insertRunScript() error {
 }
 
 func (cp *OCIConveyorPacker) insertEnv() error {
-	f, err := os.OpenFile(cp.b.RootfsPath+"/.singularity.d/env/10-docker2singularity.sh", os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o755)
+	f, err := cp.b.Rootfs.OpenFile(filepath.Join(".singularity.d", "env", "10-docker2singularity.sh"), os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o755)
 	if err != nil {
 		return err
 	}
@@ -381,7 +380,7 @@ func (cp *OCIConveyorPacker) insertEnv() error {
 
 	f.Sync()
 
-	err = os.Chmod(cp.b.RootfsPath+"/.singularity.d/env/10-docker2singularity.sh", 0o755)
+	err = f.Chmod(0o755)
 	if err != nil {
 		return err
 	}
@@ -399,7 +398,7 @@ func (cp *OCIConveyorPacker) insertOCILabels() (err error) {
 		return err
 	}
 
-	err = fs.WriteFileNoFollow(filepath.Join(cp.b.RootfsPath, "/.singularity.d/labels.json"), []byte(text), 0o644)
+	err = cp.b.Rootfs.WriteFile(".singularity.d/labels.json", []byte(text), 0o644)
 	return err
 }
 

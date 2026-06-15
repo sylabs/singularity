@@ -8,9 +8,7 @@ package sources
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 
-	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 )
 
@@ -47,14 +45,14 @@ func (cp *ScratchConveyorPacker) Pack(context.Context) (b *types.Bundle, err err
 }
 
 func (c *ScratchConveyor) insertBaseEnv() (err error) {
-	if err = makeBaseEnv(c.b.RootfsPath, true); err != nil {
+	if err = makeBaseEnv(c.b, true); err != nil {
 		return
 	}
 	return nil
 }
 
 func (cp *ScratchConveyorPacker) insertRunScript() (err error) {
-	err = fs.WriteFileNoFollow(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0o755)
+	err = cp.b.Rootfs.WriteFile(".singularity.d/runscript", []byte("#!/bin/sh\n"), 0o755)
 	if err != nil {
 		return
 	}
