@@ -14,7 +14,6 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
 	"golang.org/x/sys/unix"
@@ -78,19 +77,21 @@ func (cp *BusyBoxConveyorPacker) Pack(context.Context) (b *types.Bundle, err err
 }
 
 func (c *BusyBoxConveyor) insertBaseFiles() error {
-	if err := fs.WriteFileNoFollow(filepath.Join(c.b.RootfsPath, "/etc/passwd"), []byte("root:!:0:0:root:/root:/bin/sh"), 0o664); err != nil {
+	if err := c.b.Rootfs.WriteFile("etc/passwd", []byte("root:!:0:0:root:/root:/bin/sh"), 0o664); err != nil {
 		return err
 	}
 
-	if err := fs.WriteFileNoFollow(filepath.Join(c.b.RootfsPath, "/etc/group"), []byte(" root:x:0:"), 0o664); err != nil {
+	if err := c.b.Rootfs.WriteFile("etc/group", []byte(" root:x:0:"), 0o664); err != nil {
 		return err
 	}
 
-	return fs.WriteFileNoFollow(filepath.Join(c.b.RootfsPath, "/etc/hosts"), []byte("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4"), 0o664)
+	return c.b.Rootfs.WriteFile("etc/hosts", []byte("127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4"), 0o664)
 }
 
 func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, err error) {
-	os.Mkdir(filepath.Join(c.b.RootfsPath, "/bin"), 0o755)
+	if err := c.b.Rootfs.Mkdir("bin", 0o755); err != nil && !os.IsExist(err) {
+		return "", err
+	}
 
 	resp, err := http.Get(mirrorurl)
 	if err != nil {
@@ -98,7 +99,7 @@ func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, e
 	}
 	defer resp.Body.Close()
 
-	f, err := os.OpenFile(filepath.Join(c.b.RootfsPath, "/bin/busybox"), os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o755)
+	f, err := c.b.Rootfs.OpenFile(filepath.Join("bin", "busybox"), os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o755)
 	if err != nil {
 		return "", err
 	}
@@ -114,7 +115,7 @@ func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, e
 		return "", fmt.Errorf("file received is not the right size. supposed to be: %v actually: %v", resp.ContentLength, bytesWritten)
 	}
 
-	err = os.Chmod(f.Name(), 0o755)
+	err = f.Chmod(0o755)
 	if err != nil {
 		return "", err
 	}
@@ -123,14 +124,14 @@ func (c *BusyBoxConveyor) insertBusyBox(mirrorurl string) (busyBoxPath string, e
 }
 
 func (c *BusyBoxConveyor) insertBaseEnv() (err error) {
-	if err = makeBaseEnv(c.b.RootfsPath, true); err != nil {
+	if err = makeBaseEnv(c.b, true); err != nil {
 		return
 	}
 	return nil
 }
 
 func (cp *BusyBoxConveyorPacker) insertRunScript() error {
-	return fs.WriteFileNoFollow(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0o755)
+	return cp.b.Rootfs.WriteFile(".singularity.d/runscript", []byte("#!/bin/sh\n"), 0o755)
 }
 
 // CleanUp removes any tmpfs owned by the conveyorPacker on the filesystem

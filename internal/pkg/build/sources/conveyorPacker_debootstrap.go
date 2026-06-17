@@ -117,11 +117,12 @@ func (cp *DebootstrapConveyorPacker) prepareFakerootEnv(ctx context.Context) (fu
 					if err := os.Truncate(makedevPath, 0); err != nil {
 						sylog.Warningf("while truncating %s: %s", makedevPath, err)
 					}
-					f, err := os.OpenFile(filepath.Join(cp.b.RootfsPath, "/dev/tty1"), os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
+					f, err := cp.b.Rootfs.OpenFile(filepath.Join("dev", "tty1"), os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
 					if err != nil {
 						sylog.Warningf("while creating %s: %s", filepath.Join(cp.b.RootfsPath, "/dev/tty1"), err)
+					} else {
+						f.Close()
 					}
-					f.Close()
 					break
 				}
 			}
@@ -228,7 +229,7 @@ func (cp *DebootstrapConveyorPacker) Get(ctx context.Context, b *types.Bundle) (
 // Pack puts relevant objects in a Bundle!
 func (cp *DebootstrapConveyorPacker) Pack(context.Context) (*types.Bundle, error) {
 	// change root directory permissions to 0755
-	if err := os.Chmod(cp.b.RootfsPath, 0o755); err != nil {
+	if err := cp.b.Rootfs.Chmod(".", 0o755); err != nil {
 		return nil, fmt.Errorf("while changing bundle rootfs perms: %v", err)
 	}
 
@@ -274,14 +275,14 @@ func (cp *DebootstrapConveyorPacker) getRecipeHeaderInfo() (err error) {
 }
 
 func (cp *DebootstrapConveyorPacker) insertBaseEnv(b *types.Bundle) (err error) {
-	if err = makeBaseEnv(b.RootfsPath, true); err != nil {
+	if err = makeBaseEnv(b, true); err != nil {
 		return
 	}
 	return nil
 }
 
 func (cp *DebootstrapConveyorPacker) insertRunScript(b *types.Bundle) (err error) {
-	f, err := os.OpenFile(b.RootfsPath+"/.singularity.d/runscript", os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o755)
+	f, err := b.Rootfs.OpenFile(filepath.Join(".singularity.d", "runscript"), os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o755)
 	if err != nil {
 		return
 	}
@@ -299,7 +300,7 @@ func (cp *DebootstrapConveyorPacker) insertRunScript(b *types.Bundle) (err error
 
 	f.Sync()
 
-	err = os.Chmod(b.RootfsPath+"/.singularity.d/runscript", 0o755)
+	err = f.Chmod(0o755)
 	if err != nil {
 		return
 	}

@@ -18,7 +18,6 @@ import (
 	"syscall"
 
 	"github.com/sylabs/singularity/v4/internal/pkg/util/bin"
-	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/rpm"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -99,7 +98,9 @@ func (c *YumConveyor) Get(ctx context.Context, b *types.Bundle) (err error) {
 	}
 
 	// clean up bootstrap packages
-	os.RemoveAll(filepath.Join(c.b.RootfsPath, "/var/cache/yum-bootstrap"))
+	if err := c.b.Rootfs.RemoveAll(filepath.Join("var", "cache", "yum-bootstrap")); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -252,12 +253,12 @@ func (c *YumConveyor) genYumConfig() (err error) {
 		fileContent += "\n"
 	}
 
-	err = os.Mkdir(filepath.Join(c.b.RootfsPath, "/etc"), 0o775)
+	err = c.b.Rootfs.Mkdir("etc", 0o775)
 	if err != nil {
 		return fmt.Errorf("while creating %v: %v", filepath.Join(c.b.RootfsPath, "/etc"), err)
 	}
 
-	err = fs.WriteFileNoFollow(filepath.Join(c.b.RootfsPath, yumConf), []byte(fileContent), 0o664)
+	err = c.b.Rootfs.WriteFile(yumConf, []byte(fileContent), 0o664)
 	if err != nil {
 		return fmt.Errorf("while creating %v: %v", filepath.Join(c.b.RootfsPath, yumConf), err)
 	}
@@ -340,14 +341,14 @@ func (c *YumConveyor) makePseudoDevices() (err error) {
 }
 
 func (cp *YumConveyorPacker) insertBaseEnv() (err error) {
-	if err = makeBaseEnv(cp.b.RootfsPath, true); err != nil {
+	if err = makeBaseEnv(cp.b, true); err != nil {
 		return
 	}
 	return nil
 }
 
 func (cp *YumConveyorPacker) insertRunScript() (err error) {
-	err = fs.WriteFileNoFollow(filepath.Join(cp.b.RootfsPath, "/.singularity.d/runscript"), []byte("#!/bin/sh\n"), 0o755)
+	err = cp.b.Rootfs.WriteFile(".singularity.d/runscript", []byte("#!/bin/sh\n"), 0o755)
 	if err != nil {
 		return
 	}
