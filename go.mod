@@ -19,7 +19,7 @@ require (
 	github.com/containernetworking/plugins v1.9.1
 	github.com/containers/image/v5 v5.36.2
 	github.com/coreos/go-systemd/v22 v22.7.0
-	github.com/cyphar/filepath-securejoin v0.6.1
+	github.com/cyphar/filepath-securejoin v0.7.0
 	github.com/distribution/distribution v2.8.3+incompatible
 	github.com/docker/cli v29.5.3+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
@@ -46,7 +46,7 @@ require (
 	github.com/opencontainers/runtime-tools v0.9.1-0.20251205004911-5e639034dcdc
 	github.com/opencontainers/selinux v1.15.1
 	github.com/opencontainers/umoci v0.6.0
-	github.com/pelletier/go-toml/v2 v2.3.1
+	github.com/pelletier/go-toml/v2 v2.4.0
 	github.com/samber/lo v1.53.0
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/seccomp/libseccomp-golang v0.11.1
@@ -80,7 +80,7 @@ require (
 )
 
 require (
-	cyphar.com/go-pathrs v0.2.4 // indirect
+	cyphar.com/go-pathrs v0.2.5 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20240806141605-e8a1dd7889d6 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
 	github.com/Microsoft/go-winio v0.6.3-0.20251027160822-ad3df93bed29 // indirect
