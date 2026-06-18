@@ -90,7 +90,7 @@ func NewWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFacto
 		return opt, err
 	}
 
-	np, npResolvedMode, err := netproviders.Providers(nopt)
+	np, proxyProvider, npResolvedMode, err := netproviders.Providers(nopt)
 	if err != nil {
 		return opt, err
 	}
@@ -122,6 +122,7 @@ func NewWorkerOpt(ctx context.Context, root string, snFactory BkSnapshotterFacto
 		TracingSocket:       traceSocket,
 		DefaultCgroupParent: defaultCgroupParent,
 		ResourceMonitor:     rm,
+		ProxyProvider:       proxyProvider,
 	}, np)
 	if err != nil {
 		return opt, err
@@ -222,6 +223,7 @@ type WorkerOpt struct {
 	TracingSocket   string
 	ResourceMonitor *resources.Monitor
 	CDIManager      *cdidevices.Manager
+	ProxyProvider   bknet.ProxyProvider
 }
 
 var defaultCommandCandidates = []string{"buildkit-runc", "runc"}
@@ -341,7 +343,7 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 	if !ok {
 		return nil, fmt.Errorf("unknown network mode %s", meta.NetMode)
 	}
-	namespace, err := provider.New(ctx, meta.Hostname)
+	namespace, err := provider.New(ctx, meta.Hostname, bknet.NamespaceOptions{})
 	if err != nil {
 		return nil, err
 	}
