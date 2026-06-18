@@ -143,7 +143,7 @@ func (c *ctx) instanceApply(t *testing.T, profile e2e.Profile) {
 			startErrorCode: 255,
 			// e2e test currently only captures the error from the CLI process, not the error displayed by the
 			// starter process, so we check for the generic CLI error.
-			startErrorOut: "toml: expected character",
+			startErrorOut: "toml: expected",
 			rootfull:      true,
 			rootless:      true,
 		},
@@ -276,7 +276,7 @@ func (c *ctx) actionApply(t *testing.T, profile e2e.Profile, imageRef string) {
 			name:            "invalid toml",
 			args:            []string{"--apply-cgroups", "testdata/cgroups/invalid.toml", imageRef, "/bin/sleep", "5"},
 			expectErrorCode: 255,
-			expectErrorOut:  "toml: expected character",
+			expectErrorOut:  "toml: expected",
 			rootfull:        true,
 			rootless:        true,
 			skipOCI:         false,
