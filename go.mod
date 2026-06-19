@@ -60,7 +60,7 @@ require (
 	github.com/sylabs/oci-tools v0.20.0
 	github.com/sylabs/scs-build-client v0.9.20
 	github.com/sylabs/scs-key-client v0.7.9
-	github.com/sylabs/scs-library-client v1.4.14
+	github.com/sylabs/scs-library-client v1.4.15
 	github.com/sylabs/sif/v2 v2.24.1
 	github.com/sylabs/squashfs v1.0.6
 	github.com/tonistiigi/fsutil v0.0.0-20260609091201-0257b3308df4
