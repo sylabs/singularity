@@ -17,14 +17,16 @@
 
 ### Developer / API
 
-The following have been removed:
-
-- `UpdateDefinitionRaw()` from `pkg/build/types`.
-- `OptSysCtx()` from `pkg/ocibundle/native/bundle_linux.go`
-- `CreateLoop()` from `pkg/ocibundle/tools/loop.go`
-- `pkg/util/copy`
-- `pkg/util/sysctl`
-- `pkg/util/unix`
+- The following have been removed:
+  - `UpdateDefinitionRaw()` from `pkg/build/types`.
+  - `OptSysCtx()` from `pkg/ocibundle/native/bundle_linux.go`
+  - `CreateLoop()` from `pkg/ocibundle/tools/loop.go`
+  - `pkg/util/copy`
+  - `pkg/util/sysctl`
+  - `pkg/util/unix`
+- The `pkg/build/types` and `pkg/build/types/parser` packages can now be used in
+  programs built without cgo. An `os.user` fallback for `i/p/util/user` lookups
+  is used when CGO is not available.
 
 ## 4.4.2 \[2026-06-04\]
 

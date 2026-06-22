@@ -14,9 +14,9 @@ type User struct {
 	Name  string
 	UID   uint32
 	GID   uint32
-	Gecos string
+	Gecos string // Set to user's name, not full gecos if built without CGO.
 	Dir   string
-	Shell string
+	Shell string // Not set if build without CGO.
 }
 
 // Group represents a Unix group information.
