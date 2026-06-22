@@ -21,7 +21,7 @@ require (
 	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/cyphar/filepath-securejoin v0.7.0
 	github.com/distribution/distribution v2.8.3+incompatible
-	github.com/docker/cli v29.5.3+incompatible
+	github.com/docker/cli v29.6.0+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/fatih/color v1.19.0
@@ -33,7 +33,7 @@ require (
 	github.com/gosimple/slug v1.15.0
 	github.com/moby/buildkit v0.31.0
 	github.com/moby/go-archive v0.2.0
-	github.com/moby/moby/client v0.4.1
+	github.com/moby/moby/client v0.5.0
 	github.com/moby/profiles/seccomp v0.2.3
 	github.com/moby/sys/user v0.4.0
 	github.com/moby/sys/userns v0.1.0
@@ -192,7 +192,7 @@ require (
 	github.com/mitchellh/hashstructure/v2 v2.0.2 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/locker v1.0.1 // indirect
-	github.com/moby/moby/api v1.54.2 // indirect
+	github.com/moby/moby/api v1.55.0 // indirect
 	github.com/moby/patternmatcher v0.6.1 // indirect
 	github.com/moby/policy-helpers v0.0.0-20260612073044-d5411a945cfc // indirect
 	github.com/moby/sys/capability v0.4.0 // indirect
