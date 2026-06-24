@@ -40,7 +40,7 @@ require (
 	github.com/moby/term v0.5.2
 	github.com/opencontainers/cgroups v0.0.6
 	github.com/opencontainers/image-spec v1.1.1
-	github.com/opencontainers/runc v1.4.3
+	github.com/opencontainers/runc v1.5.0
 	github.com/opencontainers/runtime-spec v1.3.0
 	github.com/opencontainers/runtime-tools v0.9.1-0.20251205004911-5e639034dcdc
 	github.com/opencontainers/selinux v1.15.1
@@ -157,7 +157,7 @@ require (
 	github.com/go-openapi/swag/yamlutils v0.26.0 // indirect
 	github.com/go-openapi/validate v0.25.3 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
-	github.com/godbus/dbus/v5 v5.2.0 // indirect
+	github.com/godbus/dbus/v5 v5.2.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/certificate-transparency-go v1.3.3 // indirect
