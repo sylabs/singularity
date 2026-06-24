@@ -124,6 +124,45 @@ singularity
 └── third_party                            # Third-party software
 ```
 
+## Security
+
+Consider to avoid false positives:
+
+- SingularityCE does not aim to secure / fully sandbox containers run as the
+  host root user.
+- Design choices including broad access to `/dev`, default `$HOME` / CWD binds,
+  unrestricted user binds, no default seccomp profile by default are
+  intentional. Singularity originated to allow direct replacement of
+  non-containerised application with containers, on standard multi-user HPC
+  systems, with default configuration.
+- Denial of service by a user against their own job/session is not in-scope.
+- uid/gid, fsuid, and capabilities vary between the different processes spawned
+  by the starter. The effective uid/gid, fsuid, and capabilities must be
+  identified to confirm a vulnerability.
+- Environment is wiped before privileged code runs by the C starter's
+  `cleanenv()`.
+- External binaries that are run in a privileged context in setuid mode are not
+  found on `$PATH`. See special handling in `bin.FindBin()` etc.
+- SingularityCE container builds are not intended to be fully sandboxed. E.g.
+  the `%pre` / `%setup` blocks in a definition file intentionally run commands
+  directly on the host.
+
+Required security analysis context:
+
+- Installation mode: setuid vs non-setuid
+- Any non-default configuration (`singularity.conf` etc.).
+- Execution mode: native, OCI, user namespace, fakeroot, sudo/root.
+- Exact process involved: starter, RPC server, master, container process, build
+  helper, external tool.
+- uid/euid/suid, gid/egid/sgid, fsuid/fsgid, and effective/permitted
+  capabilities at the vulnerable operation.
+- Whether the operation occurs before or after starter `cleanenv()` and
+  privilege drop.
+- Whether the attacker is already host root, controls the definition file,
+  controls the image, or controls the container command.
+- A minimal reproducer showing unauthorized host impact from an unprivileged
+  user.
+
 ## Resources
 
 - [Contributor's Guide](CONTRIBUTING.md)
