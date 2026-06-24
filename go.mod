@@ -46,7 +46,7 @@ require (
 	github.com/opencontainers/runtime-tools v0.9.1-0.20251205004911-5e639034dcdc
 	github.com/opencontainers/selinux v1.15.1
 	github.com/opencontainers/umoci v0.6.0
-	github.com/pelletier/go-toml/v2 v2.4.0
+	github.com/pelletier/go-toml/v2 v2.4.2
 	github.com/samber/lo v1.53.0
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/seccomp/libseccomp-golang v0.11.1
@@ -59,14 +59,14 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/sylabs/json-resp v0.9.5
 	github.com/sylabs/oci-tools v0.20.0
-	github.com/sylabs/scs-build-client v0.9.20
+	github.com/sylabs/scs-build-client v0.9.21
 	github.com/sylabs/scs-key-client v0.7.9
 	github.com/sylabs/scs-library-client v1.4.15
 	github.com/sylabs/sif/v2 v2.24.1
 	github.com/sylabs/squashfs v1.0.6
 	github.com/tonistiigi/fsutil v0.0.0-20260609091201-0257b3308df4
 	github.com/vbauerster/mpb/v8 v8.12.1
-	go.etcd.io/bbolt v1.4.3
+	go.etcd.io/bbolt v1.5.0
 	go.yaml.in/yaml/v4 v4.0.0-rc.5
 	golang.org/x/crypto v0.53.0
 	golang.org/x/sync v0.21.0
