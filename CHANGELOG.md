@@ -1,6 +1,6 @@
 # SingularityCE Changelog
 
-## Unreleased
+## 4.5.0 \[2026-06-25\]
 
 SingularityCE 4.5.0 contains mostly internal code changes and defense-in-depth
 hardening. The majority of the changes made since release 4.4.2 do not alter
