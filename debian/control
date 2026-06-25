@@ -19,6 +19,7 @@ Standards-Version: 3.9.8
 Homepage: https://sylabs.io/singularity
 Vcs-Git: https://github.com/sylabs/singularity.git
 Vcs-Browser: https://github.com/sylabs/singularity
+Rules-Requires-Root: binary-targets
 
 Package: singularity-ce
 Architecture: any
