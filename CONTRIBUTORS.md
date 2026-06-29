@@ -77,6 +77,7 @@ The following have contributed code and/or documentation to this repository.
 - Marcelo Magallon <marcelo@sylabs.io>
 - Marco Rubin <marco.rubin@protonmail.com>
 - Mark Egan-Fuller <markeganfuller@googlemail.com>
+- Martin Pecka <peci1@seznam.cz>
 - Matt Wiens <mwiens91@gmail.com>
 - Michael Bauer <m@sylabs.io>, <bauerm@umich.edu>
 - Michael Herzberg <michael@mherzberg.de>
