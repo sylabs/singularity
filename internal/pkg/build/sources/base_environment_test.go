@@ -1,4 +1,6 @@
-// Copyright (c) 2018-2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -60,6 +62,92 @@ func TestMakeSymlinks(t *testing.T) {
 
 	testWithGoodBundle(t, makeSymlinks)
 	testWithBadBundle(t, makeSymlinks)
+	testWithGoodBundle(t, func(b *types.Bundle) error {
+		// makeSymlinks should be idempotent
+		if err := makeSymlinks(b); err != nil {
+			return err
+		}
+		return makeSymlinks(b)
+	})
+}
+
+func TestMakeSymlink(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	const oldname = ".singularity.d/runscript"
+	const newname = "singularity"
+
+	tests := []struct {
+		name  string
+		setup func(root *os.Root) error // setup the precondition at newname
+
+		wantSymlinkTo string // expected target if a symlink is expected
+		wantFile      bool   // expect a regular file (not a symlink) left in place
+	}{
+		{
+			name:          "Missing",
+			setup:         func(*os.Root) error { return nil },
+			wantSymlinkTo: oldname,
+		},
+		{
+			name:          "CorrectSymlink",
+			setup:         func(r *os.Root) error { return r.Symlink(oldname, newname) },
+			wantSymlinkTo: oldname,
+		},
+		{
+			name:          "WrongSymlink",
+			setup:         func(r *os.Root) error { return r.Symlink("/.singularity.d/wrong_link", newname) },
+			wantSymlinkTo: oldname,
+		},
+		{
+			name:     "RegularFile",
+			setup:    func(r *os.Root) error { return r.WriteFile(newname, []byte("legacy"), 0o644) },
+			wantFile: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := testBundle(t.TempDir())
+			if err != nil {
+				t.Fatalf("testBundle: %v", err)
+			}
+			defer b.Rootfs.Close()
+
+			if err := tt.setup(b.Rootfs); err != nil {
+				t.Fatalf("setup: %v", err)
+			}
+
+			if err := makeSymlink(b.Rootfs, oldname, newname); err != nil {
+				t.Fatalf("makeSymlink: %v", err)
+			}
+
+			full := filepath.Join(b.RootfsPath, newname)
+			fi, err := os.Lstat(full)
+			if err != nil {
+				t.Fatalf("lstat %s: %v", full, err)
+			}
+
+			if tt.wantFile {
+				if fi.Mode()&os.ModeSymlink != 0 {
+					t.Fatalf("expected regular file, got a symlink")
+				}
+				return
+			}
+
+			if fi.Mode()&os.ModeSymlink == 0 {
+				t.Fatalf("expected symlink, got mode %v", fi.Mode())
+			}
+			target, err := os.Readlink(full)
+			if err != nil {
+				t.Fatalf("readlink: %v", err)
+			}
+			if target != tt.wantSymlinkTo {
+				t.Fatalf("symlink target = %q, want %q", target, tt.wantSymlinkTo)
+			}
+		})
+	}
 }
 
 func TestMakeFiles(t *testing.T) {
