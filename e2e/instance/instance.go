@@ -10,7 +10,6 @@ package instance
 import (
 	"bytes"
 	"os"
-	"os/user"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -45,9 +44,10 @@ type ctx struct {
 func (c *ctx) testBasicEchoServer(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	const instanceName = "echo1"
+	instanceName := randomName(t)
+	port := getFreePort(t)
 
-	args := []string{c.env.ImagePath, instanceName, strconv.Itoa(instanceStartPort)}
+	args := []string{c.env.ImagePath, instanceName, strconv.Itoa(port)}
 
 	// Start the instance.
 	c.env.RunSingularity(
@@ -60,7 +60,7 @@ func (c *ctx) testBasicEchoServer(t *testing.T) {
 				return
 			}
 			// Try to contact the instance.
-			echo(t, instanceStartPort, false)
+			echo(t, port, false)
 			c.stopInstance(t, instanceName)
 		}),
 		e2e.ExpectExit(0),
@@ -72,14 +72,15 @@ func (c *ctx) testBasicEchoServer(t *testing.T) {
 func (c *ctx) testAppEchoServer(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	const instanceName = "echoApp"
+	instanceName := randomName(t)
+	port := getFreePort(t)
 
 	args := []string{
 		"--app",
 		"foo",
 		c.env.ImagePath,
 		instanceName,
-		strconv.Itoa(instanceStartPort),
+		strconv.Itoa(port),
 	}
 
 	// Start the instance.
@@ -93,7 +94,7 @@ func (c *ctx) testAppEchoServer(t *testing.T) {
 				return
 			}
 			// Try to contact the instance.
-			echo(t, instanceStartPort, true)
+			echo(t, port, true)
 			c.stopInstance(t, instanceName)
 		}),
 		e2e.ExpectExit(0),
@@ -104,7 +105,7 @@ func (c *ctx) testAppEchoServer(t *testing.T) {
 func (c *ctx) testInstanceRun(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	const instanceName = "testtrue"
+	instanceName := randomName(t)
 
 	args := []string{c.env.ImagePath, instanceName, "true"}
 
@@ -119,26 +120,18 @@ func (c *ctx) testInstanceRun(t *testing.T) {
 				return
 			}
 			// read the log file to see if runscript was used. (It should record
-			// the text "Running command: true")
-			d, err := os.UserHomeDir()
-			if err != nil {
-				t.Fatal(err)
-			}
+			// the text "Running command: true").
+			hostUser := c.profile.HostUser(t)
 			h, err := os.Hostname()
 			if err != nil {
 				t.Fatal(err)
 			}
-			u, err := user.Current()
-			if err != nil {
-				t.Fatal(err)
-			}
-			ilog := filepath.Join(d, ".singularity", "instances", "logs", h, u.Username, instanceName+".out")
+			ilog := filepath.Join(hostUser.Dir, ".singularity", "instances", "logs", h, hostUser.Name, instanceName+".out")
 			b, err := os.ReadFile(ilog)
 			if err != nil {
 				t.Fatal(err)
 			}
 			s := string(b)
-			echo(t, instanceStartPort, false)
 			c.stopInstance(t, instanceName)
 			if !strings.Contains(s, "Running command: true") {
 				t.Fatal()
@@ -153,11 +146,12 @@ func (c *ctx) testCreateManyInstances(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	const n = 10
+	ports := getFreePorts(t, n)
 
 	// Start n instances.
 	for i := range n {
-		port := instanceStartPort + i
-		instanceName := "echo" + strconv.Itoa(i+1)
+		port := ports[i]
+		instanceName := randomName(t)
 
 		c.env.RunSingularity(
 			t,
@@ -185,7 +179,6 @@ func (c *ctx) testBasicOptions(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
 	const fileName = "hello"
-	const instanceName = "testbasic"
 	const testHostname = "echoserver99"
 	cmdList := [2]string{"instance start", "instance run"}
 	fileContents := []byte("world")
@@ -207,6 +200,9 @@ func (c *ctx) testBasicOptions(t *testing.T) {
 	// Start and Run an instance with the temporary directory as the home
 	// directory.
 	for _, cmd := range cmdList {
+		instanceName := randomName(t)
+		port := getFreePort(t)
+
 		c.env.RunSingularity(
 			t,
 			e2e.WithProfile(c.profile),
@@ -217,7 +213,7 @@ func (c *ctx) testBasicOptions(t *testing.T) {
 				"-e",
 				c.env.ImagePath,
 				instanceName,
-				strconv.Itoa(instanceStartPort),
+				strconv.Itoa(port),
 			),
 			e2e.PostRun(func(t *testing.T) {
 				if t.Failed() {
@@ -254,7 +250,6 @@ func (c *ctx) testBasicOptions(t *testing.T) {
 func (c *ctx) testContain(t *testing.T) {
 	e2e.EnsureImage(t, c.env)
 
-	const instanceName = "testcontain"
 	const fileName = "thegreattestfile"
 	cmdList := [2]string{"instance start", "instance run"}
 
@@ -267,6 +262,9 @@ func (c *ctx) testContain(t *testing.T) {
 
 	// Start and Run the instance.
 	for _, cmd := range cmdList {
+		instanceName := randomName(t)
+		port := getFreePort(t)
+
 		c.env.RunSingularity(
 			t,
 			e2e.WithProfile(c.profile),
@@ -276,7 +274,7 @@ func (c *ctx) testContain(t *testing.T) {
 				"-W", dir,
 				c.env.ImagePath,
 				instanceName,
-				strconv.Itoa(instanceStartPort),
+				strconv.Itoa(port),
 			),
 			e2e.PostRun(func(t *testing.T) {
 				if t.Failed() {
@@ -303,10 +301,10 @@ func (c *ctx) testContain(t *testing.T) {
 // Test by running directly from URI
 func (c *ctx) testInstanceFromURI(t *testing.T) {
 	e2e.EnsureORASImage(t, c.env)
-	name := "test_from_uri"
-	args := []string{c.env.OrasTestImage, name}
 	cmdList := [2]string{"instance start", "instance run"}
 	for _, cmd := range cmdList {
+		name := randomName(t)
+		args := []string{c.env.OrasTestImage, name}
 		c.env.RunSingularity(
 			t,
 			e2e.WithProfile(c.profile),
@@ -327,7 +325,7 @@ func (c *ctx) testInstanceFromURI(t *testing.T) {
 // Test that custom auth file authentication works with instance start
 func (c *ctx) testInstanceAuthFile(t *testing.T) {
 	e2e.EnsureORASImage(t, c.env)
-	instanceName := "actionAuthTesterInstance"
+	instanceName := randomName(t)
 	localAuthFileName := "./my_local_authfile"
 	authFileArgs := []string{"--authfile", localAuthFileName}
 
@@ -515,8 +513,8 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 				{"Contain", c.testContain},
 				{"InstanceFromURI", c.testInstanceFromURI},
 				{"CreateManyInstances", c.testCreateManyInstances},
-				{"InstanceRun", c.testInstanceRun},
 				{"StopAll", c.testStopAll},
+				{"InstanceRun", c.testInstanceRun},
 				{"GhostInstance", c.testGhostInstance},
 			}
 
