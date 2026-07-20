@@ -21,7 +21,7 @@ require (
 	github.com/coreos/go-systemd/v22 v22.7.0
 	github.com/cyphar/filepath-securejoin v0.7.0
 	github.com/distribution/distribution v2.8.3+incompatible
-	github.com/docker/cli v29.6.1+incompatible
+	github.com/docker/cli v29.6.2+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/fatih/color v1.19.0
@@ -31,7 +31,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gosimple/slug v1.15.0
-	github.com/moby/buildkit v0.31.1
+	github.com/moby/buildkit v0.31.2
 	github.com/moby/go-archive v0.2.0
 	github.com/moby/moby/client v0.5.0
 	github.com/moby/profiles/seccomp v0.2.3
@@ -63,7 +63,7 @@ require (
 	github.com/sylabs/scs-library-client v1.4.16
 	github.com/sylabs/sif/v2 v2.24.1
 	github.com/sylabs/squashfs v1.0.6
-	github.com/tonistiigi/fsutil v0.0.0-20260609091201-0257b3308df4
+	github.com/tonistiigi/fsutil v0.0.0-20260716115106-30cd4fc5d911
 	github.com/vbauerster/mpb/v8 v8.12.1
 	go.etcd.io/bbolt v1.5.0
 	go.yaml.in/yaml/v4 v4.0.0-rc.6
