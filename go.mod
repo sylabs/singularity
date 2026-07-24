@@ -32,7 +32,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/gosimple/slug v1.15.0
 	github.com/moby/buildkit v0.31.2
-	github.com/moby/go-archive v0.2.0
+	github.com/moby/go-archive v0.2.1
 	github.com/moby/moby/client v0.5.0
 	github.com/moby/profiles/seccomp v0.2.3
 	github.com/moby/sys/user v0.4.1
@@ -180,7 +180,7 @@ require (
 	github.com/insomniacslk/dhcp v0.0.0-20250417080101-5f8cf70e8c5f // indirect
 	github.com/jedisct1/go-minisign v0.0.0-20241212093149-d2f9f49435c7 // indirect
 	github.com/josharian/native v1.1.0 // indirect
-	github.com/klauspost/compress v1.18.6 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/klauspost/pgzip v1.2.6 // indirect
 	github.com/letsencrypt/boulder v0.20260309.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -196,7 +196,7 @@ require (
 	github.com/moby/patternmatcher v0.6.1 // indirect
 	github.com/moby/policy-helpers v0.0.0-20260612073044-d5411a945cfc // indirect
 	github.com/moby/sys/capability v0.4.0 // indirect
-	github.com/moby/sys/mount v0.3.5-0.20260529155943-fc52b7222d0b // indirect
+	github.com/moby/sys/mount v0.3.5 // indirect
 	github.com/moby/sys/mountinfo v0.7.2 // indirect
 	github.com/moby/sys/reexec v0.1.0 // indirect
 	github.com/moby/sys/sequential v0.7.0 // indirect
