@@ -10,7 +10,7 @@ require (
 	github.com/astromechza/etcpwdparse v0.0.0-20170319193008-f0e5f0779716
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buger/goterm v1.0.4
-	github.com/buger/jsonparser v1.2.0
+	github.com/buger/jsonparser v1.6.0
 	github.com/ccoveille/go-safecast/v2 v2.0.1
 	github.com/containerd/containerd/v2 v2.2.6
 	github.com/containerd/go-runc v1.1.0
@@ -64,7 +64,7 @@ require (
 	github.com/sylabs/sif/v2 v2.24.1
 	github.com/sylabs/squashfs v1.0.6
 	github.com/tonistiigi/fsutil v0.0.0-20260716115106-30cd4fc5d911
-	github.com/vbauerster/mpb/v8 v8.13.0
+	github.com/vbauerster/mpb/v8 v8.14.0
 	go.etcd.io/bbolt v1.5.0
 	go.yaml.in/yaml/v4 v4.0.0-rc.6
 	golang.org/x/crypto v0.54.0
@@ -72,7 +72,7 @@ require (
 	golang.org/x/sys v0.47.0
 	golang.org/x/term v0.45.0
 	golang.org/x/text v0.40.0
-	google.golang.org/grpc v1.82.1
+	google.golang.org/grpc v1.83.0
 	mvdan.cc/sh/v3 v3.13.0
 	tags.cncf.io/container-device-interface v1.1.0
 	tags.cncf.io/container-device-interface/specs-go v1.1.0
@@ -185,7 +185,7 @@ require (
 	github.com/letsencrypt/boulder v0.20260309.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/mattn/go-runewidth v0.0.24 // indirect
+	github.com/mattn/go-runewidth v0.0.27 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
 	github.com/mdlayher/packet v1.1.2 // indirect
 	github.com/mdlayher/socket v0.5.1 // indirect
@@ -248,6 +248,7 @@ require (
 	github.com/ulikunitz/xz v0.5.14 // indirect
 	github.com/vbatts/go-mtree v0.6.1-0.20250911112631-8307d76bc1b9 // indirect
 	github.com/vbatts/tar-split v0.12.3 // indirect
+	github.com/vbauerster/cupwriter v0.0.4 // indirect
 	github.com/vishvananda/netlink v1.3.1 // indirect
 	github.com/vishvananda/netns v0.0.5 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
