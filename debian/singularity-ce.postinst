@@ -1,0 +1,20 @@
+#!/bin/sh
+
+
+if [ "$1" = "configure" ]; then
+
+    . /etc/os-release
+
+    MAJOR_VERSION=$(echo "$VERSION_ID" | cut -d "." -f1)
+
+    # fusermount3 rule needed on Ubuntu 26.04.
+    if [ "$MAJOR_VERSION" -gt 25 ]; then
+        echo "Ubuntu 26.04 or newer - ensuring local fusermount3 umount rule"
+        grep "umount /var/lib/singularity" /etc/apparmor.d/local/fusermount3 >/dev/null 2>/dev/null || 
+            echo "umount /var/lib/singularity/**/," >> /etc/apparmor.d/local/fusermount3
+        apparmor_parser -r /etc/apparmor.d/fusermount3
+    fi
+
+fi
+
+#DEBHELPER#
