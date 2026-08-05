@@ -305,6 +305,14 @@ EOF
 Modify the path beginning `/usr/local` if you specified a non-default `--prefix`
 when configuring and installing SingularityCE.
 
+On Ubuntu 26.04+ a rule must also be added to the default `fusermount3` profile,
+if you intend to use FUSE mounts. This can be added to the
+`/etc/apparmor.d/local/fusermount3` file:
+
+```sh
+echo "umount /usr/local/var/singularity/**/," >> /etc/apparmor.d/local/fusermount3
+```
+
 Reload the system apparmor profiles after you have created the file:
 
 ```sh
