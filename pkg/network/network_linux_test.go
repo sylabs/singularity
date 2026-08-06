@@ -8,6 +8,7 @@
 package network
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -566,6 +567,9 @@ func TestAddDelNetworks(t *testing.T) {
 		cmd.SysProcAttr = &syscall.SysProcAttr{}
 		cmd.SysProcAttr.Cloneflags = syscall.CLONE_NEWNET
 
+		stderr := &bytes.Buffer{}
+		cmd.Stderr = stderr
+
 		stdinPipe, err = cmd.StdinPipe()
 		if err != nil {
 			t.Fatal(err)
@@ -587,11 +591,16 @@ func TestAddDelNetworks(t *testing.T) {
 			}
 		}
 
-		stdoutPipe.Close()
+		// Ensure uutils cat (e.g. on Ubuntu 26.04+) sees an EOF on STDIN and
+		// exits cleanly. If we don't do this, it will emit a broken pipe error,
+		// failing the test - unlike gnu cat.
 		stdinPipe.Close()
 
 		if err := cmd.Wait(); err != nil {
-			t.Error(err)
+			t.Errorf("command %q exited with error: %s", cmdPath, err)
+			if stderr.Len() > 0 {
+				t.Logf("command stderr:\n%s", stderr.String())
+			}
 		}
 	}
 }
