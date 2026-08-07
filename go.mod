@@ -10,7 +10,7 @@ require (
 	github.com/astromechza/etcpwdparse v0.0.0-20170319193008-f0e5f0779716
 	github.com/blang/semver/v4 v4.0.0
 	github.com/buger/goterm v1.0.4
-	github.com/buger/jsonparser v1.6.0
+	github.com/buger/jsonparser v1.6.1
 	github.com/ccoveille/go-safecast/v2 v2.0.1
 	github.com/containerd/containerd/v2 v2.2.6
 	github.com/containerd/go-runc v1.1.0
@@ -64,7 +64,7 @@ require (
 	github.com/sylabs/sif/v2 v2.24.1
 	github.com/sylabs/squashfs v1.0.6
 	github.com/tonistiigi/fsutil v0.0.0-20260716115106-30cd4fc5d911
-	github.com/vbauerster/mpb/v8 v8.14.0
+	github.com/vbauerster/mpb/v8 v8.15.1
 	go.etcd.io/bbolt v1.5.0
 	go.yaml.in/yaml/v4 v4.0.0-rc.6
 	golang.org/x/crypto v0.54.0
