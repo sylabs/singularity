@@ -27,7 +27,7 @@ require (
 	github.com/fatih/color v1.19.0
 	github.com/go-log/log v0.2.0
 	github.com/gofrs/flock v0.13.0
-	github.com/google/go-containerregistry v0.21.8
+	github.com/google/go-containerregistry v0.21.9
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gosimple/slug v1.15.0
@@ -50,7 +50,7 @@ require (
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/seccomp/libseccomp-golang v0.11.1
 	github.com/shopspring/decimal v1.4.0
-	github.com/sigstore/cosign/v2 v2.6.4
+	github.com/sigstore/cosign/v2 v2.6.5
 	github.com/sigstore/sigstore v1.10.9
 	github.com/sirupsen/logrus v1.9.4
 	github.com/spf13/cobra v1.10.2
