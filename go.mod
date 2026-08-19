@@ -32,7 +32,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/gosimple/slug v1.15.0
 	github.com/moby/buildkit v0.31.2
-	github.com/moby/go-archive v0.2.1
+	github.com/moby/go-archive v0.3.0
 	github.com/moby/moby/client v0.5.0
 	github.com/moby/profiles/seccomp v0.2.3
 	github.com/moby/sys/user v0.4.1
