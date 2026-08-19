@@ -1,5 +1,16 @@
 # SingularityCE Changelog
 
+## 4.5.1 \[2026-08-20\]
+
+## Packaging
+
+- Now packaged for Ubuntu 26.04 LTS.
+
+### Bug Fixes
+
+- Fix relative vs absolute path issues in some builds, introduced by hardening in
+  4.5.0.
+
 ## 4.5.0 \[2026-06-25\]
 
 SingularityCE 4.5.0 contains mostly internal code changes and defense-in-depth

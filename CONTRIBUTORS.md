@@ -73,6 +73,7 @@ The following have contributed code and/or documentation to this repository.
 - Kumar Sukhani <kumarsukhani@gmail.com>
 - Kundan Kumar <iamkundankumar28@gmail.com>
 - Lars Quentin <lars@lquenti.de>
+- Luís Simas <luis.simas@cern.ch>
 - Maciej Sieczka <msieczka@sieczka.org>
 - Marcelo Magallon <marcelo@sylabs.io>
 - Marco Rubin <marco.rubin@protonmail.com>
