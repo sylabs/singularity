@@ -130,6 +130,7 @@ func main() {
 	defer outFile.Close()
 
 	// Determine if this is a setuid install
+	//nolint:gosec // intended functionality in build process, not part of compiled code.
 	b, err := os.ReadFile(os.Args[1])
 	if err != nil {
 		fmt.Println(err)
@@ -147,6 +148,7 @@ func main() {
 	}
 
 	// Parse the config.h file
+	//nolint:gosec // intended functionality in build process, not part of compiled code.
 	inFile, err := os.ReadFile(os.Args[1])
 	if err != nil {
 		fmt.Println(err)

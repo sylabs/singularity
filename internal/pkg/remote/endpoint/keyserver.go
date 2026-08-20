@@ -191,6 +191,7 @@ func (c *keyserverTransport) RoundTrip(req *http.Request) (*http.Response, error
 			tr.TLSClientConfig.InsecureSkipVerify = k.Insecure
 		}
 
+		//nolint:gosec // confused by way request is cloned?
 		resp, err := c.client.Do(cloneReq)
 		if err != nil {
 			if i < len(c.keyservers)-1 {

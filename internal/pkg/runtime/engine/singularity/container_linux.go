@@ -2735,7 +2735,11 @@ func (c *container) getBindFlags(source string, defaultFlags uintptr) (uintptr, 
 		addFlags, _ = mount.ConvertOptions(e.Options)
 	} else {
 		// clear bits MS_REMOUNT (32) and MS_BIND/ST_RELATIME (4096)
-		addFlags = uintptr(stfs.Flags &^ 4128)
+		clearFlags := int64(syscall.MS_REMOUNT | syscall.MS_BIND)
+		addFlags, err = safecast.Convert[uintptr](stfs.Flags &^ clearFlags)
+		if err != nil {
+			return 0, fmt.Errorf("while converting mount flags for %s: %w", source, err)
+		}
 	}
 
 	if addFlags&syscall.MS_RDONLY != 0 && defaultFlags&syscall.MS_RDONLY == 0 {

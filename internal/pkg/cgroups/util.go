@@ -100,6 +100,7 @@ func HasXDGRuntimeDir() (bool, error) {
 		return false, fmt.Errorf("XDG_RUNTIME_DIR is not set")
 	}
 
+	//nolint:gosec // XDG_RUNTIME_DIR is necessarily user-controlled.
 	fi, err := os.Stat(xdgRuntimeEnv)
 	if err != nil {
 		return false, fmt.Errorf("XDG_RUNTIME_DIR %q not accessible: %v", xdgRuntimeEnv, err)

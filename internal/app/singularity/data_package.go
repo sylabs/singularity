@@ -25,6 +25,7 @@ func DataPackage(src, dst string) error {
 		return fmt.Errorf("while creating temporary directory: %w", err)
 	}
 	defer func() {
+		//nolint:gosec // tmpDir was just created by us, under the intentionally user-controlled SINGULARITY_TMPDIR.
 		if err := os.RemoveAll(tmpDir); err != nil {
 			sylog.Errorf("while removing temporary directory: %v", err)
 		}
