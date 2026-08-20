@@ -6,7 +6,7 @@ orbs:
 parameters:
   go-version:
     type: string
-    default: '1.26.6'
+    default: '1.26.7'
 
 executors:
   node:
@@ -476,7 +476,7 @@ workflows:
       - build-deb:
           matrix:
             parameters:
-              e: ["ubuntu2204", "ubuntu2404"]
+              e: ["ubuntu2204", "ubuntu2404", "ubuntu2604"]
           filters:
             branches:
               ignore: /.*/
