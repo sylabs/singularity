@@ -83,8 +83,8 @@ func SetProcessEffective(caps uint64) (uint64, error) {
 	oldEffective := uint64(data[0].Effective) | uint64(data[1].Effective)<<32
 
 	// We are intentionally discarding upper and lower bits here.
-	data[0].Effective = uint32(caps)       //nolint:gosec
-	data[1].Effective = uint32(caps >> 32) //nolint:gosec
+	data[0].Effective = uint32(caps) //nolint:gosec
+	data[1].Effective = uint32(caps >> 32)
 
 	effective := uint64(data[0].Effective) | uint64(data[1].Effective)<<32
 	permitted := uint64(data[0].Permitted) | uint64(data[1].Permitted)<<32
