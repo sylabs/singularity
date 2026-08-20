@@ -105,7 +105,9 @@ func getDownloadConfig() (scslibrary.Downloader, error) {
 	return scslibrary.Downloader{
 		Concurrency: uint(concurrency),
 		PartSize:    partSize,
-		BufferSize:  bufferSize,
+		// BufferSize is deprecated in scs-library-client and can be dropped
+		// when the singularity.conf directive is dealt with properly.
+		BufferSize: bufferSize, //nolint:staticcheck
 	}, nil
 }
 
