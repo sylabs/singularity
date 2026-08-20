@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -83,8 +83,8 @@ func SetProcessEffective(caps uint64) (uint64, error) {
 	oldEffective := uint64(data[0].Effective) | uint64(data[1].Effective)<<32
 
 	// We are intentionally discarding upper and lower bits here.
-	data[0].Effective = uint32(caps)       //nolint:gosec
-	data[1].Effective = uint32(caps >> 32) //nolint:gosec
+	data[0].Effective = uint32(caps) //nolint:gosec
+	data[1].Effective = uint32(caps >> 32)
 
 	effective := uint64(data[0].Effective) | uint64(data[1].Effective)<<32
 	permitted := uint64(data[0].Permitted) | uint64(data[1].Permitted)<<32

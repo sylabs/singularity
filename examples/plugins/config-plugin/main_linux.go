@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -26,7 +26,7 @@ var Plugin = pluginapi.Plugin{
 		Description: "This is a short example config plugin for Singularity",
 	},
 	Callbacks: []pluginapi.Callback{
-		(clicallback.SingularityEngineConfig)(callbackCgroups),
+		clicallback.SingularityEngineConfig(callbackCgroups),
 	},
 }
 

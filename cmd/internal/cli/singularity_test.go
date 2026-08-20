@@ -18,6 +18,7 @@ func TestCreateConfDir(t *testing.T) {
 	bytes := make([]byte, 8)
 	for i := range 8 {
 		//#nosec G404
+		//nolint: gosec // max/min are within byte bounds
 		bytes[i] = byte(65 + rand.Intn(25))
 	}
 	dir := "/tmp/" + string(bytes)

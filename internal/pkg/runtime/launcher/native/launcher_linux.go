@@ -706,7 +706,11 @@ func (l *Launcher) setHome() error {
 	targetUID := l.engineConfig.GetTargetUID()
 	if l.cfg.CustomHome && targetUID != 0 {
 		if targetUID > 500 {
-			if pu, err := user.GetPwUID(uint32(targetUID)); err == nil {
+			targetUID32, err := safecast.Convert[uint32](targetUID)
+			if err != nil {
+				return fmt.Errorf("while converting target UID %d: %w", targetUID, err)
+			}
+			if pu, err := user.GetPwUID(targetUID32); err == nil {
 				sylog.Debugf("Target UID requested, set home directory to %s", pu.Dir)
 				l.cfg.HomeDir = pu.Dir
 				l.engineConfig.SetCustomHome(true)
@@ -1199,12 +1203,14 @@ func mkContainerDirs() (tempDir, imageDir string, err error) {
 	}
 	defer func() {
 		if err != nil {
+			//nolint:gosec // tempDir was just created by us, under the intentionally user-controlled SINGULARITY_TMPDIR/cache dir.
 			os.RemoveAll(tempDir)
 		}
 	}()
 
 	// create an inner dir to extract to, so we don't clobber the secure permissions on the tmpDir.
 	imageDir = filepath.Join(tempDir, "root")
+	//nolint:gosec // imageDir is the fixed "root" child of tempDir, which was just created by us with os.MkdirTemp.
 	if err := os.Mkdir(imageDir, 0o755); err != nil {
 		return "", "", fmt.Errorf("could not create root directory: %s", err)
 	}
@@ -1369,7 +1375,7 @@ func (l *Launcher) starterInstance(name string, useSuid bool) error {
 
 // runPluginCallbacks executes any plugin callbacks to manipulate the engine config passed in
 func runPluginCallbacks(cfg *config.Common) error {
-	callbackType := (clicallback.SingularityEngineConfig)(nil)
+	callbackType := clicallback.SingularityEngineConfig(nil)
 	callbacks, err := plugin.LoadCallbacks(callbackType)
 	if err != nil {
 		return fmt.Errorf("while loading plugin callbacks '%T': %w", callbackType, err)

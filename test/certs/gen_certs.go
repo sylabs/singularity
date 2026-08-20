@@ -32,22 +32,11 @@ func privateKeyFromPEM(name string) (crypto.PrivateKey, error) {
 	return cryptoutils.UnmarshalPEMToPrivateKey(b, cryptoutils.SkipPassword)
 }
 
-// zeroReader is an io.Reader that always returns zeros, similar to /dev/zero.
-type zeroReader struct{}
-
-func (zeroReader) Read(b []byte) (n int, err error) {
-	for i := range b {
-		b[i] = 0
-	}
-	return len(b), nil
-}
-
 // createCertificate creates a new X.509 certificate.
 func createCertificate(tmpl, parent *x509.Certificate, pub, pri any) (*x509.Certificate, error) {
-	// Use predictable source of "randomness" to generate corpus deterministically.
-	var rand zeroReader
-
-	der, err := x509.CreateCertificate(rand, tmpl, parent, pub, pri)
+	// nil random source makes signing deterministic for testing.
+	// Previous zeroReader approach does not work with Go 1.26+
+	der, err := x509.CreateCertificate(nil, tmpl, parent, pub, pri)
 	if err != nil {
 		return nil, err
 	}

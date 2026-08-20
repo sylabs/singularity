@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2020-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
@@ -101,7 +101,7 @@ func (ep *Config) LibraryClientConfig(uri string) (*libclient.Config, error) {
 	config := &libclient.Config{
 		BaseURL:   uri,
 		UserAgent: useragent.Value(),
-		Logger:    (golog.Logger)(sylog.DebugLogger{}),
+		Logger:    golog.Logger(sylog.DebugLogger{}),
 		// TODO - probably should establish an appropriate client timeout here.
 		HTTPClient: &http.Client{},
 	}

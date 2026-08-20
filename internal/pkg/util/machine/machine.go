@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -25,6 +26,11 @@ import (
 
 // ErrUnknownArch is the error returned for unknown architecture.
 var ErrUnknownArch = errors.New("architecture not recognized")
+
+var (
+	errFoundElf = errors.New("found elf binary")
+	errNotElf   = errors.New("not an elf binary")
+)
 
 type format struct {
 	Arch       string
@@ -158,8 +164,12 @@ func ArchFromElf(binary string) (string, error) {
 	}
 	defer e.Close()
 
+	return archFromFormat(e.Machine, e.Class, e.ByteOrder)
+}
+
+func archFromFormat(machine elf.Machine, class elf.Class, byteOrder binary.ByteOrder) (string, error) {
 	for _, f := range formats {
-		if f.Machine == e.Machine && f.Class == e.Class && f.Endianness == e.ByteOrder {
+		if f.Machine == machine && f.Class == class && f.Endianness == byteOrder {
 			return f.Arch, nil
 		}
 	}
@@ -167,14 +177,48 @@ func ArchFromElf(binary string) (string, error) {
 	return "", ErrUnknownArch
 }
 
+func archFromRootFile(root *os.Root, name string) (string, error) {
+	name = strings.TrimPrefix(name, string(filepath.Separator))
+
+	f, err := root.Open(name)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	elfMagic := make([]byte, len(elf.ELFMAG))
+	if _, err := io.ReadFull(f, elfMagic); err != nil {
+		return "", err
+	}
+	if !bytes.Equal(elfMagic, []byte(elf.ELFMAG)) {
+		return "", errNotElf
+	}
+	if _, err := f.Seek(0, io.SeekStart); err != nil {
+		return "", err
+	}
+
+	e, err := elf.NewFile(f)
+	if err != nil {
+		return "", err
+	}
+
+	return archFromFormat(e.Machine, e.Class, e.ByteOrder)
+}
+
 // ArchFromContainer walks through a container filesystem until it
 // find an elf binary to read target architecture from and returns it.
 // If there is no suitable elf binary or if the architecture is not
 // recognized it will return an empty string.
 func ArchFromContainer(container string) string {
+	root, err := os.OpenRoot(container)
+	if err != nil {
+		return ""
+	}
+	defer root.Close()
+
 	// fast path if we can get architecture from shell binary
 	shell := fs.EvalRelative("/bin/sh", container)
-	arch, err := ArchFromElf(filepath.Join(container, shell))
+	arch, err := archFromRootFile(root, shell)
 	if err == nil {
 		return arch
 	}
@@ -190,26 +234,18 @@ func ArchFromContainer(container string) string {
 			return nil
 		}
 
-		f, err := os.Open(path)
-		if err != nil {
+		relPath, err := filepath.Rel(container, path)
+		if err != nil || !filepath.IsLocal(relPath) {
 			return nil
 		}
-		defer f.Close()
 
-		elfMagic := make([]byte, len(elf.ELFMAG))
-		if _, err := f.Read(elfMagic); err != nil {
+		arch, err = archFromRootFile(root, relPath)
+		if err == ErrUnknownArch {
+			return err
+		} else if err != nil {
 			return nil
 		}
-		if string(elfMagic) == string(elf.ELFMAG) {
-			arch, err = ArchFromElf(path)
-			if err == ErrUnknownArch {
-				return err
-			} else if err != nil {
-				return nil
-			}
-			return fmt.Errorf("found elf binary at %s", path)
-		}
-		return nil
+		return errFoundElf
 	})
 
 	return arch

@@ -30,7 +30,7 @@ var (
 	loggerLevel               = InfoLevel
 )
 
-var logWriter = (io.Writer)(os.Stderr)
+var logWriter = io.Writer(os.Stderr)
 
 func init() {
 	level, err := strconv.Atoi(os.Getenv(messageLevelEnv))

@@ -657,7 +657,7 @@ func (l *Launcher) prepareNativeEnv(bundlePath string, userEnv map[string]string
 			// No evaluation when the export is sourced (default OCI mode emulates --compat, which includes --no-eval)
 			value = "'" + shell.EscapeSingleQuotes(value) + "'"
 		}
-		b.WriteString(fmt.Sprintf("%s=%s\n", key, value))
+		fmt.Fprintf(&b, "%s=%s\n", key, value)
 	}
 
 	// Second, we conditionally restore host env vars, if we are --no-compat and
@@ -669,7 +669,7 @@ fi
 	`
 	cleanEnv := !l.cfg.NoCompat || l.cfg.CleanEnv
 	for k, v := range env.HostEnvMap(os.Environ(), cleanEnv) {
-		b.WriteString(fmt.Sprintf(hostEnvSnippet, k, "'"+shell.EscapeSingleQuotes(v)+"'"))
+		fmt.Fprintf(&b, hostEnvSnippet, k, "'"+shell.EscapeSingleQuotes(v)+"'")
 	}
 
 	if err := fs.WriteFileNoFollow(hostEnvPath, b.Bytes(), 0o755); err != nil {
