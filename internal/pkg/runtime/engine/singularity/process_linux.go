@@ -328,7 +328,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 func (e *EngineOperations) PostStartProcess(_ context.Context, pid int) error {
 	sylog.Debugf("Post start process")
 
-	callbackType := (singularitycallback.PostStartProcess)(nil)
+	callbackType := singularitycallback.PostStartProcess(nil)
 	callbacks, err := plugin.LoadCallbacks(callbackType)
 	if err != nil {
 		return fmt.Errorf("while loading plugins callbacks '%T': %s", callbackType, err)

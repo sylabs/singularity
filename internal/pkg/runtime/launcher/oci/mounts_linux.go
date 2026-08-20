@@ -165,7 +165,7 @@ func (l *Launcher) addTmpMounts(mounts *[]specs.Mount) error {
 		return nil
 	}
 
-	sylog.Debugf(("No workdir specification provided. Proceeding with tmpfs mounts for /tmp and /var/tmp"))
+	sylog.Debugf("No workdir specification provided. Proceeding with tmpfs mounts for /tmp and /var/tmp")
 	*mounts = append(*mounts,
 
 		specs.Mount{

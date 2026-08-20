@@ -195,7 +195,7 @@ func (rb *RemoteBuilder) Build(ctx context.Context) (err error) {
 		c, err := client.NewClient(&client.Config{
 			BaseURL:   bi.LibraryURL(),
 			AuthToken: rb.AuthToken,
-			Logger:    (golog.Logger)(sylog.DebugLogger{}),
+			Logger:    golog.Logger(sylog.DebugLogger{}),
 		})
 		if err != nil {
 			return fmt.Errorf("error initializing library client: %w", err)

@@ -26,7 +26,7 @@ var Plugin = pluginapi.Plugin{
 		Description: "This is a short example config plugin for Singularity",
 	},
 	Callbacks: []pluginapi.Callback{
-		(clicallback.SingularityEngineConfig)(callbackCgroups),
+		clicallback.SingularityEngineConfig(callbackCgroups),
 	},
 }
 

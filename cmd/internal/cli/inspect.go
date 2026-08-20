@@ -509,6 +509,7 @@ func (c *command) addHelpCommand() {
 
 func (c *command) addEnvironmentCommand() {
 	if c.sifMetadata == nil {
+		//nolint:dupword
 		c.script += `
 		for prefix in ${ALL_PATH}; do
 			if [ "${prefix##*/}" = ".singularity.d" ]; then

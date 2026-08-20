@@ -27,7 +27,7 @@ import (
 func (e *EngineOperations) MonitorContainer(pid int, signals chan os.Signal) (syscall.WaitStatus, error) {
 	var status syscall.WaitStatus
 
-	callbackType := (singularitycallback.MonitorContainer)(nil)
+	callbackType := singularitycallback.MonitorContainer(nil)
 	callbacks, err := plugin.LoadCallbacks(callbackType)
 	if err != nil {
 		return status, fmt.Errorf("while loading plugins callbacks '%T': %s", callbackType, err)

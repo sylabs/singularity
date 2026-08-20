@@ -26,9 +26,9 @@ var Plugin = pluginapi.Plugin{
 		Description: "This is a short example CLI plugin for Singularity",
 	},
 	Callbacks: []pluginapi.Callback{
-		(clicallback.Command)(callbackVersion),
-		(clicallback.Command)(callbackVerify),
-		(clicallback.Command)(callbackTestCmd),
+		clicallback.Command(callbackVersion),
+		clicallback.Command(callbackVerify),
+		clicallback.Command(callbackTestCmd),
 	},
 }
 

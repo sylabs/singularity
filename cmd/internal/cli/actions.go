@@ -516,7 +516,7 @@ func launchContainer(cmd *cobra.Command, ep launcher.ExecParams) error {
 	// Fail if the execError wasn't a result of being unable to create a FUSE
 	// mount bundle from an OCI-SIF.
 	var mountErr bndocisif.UnavailableError
-	if !(errors.As(execErr, &mountErr)) {
+	if !errors.As(execErr, &mountErr) {
 		return execErr
 	}
 
