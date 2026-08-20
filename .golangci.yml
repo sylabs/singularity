@@ -27,7 +27,7 @@ linters:
     - dupl
     - dupword
     - forcetypeassert
-    - gomodguard
+    - gomodguard_v2 
     - goprintffuncname
     - gosec
     - govet

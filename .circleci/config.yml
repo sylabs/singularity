@@ -41,7 +41,7 @@ executors:
       - image: ubuntu:26.04
   golangci-lint:
     docker:
-      - image: golangci/golangci-lint:v2.9
+      - image: golangci/golangci-lint:v2.13
   ubuntu-machine-large:
     machine:
       image: ubuntu-2404:current
