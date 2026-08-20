@@ -144,18 +144,18 @@ func (m *Manager) addDirs(path string) error {
 
 	parts := strings.Split(path, string(os.PathSeparator))
 	l := len(parts)
-	p := ""
+	var p strings.Builder
 	for i := 1; i < l; i++ {
 		s := parts[i : i+1][0]
-		p += "/" + s
+		p.WriteString("/" + s)
 		if s != "" {
-			if _, ok := m.entries[p]; !ok {
+			if _, ok := m.entries[p.String()]; !ok {
 				d := &dir{mode: m.DirMode, uid: uid, gid: gid}
-				m.entries[p] = d
+				m.entries[p.String()] = d
 				m.dirs = append(m.dirs, d)
 				// If this directory is under an overridden directory, then ensure
 				// we track the corresponding nested bind target.
-				if layoutPath, target := m.nestedBindTargetFor(p); target != "" {
+				if layoutPath, target := m.nestedBindTargetFor(p.String()); target != "" {
 					sylog.Debugf("Adding nested bind target %s for overridden directory %s", target, layoutPath)
 					if err := m.addNestedBindTarget(layoutPath, target); err != nil {
 						return err

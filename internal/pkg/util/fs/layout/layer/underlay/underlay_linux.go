@@ -136,23 +136,23 @@ func (u *Underlay) createLayer(rootFsPath string, system *mount.System) error {
 	for _, pl := range createdPath {
 		parts := strings.Split(filepath.Dir(pl.path), string(os.PathSeparator))
 		l := len(parts)
-		p := ""
+		var p strings.Builder
 		for i := 1; i < l; i++ {
 			s := parts[i : i+1][0]
-			p += "/" + s
+			p.WriteString("/" + s)
 			if s != "" {
-				if _, err := u.session.GetPath(p); err != nil {
-					if err := u.session.AddDir(p); err != nil {
+				if _, err := u.session.GetPath(p.String()); err != nil {
+					if err := u.session.AddDir(p.String()); err != nil {
 						return err
 					}
 				}
 				// if the directory is overridden by a bind mount we won't
 				// need to duplicate the container image directory
-				if _, ok := destinations[p]; ok {
+				if _, ok := destinations[p.String()]; ok {
 					continue
 				}
 				// directory not overridden, duplicate it
-				if err := u.duplicateDir(p, system, pl.path); err != nil {
+				if err := u.duplicateDir(p.String(), system, pl.path); err != nil {
 					return err
 				}
 			}
