@@ -476,7 +476,7 @@ workflows:
       - build-deb:
           matrix:
             parameters:
-              e: ["ubuntu2204", "ubuntu2404"]
+              e: ["ubuntu2204", "ubuntu2404", "ubuntu2604"]
           filters:
             branches:
               ignore: /.*/
