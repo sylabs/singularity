@@ -963,13 +963,13 @@ func (c actionTests) actionOciCdi(t *testing.T) {
 						case "c":
 							testFlag = "-c"
 						}
-						execCmd.WriteString(fmt.Sprintf(" && test %s %s", testFlag, d.Path))
+						fmt.Fprintf(&execCmd, " && test %s %s", testFlag, d.Path)
 					}
 
 					// Add commands to test the presence, and functioning, of mounts.
 					for i, m := range tt.Mounts {
 						// Add a separate teststring echo statement for each mount
-						execCmd.WriteString(fmt.Sprintf(" && echo %s > %s/testfile_%d", testfileStrings[i], m.ContainerPath, i))
+						fmt.Fprintf(&execCmd, " && echo %s > %s/testfile_%d", testfileStrings[i], m.ContainerPath, i)
 					}
 
 					// Create a postRun function to check that the testfiles written to the container mounts made their way to the right host temporary directories
