@@ -101,7 +101,7 @@ func (ep *Config) LibraryClientConfig(uri string) (*libclient.Config, error) {
 	config := &libclient.Config{
 		BaseURL:   uri,
 		UserAgent: useragent.Value(),
-		Logger:    (golog.Logger)(sylog.DebugLogger{}),
+		Logger:    golog.Logger(sylog.DebugLogger{}),
 		// TODO - probably should establish an appropriate client timeout here.
 		HTTPClient: &http.Client{},
 	}

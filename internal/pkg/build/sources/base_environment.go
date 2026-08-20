@@ -157,6 +157,7 @@ fi
 
 `
 	// Contents of /.singularity.d/env/95-apps.sh
+	//nolint:dupword
 	appsShFileContent = `#!/bin/sh
 #
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.

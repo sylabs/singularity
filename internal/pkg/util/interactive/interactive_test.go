@@ -304,7 +304,7 @@ func TestGetPassphrase(t *testing.T) {
 	}{
 		{
 			name:      "valid case",
-			input:     "mypassphrase\nmypassphrase\n",
+			input:     "mypassphrase\nmypassphrase\n", //nolint:dupword
 			shallPass: true,
 		},
 		{

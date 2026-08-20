@@ -66,7 +66,7 @@ func (cp *LibraryConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err 
 	libraryConfig := &client.Config{
 		BaseURL:   libraryURL,
 		AuthToken: authToken,
-		Logger:    (golog.Logger)(sylog.DebugLogger{}),
+		Logger:    golog.Logger(sylog.DebugLogger{}),
 	}
 
 	pullOpts := library.PullOptions{

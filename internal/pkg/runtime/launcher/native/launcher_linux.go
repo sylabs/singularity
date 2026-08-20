@@ -1369,7 +1369,7 @@ func (l *Launcher) starterInstance(name string, useSuid bool) error {
 
 // runPluginCallbacks executes any plugin callbacks to manipulate the engine config passed in
 func runPluginCallbacks(cfg *config.Common) error {
-	callbackType := (clicallback.SingularityEngineConfig)(nil)
+	callbackType := clicallback.SingularityEngineConfig(nil)
 	callbacks, err := plugin.LoadCallbacks(callbackType)
 	if err != nil {
 		return fmt.Errorf("while loading plugin callbacks '%T': %w", callbackType, err)

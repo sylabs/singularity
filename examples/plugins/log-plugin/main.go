@@ -27,7 +27,7 @@ var Plugin = pluginapi.Plugin{
 		Description: "Log executed CLI commands to syslog",
 	},
 	Callbacks: []pluginapi.Callback{
-		(clicallback.Command)(logCommand),
+		clicallback.Command(logCommand),
 	},
 }
 
