@@ -331,6 +331,7 @@ func (cp *ZypperConveyorPacker) Get(ctx context.Context, b *types.Bundle) error 
 	args = append(args, strings.Fields(include)...)
 
 	// Zypper install command
+	//nolint:gosec // zypperPath is an OS provided binary, args are from definition file
 	cmd := exec.Command(zypperPath, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

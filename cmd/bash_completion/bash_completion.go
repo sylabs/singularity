@@ -14,6 +14,7 @@ import (
 )
 
 func main() {
+	//nolint: gosec // intended functionality to use first arg as docs target, and we do have NOFOLLOW here.
 	fh, err := os.OpenFile(os.Args[1], os.O_RDWR|os.O_CREATE|os.O_TRUNC|unix.O_NOFOLLOW, 0o644)
 	if err != nil {
 		fmt.Println(err)

@@ -55,6 +55,7 @@ func TestMain(m *testing.M) {
 
 	os.Setenv("E2E_NO_REAPER", "1")
 
+	//nolint:gosec // e2e-suite only, not a runtime security issue
 	cmd := exec.Command(executable, os.Args[1:]...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
