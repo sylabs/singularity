@@ -1,4 +1,4 @@
-// Copyright (c) 2022-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2022-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -100,6 +100,7 @@ func HasXDGRuntimeDir() (bool, error) {
 		return false, fmt.Errorf("XDG_RUNTIME_DIR is not set")
 	}
 
+	//nolint:gosec // XDG_RUNTIME_DIR is necessarily user-controlled.
 	fi, err := os.Stat(xdgRuntimeEnv)
 	if err != nil {
 		return false, fmt.Errorf("XDG_RUNTIME_DIR %q not accessible: %v", xdgRuntimeEnv, err)

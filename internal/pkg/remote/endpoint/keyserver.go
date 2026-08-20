@@ -1,5 +1,5 @@
 // Copyright (c) 2020, Control Command Inc. All rights reserved.
-// Copyright (c) 2021, Sylabs Inc. All rights reserved.
+// Copyright (c) 2021-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -191,6 +191,7 @@ func (c *keyserverTransport) RoundTrip(req *http.Request) (*http.Response, error
 			tr.TLSClientConfig.InsecureSkipVerify = k.Insecure
 		}
 
+		//nolint:gosec // confused by way request is cloned?
 		resp, err := c.client.Do(cloneReq)
 		if err != nil {
 			if i < len(c.keyservers)-1 {

@@ -538,7 +538,7 @@ func Init(loadPlugins bool) {
 	// load plugins and register commands/flags if any
 	//nolint:forcetypeassert
 	if loadPlugins {
-		callbackType := (clicallback.Command)(nil)
+		callbackType := clicallback.Command(nil)
 		callbacks, err := plugin.LoadCallbacks(callbackType)
 		if err != nil {
 			sylog.Fatalf("Failed to load plugins callbacks '%T': %s", callbackType, err)

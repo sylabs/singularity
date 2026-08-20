@@ -299,7 +299,7 @@ func (m *flagManager) updateCmdFlagFromEnv(cmd *cobra.Command, prefix string) er
 	if len(errs) > 0 {
 		var errStr strings.Builder
 		for _, e := range errs {
-			errStr.WriteString(fmt.Sprintf("\n%s", e.Error()))
+			fmt.Fprintf(&errStr, "\n%s", e.Error())
 		}
 		return fmt.Errorf("while updating flags from environment: %v", errStr.String())
 	}

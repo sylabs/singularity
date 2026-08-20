@@ -1,4 +1,4 @@
-// Copyright (c) 2024, Sylabs Inc. All rights reserved.
+// Copyright (c) 2024-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.package singularity
@@ -25,6 +25,7 @@ func DataPackage(src, dst string) error {
 		return fmt.Errorf("while creating temporary directory: %w", err)
 	}
 	defer func() {
+		//nolint:gosec // tmpDir was just created by us, under the intentionally user-controlled SINGULARITY_TMPDIR.
 		if err := os.RemoveAll(tmpDir); err != nil {
 			sylog.Errorf("while removing temporary directory: %v", err)
 		}

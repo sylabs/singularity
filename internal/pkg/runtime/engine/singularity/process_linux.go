@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -328,7 +328,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 func (e *EngineOperations) PostStartProcess(_ context.Context, pid int) error {
 	sylog.Debugf("Post start process")
 
-	callbackType := (singularitycallback.PostStartProcess)(nil)
+	callbackType := singularitycallback.PostStartProcess(nil)
 	callbacks, err := plugin.LoadCallbacks(callbackType)
 	if err != nil {
 		return fmt.Errorf("while loading plugins callbacks '%T': %s", callbackType, err)

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -304,7 +304,7 @@ func TestGetPassphrase(t *testing.T) {
 	}{
 		{
 			name:      "valid case",
-			input:     "mypassphrase\nmypassphrase\n",
+			input:     "mypassphrase\nmypassphrase\n", //nolint:dupword
 			shallPass: true,
 		},
 		{

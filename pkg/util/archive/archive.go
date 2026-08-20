@@ -438,7 +438,7 @@ func (u *unpacker) handleLChmod(hdr *tar.Header, path string, hdrInfo os.FileInf
 
 func (u *unpacker) mkdirAllAndChown(path string, perm os.FileMode, uid, gid int) error {
 	var current string
-	for _, part := range strings.Split(path, string(os.PathSeparator)) {
+	for part := range strings.SplitSeq(path, string(os.PathSeparator)) {
 		if part == "" || part == "." {
 			continue
 		}

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2025, Sylabs Inc. All rights reserved.
+// Copyright (c) 2019-2026, Sylabs Inc. All rights reserved.
 // Copyright (c) Contributors to the Apptainer project, established as
 //   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
@@ -55,6 +55,7 @@ func TestMain(m *testing.M) {
 
 	os.Setenv("E2E_NO_REAPER", "1")
 
+	//nolint:gosec // e2e-suite only, not a runtime security issue
 	cmd := exec.Command(executable, os.Args[1:]...)
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
