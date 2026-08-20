@@ -14,7 +14,8 @@ Build-Depends:
  libtool,
  pkg-config,
  squashfs-tools,
- zlib1g-dev
+ zlib1g-dev,
+ debhelper-compat (= 13)
 Standards-Version: 3.9.8
 Homepage: https://sylabs.io/singularity
 Vcs-Git: https://github.com/sylabs/singularity.git
