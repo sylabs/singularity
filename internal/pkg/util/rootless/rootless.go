@@ -76,6 +76,7 @@ func InNS() bool {
 // ExecWithFakeroot will exec singularity with provided args, in a
 // subuid/gid-mapped fakeroot user namespace. This uses the fakeroot engine.
 func ExecWithFakeroot(args []string) error {
+	//nolint:prealloc
 	singularityBin := []string{
 		filepath.Join(buildcfg.BINDIR, "singularity"),
 	}
