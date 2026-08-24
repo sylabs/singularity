@@ -1,0 +1,1 @@
+{{ printf "uid=%d gid=%d user=%q group=%q exe=%q version=%q cwd=%q command=%q args=%q flags=%q image=%q sif-uuid=%q LOGNAME=%q" .UID .GID .User .Group .Executable .Version .CWD .Command .Args .Flags .Image .SIFUUID .Env.LOGNAME -}}
