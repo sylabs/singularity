@@ -12,8 +12,7 @@ import (
 	"strconv"
 	"testing"
 
-	current "github.com/containers/common/pkg/hooks/1.0.0"
-	hook "github.com/containers/common/pkg/hooks/1.0.0"
+	cchooks "github.com/containers/common/pkg/hooks/1.0.0"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/test"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
@@ -32,7 +31,7 @@ func TestNativeHook_Validate(t *testing.T) {
 			nh: &NativeHook{
 				Version: "1.0.0",
 				Hook:    specs.Hook{Path: "/bin/true"},
-				When:    hook.When{Always: &trueBool},
+				When:    cchooks.When{Always: &trueBool},
 				Stages:  []string{"poststart"},
 			},
 			wantErr: false,
@@ -42,7 +41,7 @@ func TestNativeHook_Validate(t *testing.T) {
 			nh: &NativeHook{
 				Version: "99.0.0",
 				Hook:    specs.Hook{Path: "/bin/true"},
-				When:    hook.When{Always: &trueBool},
+				When:    cchooks.When{Always: &trueBool},
 				Stages:  []string{"poststart"},
 			},
 			wantErr: true,
@@ -52,7 +51,7 @@ func TestNativeHook_Validate(t *testing.T) {
 			nh: &NativeHook{
 				Version: "1.0.0",
 				Hook:    specs.Hook{},
-				When:    hook.When{Always: &trueBool},
+				When:    cchooks.When{Always: &trueBool},
 				Stages:  []string{"poststart"},
 			},
 			wantErr: true,
@@ -62,7 +61,7 @@ func TestNativeHook_Validate(t *testing.T) {
 			nh: &NativeHook{
 				Version: "1.0.0",
 				Hook:    specs.Hook{Path: "/bin/true"},
-				When:    hook.When{},
+				When:    cchooks.When{},
 				Stages:  []string{"poststart"},
 			},
 			wantErr: true,
@@ -72,7 +71,7 @@ func TestNativeHook_Validate(t *testing.T) {
 			nh: &NativeHook{
 				Version: "1.0.0",
 				Hook:    specs.Hook{Path: "/bin/true"},
-				When:    hook.When{Always: &trueBool, Annotations: map[string]string{"key": "val"}},
+				When:    cchooks.When{Always: &trueBool, Annotations: map[string]string{"key": "val"}},
 				Stages:  []string{"poststart"},
 			},
 			wantErr: true,
@@ -82,7 +81,7 @@ func TestNativeHook_Validate(t *testing.T) {
 			nh: &NativeHook{
 				Version: "1.0.0",
 				Hook:    specs.Hook{Path: "/bin/true"},
-				When:    hook.When{Always: &trueBool, Commands: []string{"cmd"}},
+				When:    cchooks.When{Always: &trueBool, Commands: []string{"cmd"}},
 				Stages:  []string{"poststart"},
 			},
 			wantErr: true,
@@ -92,7 +91,7 @@ func TestNativeHook_Validate(t *testing.T) {
 			nh: &NativeHook{
 				Version: "1.0.0",
 				Hook:    specs.Hook{Path: "/bin/true"},
-				When:    hook.When{Always: &trueBool, HasBindMounts: &trueBool},
+				When:    cchooks.When{Always: &trueBool, HasBindMounts: &trueBool},
 				Stages:  []string{"poststart"},
 			},
 			wantErr: true,
@@ -102,7 +101,7 @@ func TestNativeHook_Validate(t *testing.T) {
 			nh: &NativeHook{
 				Version: "1.0.0",
 				Hook:    specs.Hook{Path: "/bin/true"},
-				When:    hook.When{Always: &trueBool},
+				When:    cchooks.When{Always: &trueBool},
 			},
 			wantErr: true,
 		},
@@ -111,7 +110,7 @@ func TestNativeHook_Validate(t *testing.T) {
 			nh: &NativeHook{
 				Version: "1.0.0",
 				Hook:    specs.Hook{Path: "/bin/true"},
-				When:    hook.When{Always: &trueBool},
+				When:    cchooks.When{Always: &trueBool},
 				Stages:  []string{"prestart"},
 			},
 			wantErr: true,
@@ -353,7 +352,7 @@ func Test_loadNativeHooksUnpriv(t *testing.T) {
 			Args: []string{"arg1", "arg2"},
 			Env:  []string{"I_AM_A_HOOK=1"},
 		},
-		When: current.When{
+		When: cchooks.When{
 			Always: &trueBool,
 		},
 		Stages:     []string{"poststart"},
@@ -444,7 +443,7 @@ func Test_loadNativeHooksPriv(t *testing.T) {
 			Args: []string{"arg1", "arg2"},
 			Env:  []string{"I_AM_A_HOOK=1"},
 		},
-		When: current.When{
+		When: cchooks.When{
 			Always: &trueBool,
 		},
 		Stages:     []string{"poststart"},

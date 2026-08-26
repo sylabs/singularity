@@ -17,7 +17,7 @@ import (
 	"strings"
 	"syscall"
 
-	current "github.com/containers/common/pkg/hooks/1.0.0"
+	cchooks "github.com/containers/common/pkg/hooks/1.0.0"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/sylabs/singularity/v4/internal/pkg/buildcfg"
 	"github.com/sylabs/singularity/v4/internal/pkg/util/fs"
@@ -39,7 +39,7 @@ type NativeHook struct {
 	// Hook as an OCI runtime-spec Hook struct
 	Hook specs.Hook `json:"hook"`
 	// When the hook should run
-	When current.When `json:"when"`
+	When cchooks.When `json:"when"`
 	// Stages in the container lifecycle at which the hook should run
 	Stages []string `json:"stages"`
 	// Privileged indicates the hook should be executed only in setuid, and with escalated privilege.
@@ -53,8 +53,8 @@ func (n *NativeHook) Validate() error {
 		return fmt.Errorf("native hook is nil")
 	}
 
-	if n.Version != current.Version {
-		return fmt.Errorf("hook version %q is not supported (%q required)", n.Version, current.Version)
+	if n.Version != cchooks.Version {
+		return fmt.Errorf("hook version %q is not supported (%q required)", n.Version, cchooks.Version)
 	}
 
 	if n.Hook.Path == "" {
@@ -179,7 +179,7 @@ func loadNativeHooks(hookDir string, privileged bool) ([]NativeHook, error) {
 		f := os.NewFile(uintptr(fd), de.Name())
 		defer f.Close()
 
-		if privileged && !(fs.FileHasOwner(f, 0) && fs.FileHasGroup(f, 0)) {
+		if privileged && (!fs.FileHasOwner(f, 0) || !fs.FileHasGroup(f, 0)) {
 			return nil, fmt.Errorf("%q must be owned by root:root", f.Name())
 		}
 
