@@ -1,0 +1,6 @@
+---
+plugin: rest
+path: "/assets/config/config.prod.json"
+response:
+  staticFile: mock/config.mock.json
+

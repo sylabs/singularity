@@ -1,0 +1,8 @@
+- algorithm: rsa
+  bitlength: 2048
+  creationtime: "2018-07-23T22:39:05Z"
+  expirationtime: "2019-07-23T22:39:05Z"
+  fingerprint: 6EDA9F72CB17F3129A7777B0596D33DAEE2EFD1A
+  keyidshort: EE2EFD1A
+  names:
+  - AdRock (test) <adrock@sylabs.io>

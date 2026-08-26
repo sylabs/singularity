@@ -1,0 +1,6 @@
+- name: Person A
+  age: 30
+  dancing: true
+- name: Person B
+  age: 30
+  dancing: false

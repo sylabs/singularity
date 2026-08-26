@@ -1,0 +1,2 @@
+ID,Username,Email,Provider,ProviderID,Active,Groups,Roles,AllRoles,Quota.MaxBuildTime,Quota.MaxBuildTimeCumulative,Quota.MaxLibrarySize,CreatedAt,DeactivatedAt
+507f1f77bcf86cd799439aaa,user123,john@example.com,google,1533836926,true,[admin],[library-admin],[auth-admin],1800,3600000,"  1.0 MiB",2019-02-26 03:32:33.587 +0000 UTC,2019-02-26 03:32:33.587 +0000 UTC

@@ -1,0 +1,10 @@
+*.sif
+*.o
+
+/enterprise
+singularity_source
+.idea/
+.vscode/
+
+go.mod
+go.sum

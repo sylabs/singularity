@@ -1,0 +1,1541 @@
+swagger: "2.0"
+
+info:
+  version: "1.0"
+  title: "Sylabs Container Library API (OCI-SHIM)"
+  description: "This is the v1.0 REST API for the Sylabs Library - a service that provides storage, access to, and management of Singularity container images."
+  termsOfService: "https://www.sylabs.io/terms-and-conditions/"
+  contact:
+    email: "cloud@sylabs.io"
+  license:
+    name: Copyright Sylabs Inc. 2018, 2021.
+    url: "https://www.sylabs.io/terms-and-conditions/"
+
+host: "library.sylabs.io:5150"
+schemes:
+  - "http"
+  - "https"
+consumes:
+  - application/json
+produces:
+  - application/json
+
+# Sections for Swagger Docs
+tags:
+  - name: "base"
+    description: "Base Operations"
+  - name: "entity"
+    description: "Operations on projects (entities)"
+  - name: "collection"
+    description: "Operations on collections"
+  - name: "container"
+    description: "Operations on containers"
+  - name: "image"
+    description: "Operations on container versions (images)"
+  - name: "tags"
+    description: "Operations on tags that annotate container images"
+  - name: "search"
+    description: "Search across the library"
+  - name: "reports"
+    description: "Summary reports about library content"
+
+
+# Object/Type Definitions
+definitions:
+  entity:
+    type: object
+    required:
+      - name
+    description: An entity object represents a project within the container library
+    properties:
+      id:
+        type: string
+        example: "project123"
+        description: "Unique identifier of this project"
+      name:
+        type: string
+        minLength: 4
+        maxLength: 255
+        pattern: "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+        example: "project123"
+        description: "A project name (regex ^[a-zA-Z0-9-]+)"
+      createdAt:
+        type: string
+        example: "2018-02-27T15:50:00+6:00"
+        description: "Time entity was created (managed by server)"
+      updatedAt:
+        type: string
+        example: "2018-02-27T15:50:00+6:00"
+        description: "Time entity was last updated (managed by server)"
+      owner:
+        type: string
+        example: "user123"
+        description: "The user who is the owner of this project"
+      defaultPrivate:
+        type: boolean
+        example: true
+        description: "Marker that new objects in the project should be private"
+
+  collection:
+    type: object
+    required:
+      - name
+    description: "A collection object represents a logical grouping of containers, which belong to an entity (project)"
+    properties:
+      id:
+        type: string
+        example: "project123/bioinformatics-tools"
+        description: "Unique identifier for this collection"
+      name:
+        type: string
+        minLength: 4
+        maxLength: 255
+        pattern: "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+        example: "collection1"
+        description: "A collection name (regex ^[a-zA-Z0-9-]+)"
+      entity:
+        type: string
+        example: "project123"
+        description: "The entity to which this collection belongs"
+      entityName:
+        type: string
+        example: "project123"
+        description: "Name of the entity to which this collection belongs"
+      containers:
+        type: array
+        items:
+          type: string
+        example: ["project123/bioinformatics-toools/bwa", "project123/bioinformatics-tools/tophat"]
+        description: "A list of IDs for containers belonging to this entity"
+
+  container:
+    type: object
+    required:
+      - name
+    description: "A container that may have multiple versions (images), and is a member of a collection."
+    properties:
+      id:
+        type: string
+        example: "project123/bioinformatics-tools/bwa"
+        description: "Unique identifier for this container"
+      name:
+        type: string
+        minLength: 4
+        maxLength: 255
+        pattern: "^[a-z0-9]+(?:[._-][a-z0-9]+)*$"
+        example: "bwa"
+        description: "A container name (regex ^[a-zA-Z0-9-]+)"
+      description:
+        type: string
+        example: "A basic container base image, with the BWA application installed."
+        description: "A friendly description of the container"
+      collection:
+        type: string
+        example: "project123/bioinformatics-tools"
+        description: "ID of the collection to which this container belongs"
+      collectionName:
+        type: string
+        example: "bioinformatics-tools"
+        description: "Name of the collection to which this container belongs"
+      entity:
+        type: string
+        example: "project123"
+        description: "ID of the entity to which this collection belongs"
+      entityName:
+        type: string
+        example: "project123"
+        description: "Name of the entity to which this collection belongs"
+      images:
+        type: array
+        items:
+          type: string
+        example: ["project123/bioinformatics-tools/bwa:sha256.03883ca565b32e58fa0a496316d69de35741f2ef34b5b4658a6fec04ed8149a8", "project123/bioinformatics-tools/bwa:sha256.03883ca565b32e58fa0a496316d69de35741f2ef34b5b4658a6fec04ed814123"]
+        description: "A list of IDs for the images of this container"
+      imageTags:
+        $ref: "#/definitions/tagMap"
+      archTags:
+        $ref: "#/definitions/archTagMap"
+      size:
+        type: integer
+        format: int64
+        example: "1024000"
+        description: "Size in bytes of storage used by this container"
+      createdAt:
+        type: string
+        example: "2018-02-27T15:50:00+6:00"
+        description: "Time container was created (managed by server)"
+      updatedAt:
+        type: string
+        example: "2018-02-27T15:50:00+6:00"
+        description: "Time container was last updated (managed by server)"
+      deleted:
+        type: boolean
+        example: true
+        description: "Marker that container is (soft) deleted"
+      downloadCount:
+        type: integer
+        format: int64
+        example: "8"
+        description: "The number of times that this container was downloaded"
+
+  image:
+    type: object
+    required:
+      - id
+    description: "Represents a SIF image, which is a version of a container."
+    properties:
+      id:
+        type: string
+        example: "project123/bioinformatics-tools/bwa:sha256.03883ca565b32e58fa0a496316d69de35741f2ef34b5b4658a6fec04ed8149a8"
+        description: "Unique identifier for this image"
+      hash:
+        type: string
+        minLength: 4
+        maxLength: 255
+        pattern: "^((sha256\\.[a-f0-9]{64})|(sif\\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}))$"
+        example: "sha256.e50a30881ace3d5944f5661d222db7bee5296be9e4dc7c1fcb7604bcae926e88"
+        description: "An image hash in sha256 or sif format"
+      description:
+        type: string
+        example: "Version 1.0.0, no optimizations."
+        description: "Friendly description"
+      container:
+        type: string
+        example: "project123/bioinformatics-tools/bwa"
+        description: "ID of the container to which this image belongs"
+      containerName:
+        type: string
+        example: "bwa"
+        description: "Name of the container to which this image belongs"
+      collection:
+        type: string
+        example: "project123/bioinformatics-tools"
+        description: "ID of the collection to which this container belongs"
+      collectionName:
+        type: string
+        example: "bioinformatics-tools"
+        description: "Name of the collection to which this container belongs"
+      entity:
+        type: string
+        example: "project123"
+        description: "ID of the entity to which this collection belongs"
+      entityName:
+        type: string
+        example: "project123"
+        description: "Name of the entity to which this collection belongs"
+      size:
+        type: integer
+        format: int64
+        example: "1024000"
+        description: "Size in bytes of storage used by this image"
+      uploaded:
+        type: boolean
+        example: true
+        description: "Marker that file was successfully uploaded for this image"
+      signed:
+        type: boolean
+        example: true
+        description: "Marker that image contains a signature"
+      encrypted:
+        type: boolean
+        example: true
+        description: "Marker that image is encrypted"
+      arch:
+        type: string
+        example: "amd64"
+        description: "Name of the CPU architecture of image contents"
+      tags:
+        type: array
+        items:
+          type: string
+        example: ["latest", "v1.0.0"]
+        description: "The list of tags that are assigned to this image"
+      deleted:
+        type: boolean
+        example: true
+        description: "Marker that image is (soft) deleted"
+
+  tagMap:
+    type: object
+    description: Map of tag -> image for a container
+    additionalProperties:
+      type: string
+    example:
+      latest: "project123/bioinformatics-tools/bwa:sha256.535b170e0a73cd85468464de6fcef46fb97e78d92a8dcc4cc1d09a52f2e1450c"
+      v1.0.0: "project123/bioinformatics-tools/bwa:sha256.535b170e0a73cd85468464de6fcef46fb97e78d92a8dcc4cc1d09a52f2e1450c"
+      v2.0.0: "project123/bioinformatics-tools/bwa:sha256.535b170e0a73cd85468464de6fcef46fb97e78d92a8dcc4cc1d09a52f2e12345"
+  tag:
+    type: object
+    description: Data for a a single tag name -> image
+    properties:
+      tag:
+        type: string
+        description: Tag name
+        example: latest
+      imageID:
+        type: string
+        example: "project123/bioinformatics-tools/bwa:sha256.535b170e0a73cd85468464de6fcef46fb97e78d92a8dcc4cc1d09a52f2e1450c"
+        description: id of the image
+
+  imageTagsResponse:
+    type: object
+    description: The tag -> image relationship for a container
+    properties:
+      data:
+        $ref: "#/definitions/tagMap"
+
+  archTagMap:
+    type: object
+    description: 2-level map of arch -> tag -> image for a container
+    additionalProperties:
+      $ref: "#/definitions/tagMap"
+    example:
+      "amd64":
+        latest: "project123/bioinformatics-tools/bwa:sha256.535b170e0a73cd85468464de6fcef46fb97e78d92a8dcc4cc1d09a52f2e1450c"
+        v1.0.0: "project123/bioinformatics-tools/bwa:sha256.535b170e0a73cd85468464de6fcef46fb97e78d92a8dcc4cc1d09a52f2e1450c"
+      "arm64":
+        latest: "project123/bioinformatics-tools/bwa:sha256.535b170e0a73cd85468464de6fcef46fb97e78d92a8dcc4cc1d09a52f2eaaaaa"
+
+  archTag:
+    type: object
+    description: Data for a single arch -> tag name -> image
+    properties:
+      arch:
+        type: string
+        description: Architecture
+        example: amd64
+      tag:
+        type: string
+        description: Tag name
+        example: latest
+      imageID:
+        type: string
+        example: "project123/bioinformatics-tools/bwa:sha256.535b170e0a73cd85468464de6fcef46fb97e78d92a8dcc4cc1d09a52f2e1450c"
+        description: ID of the image
+
+  archTagsMapResponse:
+    type: object
+    description: The arch -> tag -> image relationship for a container
+    properties:
+      data:
+        $ref: "#/definitions/archTagMap"
+
+  fileResponse:
+    type: string
+    format: binary
+
+  # MODEL LEVEL RESPONSES
+  entityResponse:
+    type: object
+    properties:
+      data:
+        $ref: "#/definitions/entity"
+
+  entityListResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/entity"
+
+  collectionResponse:
+    type: object
+    properties:
+      data:
+        $ref: "#/definitions/collection"
+
+  collectionListResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/collection"
+
+  containerResponse:
+    type: object
+    properties:
+      data:
+        $ref: "#/definitions/container"
+
+  containerListResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/container"
+
+  imageResponse:
+    type: object
+    properties:
+      data:
+        $ref: "#/definitions/image"
+
+  imageListResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/image"
+
+  searchResponse:
+    type: object
+    properties:
+      data:
+        type: object
+        properties:
+          entity:
+            type: array
+            items:
+              $ref: "#/definitions/entity"
+          collection:
+            type: array
+            items:
+              $ref: "#/definitions/collection"
+          container:
+            type: array
+            items:
+              $ref: "#/definitions/container"
+          image:
+            type: array
+            items:
+              $ref: "#/definitions/image"
+
+  libraryStatsResponse:
+    type: object
+    properties:
+      entitiesStored:
+        type: integer
+        example: 1000
+        description: "Entities count stored in cloud service"
+      collectionsStored:
+        type: integer
+        example: 1000
+        description: "Collections count stored in cloud service"
+      containersStored:
+        type: integer
+        example: 1000
+        description: "Containers count stored in cloud service"
+      imagesStored:
+        type: integer
+        example: 1000
+        description: "Images count stored in cloud service"
+
+  entityReportRecord:
+    type: object
+    properties:
+      path:
+        type: string
+        description: "Path to this project (entity) in the library"
+        example: "sylabs"
+      entityID:
+        type: string
+        description: "ID of this project (entity)"
+        example: "project123"
+      entityName:
+        type: string
+        description: "Name of this project (entity)"
+        example: "project123"
+      size:
+        type: integer
+        format: int64
+        description: "Size of project (entity) storage used in bytes"
+        example: 102400
+      collectionCount:
+        type: integer
+        description: "Number of collections for this project (entity)"
+        example: 3
+
+  entityReportResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/entityReportRecord"
+
+  collectionReportRecord:
+    type: object
+    properties:
+      path:
+        type: string
+        description: "Path to this collection in the library"
+        example: "project123/bioinformatics-tools"
+      entityID:
+        type: string
+        description: "ID of the project (entity)"
+        example: "project123"
+      entityName:
+        type: string
+        description: "Name of the project (entity)"
+        example: "project123"
+      collectionID:
+        type: string
+        description: "ID of the collection"
+        example: "project123/bioinformatics-tools"
+      collectionName:
+        type: string
+        description: "Name of the collection"
+        example: "bioinformatics-tools"
+      size:
+        type: integer
+        format: int64
+        description: "Size of collection in bytes"
+        example: 102400
+      containerCount:
+        type: integer
+        description: "Number of containers for this collection"
+        example: 6
+
+  collectionReportResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/collectionReportRecord"
+
+  containerReportRecord:
+    type: object
+    properties:
+      path:
+        type: string
+        description: "Path to this container in the library"
+        example: "project123/bioinformatics-tools/bwa"
+      entityID:
+        type: string
+        description: "ID of the project (entity)"
+        example: "project122"
+      entityName:
+        type: string
+        description: "Name of the project (entity)"
+        example: "project123"
+      collectionID:
+        type: string
+        description: "ID of the collection"
+        example: "project123/bioinformatics-tools"
+      collectionName:
+        type: string
+        description: "Name of the collection"
+        example: "bioinformatics-tools"
+      containerID:
+        type: string
+        description: "ID of the container"
+        example: "project123/bioinformatics-tools/bwa"
+      containerName:
+        type: string
+        description: "Name of the container"
+        example: "bwa"
+      size:
+        type: integer
+        format: int64
+        description: "Size of container in bytes"
+        example: 102400
+      imageCount:
+        type: integer
+        description: "Number of images/versions for this container"
+        example: 2
+
+  containerReportResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/containerReportRecord"
+
+  versionResponse:
+    type: object
+    description: Version check response.
+    properties:
+      data:
+        type: object
+        properties:
+          version:
+            type: string
+            example: "v1.2.0-0-gdeadbee"
+            description: "Version of the Library Service."
+          apiVersion:
+            type: string
+            example: "v1.0.0"
+            description: "Version of the Library Service API that is being served."
+
+  # ERROR RESPONSES
+
+  json400error:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: integer
+            example: 400
+          message:
+            type: string
+            example: "Bad Request"
+
+  json401error:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: integer
+            example: 401
+          message:
+            type: string
+            example: "Not authorized - please authenticate"
+
+  json403error:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: integer
+            example: 403
+          message:
+            type: string
+            example: "Not authorized to access this entry"
+
+  json404error:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: integer
+            example: 404
+          message:
+            type: string
+            example: "Not found"
+
+  json409error:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: integer
+            example: 409
+          message:
+            type: string
+            example: "Conflict"
+
+  json500error:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: integer
+            example: 500
+          message:
+            type: string
+            example: "Internal server error"
+
+  json501error:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: integer
+            example: 501
+          message:
+            type: string
+            example: "Not implemented"
+
+  json507error:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: integer
+            example: 507
+          message:
+            type: string
+            example: "Insufficient storage"
+
+# API Endpoints
+paths:
+  /version:
+    get:
+      tags:
+        - base
+      summary: "Version check"
+      operationId: "GetVersion"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/versionResponse"
+
+  /v1/health:
+    get:
+      tags:
+        - base
+      summary: "Health check"
+      operationId: "getHealth"
+      responses:
+        200:
+          description: "Success. API available"
+          schema:
+            type: object
+            properties:
+              version:
+                type: string
+                example: "1.0.0"
+                description: Version of the library service
+              apiVersion:
+                type: string
+                example: "1.0.0"
+                description: Version of the exposed API
+              user:
+                type: string
+                example: "example@example.com"
+                description: The authenticated user, if any
+
+  /v1/stats/library:
+    get:
+      tags:
+        - base
+      summary: "Service Statistics"
+      operationId: "getLibraryStats"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/libraryStatsResponse"
+
+  # Entity Operations
+
+  /v1/entities:
+    get:
+      tags:
+        - "entity"
+      summary: "List projects (entities)"
+      description: "List projects (entities) available to the user"
+      operationId: "ListEntities"
+      parameters: []
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/entityListResponse"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+    post:
+      tags:
+        - "entity"
+      summary: "Create project (entity)"
+      description: "Create a new library project (entity)"
+      operationId: "CreateEntity"
+      parameters:
+        - name: entity
+          in: body
+          description: Project (entity) to be created
+          schema:
+            $ref: "#/definitions/entity"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: Return new project (entity)
+          schema:
+            $ref: "#/definitions/entityResponse"
+        201:
+          description: Return new project (entity)
+          schema:
+            $ref: "#/definitions/entityResponse"
+        400:
+          description: Project (entity) provided was not valid
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: Not authorized to create this project (entity)
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to create this project (entity)
+          schema:
+            $ref: "#/definitions/json403error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/entities/{ref}:
+    get:
+      tags:
+        - "entity"
+      summary: "Get Project (entity)"
+      description: "Get detail about a project (entity) in the library"
+      operationId: "GetEntity"
+      parameters:
+        - in: path
+          required: true
+          name: ref
+          type: string
+          description: "ID of a project (entity)"
+          x-example: "project123"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/entityResponse"
+        401:
+          description: Not authorized to access this project (entity)
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to create this project (entity)
+          schema:
+            $ref: "#/definitions/json403error"
+        404:
+          description: Project (entity) requested was not found
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/entities/{ref}/_collections:
+    get:
+      tags:
+        - "entity"
+      summary: "List collections that belong to the specified project (entity)"
+      description: "List collections that belong to the specified project (entity)"
+      operationId: "ListEntityCollections"
+      parameters:
+        - in: path
+          required: true
+          name: ref
+          type: string
+          description: "ID of a project (entity)"
+          x-example: "project123"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/collectionListResponse"
+        401:
+          description: Not authorized to access this project (entity)
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to access this project (entity)
+          schema:
+            $ref: "#/definitions/json403error"
+        404:
+          description: "Project (entity) not found"
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+  # Collection Operations
+
+  /v1/collections:
+    post:
+      tags:
+        - "collection"
+      summary: "Create collection"
+      description: "Create a new collection to hold containers belonging to an project (entity)"
+      operationId: "CreateCollection"
+      parameters:
+        - name: collection
+          in: body
+          description: Collection to be created
+          schema:
+            $ref: "#/definitions/collection"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: Return new collection
+          schema:
+            $ref: "#/definitions/collectionResponse"
+        201:
+          description: Return new collection
+          schema:
+            $ref: "#/definitions/collectionResponse"
+        400:
+          description: Collection provided was not valid
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: Not authorized to create this collection
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to create this collection
+          schema:
+            $ref: "#/definitions/json403error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/collections/{ref}:
+    get:
+      tags:
+        - "collection"
+      summary: "Get Collection"
+      description: "Get detail about a collection in the library"
+      operationId: "GetCollection"
+      parameters:
+        - in: path
+          required: true
+          name: ref
+          type: string
+          description: "reference to a collection"
+          x-example: "project123/bioinformatics-tools"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/collectionResponse"
+        401:
+          description: Not authorized to access this collection
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to access this collection
+          schema:
+            $ref: "#/definitions/json403error"
+        404:
+          description: Requested collection was not found
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/collections/{ref}/_containers:
+    get:
+      tags:
+        - "collection"
+      summary: "List containers that belong to the specified collection"
+      description: "List containers that belong to the specified collection"
+      operationId: "ListCollectionContainers"
+      parameters:
+        - in: path
+          required: true
+          name: ref
+          type: string
+          description: "reference to a collection"
+          x-example: "project123/bioinformatics-tools"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/containerListResponse"
+        400:
+          description: Collection provided was not valid
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: Not authorized to access this collection
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to access this collection
+          schema:
+            $ref: "#/definitions/json403error"
+        404:
+          description: Requested collection was not found
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+  # Container Operations
+  /v1/containers:
+    post:
+      tags:
+        - "container"
+      summary: "Create container"
+      description: "Create a new container within a collection"
+      operationId: "CreateContainer"
+      parameters:
+        - name: container
+          in: body
+          description: Container to be created
+          schema:
+            $ref: "#/definitions/container"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: Return new container
+          schema:
+            $ref: "#/definitions/containerResponse"
+        201:
+          description: Return new container
+          schema:
+            $ref: "#/definitions/containerResponse"
+        400:
+          description: Container provided was not valid
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: Not authorized to create this container
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to create this container
+          schema:
+            $ref: "#/definitions/json403error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+
+  /v1/containers/{ref}:
+    get:
+      tags:
+        - "container"
+      summary: "Get Container"
+      description: "Get detail about a container in the library"
+      operationId: "GetContainer"
+      parameters:
+        - in: path
+          required: true
+          name: ref
+          type: string
+          description: "reference to a container"
+          x-example: "project123/bioinformatics-tools/bwa"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/containerResponse"
+        401:
+          description: Not authorized to access this container
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to access this container
+          schema:
+            $ref: "#/definitions/json403error"
+        404:
+          description: Requested container was not found
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/containers/{ref}/_images:
+    get:
+      tags:
+        - "container"
+      summary: "List images that belong to the specified container"
+      description: "List images that belong to the specified container"
+      operationId: "ListContainerImages"
+      parameters:
+        - in: path
+          required: true
+          name: ref
+          type: string
+          description: "reference to a container"
+          x-example: "project123/bioinformatics-tools/bwa"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/imageListResponse"
+        401:
+          description: Not authorized to access this container
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to access this container
+          schema:
+            $ref: "#/definitions/json403error"
+        404:
+          description: Requested container was not found
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+  # Tags Operations - Legacy without architecture
+  /v1/tags/{containerRef}:
+    post:
+      tags:
+        - "tags"
+      summary: "DEPRECATED: add a tag to container with tag name and image id"
+      description: "DEPRECATED: add a tag to container with tag name and image id"
+      operationId: "SetTag"
+      parameters:
+        - in: path
+          required: true
+          name: containerRef
+          type: string
+          description: "ID of a container"
+          x-example: "project123/bioinformatics-tools/bwa"
+        - name: tag
+          in: body
+          description: Tag name and image id of the new tag
+          schema:
+            $ref: "#/definitions/tag"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/imageTagsResponse"
+        400:
+          description: containerRef is missing, invalid, or container is deleted
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: Not authorized to access this container
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to access this container
+          schema:
+            $ref: "#/definitions/json403error"
+        404:
+          description: Requested container was not found
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/tags/{containerRef}/{tag}:
+    delete:
+      tags:
+        - "tags"
+      summary: "DEPRECATED: delete a tag belonging to the container"
+      description: "DEPRECATED: delete a tag belonging to the container"
+      operationId: "DeleteTag"
+      parameters:
+        - in: path
+          required: true
+          name: containerRef
+          type: string
+          description: "ID of a container"
+          x-example: "project123/bioinformatics-tools/bwa"
+        - name: tag
+          in: path
+          type: string
+          description: Tag name to be deleted
+          x-example: "latest"
+          required: true
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/imageTagsResponse"
+        400:
+          description: containerRef is missing, invalid, or container is deleted
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: Not authorized to access this container
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to access this container
+          schema:
+            $ref: "#/definitions/json403error"
+        404:
+          description: Requested container was not found
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+  # Image Operations
+
+  /v1/images:
+    post:
+      tags:
+        - "image"
+      summary: "Create image"
+      description: "Create a new image within a collection"
+      operationId: "CreateImage"
+      parameters:
+        - name: image
+          in: body
+          description: Image to be created
+          schema:
+            $ref: "#/definitions/image"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: Return new image
+          schema:
+            $ref: "#/definitions/imageResponse"
+        201:
+          description: Return new image
+          schema:
+            $ref: "#/definitions/imageResponse"
+        400:
+          description: Provided image was not valid
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: Not authorized to create this image
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to create this image
+          schema:
+            $ref: "#/definitions/json403error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/images/{ref}:
+    get:
+      tags:
+        - "image"
+      summary: "Get Image"
+      description: "Get detail about an image in the library"
+      operationId: "GetImage"
+      parameters:
+        - in: path
+          required: true
+          name: ref
+          type: string
+          description: "ID of an image"
+          x-example: "project123/bioinformatics-tools/bwa:v1"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/imageResponse"
+        401:
+          description: Not authorized to access this image
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to access this image
+          schema:
+            $ref: "#/definitions/json401error"
+        404:
+          description: Requested image was not found
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+    delete:
+      tags:
+        - "image"
+      summary: "Delete image"
+      description: "Delete an image from the library"
+      operationId: "DeleteImage"
+      parameters:
+        - in: path
+          required: true
+          name: ref
+          type: string
+          description: "ID of an image"
+          x-example: "project123/bioinformatics-tools/bwa:v1"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: Returns the image that was deleted
+          schema:
+            $ref: "#/definitions/imageResponse"
+        401:
+          description: Not authorized to delete this image
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to delete this image
+          schema:
+            $ref: "#/definitions/json403error"
+        404:
+          description: Requested image was not found
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+  # ImageFile Operations
+
+  /v1/imagefile/{ref}:
+    get:
+      tags:
+        - "image"
+      summary: "Download Image"
+      description: "Download the image file for an image"
+      operationId: "DownloadImage"
+      parameters:
+        - in: path
+          required: true
+          name: ref
+          type: string
+          description: "ID of an image"
+          x-example: "project123/bioinformatics-tools/bwa:v1"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/fileResponse"
+        401:
+          description: Not authorized to download this image
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to download this image
+          schema:
+            $ref: "#/definitions/json401error"
+        404:
+          description: Requested image was not found
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+    post:
+      tags:
+        - "image"
+      summary: "Upload Image"
+      description: "Upload the image file for an image"
+      operationId: "UploadImage"
+      parameters:
+        - in: path
+          required: true
+          name: ref
+          type: string
+          description: "ID of an image"
+          x-example: "project123/bioinformatics-tools/bwa:v1"
+        - name: file
+          in: body
+          description: the raw image as application/octet-stream
+          required: true
+          schema:
+            type: string
+            format: binary
+      consumes:
+        - application/octet-stream
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: Upload Successful
+        400:
+          description: Provided image upload was not valid
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: Not authorized to upload this image
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Not authorized to upload this image
+          schema:
+            $ref: "#/definitions/json403error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+        507:
+          description: Over quota for upload
+          schema:
+            $ref: "#/definitions/json507error"
+
+  # Search Operations
+
+  /v1/search:
+    get:
+      tags:
+        - "search"
+      summary: "Search the library"
+      description: "Search the library for a value"
+      operationId: "Search"
+      parameters:
+        - name: model
+          in: query
+          required: false
+          type: string
+          description: "model in the library to search. If empty all models will be searched"
+          x-example: "entity"
+        - name: field
+          in: query
+          required: false
+          type: string
+          description: "field to search, multiple fields comma separated. If empty will search name"
+          x-example: "name,description"
+        - name: value
+          in: query
+          required: true
+          type: string
+          minLength: 3
+          description: "value to search for"
+          x-example: "tensorflow"
+        - name: arch
+          in: query
+          required: false
+          type: string
+          description: "The image architecture array to search, if arch is provided, will only search images with the specified arch"
+          x-example: "arm64,amd64"
+        - name: signed
+          in: query
+          required: false
+          type: string
+          description: "A flag to optionally search for signed, or unsigned images. If omitted both signed and unsigned images are returned"
+          x-example: "true"
+        - name: encrypted
+          in: query
+          required: false
+          type: string
+          description: "A flag to optionally search for encrypted, or unencrypted images. If omitted both encrypted and unencrypted images are returned"
+          x-example: "true"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/searchResponse"
+        400:
+          description: Provided search parameters were not valid
+          schema:
+            $ref: "#/definitions/json400error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+  # Report Operations
+  /v1/reports/entities:
+    get:
+      tags:
+        - "reports"
+      summary: "Project (entity) / Quota level report"
+      description: "Summary of projects (entities) and their usage and quotas"
+      operationId: "EntityReport"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/entityReportResponse"
+        401:
+          description: Unauthorized to get this report
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Unauthorized to get this report
+          schema:
+            $ref: "#/definitions/json403error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/reports/collections:
+    get:
+      tags:
+        - "reports"
+      summary: "Collection level report"
+      description: "Summary of collections and their size"
+      operationId: "CollectionReport"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/collectionReportResponse"
+        401:
+          description: Unauthorized to get this report
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Unauthorized to get this report
+          schema:
+            $ref: "#/definitions/json403error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/reports/containers:
+    get:
+      tags:
+        - "reports"
+      summary: "Container level report"
+      description: "Summary of containers and their size"
+      operationId: "ContainerReport"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/containerReportResponse"
+        401:
+          description: Unauthorized to get this report
+          schema:
+            $ref: "#/definitions/json401error"
+        403:
+          description: Unauthorized to get this report
+          schema:
+            $ref: "#/definitions/json403error"
+        500:
+          description: Server internal error
+          schema:
+            $ref: "#/definitions/json500error"
+
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header

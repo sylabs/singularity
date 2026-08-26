@@ -1,0 +1,967 @@
+swagger: "2.0"
+
+info:
+  version: "1.0"
+  title: "Sylabs Consent Service API"
+  description: |
+    This is the v1.0 REST API for the Sylabs Consent Service.
+    This document lists only public API endpoints for interaction with user
+    accounts, groups, and roles. The consent-service also implements and
+    OpenID Connect/OAuth2 consent flow. This is not for public consumption.
+  termsOfService: "https://www.sylabs.io/terms-and-conditions/"
+  contact:
+    email: "cloud@sylabs.io"
+  license:
+    name: Copyright Sylabs Inc. 2018
+    url: "https://www.sylabs.io/terms-and-conditions/"
+
+host: "auth.sylabs.io:3000"
+basePath: "/"
+schemes:
+  - "http"
+  - "https"
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+consumes:
+  - application/json
+produces:
+  - application/json
+
+# Sections for Swagger Docs
+tags:
+  - name: "base"
+    description: "Base Operations"
+  - name: "users"
+    description: "Operations on users"
+  - name: "groups"
+    description: "Operations on groups"
+  - name: "roles"
+    description: "Operations on roles"
+
+# MODEL DEFINITIONS
+definitions:
+  user:
+    type: object
+    description: A user account
+    properties:
+      id:
+        type: string
+        example: 507f1f77bcf86cd799439aaa
+        description: "BSON identifier for the user account."
+      organizationIDs:
+        type: array
+        items:
+          type: string
+          example: 507f1f77bcf86cd799439ddd
+        description: "BSON identifiers for the organizations this user belongs to. Currently a single fixed primary organization"
+      username:
+        type: string
+        example: user123
+        description: "Username across Sylabs services"
+      provider:
+        type: string
+        example: google
+        description: "Upstream identity provider the account is associated with"
+      providerID:
+        type: string
+        example: 1533836926
+        description: "The identifier that the user is known by at the upstream provider"
+      fullName:
+        type: string
+        example: "John A. Smith"
+        description: "The preferred full name retrieved from the provider"
+      email:
+        type: string
+        example: "john@example.com"
+        description: "Email address retrieved from the provider"
+      active:
+        type: boolean
+        example: true
+        description: Is the user permitted to login
+      createdAt:
+        type: string
+        example: "2019-02-26T03:32:33.587Z"
+        description: "Date/Time user was created, RFC3339 format."
+      deactivatedAt:
+        type: string
+        example: "2019-02-26T03:32:33.587Z"
+        description: "Date/Time user was deactivated, RFC3339 format"
+      groups:
+        type: array
+        items:
+          type: string
+          example: "admin"
+        description: "List of groups to which the user belongs."
+      quotas:
+        $ref: "#/definitions/userQuota"
+      roles:
+        type: array
+        items:
+          type: string
+          example: "library-admin"
+        description: "List of roles to which the user directly belongs."
+      allRoles:
+        type: array
+        items:
+          type: string
+          example: "auth-admin"
+        description: "List of roles to which the user belongs, including via group membership."
+
+  group:
+    type: object
+    description: A group of users
+    properties:
+      id:
+        type: string
+        example: 507f1f77bcf86cd799439bbb
+        description: "BSON identifier for the group."
+      organizationID:
+        type: string
+        example: 507f1f77bcf86cd799439ddd
+        description: "BSON identifier for the organization this group belongs to. Currently a fixed primary organization"
+      name:
+        type: string
+        example: admin
+        description: "Canonical name for the group - used as the identifying field"
+      description:
+        type: string
+        example: "Administrative root users"
+        description: "Description of the purpose of the group"
+      createdAt:
+        type: string
+        example: "2019-02-26T03:32:33.587Z"
+        description: "Date/Time group was created, RFC3339 format."
+      roles:
+        type: array
+        items:
+          type: string
+          example: "library-admin"
+        description: "List of roles assigned to this group, which are conveyed to group members."
+
+  role:
+    type: object
+    description: A role, conveying permissions to a user or a group
+    properties:
+      id:
+        type: string
+        example: 507f1f77bcf86cd799439ccc
+        description: "BSON identifier for the role."
+      organizationID:
+        type: string
+        example: 507f1f77bcf86cd799439ddd
+        description: "BSON identifier for the organization this role belongs to. Currently a fixed primary organization"
+      name:
+        type: string
+        example: auth-admin
+        description: "Canonical name for the role - used as the identifying field"
+      description:
+        type: string
+        example: "Authentication system administrative permissions"
+        description: "Description of the purpose of the role"
+      createdAt:
+        type: string
+        example: "2019-02-26T03:32:33.587Z"
+        description: "Date/Time role was created, RFC3339 format."
+
+  organization:
+    type: object
+    description: An organization which groups users, groups, roles
+    properties:
+      id:
+        type: string
+        example: 507f1f77bcf86cd799439ddd
+        description: "BSON identifier for the organization."
+      name:
+        type: string
+        example: primary
+        description: "Canonical name for the organization"
+      description:
+        type: string
+        example: "Primary Organization"
+        description: "Description of the purpose of the organization"
+      createdAt:
+        type: string
+        example: "2019-02-26T03:32:33.587Z"
+        description: "Date/Time organization was created, RFC3339 format."
+
+  userQuota:
+    type: object
+    description: "User quota specification"
+    properties:
+      maxLibrarySize:
+        type: number
+        example: 1024
+        description: "User storage quota in MiB"
+      maxBuildTime:
+        type: number
+        example: 1800
+        description: "User maximum build time in seconds"
+      maxBuildTimeCumulative:
+        type: number
+        example: 3600000
+        description: "User cumulative build time per period in seconds"
+
+  # MODEL LEVEL RESPONSES
+  userResponse:
+    type: object
+    properties:
+      data:
+        $ref: "#/definitions/user"
+
+  userListResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/user"
+
+  groupResponse:
+    type: object
+    properties:
+      data:
+        $ref: "#/definitions/group"
+
+  groupListResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/group"
+
+  roleResponse:
+    type: object
+    properties:
+      data:
+        $ref: "#/definitions/role"
+
+  roleListResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/role"
+
+  versionResponse:
+    type: object
+    description: Version check response.
+    properties:
+      data:
+        type: object
+        properties:
+          version:
+            type: string
+            example: "v1.2.0-0-gdeadbee"
+            description: "Version of the Consent Service."
+
+  userStatsResponse:
+    type: object
+    description: User statistics response.
+    properties:
+      data:
+        type: object
+        properties:
+          entitiesStored:
+            type: integer
+            example: 12345
+            description: "Number of users"
+          usersByProvider:
+            type: object
+            additionalProperties:
+              type: integer
+            example:
+              Google: 1234
+              Microsoft: 1234
+
+  # ERROR RESPONSES
+
+  json400error:
+    type: object
+    properties:
+      code:
+        type: integer
+        example: 400
+      status:
+        type: string
+        example: "Bad Request"
+      message:
+        type: string
+        example: "Invalid JSON"
+
+  json400response:
+    type: object
+    description: Not Found
+    properties:
+      error:
+        $ref: "#/definitions/json400error"
+
+  json401error:
+    type: object
+    properties:
+      code:
+        type: integer
+        example: 401
+      status:
+        type: string
+        example: "Unauthorized"
+      message:
+        type: string
+        example: "Not authorized to access this entry"
+
+  json401response:
+    type: object
+    description: Not Found
+    properties:
+      error:
+        $ref: "#/definitions/json401error"
+
+  json404error:
+    type: object
+    properties:
+      code:
+        type: integer
+        example: 404
+      status:
+        type: string
+        example: "Not Found"
+      message:
+        type: string
+        example: "<model> <id> not found."
+
+  json404response:
+    type: object
+    description: Not Found
+    properties:
+      error:
+        $ref: "#/definitions/json404error"
+
+  json500error:
+    type: object
+    properties:
+      code:
+        type: integer
+        example: 500
+      status:
+        type: string
+        example: "Internal Server Error"
+      message:
+        type: string
+        example: "See server logs for details"
+
+  json500response:
+    type: object
+    description: Insufficient Storage
+    properties:
+      error:
+        $ref: "#/definitions/json500error"
+
+paths:
+  /version:
+    get:
+      tags:
+        - base
+      summary: "Version check"
+      operationId: "GetVersion"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/versionResponse"
+
+  /v1/health:
+    get:
+      tags:
+        - base
+      summary: "Health check"
+      operationId: "GetHealth"
+      responses:
+        200:
+          description: "Success. API available."
+          schema:
+            type: object
+            properties:
+              version:
+                type: string
+                example: "1.0.0"
+                description: Version of the consent service
+              user:
+                type: string
+                example: "507f1f77bcf86cd799439011"
+                description: The authenticated user, if any
+
+  /v1/admin/users:
+    get:
+      tags:
+        - users
+      summary: "List Users"
+      operationId: "ListUsers"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/userListResponse"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/admin/users/{userID}:
+    get:
+      tags:
+        - users
+      summary: "Get User"
+      operationId: "GetUser"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          required: true
+          name: userID
+          type: string
+          description: "BSON ID of user to retrieve"
+          x-example: "507f1f77bcf86cd799439011"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/userResponse"
+        400:
+          description: "Bad request - user id not valid"
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        404:
+          description: "Bad request - user id not found"
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/admin/users/{userID}/updatequota:
+    post:
+      tags:
+        - users
+      summary: "Update User Quota"
+      operationId: "UpdateUserQuota"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          required: true
+          name: userID
+          type: string
+          description: "BSON ID of user to update"
+          x-example: "507f1f77bcf86cd799439011"
+        - in: body
+          name: updateUserQuotaRequestBody
+          required: true
+          schema:
+            $ref: "#/definitions/userQuota"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/userResponse"
+        400:
+          description: "Bad request - user id not valid"
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        404:
+          description: "Bad request - user id not found"
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/admin/users/{userID}/deactivate:
+    post:
+      tags:
+        - users
+      summary: "Deactivate User"
+      operationId: "DeactivateUser"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          required: true
+          name: userID
+          type: string
+          description: "BSON ID of user to deactivate"
+          x-example: "507f1f77bcf86cd799439011"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/userResponse"
+        400:
+          description: "Bad request - user id not valid"
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        404:
+          description: "Bad request - user id not found"
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/admin/users/{userID}/activate:
+    post:
+      tags:
+        - users
+      summary: "(re)Activate User"
+      operationId: "ActivateUser"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          required: true
+          name: userID
+          type: string
+          description: "BSON ID of user to activate"
+          x-example: "507f1f77bcf86cd799439011"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/userResponse"
+        400:
+          description: "Bad request - user id not valid"
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        404:
+          description: "Bad request - user id not found"
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/admin/users/{userID}/group/{group}:
+    post:
+      tags:
+        - users
+      summary: "Add User to Group"
+      operationId: "UserAddGroup"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          required: true
+          name: userID
+          type: string
+          description: "BSON ID of user to add to group"
+          x-example: "507f1f77bcf86cd799439011"
+        - in: path
+          required: true
+          name: group
+          type: string
+          description: "Name of group"
+          x-example: "admin"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/userResponse"
+        400:
+          description: "Bad request - user id or group not valid"
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        404:
+          description: "Bad request - user id not found"
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"
+
+    delete:
+      tags:
+        - users
+      summary: "Remove User from Group"
+      operationId: "UserRemoveGroup"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          required: true
+          name: userID
+          type: string
+          description: "BSON ID of user to remove from group"
+          x-example: "507f1f77bcf86cd799439011"
+        - in: path
+          required: true
+          name: group
+          type: string
+          description: "Name of group"
+          x-example: "admin"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/userResponse"
+        400:
+          description: "Bad request - user id or group not valid"
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        404:
+          description: "Bad request - user id not found"
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/admin/users/{userID}/role/{role}:
+    post:
+      tags:
+        - users
+      summary: "Add User to Role"
+      operationId: "UserAddRole"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          required: true
+          name: userID
+          type: string
+          description: "BSON ID of user to add to role"
+          x-example: "507f1f77bcf86cd799439011"
+        - in: path
+          required: true
+          name: role
+          type: string
+          description: "Name of role"
+          x-example: "auth-admin"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/userResponse"
+        400:
+          description: "Bad request - user id or role not valid"
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        404:
+          description: "Bad request - user id not found"
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"
+
+    delete:
+      tags:
+        - users
+      summary: "Remove User from Role"
+      operationId: "UserRemoveRole"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          required: true
+          name: userID
+          type: string
+          description: "BSON ID of user to remove from role"
+          x-example: "507f1f77bcf86cd799439011"
+        - in: path
+          required: true
+          name: role
+          type: string
+          description: "Name of role"
+          x-example: "auth-admin"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/userResponse"
+        400:
+          description: "Bad request - user id or role not valid"
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        404:
+          description: "Bad request - user id not found"
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/admin/groups:
+    get:
+      tags:
+        - groups
+      summary: "List Groups"
+      operationId: "ListGroups"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/groupListResponse"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/admin/groups/{group}:
+    get:
+      tags:
+        - groups
+      summary: "Get Group"
+      operationId: "GetGroup"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          required: true
+          name: group
+          type: string
+          description: "Name of group to retrieve"
+          x-example: "admin"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/groupResponse"
+        400:
+          description: "Bad request - group name not valid"
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        404:
+          description: "Bad request - group name not found"
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/admin/groups/{group}/role/{role}:
+    post:
+      tags:
+        - groups
+      summary: "Add Group to Role"
+      operationId: "GroupAddRole"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          required: true
+          name: group
+          type: string
+          description: "Name of group to add to role"
+          x-example: "admin"
+        - in: path
+          required: true
+          name: role
+          type: string
+          description: "Name of role"
+          x-example: "auth-admin"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/groupResponse"
+        400:
+          description: "Bad request - group or role not valid"
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        404:
+          description: "Bad request - group not found"
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"
+
+    delete:
+      tags:
+        - groups
+      summary: "Remove Group from Role"
+      operationId: "GroupRemoveRole"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          required: true
+          name: group
+          type: string
+          description: "Name of group to remove from role"
+          x-example: "admin"
+        - in: path
+          required: true
+          name: role
+          type: string
+          description: "Name of role"
+          x-example: "auth-admin"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/groupResponse"
+        400:
+          description: "Bad request - group or role not valid"
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        404:
+          description: "Bad request - group not found"
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/admin/roles:
+    get:
+      tags:
+        - roles
+      summary: "List Roles"
+      operationId: "ListRoles"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/roleListResponse"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/admin/roles/{role}:
+    get:
+      tags:
+        - roles
+      summary: "Get Role"
+      operationId: "GetRole"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          required: true
+          name: role
+          type: string
+          description: "Name of role to retrieve"
+          x-example: "auth-admin"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/roleResponse"
+        400:
+          description: "Bad request - role name not valid"
+          schema:
+            $ref: "#/definitions/json400error"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        404:
+          description: "Bad request - role name not found"
+          schema:
+            $ref: "#/definitions/json404error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"
+
+  /v1/stats/users:
+    get:
+      tags:
+        - users
+      summary: "Get User Statistics"
+      operationId: "UserStats"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/userStatsResponse"
+        401:
+          description: "Not authorized"
+          schema:
+            $ref: "#/definitions/json401error"
+        500:
+          description: "Internal server error"
+          schema:
+            $ref: "#/definitions/json500error"

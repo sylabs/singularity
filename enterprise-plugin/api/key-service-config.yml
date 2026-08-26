@@ -1,0 +1,6 @@
+---
+plugin: openapi
+specFile: key-service/v1/openapi.yml
+
+validation:
+  request: true

@@ -1,0 +1,720 @@
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-14T19:05:10.603Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c7a866913d6b2cfbbf8671
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-14T19:05:10.596Z"
+  status: ""
+  submittime: "2021-06-14T19:05:10.534Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c7a866913d6b2cfbbf8671
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-14T20:05:08.572Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c7b674913d6b2cfbbf8672
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-14T20:05:08.563Z"
+  status: ""
+  submittime: "2021-06-14T20:05:08.462Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c7b674913d6b2cfbbf8672
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-14T21:05:08.385Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c7c484913d6b2cfbbf8673
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-14T21:05:08.378Z"
+  status: ""
+  submittime: "2021-06-14T21:05:08.25Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c7c484913d6b2cfbbf8673
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-14T22:05:08.365Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c7d2947794506e0eaac5fb
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-14T22:05:08.357Z"
+  status: ""
+  submittime: "2021-06-14T22:05:08.24Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c7d2947794506e0eaac5fb
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-14T23:05:07.421Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c7e0a37794506e0eaac5fc
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-14T23:05:07.414Z"
+  status: ""
+  submittime: "2021-06-14T23:05:07.322Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c7e0a37794506e0eaac5fc
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T00:05:09.12Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c7eeb57794506e0eaac5fd
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T00:05:09.113Z"
+  status: ""
+  submittime: "2021-06-15T00:05:09.047Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c7eeb57794506e0eaac5fd
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T01:05:10.276Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c7fcc67794506e0eaac5fe
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T01:05:10.269Z"
+  status: ""
+  submittime: "2021-06-15T01:05:10.211Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c7fcc67794506e0eaac5fe
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T02:05:07.139Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c80ad37794506e0eaac5ff
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T02:05:07.132Z"
+  status: ""
+  submittime: "2021-06-15T02:05:07.054Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c80ad37794506e0eaac5ff
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T03:05:23.645Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c818f37794506e0eaac600
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T03:05:23.638Z"
+  status: ""
+  submittime: "2021-06-15T03:05:23.528Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c818f37794506e0eaac600
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T04:05:17.382Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c826fd7794506e0eaac601
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T04:05:17.376Z"
+  status: ""
+  submittime: "2021-06-15T04:05:17.252Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c826fd7794506e0eaac601
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T05:05:10.016Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c835057794506e0eaac602
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T05:05:09.999Z"
+  status: ""
+  submittime: "2021-06-15T05:05:09.873Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c835057794506e0eaac602
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T06:05:16.877Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c8431c7794506e0eaac603
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T06:05:16.86Z"
+  status: ""
+  submittime: "2021-06-15T06:05:16.781Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c8431c7794506e0eaac603
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T07:05:12.435Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c851287794506e0eaac604
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T07:05:12.427Z"
+  status: ""
+  submittime: "2021-06-15T07:05:12.348Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c851287794506e0eaac604
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T08:05:11.092Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c85f377794506e0eaac605
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T08:05:11.086Z"
+  status: ""
+  submittime: "2021-06-15T08:05:11.02Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c85f377794506e0eaac605
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T09:05:11.172Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c86d477794506e0eaac606
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T09:05:11.163Z"
+  status: ""
+  submittime: "2021-06-15T09:05:11.033Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c86d477794506e0eaac606
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T10:05:13.26Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c87b597794506e0eaac607
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T10:05:13.253Z"
+  status: ""
+  submittime: "2021-06-15T10:05:13.18Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c87b597794506e0eaac607
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T11:05:09.709Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c889657794506e0eaac608
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T11:05:09.699Z"
+  status: ""
+  submittime: "2021-06-15T11:05:09.604Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c889657794506e0eaac608
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T12:05:09.368Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c897757794506e0eaac609
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T12:05:09.352Z"
+  status: ""
+  submittime: "2021-06-15T12:05:09.278Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c897757794506e0eaac609
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T13:05:11.037Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c8a5867794506e0eaac60a
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T13:05:11.03Z"
+  status: ""
+  submittime: "2021-06-15T13:05:10.966Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c8a5867794506e0eaac60a
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T14:05:11.546Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c8b3977794506e0eaac60b
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T14:05:11.487Z"
+  status: ""
+  submittime: "2021-06-15T14:05:11.316Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c8b3977794506e0eaac60b
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T15:05:11.084Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c8c1a67794506e0eaac60c
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T15:05:11.076Z"
+  status: ""
+  submittime: "2021-06-15T15:05:10.972Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c8c1a67794506e0eaac60c
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T16:05:10.237Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c8cfb67794506e0eaac60d
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T16:05:10.228Z"
+  status: ""
+  submittime: "2021-06-15T16:05:10.114Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c8cfb67794506e0eaac60d
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T17:05:15.956Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c8ddcb7794506e0eaac60e
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T17:05:15.948Z"
+  status: ""
+  submittime: "2021-06-15T17:05:15.837Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c8ddcb7794506e0eaac60e
+- buildrecipe: |-
+    Bootstrap: docker
+    From: alpine:latest
+  callbackurl: ""
+  completetime: "2021-06-15T18:05:09.342Z"
+  createdby: 5c74b351c8b8ca000176f48d
+  definition:
+    builddata:
+      buildscripts:
+        post: ""
+        setup: ""
+      files: {}
+    header: null
+    imagedata:
+      imagescripts:
+        environment: ""
+        help: ""
+        runscript: ""
+        test: ""
+  deleted: false
+  id: 60c8ebd57794506e0eaac60f
+  imagechecksum: ""
+  imagesize: 0
+  iscomplete: true
+  libraryref: ""
+  libraryurl: ""
+  starttime: "2021-06-15T18:05:09.334Z"
+  status: ""
+  submittime: "2021-06-15T18:05:09.241Z"
+  wsurl: wss://build.staging.sylabs.io/v1/build-ws/60c8ebd57794506e0eaac60f

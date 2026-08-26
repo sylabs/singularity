@@ -1,0 +1,32 @@
+[
+  {
+    "containers": [
+      "project123/bioinformatics-toools/bwa",
+      "project123/bioinformatics-tools/tophat"
+    ],
+    "entity": "project123",
+    "entityName": "project123",
+    "id": "project123/bioinformatics-tools",
+    "name": "collection1"
+  },
+  {
+    "containers": [
+      "project123/bioinformatics-toools/bwa",
+      "project123/bioinformatics-tools/tophat"
+    ],
+    "entity": "project123",
+    "entityName": "project123",
+    "id": "project123/bioinformatics-tools",
+    "name": "collection1"
+  },
+  {
+    "containers": [
+      "project123/bioinformatics-toools/bwa",
+      "project123/bioinformatics-tools/tophat"
+    ],
+    "entity": "project123",
+    "entityName": "project123",
+    "id": "project123/bioinformatics-tools",
+    "name": "collection1"
+  }
+]

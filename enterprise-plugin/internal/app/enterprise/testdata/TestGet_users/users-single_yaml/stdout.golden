@@ -1,0 +1,21 @@
+- active: true
+  allroles:
+  - auth-admin
+  createdat: "2019-02-26T03:32:33.587Z"
+  deactivatedat: "2019-02-26T03:32:33.587Z"
+  email: john@example.com
+  fullname: John A. Smith
+  groups:
+  - admin
+  id: 507f1f77bcf86cd799439aaa
+  organizationids:
+  - 507f1f77bcf86cd799439ddd
+  provider: google
+  providerid: "1533836926"
+  quotas:
+    maxbuildtime: 1800
+    maxbuildtimecumulative: 3.6e+06
+    maxlibrarysize: 1024
+  roles:
+  - library-admin
+  username: user123

@@ -1,0 +1,12 @@
+DEBUG   {{.UIDPid}}GetServiceURIs()              Retrieving service URIs from config at https://cloud.sylabs.io/assets/config/config.prod.json
+DEBUG   {{.UIDPid}}init()                        Initializing library client for URI https://library.sylabs.io
+DEBUG   {{.UIDPid}}init()                        Initializing build server client for URI https://build.sylabs.io
+DEBUG   {{.UIDPid}}init()                        Initializing build manager client for URI https://build.sylabs.io
+DEBUG   {{.UIDPid}}init()                        Initializing key service client for URI https://keys.sylabs.io
+DEBUG   {{.UIDPid}}init()                        Initializing consent service client for URI https://auth.sylabs.io/consent
+DEBUG   {{.UIDPid}}init()                        Initializing token service client for URI https://auth.sylabs.io/token
+WARNING {{.UIDPid}}logtest()                     Test Warningf
+ERROR   {{.UIDPid}}logtest()                     Test Errorf
+INFO    {{.UIDPid}}logtest()                     Test Infof
+VERBOSE {{.UIDPid}}logtest()                     Test Verbosef
+DEBUG   {{.UIDPid}}logtest()                     Test Debugf

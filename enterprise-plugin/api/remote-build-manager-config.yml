@@ -1,0 +1,6 @@
+---
+plugin: openapi
+specFile: remote-build/manager/v1/openapi.yml
+
+validation:
+  request: true

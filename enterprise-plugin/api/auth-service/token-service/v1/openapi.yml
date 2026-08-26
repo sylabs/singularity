@@ -1,0 +1,266 @@
+swagger: "2.0"
+
+info:
+  version: "1.0"
+  title: "Sylabs Token Service API"
+  description: "This is the v1.0 REST API for the Sylabs Token Service."
+  termsOfService: "https://www.sylabs.io/terms-and-conditions/"
+  contact:
+    email: "cloud@sylabs.io"
+  license:
+    name: Copyright Sylabs Inc. 2018
+    url: "https://www.sylabs.io/terms-and-conditions/"
+
+host: "auth.sylabs.io:5052"
+basePath: "/"
+schemes:
+  - "http"
+  - "https"
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header
+consumes:
+  - application/json
+produces:
+  - application/json
+
+paths:
+  /version:
+    get:
+      summary: "Version check"
+      operationId: "getVersion"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/VersionResponse"
+
+  /v1/token/new:
+    post:
+      summary: "Create API Token"
+      description: "Issue an API Token, which is a long-lived JWT."
+      operationId: "NewToken"
+      security:
+        - Bearer: []
+      consumes:
+        - application/x-www-form-urlencoded
+      parameters:
+        - in: formData
+          name: sub
+          type: string
+          description: "Subject (user) for the token to be issued."
+          x-example: myuser
+        - in: formData
+          name: dur
+          type: string
+          description: "Lifetime of the token as a golang duration."
+          x-example: 30d
+        - in: formData
+          name: lab
+          type: string
+          description: "Label for the token to allow identification by the user."
+          x-example: "demo token"
+      produces:
+        - application/jwt
+      responses:
+        200:
+          description: "Success."
+          schema:
+            type: string
+            example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjUxMjQ4MjM4MzAsImlhdCI6MTUyNDgyNzQzMCwiaXNzIjoibG9jYWxob3N0OjUwNTIiLCJqdGkiOiI1YWUzMDUyNmU4OWJkZWU1NWNiYTI4MTYiLCJzdWIiOiJhZHJvY2sifQ.EQMxVqSqB6qN-7i1FCmRxsD8op2kAQgLqTIn0z7Dr8GKgV2G3UdN2wyPziqaD2UQnDqoGLvHns7POwm1DeQ6z-3HdConsscJmHLgcj1osW1KMgF4-M11sryHD9kOFS2kt8AHaOf05wDRjRiGOk6OnmuWUyCMygnmTc0MvkWNSOSkt1tH56AqNw3yFMJMq4PjMtovONzLpq0COitwym-fmVwCGRU5Wj19de05pyEoegrC_FPaFavcDGZZlpFzASLAj0BMfiAe5QQGi6FzsB-XdzQ4oHLu036vogkrg-CAVa1BJ7OfZ8vKfH0ipcESAVcHGJcmFvjWqoocCIUlphuNYw"
+        400:
+          description: "Bad request. Ensure parameters are supplied correctly."
+        500:
+          description: "Internal server error."
+
+  /v1/token/{jti}:
+    get:
+      summary: "Get Token Details"
+      description: "Get details about a token that was issued previously, the token itself is not stored."
+      operationId: "GetToken"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          required: true
+          name: jti
+          type: string
+          description: "Token BSON ID of token to retrieve"
+          x-example: "507f1f77bcf86cd799439011"
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/TokenDetails"
+        403:
+          description: "Forbidden. Authorization token was not supplied, not valid, or revoked."
+        500:
+          description: "Internal server error."
+
+    delete:
+      summary: "Revoke a Token"
+      description: |-
+        Mark a token as revoked, so it is not valid for authentication/authorization.
+
+        Requests made by admin bearer token (CLI or web) can specify "all" for jti and subject of tokens to be revoked for "sub"
+      operationId: "RevokeToken"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          required: true
+          name: jti
+          type: string
+          description: "Token BSON ID of token to revoke. May be \"all\" when request being performed as admin and \"sub\" is specified."
+          x-example: "507f1f77bcf86cd799439011"
+        - in: query
+          required: false
+          name: sub
+          type: string
+          description: "Subject of tokens to revoke. Must be defined if jti is \"all\""
+          x-example: "507f191e810c19729de860ea"
+      responses:
+        200:
+          description: "Success."
+        400:
+          description: "Bad request. Ensure parameters are supplied correctly."
+        404:
+          description: "Requested token was not found."
+        500:
+          description: "Internal server error."
+
+  /v1/token-status:
+    get:
+      summary: "Status of auth token"
+      description: "Return status of the auth token in the Authorization: Bearer header"
+      operationId: "TokenStatus"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Token is valid."
+        404:
+          description: "Token is not found or was revoked."
+        500:
+          description: "Internal server error."
+
+  /v1/tokens:
+    get:
+      summary: "List User Tokens"
+      description: |-
+        List all tokens with a specified subject (belonging to a user).
+
+        Requests made by admin bearer token (CLI or web) allow specifying arbitrary sub(ject).
+      operationId: "GetTokens"
+      security:
+        - Bearer: []
+      parameters:
+        - in: query
+          name: sub
+          type: string
+          description: "Subject (user) to retrieve tokens for."
+          x-example: myuser
+        - in: query
+          name: all
+          type: string
+          description: "Set to true to show revoked / expired tokens"
+          x-example: true
+      responses:
+        200:
+          description: "Success."
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/TokenDetails"
+        400:
+          description: "Bad request. Ensure parameters are supplied correctly."
+        404:
+          description: "No tokens found for requested subject."
+        500:
+          description: "Internal server error."
+
+  /v1/keys/public:
+    get:
+      summary: "Get Public Key"
+      description: "Returns the public signing key in JWK format, to be consumed by services verifying tokens."
+      operationId: "GetPublicKey"
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/Jwk"
+        500:
+          description: "Internal server error."
+
+definitions:
+  VersionResponse:
+    type: object
+    description: Version check response.
+    properties:
+      data:
+        type: object
+        properties:
+          version:
+            type: string
+            example: "v1.2.0-0-gdeadbee"
+            description: "Version of the Token Service."
+
+  TokenDetails:
+    type: object
+    description: Metadata that describes a build request.
+    properties:
+      id:
+        type: string
+        example: 507f1f77bcf86cd799439011
+        description: "BSON identified for the token record."
+      subject:
+        type: string
+        example: 507f191e810c19729de860ea
+        description: "Subject (user) of the issued token."
+      issuedAt:
+        type: string
+        example: "2019-02-26T03:32:33.587Z"
+        description: "Date/Time token was issued, RFC3339 format."
+      expiration:
+        type: string
+        example: "2019-02-26T03:32:33.587Z"
+        description: "Date/Time token will expire, RFC3339 format."
+      label:
+        type: string
+        example: "Demo Token 123"
+        description: "User supplied label to allow token to be identified easily."
+      isRevoked:
+        type: boolean
+        example: true
+        description: "Marker of whether the token is revoked, and cannot be used to authenticate a user."
+      revokedAt:
+        type: string
+        example: "2019-02-26T03:32:33.587Z"
+        description: "Date/Time token was revoked, RFC3339 format."
+  Jwk:
+    properties:
+      keys:
+        items:
+          properties:
+            alg:
+              default: RS256
+              type: string
+            e:
+              type: string
+            kid:
+              type: string
+            kty:
+              default: RSA
+              type: string
+            "n":
+              type: string
+            use:
+              default: sig
+              type: string
+          type: object
+        type: array
+    type: object

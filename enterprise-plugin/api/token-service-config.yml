@@ -1,0 +1,6 @@
+---
+plugin: openapi
+specFile: auth-service/token-service/v1/openapi.yml
+
+validation:
+  request: true

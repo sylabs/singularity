@@ -1,0 +1,6 @@
+---
+plugin: openapi
+specFile: cloud-library/v1/openapi.yml
+
+validation:
+  request: true

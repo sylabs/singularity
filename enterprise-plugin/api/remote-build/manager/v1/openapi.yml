@@ -1,0 +1,182 @@
+swagger: "2.0"
+
+info:
+  version: "1.0"
+  title: "Sylabs Remote Build Manager"
+  description: "This is the v1.0 REST API for the Sylabs Remote Build Manager."
+  termsOfService: "https://www.sylabs.io/terms-and-conditions/"
+  contact:
+    email: "cloud@sylabs.io"
+  license:
+    name: Copyright Sylabs Inc. 2018
+    url: "https://www.sylabs.io/terms-and-conditions/"
+
+host: "localhost:5051"
+schemes:
+  - "http"
+
+paths:
+  /version:
+    get:
+      summary: "Version check"
+      operationId: "getVersion"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/VersionResponse"
+
+  /v1/admin/agent-pool/{name}:
+    get:
+      summary: "Get List of Agents"
+      description: "Get a list of Agents that are in the specified pool."
+      operationId: "getAgentPool"
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/AgentInfoList"
+        400:
+          description: "Bad request."
+          schema:
+            $ref: "#/definitions/JSONError"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        403:
+          description: "Forbidden."
+          schema:
+            $ref: "#/definitions/JSONError"
+        404:
+          description: "Agent pool not found."
+          schema:
+            $ref: "#/definitions/JSONError"
+        500:
+          description: "Internal server error."
+          schema:
+            $ref: "#/definitions/JSONError"
+      parameters:
+        - in: path
+          required: true
+          name: name
+          type: string
+          description: "Name of Agent pool."
+  /v1/admin/agent-pool/{name}/{id}:
+    delete:
+      summary: "Delete remote build agent"
+      description: "Delete remote build agent by id."
+      operationId: "deleteAgent"
+      produces:
+        - application/json
+      security:
+        - Bearer: []
+      responses:
+        202:
+          description: "Success."
+        400:
+          description: "Bad request."
+          schema:
+            $ref: "#/definitions/JSONError"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        403:
+          description: "Forbidden."
+          schema:
+            $ref: "#/definitions/JSONError"
+        404:
+          description: "Agent pool and/or agent ID not found."
+          schema:
+            $ref: "#/definitions/JSONError"
+        500:
+          description: "Internal server error."
+          schema:
+            $ref: "#/definitions/JSONError"
+      parameters:
+        - in: path
+          required: true
+          name: name
+          type: string
+          description: "Name of Agent pool."
+        - in: path
+          required: true
+          name: id
+          type: string
+          description: "Agent ID."
+
+definitions:
+  VersionResponse:
+    type: object
+    description: Version check response.
+    properties:
+      data:
+        type: object
+        properties:
+          version:
+            type: string
+            example: "v1.2.0-0-gdeadbee"
+            description: "Version of the service."
+
+  AgentInfoList:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/AgentInfo"
+
+  AgentInfo:
+    type: object
+    description: Information about an Agent.
+    properties:
+      id:
+        type: string
+        example: "0a6bccb3-094f-4c65-a8cd-2903e4672968"
+        description: "UUID of the Agent."
+      address:
+        type: string
+        example: "8a62f2d3b523"
+        description: "Hostname of Agent."
+      queue:
+        type: string
+        example: "0a6bccb3-094f-4c65-a8cd-2903e4672968"
+        description: "Name of the AMQP queue the Agent accepts messages on."
+      taskID:
+        type: string
+        example: "5af05d5e9293620001b41d2c"
+        description: "BSON ID of current task."
+      taskedAt:
+        type: string
+        example: "2018-10-28T16:51:02.8492307Z"
+        description: "Date/time current task was assigned."
+      addedAt:
+        type: string
+        example: "2018-10-28T16:45:03.6037837Z"
+        description: "Date/time when Agent was added."
+
+  JSONError:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: integer
+            description: "HTTP status code."
+          message:
+            type: string
+            description: "Detailed error message."
+
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header

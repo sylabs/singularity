@@ -1,0 +1,5 @@
+Version:  0.1.2-alpha.3+build
+Built:    Mon Jan  2 15:04:05 UTC 2006
+By:       test
+Commit:   e68ef3dced07b0e28b5f9f06b3bb648e853a684a
+Runtime:  {{ .Runtime }}

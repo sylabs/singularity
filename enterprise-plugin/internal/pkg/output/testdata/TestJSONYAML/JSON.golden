@@ -1,0 +1,12 @@
+[
+  {
+    "Name": "Person A",
+    "Age": 30,
+    "Dancing": true
+  },
+  {
+    "Name": "Person B",
+    "Age": 30,
+    "Dancing": false
+  }
+]
