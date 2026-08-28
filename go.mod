@@ -13,7 +13,7 @@ require (
 	github.com/buger/jsonparser v1.6.1
 	github.com/ccoveille/go-safecast/v2 v2.0.1
 	github.com/containerd/containerd/v2 v2.3.3
-	github.com/containerd/go-runc v1.1.0
+	github.com/containerd/go-runc v1.2.0
 	github.com/containerd/platforms v1.0.0-rc.5
 	github.com/containernetworking/cni v1.3.0
 	github.com/containernetworking/plugins v1.9.1
