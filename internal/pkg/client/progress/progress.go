@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2018-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -66,7 +66,12 @@ func BarCallback(ctx context.Context) Callback {
 		p, bar := initProgressBar(totalSize)
 
 		// create proxy reader
-		bodyProgress := bar.ProxyReader(r)
+		bodyProgress, err := bar.ProxyReader(r)
+		if err != nil {
+			bar.Abort(true)
+			p.Wait()
+			return err
+		}
 		defer bodyProgress.Close()
 
 		written, err := CopyWithContext(ctx, w, bodyProgress)
@@ -120,7 +125,19 @@ func (dpb *DownloadBar) Init(contentLength int64) {
 }
 
 func (dpb *DownloadBar) ProxyReader(r io.Reader) io.ReadCloser {
-	return dpb.bar.ProxyReader(r)
+	if dpb.bar == nil {
+		return io.NopCloser(r)
+	}
+	bar, err := dpb.bar.ProxyReader(r)
+	if err != nil {
+		sylog.Warningf("while getting progress bar ProxyReader: %v", err)
+		// scs-library-client expects a ProxyReader method without error
+		// return, so we can't return the error introduced by mpb v8.16.0 here
+		// yet. If we do get an error from mbp, return the original
+		// (non-progress bar) reader instead.
+		return io.NopCloser(r)
+	}
+	return bar
 }
 
 func (dpb *DownloadBar) IncrBy(n int) {
@@ -158,7 +175,17 @@ func (upb *UploadBar) InitUpload(totalSize int64, r io.Reader) {
 		return
 	}
 	upb.progress, upb.bar = initProgressBar(totalSize)
-	upb.r = upb.bar.ProxyReader(r)
+	pbr, err := upb.bar.ProxyReader(r)
+	if err != nil {
+		sylog.Warningf("while getting progress bar ProxyReader: %v", err)
+		// scs-library-client expects a ProxyReader method without error
+		// return, so we can't return the error introduced by mpb v8.16.0 here
+		// yet. If we do get an error from mbp, return the original
+		// (non-progress bar) reader instead.
+		upb.r = r
+		return
+	}
+	upb.r = pbr
 }
 
 func (upb *UploadBar) GetReader() io.Reader {
