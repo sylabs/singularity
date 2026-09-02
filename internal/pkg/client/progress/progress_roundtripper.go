@@ -1,4 +1,4 @@
-// Copyright (c) 2023, Sylabs Inc. All rights reserved.
+// Copyright (c) 2023-2026, Sylabs Inc. All rights reserved.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -58,7 +58,13 @@ func (t *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		bar := t.p.AddBar(resp.ContentLength, defaultOption...)
 		t.bars = append(t.bars, bar)
 		t.sizes = append(t.sizes, resp.ContentLength)
-		resp.Body = bar.ProxyReader(resp.Body)
+		r, err := bar.ProxyReader(resp.Body)
+		if err != nil {
+			sylog.Warningf("while getting progress bar ProxyReader: %v", err)
+			bar.Abort(true)
+		} else {
+			resp.Body = r
+		}
 	}
 	return resp, err
 }
