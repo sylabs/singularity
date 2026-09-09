@@ -93,6 +93,7 @@ commands:
             <<# parameters.sudo >>sudo <</ parameters.sudo >>DEBIAN_FRONTEND=noninteractive apt-get -q install -y autoconf \
               automake \
               build-essential \
+              curl \
               cryptsetup \
               fuse2fs \
               fuse3 \
@@ -390,6 +391,7 @@ jobs:
             DEBIAN_FRONTEND=noninteractive apt-get install -y autoconf \
               automake \
               build-essential \
+              curl \
               cryptsetup \
               devscripts \
               dh-apparmor \
