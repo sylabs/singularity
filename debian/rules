@@ -84,7 +84,7 @@ override_dh_auto_install:
 # install plugin sifs
 	mkdir -p $(DESTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/singularity/plugin-sif/log-plugin
 	cp $(SRCDIR)/$(DH_GOPKG)/log-plugin/log-plugin.sif $(DESTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/singularity/plugin-sif/log-plugin/
-	mkdir -p $(DESTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/singularity/plugin-sif/pro-enterprise-plugin
+	mkdir -p $(DESTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/singularity/plugin-sif/enterprise-plugin
 	cp $(SRCDIR)/$(DH_GOPKG)/enterprise-plugin/enterprise-plugin.sif $(DESTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/singularity/plugin-sif/enterprise-plugin/
 # install plugin configs
 	mkdir -p $(DESTDIR)/etc/singularity/plugins/sylabs.io/log-plugin

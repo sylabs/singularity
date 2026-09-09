@@ -1,3 +1,21 @@
+singularity-ce (4.5.1+56.g249823db0.dirty-resolute) unstable; urgency=medium
+
+  * See: https://github.com/sylabs/singularity/blob/main/CHANGELOG.md
+
+ -- Sylabs Community Packaging <community@sylabs.io>  Wed, 09 Sep 2026 14:02:23 +0100
+
+singularity-ce (4.5.1+56.g249823db0.dirty-resolute) unstable; urgency=medium
+
+  * See: https://github.com/sylabs/singularity/blob/main/CHANGELOG.md
+
+ -- Sylabs Community Packaging <community@sylabs.io>  Wed, 09 Sep 2026 13:58:15 +0100
+
+singularity-ce (4.5.1+55.g27d161d2a-resolute) unstable; urgency=medium
+
+  * See: https://github.com/sylabs/singularity/blob/main/CHANGELOG.md
+
+ -- Sylabs Community Packaging <community@sylabs.io>  Wed, 09 Sep 2026 13:53:28 +0100
+
 singularity-ce (3.9.1) unstable; urgency=high
 
   * See: https://github.com/sylabs/singularity/blob/main/CHANGELOG.md

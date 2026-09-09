@@ -50,11 +50,11 @@ Description: SingularityCE is the Community Edition of Singularity, an
 
 Package: singularity-ce-log-plugin
 Architecture: any
-Depends: singularitypro-ce (= ${binary:Version})
+Depends: singularity-ce (= ${binary:Version})
 Description: Provides a configurable logging plugin for SingularityCE.
  Outputs to syslog via a configurable template.
 
-Package: singularityce-enterprise-plugin
+Package: singularity-ce-enterprise-plugin
 Architecture: any
 Depends: singularity-ce (= ${binary:Version})
 Description: Provides an enterprise command for the singularity CLI,
