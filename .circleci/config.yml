@@ -457,11 +457,11 @@ workflows:
           matrix:
             parameters:
               e: ["ubuntu2204", "ubuntu2404", "ubuntu2604"]
-          filters:
-            branches:
-              only:
-                - main
-                - /release-.*/
+#          filters:
+#            branches:
+#             only:
+#                - main
+#                - /release-.*/
 
   tagged-release:
     jobs:
