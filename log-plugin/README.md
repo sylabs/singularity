@@ -22,15 +22,15 @@ Using Singularity source directory: /home/dave/Git_sylabs/singularity
  COMPILE singularity plugin compile
  INSTALL singularity plugin install
 ENABLED  NAME
-    yes  sylabs.io/pro-log-plugin
+    yes  sylabs.io/log-plugin
 
 
 # Uninstall the plugin
 $ sudo make uninstall
-Using Singularity source directory: /home/dave/Git_sylabs/singularity-pro3
+Using Singularity source directory: /home/dave/Git_sylabs/singularity
  UNINSTALL singularity plugin uninstall
-singularity plugin uninstall sylabs.io/pro-log-plugin
-Uninstalled plugin "sylabs.io/pro-log-plugin".
+singularity plugin uninstall sylabs.io/log-plugin
+Uninstalled plugin "sylabs.io/log-plugin".
 
 # Clean up build files
 $ make clean

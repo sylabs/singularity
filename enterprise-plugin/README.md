@@ -51,10 +51,10 @@ For additional help or support, please visit https://www.sylabs.io/docs/
 
 # Uninstall the plugin
 $ sudo make uninstall
-Using Singularity source directory: /home/dave/Git_sylabs/singularity-pro3
+Using Singularity source directory: /home/dave/Git_sylabs/singularity
  UNINSTALL singularity plugin uninstall
-singularity plugin uninstall sylabs.io/pro-enterprise-plugin
-Uninstalled plugin "sylabs.io/pro-enterprise-plugin".
+singularity plugin uninstall sylabs.io/enterprise-plugin
+Uninstalled plugin "sylabs.io/enterprise-plugin".
 
 # Clean up build files
 $ make clean

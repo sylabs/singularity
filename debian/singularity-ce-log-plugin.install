@@ -1,0 +1,2 @@
+usr/lib/*/singularity/plugin-sif/log-plugin/log-plugin.sif
+etc/singularity/plugins/sylabs.io/log-plugin/*
