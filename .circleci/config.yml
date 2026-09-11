@@ -447,11 +447,11 @@ workflows:
           matrix:
             parameters:
               e: ["almalinux8", "almalinux9", "almalinux10"]
-          filters:
-            branches:
-              only:
-                - main
-                - /release-.*/
+#          filters:
+#            branches:
+#              only:
+#                - main
+#                - /release-.*/
 
       - build-deb:
           matrix:
