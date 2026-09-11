@@ -374,6 +374,9 @@ jobs:
       - run:
           name: Run SingularityCE
           command: singularity version
+      - run:
+          name: List plugins
+          command: singularity plugin list
       - store_artifacts:
           path: ~/rpmbuild/RPMS
 
@@ -424,6 +427,9 @@ jobs:
       - run:
           name: Run SingularityCE
           command: singularity version
+      - run:
+          name: List plugins
+          command: singularity plugin list
       - store_artifacts:
           path: ~/deb
 
