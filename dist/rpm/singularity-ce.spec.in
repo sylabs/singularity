@@ -135,6 +135,8 @@ make DESTDIR=$RPM_BUILD_ROOT install -C builddir V=
 %config(noreplace) %{_sysconfdir}/singularity/cgroups/*
 %dir %{_sysconfdir}/singularity/network
 %config(noreplace) %{_sysconfdir}/singularity/network/*
+%dir %{_sysconfdir}/singularity/native-hooks.d
+%config(noreplace) %{_sysconfdir}/singularity/native-hooks.d/*
 %dir %{_sysconfdir}/singularity/seccomp-profiles
 %config(noreplace) %{_sysconfdir}/singularity/seccomp-profiles/*
 %{_datadir}/bash-completion/completions/singularity
