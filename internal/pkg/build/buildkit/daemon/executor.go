@@ -467,7 +467,7 @@ func (w *buildExecutor) Run(ctx context.Context, id string, root executor.Mount,
 	spec.Process.Terminal = meta.Tty
 	spec.Process.OOMScoreAdj = w.oomScoreAdj
 	if w.rootless {
-		if err := rootlessspecconv.ToRootless(spec); err != nil {
+		if _, err := rootlessspecconv.ToRootless(spec); err != nil {
 			return nil, err
 		}
 	}
