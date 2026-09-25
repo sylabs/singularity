@@ -1,6 +1,6 @@
 module github.com/sylabs/singularity/v4
 
-go 1.26.3
+go 1.27.0
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
@@ -51,8 +51,8 @@ require (
 	github.com/seccomp/libseccomp-golang v0.12.0
 	github.com/shopspring/decimal v1.4.0
 	github.com/sigstore/cosign/v2 v2.6.5
-	github.com/sigstore/sigstore v1.10.11
-	github.com/sirupsen/logrus v1.10.1
+	github.com/sigstore/sigstore v1.11.0
+	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.12.1
@@ -130,7 +130,7 @@ require (
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/garyburd/redigo v1.6.4 // indirect
 	github.com/go-chi/chi/v5 v5.3.0 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.5 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/analysis v0.25.2 // indirect
