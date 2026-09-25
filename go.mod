@@ -57,11 +57,11 @@ require (
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.12.1
 	github.com/sylabs/json-resp v0.9.5
-	github.com/sylabs/oci-tools v0.20.1
+	github.com/sylabs/oci-tools v0.20.2
 	github.com/sylabs/scs-build-client v0.9.22
 	github.com/sylabs/scs-key-client v0.7.9
 	github.com/sylabs/scs-library-client v1.4.16
-	github.com/sylabs/sif/v2 v2.24.1
+	github.com/sylabs/sif/v2 v2.24.2
 	github.com/sylabs/squashfs v1.0.6
 	github.com/tonistiigi/fsutil v0.0.0-20260819142231-83cac42c1c52
 	github.com/vbauerster/mpb/v8 v8.16.1
