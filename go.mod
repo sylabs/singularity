@@ -52,7 +52,7 @@ require (
 	github.com/shopspring/decimal v1.4.0
 	github.com/sigstore/cosign/v2 v2.6.5
 	github.com/sigstore/sigstore v1.10.11
-	github.com/sirupsen/logrus v1.10.1
+	github.com/sirupsen/logrus v1.10.2
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.12.1
