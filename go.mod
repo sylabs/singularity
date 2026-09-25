@@ -1,6 +1,6 @@
 module github.com/sylabs/singularity/v4
 
-go 1.26.3
+go 1.26.8
 
 require (
 	github.com/Netflix/go-expect v0.0.0-20220104043353-73e0943537d2
@@ -12,7 +12,7 @@ require (
 	github.com/buger/goterm v1.0.4
 	github.com/buger/jsonparser v1.6.1
 	github.com/ccoveille/go-safecast/v2 v2.0.1
-	github.com/containerd/containerd/v2 v2.3.5
+	github.com/containerd/containerd/v2 v2.3.6
 	github.com/containerd/go-runc v1.2.1
 	github.com/containerd/platforms v1.0.0-rc.5
 	github.com/containernetworking/cni v1.3.1
