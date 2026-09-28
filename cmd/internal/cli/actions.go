@@ -112,7 +112,7 @@ func uriToCacheImage(ctx context.Context, refType string, cmd *cobra.Command, im
 		if err != nil {
 			return "", fmt.Errorf("while creating docker credentials: %v", err)
 		}
-		return oras.PullToCache(ctx, imgCache, pullFrom, ociAuth, reqAuthFile)
+		return oras.PullToCache(ctx, imgCache, pullFrom, ociAuth, reqAuthFile, getOCIPlatform())
 	case uri.Shub:
 		return shub.PullToCache(ctx, imgCache, pullFrom, noHTTPS)
 	case ociimage.SupportedTransport(refType):
@@ -142,7 +142,7 @@ func uriToTempImage(ctx context.Context, refType string, cmd *cobra.Command, img
 		if authErr != nil {
 			return "", "", fmt.Errorf("while creating docker credentials: %v", authErr)
 		}
-		_, err = oras.PullToFile(ctx, imgCache, tmpImage, pullFrom, ociAuth, reqAuthFile)
+		_, err = oras.PullToFile(ctx, imgCache, tmpImage, pullFrom, ociAuth, reqAuthFile, getOCIPlatform())
 	case uri.Shub:
 		_, err = shub.PullToFile(ctx, imgCache, tmpImage, pullFrom, noHTTPS)
 	case ociimage.SupportedTransport(refType):

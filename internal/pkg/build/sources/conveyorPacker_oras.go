@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 
 	"github.com/google/go-containerregistry/pkg/authn"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/sylabs/singularity/v4/internal/pkg/client/oras"
 	"github.com/sylabs/singularity/v4/pkg/build/types"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
@@ -43,9 +44,9 @@ func (cp *OrasConveyorPacker) Get(ctx context.Context, b *types.Bundle) (err err
 	var imagePath string
 	if b.Opts.ImgCache.IsDisabled() {
 		imageTemp := filepath.Join(b.TmpDir, "library-image")
-		imagePath, err = oras.PullToFile(ctx, b.Opts.ImgCache, imageTemp, fullRef, authConfig, b.Opts.DockerAuthFile)
+		imagePath, err = oras.PullToFile(ctx, b.Opts.ImgCache, imageTemp, fullRef, authConfig, b.Opts.DockerAuthFile, v1.Platform{})
 	} else {
-		imagePath, err = oras.PullToCache(ctx, b.Opts.ImgCache, fullRef, authConfig, b.Opts.DockerAuthFile)
+		imagePath, err = oras.PullToCache(ctx, b.Opts.ImgCache, fullRef, authConfig, b.Opts.DockerAuthFile, v1.Platform{})
 	}
 	if err != nil {
 		return fmt.Errorf("while fetching library image: %v", err)
