@@ -386,7 +386,7 @@ func makeDef(spec string) (types.Definition, error) {
 	}
 
 	// Check if spec is an image/sandbox
-	if _, err := image.Init(spec, false); err == nil {
+	if _, err := image.Init(spec, false, true); err == nil {
 		return types.NewDefinitionFromURI("localimage" + "://" + spec)
 	}
 
@@ -414,7 +414,7 @@ func MakeAllDefs(spec string, buildArgsMap map[string]string) ([]types.Definitio
 	}
 
 	// check if spec is an image/sandbox
-	if i, err := image.Init(spec, false); err == nil {
+	if i, err := image.Init(spec, false, true); err == nil {
 		_ = i.File.Close()
 		d, err := types.NewDefinitionFromURI("localimage://" + spec)
 		return []types.Definition{d}, err

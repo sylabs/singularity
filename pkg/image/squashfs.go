@@ -137,7 +137,7 @@ func GetSquashfsComp(b []byte) (string, error) {
 	return "", fmt.Errorf("not a valid squashfs image")
 }
 
-func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo) error {
+func (f *squashfsFormat) initializer(img *Image, fileinfo os.FileInfo, _ bool) error {
 	if fileinfo.IsDir() {
 		return debugError("not a squashfs image")
 	}

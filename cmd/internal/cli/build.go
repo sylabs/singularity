@@ -438,7 +438,7 @@ func checkBuildTarget(path string) error {
 
 			question := fmt.Sprintf("Build target '%s' already exists and will be deleted during the build process. Do you want to continue? [y/N] ", f.Name())
 
-			img, err := image.Init(abspath, false)
+			img, err := image.Init(abspath, false, true)
 			if err != nil {
 				if err != image.ErrUnknownFormat {
 					return fmt.Errorf("while determining '%s' format: %s", f.Name(), err)

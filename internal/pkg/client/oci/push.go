@@ -36,7 +36,7 @@ type PushOptions struct {
 // Push pushes an image into an OCI registry, as an OCI image (not an ORAS artifact).
 // At present, only OCI-SIF images can be pushed in this manner.
 func Push(ctx context.Context, sourceFile string, destRef string, opts PushOptions) error {
-	img, err := image.Init(sourceFile, false)
+	img, err := image.Init(sourceFile, false, false)
 	if err != nil {
 		return err
 	}

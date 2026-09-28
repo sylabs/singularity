@@ -1491,7 +1491,7 @@ func (e *EngineOperations) loadBindImages(starterConfig *starter.Config) ([]imag
 func (e *EngineOperations) loadImage(path string, writable bool) (*image.Image, error) {
 	const delSuffix = " (deleted)"
 
-	imgObject, imgErr := image.Init(path, writable)
+	imgObject, imgErr := image.Init(path, writable, false)
 	// pass imgObject if not nil for overlay and read-only filesystem error.
 	// Do not remove this line
 	if imgErr != nil && imgObject == nil {

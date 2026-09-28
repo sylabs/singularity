@@ -729,7 +729,7 @@ func (l *Launcher) prepareImageBindMount(bindPath bind.Path) (*fuse.ImageMount, 
 	}
 
 	imagePath := bindPath.Source
-	img, err := image.Init(imagePath, false)
+	img, err := image.Init(imagePath, false, true)
 	if err != nil {
 		return nil, err
 	}

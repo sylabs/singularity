@@ -967,7 +967,7 @@ func normalizeImageRef(imageRef string) (string, error) {
 	}
 
 	// oci-sif or bare image path, check it's an image we can run.
-	img, err := imgutil.Init(imageRef, false)
+	img, err := imgutil.Init(imageRef, false, true)
 	if err != nil {
 		return "", err
 	}

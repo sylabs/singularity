@@ -17,7 +17,7 @@ type ociSifFormat struct{}
 
 // initializer performs minimal detection of oci-sif images only.
 // It does not populate any information except img.Type.
-func (f *ociSifFormat) initializer(img *Image, fi os.FileInfo) error {
+func (f *ociSifFormat) initializer(img *Image, fi os.FileInfo, _ bool) error {
 	if fi.IsDir() {
 		return debugError("not an oci-sif file image")
 	}
@@ -65,7 +65,7 @@ func (f *ociSifFormat) lock(*Image) error {
 // IsOCISIF receives a path to an image file and returns a boolean indicating
 // whether the file is an OCI-SIF image.
 func IsOCISIF(filename string) (bool, error) {
-	img, err := Init(filename, false)
+	img, err := Init(filename, false, false)
 	if err != nil {
 		return false, fmt.Errorf("could not open image %s: %s", filename, err)
 	}
