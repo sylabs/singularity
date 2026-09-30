@@ -46,7 +46,6 @@ func DownloadImage(ctx context.Context, path, ref string, ociAuth *authn.AuthCon
 	// care about is that we are pulling a single SIF file.
 	//
 	manifest, err := im.Manifest()
-
 	if err != nil {
 		rt.ProgressShutdown()
 		return err
