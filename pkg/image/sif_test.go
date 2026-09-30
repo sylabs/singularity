@@ -106,6 +106,7 @@ func TestSIFInitializer(t *testing.T) {
 		expectedSuccess    bool
 		expectedPartitions int
 		expectedSections   int
+		forExecution       bool
 	}{
 		{
 			name:               "NoPartitionSIF",
@@ -124,7 +125,7 @@ func TestSIFInitializer(t *testing.T) {
 			expectedSections:   0,
 		},
 		{
-			name:            "PrimaryPartitionOtherArchSIF",
+			name:            "PrimaryPartitionOtherArchSIFRun",
 			path:            createSIF(t, false, primPartOtherArch),
 			writable:        false,
 			expectedSuccess: machine.CompatibleWith("s390x"),
@@ -135,6 +136,15 @@ func TestSIFInitializer(t *testing.T) {
 				return 0
 			}(),
 			expectedSections: 0,
+			forExecution:     true,
+		},
+		{
+			name:               "PrimaryPartitionOtherArchSIFNoRun",
+			path:               createSIF(t, false, primPartOtherArch),
+			writable:           false,
+			expectedSuccess:    true,
+			expectedPartitions: 1,
+			expectedSections:   0,
 		},
 		{
 			name:               "PrimaryPartitionSIF",
@@ -210,7 +220,7 @@ func TestSIFInitializer(t *testing.T) {
 				t.Fatalf("cannot stat the image file: %s\n", err)
 			}
 
-			err = sifFmt.initializer(img, fileinfo, false)
+			err = sifFmt.initializer(img, fileinfo, tt.forExecution)
 			os.Remove(tt.path)
 
 			if (err == nil) != tt.expectedSuccess {
