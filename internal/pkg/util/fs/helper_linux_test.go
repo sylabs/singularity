@@ -337,6 +337,20 @@ func TestIsGroup(t *testing.T) {
 	}
 }
 
+func TestFileIsGroup(t *testing.T) {
+	test.DropPrivilege(t)
+	defer test.ResetPrivilege(t)
+
+	f, err := os.Open("/etc/passwd")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if FileHasGroup(f, 0) != true {
+		t.Errorf("FileIsGroup returns false for /etc/passwd root group ownership")
+	}
+}
+
 func TestIsExec(t *testing.T) {
 	test.DropPrivilege(t)
 	defer test.ResetPrivilege(t)

@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "hook": {
+    "path": "/usr/bin/env",
+    "args": ["id"]
+  },
+  "when": {
+    "always": true
+  },
+  "stages": ["poststart"],
+  "privileged": false
+}

@@ -38,6 +38,7 @@ import (
 	singularityenv "github.com/sylabs/singularity/v4/e2e/env"
 	"github.com/sylabs/singularity/v4/e2e/gpu"
 	"github.com/sylabs/singularity/v4/e2e/help"
+	"github.com/sylabs/singularity/v4/e2e/hooks"
 	"github.com/sylabs/singularity/v4/e2e/inspect"
 	"github.com/sylabs/singularity/v4/e2e/instance"
 	"github.com/sylabs/singularity/v4/e2e/key"
@@ -83,6 +84,7 @@ var e2eGroups = map[string]testhelper.Group{
 	"ECL":            ecl.E2ETests,
 	"GPU":            gpu.E2ETests,
 	"HELP":           help.E2ETests,
+	"HOOKS":          hooks.E2ETests,
 	"INSPECT":        inspect.E2ETests,
 	"INSTANCE":       instance.E2ETests,
 	"KEY":            key.E2ETests,

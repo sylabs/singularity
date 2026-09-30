@@ -214,7 +214,16 @@ func Master(rpcSocket, masterSocket, postStartSocket, cleanupSocket, containerPi
 
 	go createContainer(ctx, rpcSocket, containerPid, e, fatalChan)
 
-	go startContainer(ctx, masterSocket, postStartSocket, containerPid, e, fatalChan)
+	go func() {
+		// When a poststart hook is run, we write container state to it over a pipe to its STDIN.
+		// A hook that doesn't attempt to use the OCI state isn't going to read to EOF. It may
+		// terminate quickly as we are attempting to write to the pipe. We don't want to die from
+		// the SIGPIPE in this case.
+		// Any other Go code that needs to write to a pipe should see an EPIPE.
+		signal.Ignore(syscall.SIGPIPE)
+		startContainer(ctx, masterSocket, postStartSocket, containerPid, e, fatalChan)
+		signal.Notify(signals, syscall.SIGPIPE)
+	}()
 
 	go func() {
 		var err error

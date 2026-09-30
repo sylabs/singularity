@@ -72,7 +72,6 @@ $(syecl_config_INSTALL): $(syecl_config)
 
 INSTALLFILES += $(syecl_config_INSTALL)
 
-
 # seccomp profile
 seccomp_profile := $(SOURCEDIR)/etc/seccomp-profiles/default.json
 
@@ -131,3 +130,13 @@ $(global_keyring_INSTALL): $(global_keyring)
 
 INSTALLFILES += $(global_keyring_INSTALL)
 
+# native_hooks example
+native_hooks := $(SOURCEDIR)/etc/native-hooks.d/poststart.json.example
+
+native_hooks_INSTALL := $(DESTDIR)$(SYSCONFDIR)/singularity/native-hooks.d/poststart.json.example
+$(native_hooks_INSTALL): $(native_hooks)
+	@echo " INSTALL" $@
+	$(V)umask 0022 && mkdir -p $(@D)
+	$(V)install -m 0644 $< $@
+
+INSTALLFILES += $(native_hooks_INSTALL)
