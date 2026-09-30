@@ -1,0 +1,5 @@
+output:
+- name: Robot logger
+  type: robot
+  template: default.tpl
+

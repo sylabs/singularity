@@ -1,0 +1,6 @@
+Collection: library/default
+  Containers:	[project123/bioinformatics-toools/bwa project123/bioinformatics-tools/tophat]
+  Entity:	project123
+  Entity Name:	project123
+  Id:	project123/bioinformatics-tools
+  Name:	collection1

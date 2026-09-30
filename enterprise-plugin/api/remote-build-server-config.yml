@@ -1,0 +1,13 @@
+---
+plugin: openapi
+specFile: remote-build/server/v1/openapi.yml
+
+validation:
+  request: true
+
+resources:
+  - path: /v1/build
+    method: get
+    response:
+      staticFile: mock/get-builds.json
+      statusCode: 200

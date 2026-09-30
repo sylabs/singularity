@@ -1,0 +1,6 @@
+---
+plugin: openapi
+specFile: auth-service/consent-service/v1/openapi.yml
+
+validation:
+  request: true

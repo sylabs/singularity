@@ -93,6 +93,7 @@ commands:
             <<# parameters.sudo >>sudo <</ parameters.sudo >>DEBIAN_FRONTEND=noninteractive apt-get -q install -y autoconf \
               automake \
               build-essential \
+              curl \
               cryptsetup \
               fuse2fs \
               fuse3 \
@@ -373,6 +374,9 @@ jobs:
       - run:
           name: Run SingularityCE
           command: singularity version
+      - run:
+          name: List plugins
+          command: singularity plugin list
       - store_artifacts:
           path: ~/rpmbuild/RPMS
 
@@ -390,6 +394,7 @@ jobs:
             DEBIAN_FRONTEND=noninteractive apt-get install -y autoconf \
               automake \
               build-essential \
+              curl \
               cryptsetup \
               devscripts \
               dh-apparmor \
@@ -422,6 +427,9 @@ jobs:
       - run:
           name: Run SingularityCE
           command: singularity version
+      - run:
+          name: List plugins
+          command: singularity plugin list
       - store_artifacts:
           path: ~/deb
 
@@ -445,21 +453,21 @@ workflows:
           matrix:
             parameters:
               e: ["almalinux8", "almalinux9", "almalinux10"]
-          filters:
-            branches:
-              only:
-                - main
-                - /release-.*/
+#          filters:
+#            branches:
+#              only:
+#                - main
+#                - /release-.*/
 
       - build-deb:
           matrix:
             parameters:
               e: ["ubuntu2204", "ubuntu2404", "ubuntu2604"]
-          filters:
-            branches:
-              only:
-                - main
-                - /release-.*/
+#          filters:
+#            branches:
+#             only:
+#                - main
+#                - /release-.*/
 
   tagged-release:
     jobs:

@@ -1,0 +1,5 @@
+output:
+- name: System logger
+  type: syslog
+  template: default.tpl
+

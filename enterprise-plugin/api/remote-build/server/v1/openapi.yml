@@ -1,0 +1,561 @@
+swagger: "2.0"
+
+info:
+  version: "1.0"
+  title: "Sylabs Remote Build Server"
+  description: "This is the v1.0 REST API for the Sylabs Remote Build Server."
+  termsOfService: "https://www.sylabs.io/terms-and-conditions/"
+  contact:
+    email: "cloud@sylabs.io"
+  license:
+    name: Copyright Sylabs Inc. 2018
+    url: "https://www.sylabs.io/terms-and-conditions/"
+
+host: "localhost:5050"
+schemes:
+  - "http"
+consumes:
+  - application/json
+produces:
+  - application/json
+
+paths:
+  /version:
+    get:
+      summary: "Version check"
+      operationId: "getVersion"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/VersionResponse"
+
+  /v1/convert-def-file:
+    post:
+      summary: "Convert DefFile"
+      description: "Convert the supplied DefFile into an equivalent Definition structure."
+      operationId: "convertDefFile"
+      consumes:
+        - text/plain
+      parameters:
+        - name: defFile
+          in: body
+          schema:
+            $ref: "#/definitions/DefFile"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/DefinitionResponse"
+        400:
+          description: "Bad request. Ensure DefFile is properly formatted."
+          schema:
+            $ref: "#/definitions/JSONError"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        500:
+          description: "Internal server error."
+          schema:
+            $ref: "#/definitions/JSONError"
+
+  /v1/build-def-file:
+    post:
+      summary: "Build DefFile"
+      description: "Start a build based on the supplied DefFile."
+      operationId: "addBuildLegacy"
+      consumes:
+        - text/plain
+      parameters:
+        - name: defFile
+          in: body
+          description: Definition file
+          schema:
+            $ref: "#/definitions/DefFile"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success. Build request accepted."
+          schema:
+            $ref: "#/definitions/BuildMetadataResponse"
+        400:
+          description: "Bad request. Ensure DefFile is properly formatted."
+          schema:
+            $ref: "#/definitions/JSONError"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        500:
+          description: "Internal server error."
+          schema:
+            $ref: "#/definitions/JSONError"
+
+  /v1/build:
+    get:
+      summary: "Get List of Builds"
+      description: "Get a list of builds that have been performed."
+      operationId: "getBuilds"
+      security:
+        - Bearer: []
+      parameters:
+        - in: query
+          required: false
+          name: from
+          type: string
+          description: "an RFC 3339 date and time string specifying the earliest build date and time to include in results"
+          x-example: "2006-01-02T15:04:05Z07:00"
+        - in: query
+          required: false
+          name: to
+          type: string
+          description: "an RFC 3339 date and time string specifying the latest build date and time to include in results"
+          x-example: "2006-01-02T15:04:05Z07:00"
+        - in: query
+          required: false
+          name: user
+          type: string
+          description: "a user primitive.ObjectID, specifies the user search condition"
+          x-example: "5b7aec2f606bb803640f6bbb"
+        - in: query
+          required: false
+          name: includeDeleted
+          type: string
+          description: "true/false to specify whether query deleted builds"
+          x-example: "true"
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/ListBuildsResponse"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        500:
+          description: "Internal server error."
+          schema:
+            $ref: "#/definitions/JSONError"
+
+    post:
+      summary: "Add Build"
+      description: "Start a build based on the supplied Definition."
+      operationId: "addBuild"
+      parameters:
+        - name: buildRequest
+          in: body
+          schema:
+            $ref: "#/definitions/BuildRequest"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success. Build request accepted."
+          schema:
+            $ref: "#/definitions/BuildMetadataResponse"
+        400:
+          description: "Bad request. Ensure build parameters are properly formatted."
+          schema:
+            $ref: "#/definitions/JSONError"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        500:
+          description: "Internal server error."
+          schema:
+            $ref: "#/definitions/JSONError"
+
+  /v1/build/{id}:
+    get:
+      summary: "Get Build Meatadata"
+      description: "Get the metadata associated with a specific build."
+      operationId: "getBuild"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/BuildMetadataResponse"
+        400:
+          description: "Bad request. Ensure build ID is properly formatted."
+          schema:
+            $ref: "#/definitions/JSONError"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        404:
+          description: "Not found. The supplied build ID was not found."
+          schema:
+            $ref: "#/definitions/JSONError"
+        500:
+          description: "Internal server error."
+          schema:
+            $ref: "#/definitions/JSONError"
+      parameters:
+        - in: path
+          required: true
+          name: id
+          type: string
+          description: "Unique BSON ID of a build."
+
+    delete:
+      summary: "Delete Build Metadata"
+      description: "Delete the metadata associated with a specific build."
+      operationId: "deleteBuild"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success."
+        400:
+          description: "Bad request. Ensure build ID is properly formatted."
+          schema:
+            $ref: "#/definitions/JSONError"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        500:
+          description: "Internal server error."
+          schema:
+            $ref: "#/definitions/JSONError"
+      parameters:
+        - in: path
+          required: true
+          name: id
+          type: string
+          description: "Unique BSON ID of a build."
+
+  /v1/build/{id}/_cancel:
+    put:
+      summary: "Cancel running build"
+      description: "Cancel a running build"
+      operationId: "cancelBuild"
+      security:
+        - Bearer: []
+      parameters:
+        - in: path
+          required: true
+          name: id
+          type: string
+          description: "Unique BSON ID of a build."
+      responses:
+        204:
+          description: "Success."
+        400:
+          description: "Bad request."
+          schema:
+            $ref: "#/definitions/JSONError"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        404:
+          description: "Not found. The supplied build ID was not found."
+          schema:
+            $ref: "#/definitions/JSONError"
+        500:
+          description: "Internal server error."
+          schema:
+            $ref: "#/definitions/JSONError"
+
+  /v1/build-output/{id}:
+    get:
+      summary: "Get Build Output"
+      description: "Get console output of a build that has been performed."
+      operationId: "getBuildOutput"
+      produces:
+        - text/plain
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/BuildOutput"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        404:
+          description: "Not found. The supplied build ID was not found."
+          schema:
+            $ref: "#/definitions/JSONError"
+        500:
+          description: "Internal server error."
+          schema:
+            $ref: "#/definitions/JSONError"
+      parameters:
+        - in: path
+          required: true
+          name: id
+          type: string
+          description: "Unique BSON ID of a build."
+
+  /v1/stats/builds:
+    get:
+      summary: "Get Build Statistics"
+      operationId: "getBuildStats"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/BuildStatsResponse"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        403:
+          description: "Authorization token does not contain the Build Service Admin role."
+          schema:
+            $ref: "#/definitions/JSONError"
+        500:
+          description: "Internal server error."
+          schema:
+            $ref: "#/definitions/JSONError"
+
+definitions:
+  BuildRequest:
+    type: object
+    description: Metadata that describes a build request.
+    properties:
+      definition:
+        $ref: "#/definitions/Definition"
+      libraryRef:
+        type: string
+        example: "user/collection/name:tag"
+        description: "The Container Library reference that the Builder will push the built image to. If not provided, the Builder will use an auto-generated reference."
+      libraryURL:
+        type: string
+        example: "https://library.sylabs.io"
+        description: "URL of the Container Library that the Builder will push the built image to. If not provided, the Sylabs Container Library will be used."
+      callbackURL:
+        type: string
+        example: "http://your.domain/build-completion-hook"
+        description: "Callback URL to be called on build completion"
+      buildRecipe:
+        type: string
+        example: "Bootstrap: arch"
+        description: "Raw build recipe"
+
+  BuildMetadataResponse:
+    type: object
+    properties:
+      data:
+        $ref: "#/definitions/BuildMetadata"
+
+  ListBuildsResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          $ref: "#/definitions/BuildMetadata"
+
+  BuildMetadata:
+    type: object
+    description: Metadata that describes a build.
+    properties:
+      id:
+        type: string
+        example: "5af05d5e9293620001b41d2c"
+        description: "Unique BSON identifier for this object"
+      createdBy:
+        type: string
+        example: "user"
+        description: "The user that created the build"
+      submitTime:
+        type: string
+        example: "2018-05-07T14:06:22.5742348Z"
+        description: "Time at which the build was submitted"
+      startTime:
+        type: string
+        example: "2018-05-07T14:06:22.5742348Z"
+        description: "Time at which the build was started"
+      isComplete:
+        type: boolean
+        example: True
+        description: "If TRUE, indicates the build is complete"
+      completeTime:
+        type: string
+        example: "2018-05-07T14:06:22.5742348Z"
+        description: "Time at which the build was completed"
+      imageSize:
+        type: integer
+        example: "350411"
+        description: "Size of the image file, in bytes"
+      imageChecksum:
+        type: string
+        example: "sha256.d86de0781ebd9e4d95c1c79b3387b563c90b0db3d3f6d77440c31127582f52bc"
+        description: "Checksum of the image file"
+      definition:
+        $ref: "#/definitions/Definition"
+      wsURL:
+        type: string
+        example: "http://localhost:5051/build-ws/5af05d5e9293620001b41d2c"
+        description: "URL of websocket to monitor console output as build progresses"
+      libraryRef:
+        type: string
+        example: "user/collection/name:tag"
+        description: "The Container Library reference of the built image."
+      libraryURL:
+        type: string
+        example: "https://library.sylabs.io"
+        description: "URL of the Container Library that the Builder will push the built image to."
+      callbackURL:
+        type: string
+        example: "http://your.domain/build-completion-hook"
+        description: "Callback URL to be called on build completion"
+      buildRecipe:
+        type: string
+        example: "Bootstrap: arch"
+        description: "Raw build recipe"
+      deleted:
+        type: boolean
+        example: "true"
+        description: "whether build is deleted or not"
+      status:
+        type: string
+        enum:
+          - "Pending"
+          - "InProgress"
+          - "Complete"
+          - "Cancelled"
+          - "Deleted"
+        example: "InProgress"
+        description: "Indicates build status"
+
+  DefinitionResponse:
+    type: object
+    properties:
+      data:
+        $ref: "#/definitions/Definition"
+
+  Definition:
+    type: object
+    description: Description of a build request.
+    properties:
+      header:
+        type: object
+        properties:
+          bootstrap:
+            type: string
+            example: "docker"
+            description: "The kind of base to use."
+          from:
+            type: string
+            example: "ubuntu"
+            description: "The named container reference."
+      imageData:
+        type: object
+        properties:
+          imageScripts:
+            type: object
+            properties:
+              help:
+                type: string
+                example: "Help message for the container image."
+                description: "Some helpful message!"
+              environment:
+                type: string
+                example: "FOO=bar"
+                description: "Environment variables that are exposed when the container image is run."
+              runScript:
+                type: string
+                example: "echo 'Hello, Singularity world!'"
+                description: "Script that is executed when the container image is run."
+              test:
+                type: string
+                example: "echo 'Test command!'"
+                description: "Test script that is run on build completion."
+      buildData:
+        type: object
+        properties:
+          files:
+            type: object
+            additionalProperties:
+              type: string
+          buildScripts:
+            type: object
+            properties:
+              setup:
+                type: string
+                example: "echo 'Setup command!'"
+                description: "Commands that are executed on the host system outside of the container after the base OS has been installed."
+              post:
+                type: string
+                example: "echo 'Post command!'"
+                description: "Commands that are executed within the container after the base OS has been installed at build time."
+
+  DefFile:
+    type: string
+    example: "Bootstrap: arch"
+    description: Raw DefFile
+
+  BuildOutput:
+    type: string
+    example: |
+      Building Singularity image...
+      Singularity container built: /tmp/5b3e30ac559f70000157df8a.simg
+      Cleaning up...
+    description: Console output from a build.
+
+  VersionResponse:
+    type: object
+    description: Version check response.
+    properties:
+      data:
+        type: object
+        properties:
+          version:
+            type: string
+            example: "v1.2.0-0-gdeadbee"
+            description: "Version of the service."
+
+  BuildStatsResponse:
+    type: object
+    description: Build statistics response.
+    properties:
+      data:
+        type: object
+        properties:
+          buildCount:
+            type: integer
+            example: "12345"
+          usersWithBuilds:
+            type: integer
+            example: "9876"
+          buildsProcessing:
+            type: integer
+            example: "4"
+          buildsQueued:
+            type: integer
+            example: "6"
+
+  JSONError:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: integer
+          message:
+            type: string
+
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header

@@ -1,0 +1,2 @@
+#!/bin/sh
+singularity plugin install /usr/lib/*/singularity/plugin-sif/log-plugin/log-plugin.sif

@@ -1,0 +1,18 @@
+User: 5eaa1ea9df974cd942a00000
+  Active:	true
+  All Roles:	[auth-admin]
+  Created At:	2019-02-26T03:32:33.587Z
+  Deactivated At:	2019-02-26T03:32:33.587Z
+  Email:	john@example.com
+  Full Name:	John A. Smith
+  Groups:	[admin]
+  Id:	507f1f77bcf86cd799439aaa
+  Organization I Ds:	[507f1f77bcf86cd799439ddd]
+  Provider:	google
+  Provider Id:	1533836926
+  Quotas:
+    Max Build Time:	1800
+    Max Build Time Cumulative:	3.6e+06
+    Max Library Size:	1024
+  Roles:	[library-admin]
+  Username:	user123

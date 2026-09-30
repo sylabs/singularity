@@ -70,6 +70,10 @@ override_dh_auto_build:
 # build standard install
 	cd $(SRCDIR)/$(DH_GOPKG) && \
 	make -C builddir
+# build plugins
+	cd $(SRCDIR)/$(DH_GOPKG) && \
+	./builddir/singularity plugin compile log-plugin && \
+	./builddir/singularity plugin compile enterprise-plugin
 
 override_dh_auto_test:
 
@@ -77,6 +81,15 @@ override_dh_auto_install:
 # install standard build
 	cd $(SRCDIR)/$(DH_GOPKG) && \
 	make -C builddir install
+# install plugin sifs
+	mkdir -p $(DESTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/singularity/plugin-sif/log-plugin
+	cp $(SRCDIR)/$(DH_GOPKG)/log-plugin/log-plugin.sif $(DESTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/singularity/plugin-sif/log-plugin/
+	mkdir -p $(DESTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/singularity/plugin-sif/enterprise-plugin
+	cp $(SRCDIR)/$(DH_GOPKG)/enterprise-plugin/enterprise-plugin.sif $(DESTDIR)/usr/lib/$(DEB_HOST_MULTIARCH)/singularity/plugin-sif/enterprise-plugin/
+# install plugin configs
+	mkdir -p $(DESTDIR)/etc/singularity/plugins/sylabs.io/log-plugin
+	cp $(SRCDIR)/$(DH_GOPKG)/log-plugin/config.yml $(DESTDIR)/etc/singularity/plugins/sylabs.io/log-plugin/
+	cp $(SRCDIR)/$(DH_GOPKG)/log-plugin/default.tpl $(DESTDIR)/etc/singularity/plugins/sylabs.io/log-plugin/
 # Apparmor userns profile needed on Ubuntu >=23.10, or unconfined placeholder for older versions.
 	if [ $(OS_MAJOR) -gt 23 ] || [ "$(OS_VERSION)" = "23.10" ]; then \
 		echo "Ubuntu 24.04 or newer - installing apparmor userns profile"; \

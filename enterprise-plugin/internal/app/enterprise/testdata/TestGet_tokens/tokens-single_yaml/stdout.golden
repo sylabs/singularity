@@ -1,0 +1,7 @@
+- expiration: "2019-02-26T03:32:33.587Z"
+  id: 507f1f77bcf86cd799439011
+  isrevoked: true
+  issuedat: "2019-02-26T03:32:33.587Z"
+  label: Demo Token 123
+  revokedat: "2019-02-26T03:32:33.587Z"
+  subject: 507f191e810c19729de860ea

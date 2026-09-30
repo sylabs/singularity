@@ -1,0 +1,57 @@
+{
+  "env": {
+    "name": "prod"
+  },
+  "logging": {
+    "console": true
+  },
+  "libraryAPI": {
+    "uri": "http://localhost:8080"
+  },
+  "keystoreAPI": {
+    "uri": "http://localhost:8080"
+  },
+  "builderAPI": {
+    "uri": "http://localhost:8080",
+    "managerUri": "http://localhost:8080"
+  },
+  "consentAPI": {
+    "uri": "http://localhost:8080"
+  },
+  "tokenAPI": {
+    "uri": "http://localhost:8080"
+  },
+  "auth": {
+    "issuer": "https://hydra.sylabs.io",
+    "requireHttps": true,
+    "redirectUri": "https://cloud.sylabs.io",
+    "clientId": "services-frontend",
+    "scope": "openid offline_access email profile",
+    "silentRenew": true,
+    "silentRenewUrl": "https://cloud.sylabs.io/assets/html/auth-revoke.html"
+  },
+  "googleAnalytics": {
+    "googleAnalyticsId": ""
+  },
+  "maintenanceMode": {
+    "enabled": false
+  },
+  "customize": {
+    "app": {
+      "libraryDescription": "Cloud Library is the official image registry provided by <a href=\"https://sylabs.io\">Sylabs.io</a>. Users can share Singularity images through the Cloud Library, as well as pull/push SIF™ images through Singularity CLI. Email any feature requests or feedback to <a href=\"mailto:support@sylabs.io\">support@sylabs.io</a>.",
+      "placeholder": ""
+    },
+    "landingPage": {
+      "showHamburgerNav": false
+    },
+    "nav" : {
+      "hideLandingPage": false,
+      "hideRemoteBuilder" : false,
+      "hideKeystore" : false
+    },
+    "footer": {
+      "visible": true
+    }
+  }
+}
+

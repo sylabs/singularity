@@ -1,0 +1,86 @@
+[
+  {
+    "active": true,
+    "allRoles": [
+      "auth-admin"
+    ],
+    "createdAt": "2019-02-26T03:32:33.587Z",
+    "deactivatedAt": "2019-02-26T03:32:33.587Z",
+    "email": "john@example.com",
+    "fullName": "John A. Smith",
+    "groups": [
+      "admin"
+    ],
+    "id": "507f1f77bcf86cd799439aaa",
+    "organizationIDs": [
+      "507f1f77bcf86cd799439ddd"
+    ],
+    "provider": "google",
+    "providerID": "1533836926",
+    "quotas": {
+      "maxBuildTime": 1800,
+      "maxBuildTimeCumulative": 3600000,
+      "maxLibrarySize": 1024
+    },
+    "roles": [
+      "library-admin"
+    ],
+    "username": "user123"
+  },
+  {
+    "active": true,
+    "allRoles": [
+      "auth-admin"
+    ],
+    "createdAt": "2019-02-26T03:32:33.587Z",
+    "deactivatedAt": "2019-02-26T03:32:33.587Z",
+    "email": "john@example.com",
+    "fullName": "John A. Smith",
+    "groups": [
+      "admin"
+    ],
+    "id": "507f1f77bcf86cd799439aaa",
+    "organizationIDs": [
+      "507f1f77bcf86cd799439ddd"
+    ],
+    "provider": "google",
+    "providerID": "1533836926",
+    "quotas": {
+      "maxBuildTime": 1800,
+      "maxBuildTimeCumulative": 3600000,
+      "maxLibrarySize": 1024
+    },
+    "roles": [
+      "library-admin"
+    ],
+    "username": "user123"
+  },
+  {
+    "active": true,
+    "allRoles": [
+      "auth-admin"
+    ],
+    "createdAt": "2019-02-26T03:32:33.587Z",
+    "deactivatedAt": "2019-02-26T03:32:33.587Z",
+    "email": "john@example.com",
+    "fullName": "John A. Smith",
+    "groups": [
+      "admin"
+    ],
+    "id": "507f1f77bcf86cd799439aaa",
+    "organizationIDs": [
+      "507f1f77bcf86cd799439ddd"
+    ],
+    "provider": "google",
+    "providerID": "1533836926",
+    "quotas": {
+      "maxBuildTime": 1800,
+      "maxBuildTimeCumulative": 3600000,
+      "maxLibrarySize": 1024
+    },
+    "roles": [
+      "library-admin"
+    ],
+    "username": "user123"
+  }
+]

@@ -1,0 +1,8 @@
+output:
+- name: System logger
+  type: syslog
+  template: default.tpl
+- name: System logger also
+  type: syslog
+  template: default.tpl
+

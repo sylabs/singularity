@@ -121,7 +121,13 @@ func CompilePlugin(sourceDir, destSif, buildTags string) error {
 
 	goPath, err := bin.FindBin("go")
 	if err != nil {
-		return errors.New("go compiler not found")
+		// This should only occur in package builds where `singularity.conf` is
+		// not installed to the final location when the plugin(s) are built.
+		sylog.Warningf("go compiler not found via configuration. Searching path.")
+		goPath, err = exec.LookPath("go")
+		if err != nil {
+			return fmt.Errorf("go compiler not found")
+		}
 	}
 
 	// we need to use the exact same go runtime version used

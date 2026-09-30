@@ -1,0 +1,308 @@
+swagger: "2.0"
+
+info:
+  version: "1.0"
+  title: "Sylabs Key Service API"
+  description: "This is the v1.0 REST API for the Sylabs Key Service."
+  termsOfService: "https://www.sylabs.io/terms-and-conditions/"
+  contact:
+    email: "cloud@sylabs.io"
+  license:
+    name: Copyright Sylabs Inc. 2018
+    url: "https://www.sylabs.io/terms-and-conditions/"
+
+host: "keys.sylabs.io"
+schemes:
+  - "https"
+
+paths:
+  /version:
+    get:
+      summary: "Version check"
+      operationId: "getVersion"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/VersionResponse"
+
+  /pks/lookup:
+    get:
+      summary: "Search for Key"
+      operationId: "pksLookup"
+      security:
+        - Bearer: []
+      produces:
+        - application/pgp-keys
+      responses:
+        200:
+          description: "Success."
+          schema:
+            description: A URL encoded, ASCII armored keyring.
+            type: string
+          headers:
+            X-HKP-Next-Page-Token:
+              description: Token to next page of results.
+              type: string
+        400:
+          description: "Invalid request."
+          schema:
+            $ref: "#/definitions/JSONError"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        501:
+          description: "Operation not implemented."
+          schema:
+            $ref: "#/definitions/JSONError"
+      parameters:
+        - name: search
+          in: query
+          description: The ID of the key being sought, or some text from the key being sought.
+          required: true
+          type: string
+        - name: op
+          in: query
+          description: The operation to be performed on the keyserver. Supported values are "get", "index", and "vindex".
+          required: true
+          type: string
+        - name: x-pagetoken
+          in: query
+          description: Token to next page of results.
+          type: string
+        - name: x-pagesize
+          in: query
+          description: Maximum number of results to be returned.
+          type: integer
+
+  /pks/add:
+    post:
+      summary: "Submit Key to Keyserver"
+      operationId: "pksAdd"
+      security:
+        - Bearer: []
+      consumes:
+        - application/x-www-form-urlencoded
+      responses:
+        200:
+          description: "Success."
+        400:
+          description: "Invalid request."
+          schema:
+            $ref: "#/definitions/JSONError"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        500:
+          description: "Problem reading key text."
+          schema:
+            $ref: "#/definitions/JSONError"
+      parameters:
+        - name: keytext
+          in: formData
+          description: A URL encoded, ASCII armored keyring.
+          required: true
+          type: string
+
+  /v1/keys:
+    get:
+      summary: "List Keys"
+      operationId: "listKeys"
+      security:
+        - Bearer: []
+      produces:
+        - application/json
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/KeysResponse"
+        400:
+          description: "Invalid request."
+          schema:
+            $ref: "#/definitions/JSONError"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        500:
+          description: "Internal server error."
+          schema:
+            $ref: "#/definitions/JSONError"
+      parameters:
+        - name: createdby
+          in: query
+          description: Include only keys created by the specified subject.
+          type: string
+        - name: search
+          in: query
+          description: Include only keys including the supplied email/name.
+          type: string
+        - name: pagetoken
+          in: query
+          description: Token to next page of results.
+          type: string
+        - name: pagesize
+          in: query
+          description: Maximum number of results to be returned.
+          type: integer
+
+  /v1/key/{fingerprint}:
+    delete:
+      summary: "Delete Key"
+      operationId: "deleteKey"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success."
+        400:
+          description: "Invalid request."
+          schema:
+            $ref: "#/definitions/JSONError"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        403:
+          description: "Authorization token does not contain the Key Service Admin role."
+          schema:
+            $ref: "#/definitions/JSONError"
+        404:
+          description: "The specified key was not found."
+          schema:
+            $ref: "#/definitions/JSONError"
+        500:
+          description: "Internal server error."
+          schema:
+            $ref: "#/definitions/JSONError"
+      parameters:
+        - in: path
+          required: true
+          name: fingerprint
+          type: string
+          description: "Fingerprint of key."
+
+  /v1/stats/keys:
+    get:
+      summary: "Get Key Statistics"
+      operationId: "getKeyStats"
+      security:
+        - Bearer: []
+      responses:
+        200:
+          description: "Success."
+          schema:
+            $ref: "#/definitions/KeyStatsResponse"
+        401:
+          description: "Authorization token was not supplied, not valid, or revoked."
+          schema:
+            $ref: "#/definitions/JSONError"
+        403:
+          description: "Authorization token does not contain the Key Service Admin role."
+          schema:
+            $ref: "#/definitions/JSONError"
+        500:
+          description: "Internal server error."
+          schema:
+            $ref: "#/definitions/JSONError"
+
+definitions:
+  VersionResponse:
+    type: object
+    description: Version check response.
+    properties:
+      data:
+        type: object
+        properties:
+          version:
+            type: string
+            example: "v1.2.0-0-gdeadbee"
+            description: "Version of the Key Service."
+
+  KeysResponse:
+    type: object
+    properties:
+      data:
+        type: array
+        items:
+          type: object
+          description: Metadata about a key.
+          properties:
+            creationTime:
+              type: string
+              format: dateTime
+              example: "2018-07-23T22:39:05Z"
+              description: "Creation time of key."
+            expirationTime:
+              type: string
+              format: dateTime
+              example: "2019-07-23T22:39:05Z"
+              description: "Expiration time of key (if applicable)."
+            algorithm:
+              type: string
+              example: "rsa"
+              description: "Algorithm of key."
+            bitLength:
+              type: integer
+              example: 2048
+              description: "Bit length of key."
+            fingerprint:
+              type: string
+              example: "6EDA9F72CB17F3129A7777B0596D33DAEE2EFD1A"
+              description: "Fingerprint of key."
+            keyIDShort:
+              type: string
+              example: "EE2EFD1A"
+              description: "Short ID of key."
+            names:
+              type: array
+              description: "Array of one or more UIDs (contains name, comment, and email by convention.)"
+              items:
+                type: string
+                example: "AdRock (test) <adrock@sylabs.io>"
+      page:
+        type: object
+        properties:
+          next:
+            type: string
+            description: Token to next page of results.
+          totalSize:
+            type: integer
+            example: 128
+            description: "total size of the search, only return in the first page"
+
+  KeyStatsResponse:
+    type: object
+    description: Key statistics response.
+    properties:
+      data:
+        type: object
+        properties:
+          entitiesStored:
+            type: integer
+            example: "12345"
+          usersWithEntities:
+            type: integer
+            example: "9876"
+
+  JSONError:
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: integer
+          message:
+            type: string
+
+securityDefinitions:
+  Bearer:
+    type: apiKey
+    name: Authorization
+    in: header

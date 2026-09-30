@@ -1,0 +1,5 @@
+#!/bin/sh
+singularity plugin disable sylabs.io/log-plugin || \
+    echo "Could not disable plugin - it may have been disabled or removed manually"
+singularity plugin uninstall sylabs.io/log-plugin || \
+    echo "Could not de-register plugin - it may have been disabled or removed manually"

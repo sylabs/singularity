@@ -1,0 +1,13 @@
+[
+  {
+    "algorithm": "rsa",
+    "bitLength": 2048,
+    "creationTime": "2018-07-23T22:39:05Z",
+    "expirationTime": "2019-07-23T22:39:05Z",
+    "fingerprint": "6EDA9F72CB17F3129A7777B0596D33DAEE2EFD1A",
+    "keyIDShort": "EE2EFD1A",
+    "names": [
+      "AdRock (test) \u003cadrock@sylabs.io\u003e"
+    ]
+  }
+]

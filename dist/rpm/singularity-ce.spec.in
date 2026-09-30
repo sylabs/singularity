@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017-2025, SyLabs, Inc. All rights reserved.
+# Copyright (c) 2017-2026, SyLabs, Inc. All rights reserved.
 # Copyright (c) 2017, SingularityWare, LLC. All rights reserved.
 #
 # Copyright (c) 2015-2017, Gregory M. Kurtzer. All rights reserved.
@@ -42,6 +42,47 @@ Source: %{name}-@PACKAGE_VERSION@.tar.gz
 # Note - we do not require Golang. It can be too old in distros, and we assume it
 # may be provided outside of a distro package here. This does break building via
 # mock. Distro packages derived from this spec need to require it.
+
+%if "%{_target_vendor}" == "suse"
+#
+# SLES Dependencies
+#
+BuildRequires: gcc
+BuildRequires: make
+BuildRequires: /usr/bin/pkg-config
+# Paths to runtime dependencies detected by mconfig, so must be present at build time.
+BuildRequires: cryptsetup
+BuildRequires: squashfs
+# Required for building bundled squashfuse
+BuildRequires: autoconf
+BuildRequires: automake
+BuildRequires: fuse3-devel
+BuildRequires: libseccomp-devel
+BuildRequires: libtool
+BuildRequires: zlib-devel
+# Required for libsubid support
+BuildRequires: shadow-utils-subid-devel
+
+Requires: conmon
+Requires: libseccomp2
+Requires: /usr/bin/runc
+Requires: squashfs
+Requires: cryptsetup
+# FUSE 2 for fuse2fs
+Requires: fuse
+# FUSE 3 for squashfuse
+Requires: fuse3
+
+# SLES 16 has libsubid, and we will build with support for it.
+%if 0%{?suse_version} >= 1600
+BuildRequires: libsubid-devel
+Requires: libsubid5
+%endif
+
+%else
+#
+# EL Dependencies
+#
 BuildRequires: gcc
 BuildRequires: make
 BuildRequires: /usr/bin/pkg-config
@@ -52,6 +93,7 @@ BuildRequires: squashfs-tools
 BuildRequires: autoconf
 BuildRequires: automake
 BuildRequires: fuse3-devel
+BuildRequires: libseccomp-devel
 BuildRequires: libtool
 BuildRequires: zlib-devel
 # Required for libsubid support
@@ -59,17 +101,24 @@ BuildRequires: shadow-utils-subid-devel
 
 Requires: conmon
 Requires: crun
+
+# RHEL <10 Always require runc, for maximum compatibility with buildkitd.
+# Require it by binary path as the docker 3rd party containerd.io package
+# includes it, but does not provide 'runc'. Not available in RHEL 10 repos.
+%if 0%{?rhel} < 10
+Requires: /usr/bin/runc
+%endif
+
 Requires: shadow-utils
 Requires: shadow-utils-subid
 Requires: squashfs-tools
 Requires: cryptsetup
-
 # FUSE 2 for fuse2fs
 Requires: fuse
 # FUSE 3 for squashfuse
 Requires: fuse3
 
-
+%endif
 
 Provides: %{name}-runtime
 
@@ -85,6 +134,8 @@ Conflicts: singularitypro31
 Conflicts: singularitypro35
 Conflicts: singularitypro37
 Conflicts: singularitypro39
+Conflicts: singularitypro41
+Conflicts: singularitypro43
 
 %description
 SingularityCE is the Community Edition of Singularity, an open source
@@ -94,6 +145,13 @@ container platform designed to be simple, fast, and secure.
 %autosetup -n %{name}-@PACKAGE_VERSION@
 
 %build
+
+%if "%{_target_vendor}" == "suse"  && 0%{?suse_version} < 1600
+%define without_libsubid --without-libsubid
+%else
+%define without_libsubid %{nil}
+%endif
+
 ./mconfig -V @PACKAGE_VERSION@-@PACKAGE_RELEASE@ \
         --prefix=%{_prefix} \
         --exec-prefix=%{_exec_prefix} \
@@ -107,12 +165,27 @@ container platform designed to be simple, fast, and secure.
         --localstatedir=%{_sharedstatedir} \
         --sharedstatedir=%{_sharedstatedir} \
         --mandir=%{_mandir} \
-        --infodir=%{_infodir}
+        --infodir=%{_infodir} %{without_libsubid}
 
 make -C builddir old_config= V=
 
+# Build plugins
+./builddir/singularity plugin compile log-plugin
+./builddir/singularity plugin compile enterprise-plugin
+
 %install
 make DESTDIR=$RPM_BUILD_ROOT install -C builddir V=
+
+# Copy plugin SIFs to install location
+mkdir -p $RPM_BUILD_ROOT%{_libexecdir}/singularity/plugin-sif/log-plugin
+cp log-plugin/log-plugin.sif $RPM_BUILD_ROOT%{_libexecdir}/singularity/plugin-sif/log-plugin/
+mkdir -p $RPM_BUILD_ROOT%{_libexecdir}/singularity/plugin-sif/enterprise-plugin
+cp enterprise-plugin/enterprise-plugin.sif $RPM_BUILD_ROOT%{_libexecdir}/singularity/plugin-sif/enterprise-plugin
+
+# Copy plugin config to install location
+mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/singularity/plugins/sylabs.io/log-plugin/
+cp log-plugin/config.yml $RPM_BUILD_ROOT%{_sysconfdir}/singularity/plugins/sylabs.io/log-plugin/
+cp log-plugin/default.tpl $RPM_BUILD_ROOT%{_sysconfdir}/singularity/plugins/sylabs.io/log-plugin/
 
 %files
 %attr(4755, root, root) %{_libexecdir}/singularity/bin/starter-suid
@@ -150,5 +223,87 @@ make DESTDIR=$RPM_BUILD_ROOT install -C builddir V=
 %doc README.md
 %doc CHANGELOG.md
 %doc CONTRIBUTING.md
+
+# ------------------------------------------------------------------------------
+# SUB-PACKAGE log-plugin
+# ------------------------------------------------------------------------------
+
+%package log-plugin
+Summary: Configurable logging plugin for SingularityCE
+Requires: singularity-ce = @PACKAGE_RPM_VERSION@-@PACKAGE_RELEASE@%{?dist}
+
+%description log-plugin
+Provides a configurable logging plugin for SingularityCE. Outputs to syslog via
+a configurable template.
+
+%files log-plugin
+%dir %{_libexecdir}/singularity/plugin-sif/log-plugin/
+%{_libexecdir}/singularity/plugin-sif/log-plugin/log-plugin.sif
+%dir %{_sysconfdir}/singularity/plugins/sylabs.io/log-plugin
+%config(noreplace) %{_sysconfdir}/singularity/plugins/sylabs.io/log-plugin/*
+
+%pre log-plugin
+# If we *are* upgrading then we will deregister the old version first to be super
+# safe!
+if [ "$1" -gt 1 ]; then
+    singularity plugin disable sylabs.io/log-plugin || \
+        echo "Could not disable old version of plugin - it may have been disabled or removed manually"
+    singularity plugin uninstall sylabs.io/log-plugin || \
+        echo "Could not de-register old version of plugin - it may have been disabled or removed manually"
+fi
+
+%post log-plugin
+# Singularity must extract always and register the new plugin version from the SIF
+singularity plugin install %{_libexecdir}/singularity/plugin-sif/log-plugin/log-plugin.sif
+
+%preun log-plugin
+# If we are *not* upgrading, but fully uninstalling
+# Disable and remove the extracted plugin singularity manages
+if [ "$1" = 0 ]; then
+    singularity plugin disable sylabs.io/log-plugin || \
+        echo "Could not disable plugin - it may have been disabled or removed manually"
+    singularity plugin uninstall sylabs.io/log-plugin || \
+        echo "Could not de-register plugin - it may have been disabled or removed manually"
+fi
+
+# ------------------------------------------------------------------------------
+# SUB-PACKAGE enterprise-plugin
+# ------------------------------------------------------------------------------
+
+%package enterprise-plugin
+Summary: Management of Singularity Enterprise from SingularityCE
+Requires: singularity-ce = @PACKAGE_RPM_VERSION@-@PACKAGE_RELEASE@%{?dist}
+
+%description enterprise-plugin
+Provides an enterprise command for the singularity CLI, allowing query and
+management of a Singularity Enterprise installation.
+
+%files enterprise-plugin
+%dir %{_libexecdir}/singularity/plugin-sif/enterprise-plugin/
+%{_libexecdir}/singularity/plugin-sif/enterprise-plugin/enterprise-plugin.sif
+
+%pre enterprise-plugin
+# If we *are* upgrading then we will deregister the old version first to be super
+# safe!
+if [ "$1" -gt 1 ]; then
+    singularity plugin disable sylabs.io/enterprise-plugin || \
+        echo "Could not disable old version of plugin - it may have been disabled or removed manually"
+    singularity plugin uninstall sylabs.io/enterprise-plugin || \
+        echo "Could not de-register old version of plugin - it may have been disabled or removed manually"
+fi
+
+%post enterprise-plugin
+# Singularity must extract always and register the new plugin version from the SIF
+singularity plugin install %{_libexecdir}/singularity/plugin-sif/enterprise-plugin/enterprise-plugin.sif
+
+%preun enterprise-plugin
+# If we are *not* upgrading, but fully uninstalling
+# Disable and remove the extracted plugin singularity manages
+if [ "$1" = 0 ]; then
+    singularity plugin disable sylabs.io/enterprise-plugin || \
+        echo "Could not disable plugin - it may have been disabled or removed manually"
+    singularity plugin uninstall sylabs.io/enterprise-plugin || \
+        echo "Could not de-register plugin - it may have been disabled or removed manually"
+fi
 
 %changelog
