@@ -1260,6 +1260,69 @@ func (c configTests) configFile(t *testing.T) {
 	}
 }
 
+func (c configTests) trustedBindPaths(t *testing.T) {
+	e2e.EnsureImage(t, c.env)
+
+	// Mount /sbin  to /bindpath via config
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("config global"),
+		e2e.WithArgs("--set", "bind path", "/sbin:/bindpath"),
+		e2e.ExpectExit(0),
+	)
+	// With default 'trusted bind paths = no' we should have nosuid,nodev
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("no"),
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(c.env.ImagePath, "grep", "/bindpath", "/proc/self/mountinfo"),
+		e2e.ExpectExit(0,
+			e2e.ExpectOutput(e2e.ContainMatch, "nosuid,nodev"),
+		),
+	)
+	// Turn on 'trusted bind paths = yes'
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("config global"),
+		e2e.WithArgs("--set", "trusted bind paths", "yes"),
+		e2e.ExpectExit(0),
+	)
+	// With 'trusted bind paths = yes' we should not have nosuid,nodev
+	c.env.RunSingularity(
+		t,
+		e2e.AsSubtest("yes"),
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("exec"),
+		e2e.WithArgs(c.env.ImagePath, "grep", "/bindpath", "/proc/self/mountinfo"),
+		e2e.ExpectExit(0,
+			e2e.ExpectOutput(e2e.UnwantedContainMatch, "nosuid,nodev"),
+		),
+	)
+	// Clean up config
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("config global"),
+		// "bind path" doesn't behave like other config values. The default
+		// defined in code is empty, but the installed default config file has
+		//     bind path = /etc/localtime
+		//     bind path = /etc/hosts
+		// We must set it back, rather than reset it (which clears it)
+		e2e.WithArgs("--set", "bind path", "/etc/localtime,/etc/hosts"),
+		e2e.ExpectExit(0),
+	)
+	c.env.RunSingularity(
+		t,
+		e2e.WithProfile(e2e.RootProfile),
+		e2e.WithCommand("config global"),
+		e2e.WithArgs("--reset", "trusted bind paths"),
+		e2e.ExpectExit(0),
+	)
+}
+
 // E2ETests is the main func to trigger the test suite
 func E2ETests(env e2e.TestEnv) testhelper.Tests {
 	c := configTests{
@@ -1274,5 +1337,6 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		"config global combination": np(c.configGlobalCombination), // test various global configuration with combination
 		"config user netns":         np(c.configUserNetns),         // test entering a network namespace as an unpriv user
 		"oci config global":         np(c.ociConfigGlobal),         // test various global configuration for OCI mode
+		"trusted bind path":         np(c.trustedBindPaths),        // test trusted bind path directive
 	}
 }

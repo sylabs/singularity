@@ -180,6 +180,7 @@ func (e *EngineOperations) StartProcess(masterConn net.Conn) error {
 			}
 		}
 
+		sylog.Debugf("Calling exec of %s", args[0])
 		return e.execProcess(args, env)
 	}
 
@@ -634,15 +635,28 @@ func getExecError(err error, args []string, shell string) error {
 }
 
 func (e *EngineOperations) execProcess(args, env []string) error {
-	err := syscall.Exec(args[0], args, env)
-	if err == nil {
-		return nil
+	// Retry up to n times if this fails with an EINTR
+	const maxRetries = 10
+	for i := 0; i < maxRetries; i++ {
+		// Exec container process
+		err := syscall.Exec(args[0], args, env)
+		if err == nil {
+			return nil
+		}
+		// If args[0] not executable then try with shell
+		if err == syscall.ENOEXEC && args[0] != defaultShell {
+			args = append([]string{defaultShell}, args...)
+			return e.execProcess(args, env)
+		}
+		// If received an EINTR try again up to maxRetries
+		if err == syscall.EINTR {
+			sylog.Debugf("exec %s failed with EINTR, retrying", args[0])
+			continue
+		}
+		// Any other error is fatal
+		return getExecError(err, args, e.EngineConfig.GetShell())
 	}
-	if err == syscall.ENOEXEC && args[0] != defaultShell {
-		args = append([]string{defaultShell}, args...)
-		return e.execProcess(args, env)
-	}
-	return getExecError(err, args, e.EngineConfig.GetShell())
+	return fmt.Errorf("exec failed with EINTR too many times, check for memory exhaustion")
 }
 
 // bufferCloser wraps a bytes.Buffer with a Close method

@@ -37,6 +37,7 @@ type File struct {
 	MountTmp                bool     `default:"yes" authorized:"yes,no" directive:"mount tmp"`
 	MountHostfs             bool     `default:"no" authorized:"yes,no" directive:"mount hostfs"`
 	UserBindControl         bool     `default:"yes" authorized:"yes,no" directive:"user bind control"`
+	TrustedBindPaths        bool     `default:"no" authorized:"yes,no" directive:"trusted bind paths"`
 	EnableFusemount         bool     `default:"yes" authorized:"yes,no" directive:"enable fusemount"`
 	EnableUnderlay          bool     `default:"yes" authorized:"yes,no" directive:"enable underlay"`
 	MountSlave              bool     `default:"yes" authorized:"yes,no" directive:"mount slave"`
@@ -232,6 +233,15 @@ mount hostfs = {{ if eq .MountHostfs true }}yes{{ else }}no{{ end }}
 bind path = {{$path}}
 {{ end -}}
 {{ end }}
+# TRUSTED BIND PATHS: [BOOL]
+# DEFAULT: no
+# If yes, the bind path entries are 'trusted' and mounted with the same flags
+# that they have on the host. If set to no, MS_NODEV is forced and MS_NOSUID
+# is set unless --allow-suid is requested (root user only). Note that 'yes'
+# will enable access to devices on bind paths, but setuid binaries will still
+# be blocked for non-root users via PR_SET_NO_NEW_PRIVS. 
+trusted bind paths = {{ if eq .TrustedBindPaths true }}yes{{ else }}no{{ end }}
+
 # USER BIND CONTROL: [BOOL]
 # DEFAULT: yes
 # Allow users to influence and/or define bind points at runtime? This will allow
