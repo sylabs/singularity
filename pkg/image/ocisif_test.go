@@ -69,7 +69,7 @@ func TestOCISIFInitializer(t *testing.T) {
 				t.Fatalf("cannot stat the image file: %s\n", err)
 			}
 
-			err = ociSifFmt.initializer(img, fileinfo)
+			err = ociSifFmt.initializer(img, fileinfo, false)
 			os.Remove(tt.path)
 
 			if (err == nil) != tt.expectedSuccess {
