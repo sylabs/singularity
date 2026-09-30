@@ -1,6 +1,5 @@
 # SingularityCE Changelog
 
-
 ## Unreleased
 
 ### New Features & Functionality
