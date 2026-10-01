@@ -13,7 +13,6 @@ import (
 	"github.com/sylabs/sif/v2/pkg/sif"
 )
 
-//nolint:dupl
 func TestOCISIFInitializer(t *testing.T) {
 	ociMinimal := func() (sif.DescriptorInput, error) {
 		return sif.NewDescriptorInput(sif.DataOCIRootIndex, bytes.NewBufferString("{}\n"))

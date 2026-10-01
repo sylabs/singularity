@@ -60,7 +60,6 @@ func createSIF(t *testing.T, corrupted bool, fns ...func() (sif.DescriptorInput,
 	return sifFile.Name()
 }
 
-//nolint:dupl
 func TestSIFInitializer(t *testing.T) {
 	b, err := os.ReadFile(testSquash)
 	if err != nil {
