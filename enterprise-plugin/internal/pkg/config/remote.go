@@ -14,13 +14,12 @@ import (
 	"strings"
 	"time"
 
-	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
-
-	"github.com/SermoDigital/jose/jws"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote"
 	"github.com/sylabs/singularity/v4/internal/pkg/remote/endpoint"
 	"github.com/sylabs/singularity/v4/pkg/syfs"
 	"github.com/sylabs/singularity/v4/pkg/sylog"
+	useragent "github.com/sylabs/singularity/v4/pkg/util/user-agent"
 )
 
 const (
@@ -166,16 +165,19 @@ func GetServiceURIs(remoteURI string) (uris *ServiceURIs, err error) {
 	return uris, nil
 }
 
-// UserFromToken returns the user ID from the token sub claim.
-func UserFromToken(token string) (user string, err error) {
-	j, err := jws.ParseJWT([]byte(token))
-	if err != nil {
+// UserFromToken returns the user ID from the token sub claim. Validation is not
+// performed here - that is on the server side of any request.
+func UserFromToken(token string) (string, error) {
+	var claims jwt.MapClaims
+	parser := jwt.NewParser()
+
+	if _, _, err := parser.ParseUnverified(token, &claims); err != nil {
 		return "", fmt.Errorf("while parsing auth token: %v", err)
 	}
 
-	user, ok := j.Claims().Get("sub").(string)
-	if !ok {
-		return "", fmt.Errorf("could not extract user ID from token - missing sub claim")
+	user, err := claims.GetSubject()
+	if err != nil {
+		return "", fmt.Errorf("could not extract user ID from token: %w", err)
 	}
 
 	return user, nil
