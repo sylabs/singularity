@@ -236,7 +236,7 @@ func (c ctx) singularity(t *testing.T) {
 		{
 			name:         "rootOCI/exec",
 			outerProfile: e2e.OCIRootProfile,
-			outerArgs:    []string{"--keep-privs"},
+			outerArgs:    []string{"--keep-privs", "-B /dev/loop-control"},
 			innerCommand: "exec",
 			innerArgs:    []string{c.env.OrasTestImage, "/bin/true"},
 		},
@@ -244,7 +244,7 @@ func (c ctx) singularity(t *testing.T) {
 		{
 			name:         "fakerootOCI/exec",
 			outerProfile: e2e.OCIFakerootProfile,
-			outerArgs:    []string{"--keep-privs"},
+			outerArgs:    []string{"--keep-privs", "-B /dev/loop-control"},
 			innerCommand: "exec",
 			innerArgs:    []string{c.env.OrasTestImage, "/bin/true"},
 		},
