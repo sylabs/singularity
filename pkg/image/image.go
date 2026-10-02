@@ -110,7 +110,7 @@ var registeredFormats = []struct {
 // format describes the interface that an image format type must implement.
 type format interface {
 	openMode(bool) int
-	initializer(*Image, os.FileInfo) error
+	initializer(*Image, os.FileInfo, bool) error
 	lock(*Image) error
 }
 
@@ -403,7 +403,8 @@ func ResolvePath(path string) (string, error) {
 }
 
 // Init initializes an image object based on given path.
-func Init(path string, writable bool) (*Image, error) {
+// forExceution controls whatever to
+func Init(path string, writable bool, forExecution bool) (*Image, error) {
 	sylog.Debugf("Image format detection")
 
 	resolvedPath, err := ResolvePath(path)
@@ -451,7 +452,7 @@ func Init(path string, writable bool) (*Image, error) {
 		// to the caller because there is basically no error with
 		// the image format just a mismatch with writable parameter,
 		// so the decision is delegated to the caller
-		initErr := rf.format.initializer(img, fileinfo)
+		initErr := rf.format.initializer(img, fileinfo, forExecution)
 		if _, ok := initErr.(debugError); ok {
 			sylog.Debugf("%s format initializer returned: %v", rf.name, initErr)
 			_ = img.File.Close()

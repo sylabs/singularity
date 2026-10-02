@@ -582,7 +582,7 @@ func checkPullResult(t *testing.T, tt testStruct) {
 		return
 	}
 
-	img, err := image.Init(tt.expectedImage, false)
+	img, err := image.Init(tt.expectedImage, false, false)
 	if err != nil {
 		t.Fatalf("while checking image: %v", err)
 	}

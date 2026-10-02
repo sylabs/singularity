@@ -526,7 +526,7 @@ func (l *Launcher) setImageOrInstance(image string, name string) error {
 }
 
 func (l *Launcher) checkImage() error {
-	img, err := imgutil.Init(l.engineConfig.GetImage(), false)
+	img, err := imgutil.Init(l.engineConfig.GetImage(), false, true)
 	if err != nil {
 		return fmt.Errorf("could not open image %s: %w", l.engineConfig.GetImage(), err)
 	}
@@ -1051,7 +1051,7 @@ func (l *Launcher) prepareImage(c context.Context, image string) error {
 	// - the --writable flag was specified
 	tryFuse := !l.cfg.TmpSandbox && !l.cfg.Writable
 
-	img, err := imgutil.Init(image, false)
+	img, err := imgutil.Init(image, false, true)
 	if err != nil {
 		return fmt.Errorf("could not open image %s: %s", image, err)
 	}

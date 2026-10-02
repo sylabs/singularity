@@ -97,6 +97,7 @@ The following have contributed code and/or documentation to this repository.
 - Omer Preminger <omer@sylabs.io>
 - Peter Steinbach <steinbach@scionics.de>
 - Petr Votava <votava.petr@gene.com>
+- Pontus Freyhult <pontus_singularity_contact@soua.net>
 - Rafal Gumienny <rafal.gumienny@gmail.com>
 - Ralph Castain <rhc@open-mpi.org>
 - Rémy Dernat <remy.dernat@umontpellier.fr>

@@ -283,8 +283,8 @@ func pullRun(cmd *cobra.Command, args []string) {
 		if isOCI {
 			sylog.Warningf("Pull from oras:// URIs is a direct download, --oci has no effect.")
 		}
-		if platform != "" || arch != "" {
-			sylog.Warningf("Pull from oras:// is a direct download, --arch and --platform have no effect.")
+		if platform != "" && arch != "" {
+			sylog.Warningf("Both --platform and --arch given, ignoring --arch")
 		}
 
 		ociAuth, err := makeOCICredentials(cmd)
@@ -292,7 +292,7 @@ func pullRun(cmd *cobra.Command, args []string) {
 			sylog.Fatalf("Unable to make docker oci credentials: %s", err)
 		}
 
-		_, err = oras.PullToFile(ctx, imgCache, pullTo, pullFrom, ociAuth, reqAuthFile)
+		_, err = oras.PullToFile(ctx, imgCache, pullTo, pullFrom, ociAuth, reqAuthFile, getOCIPlatform())
 		if err != nil {
 			sylog.Fatalf("While pulling image from oci registry: %v", err)
 		}

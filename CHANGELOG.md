@@ -1,5 +1,12 @@
 # SingularityCE Changelog
 
+## Unreleased
+
+### New Features & Functionality
+
+- When pulling images over oras, `--arch`/`--platform` is now supported to
+  enable fetching of non-native images.
+
 ## 4.5.1 \[2026-08-20\]
 
 ## Packaging

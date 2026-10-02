@@ -13,7 +13,6 @@ import (
 	"github.com/sylabs/sif/v2/pkg/sif"
 )
 
-//nolint:dupl
 func TestOCISIFInitializer(t *testing.T) {
 	ociMinimal := func() (sif.DescriptorInput, error) {
 		return sif.NewDescriptorInput(sif.DataOCIRootIndex, bytes.NewBufferString("{}\n"))
@@ -69,7 +68,7 @@ func TestOCISIFInitializer(t *testing.T) {
 				t.Fatalf("cannot stat the image file: %s\n", err)
 			}
 
-			err = ociSifFmt.initializer(img, fileinfo)
+			err = ociSifFmt.initializer(img, fileinfo, false)
 			os.Remove(tt.path)
 
 			if (err == nil) != tt.expectedSuccess {

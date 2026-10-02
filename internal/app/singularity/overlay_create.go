@@ -269,7 +269,7 @@ func OverlayCreate(imgPath string, size int, sparse bool, overlayDirs ...string)
 	// If the imgPath exists, verify it's a SIF that we can add an overlay to.
 	var img *image.Image
 	if err := unix.Access(imgPath, unix.W_OK); err == nil {
-		img, err = image.Init(imgPath, false)
+		img, err = image.Init(imgPath, false, false)
 		if err != nil {
 			return fmt.Errorf("while opening image file %s: %s", imgPath, err)
 		}

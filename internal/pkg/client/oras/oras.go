@@ -31,9 +31,9 @@ import (
 )
 
 // DownloadImage downloads a SIF image specified by an oci reference to a file using the included credentials
-func DownloadImage(ctx context.Context, path, ref string, ociAuth *authn.AuthConfig, reqAuthFile string) error {
+func DownloadImage(ctx context.Context, path, ref string, ociAuth *authn.AuthConfig, reqAuthFile string, platform ggcrv1.Platform) error {
 	rt := progress.NewRoundTripper(ctx, nil)
-	im, err := remoteImage(ctx, ref, ociAuth, reqAuthFile, rt)
+	im, err := remoteImage(ctx, ref, ociAuth, reqAuthFile, rt, platform)
 	if err != nil {
 		rt.ProgressShutdown()
 		return err
@@ -174,7 +174,7 @@ func UploadImage(ctx context.Context, path, ref string, ociAuth *authn.AuthConfi
 
 // ensureSIF checks for a SIF image at filepath and returns an error if it is not, or an error is encountered
 func ensureSIF(filepath string) error {
-	img, err := image.Init(filepath, false)
+	img, err := image.Init(filepath, false, false)
 	if err != nil {
 		return fmt.Errorf("could not open image %s for verification: %s", filepath, err)
 	}
@@ -188,8 +188,8 @@ func ensureSIF(filepath string) error {
 }
 
 // RefHash returns the digest of the SIF layer of the OCI manifest for supplied ref
-func RefHash(ctx context.Context, ref string, ociAuth *authn.AuthConfig, reqAuthFile string) (ggcrv1.Hash, error) {
-	im, err := remoteImage(ctx, ref, ociAuth, reqAuthFile, nil)
+func RefHash(ctx context.Context, ref string, ociAuth *authn.AuthConfig, reqAuthFile string, platform ggcrv1.Platform) (ggcrv1.Hash, error) {
+	im, err := remoteImage(ctx, ref, ociAuth, reqAuthFile, nil, platform)
 	if err != nil {
 		return ggcrv1.Hash{}, err
 	}
@@ -247,7 +247,7 @@ func sha256sum(r io.Reader) (result string, nBytes int64, err error) {
 }
 
 // remoteImage returns a v1.Image for the provided remote ref.
-func remoteImage(ctx context.Context, ref string, ociAuth *authn.AuthConfig, reqAuthFile string, rt *progress.RoundTripper) (ggcrv1.Image, error) {
+func remoteImage(ctx context.Context, ref string, ociAuth *authn.AuthConfig, reqAuthFile string, rt *progress.RoundTripper, platform ggcrv1.Platform) (ggcrv1.Image, error) {
 	ref = strings.TrimPrefix(ref, "oras://")
 	ref = strings.TrimPrefix(ref, "//")
 
@@ -263,6 +263,7 @@ func remoteImage(ctx context.Context, ref string, ociAuth *authn.AuthConfig, req
 	remoteOpts := []remote.Option{
 		ociauth.AuthOptn(ociAuth, reqAuthFile),
 		remote.WithContext(ctx),
+		remote.WithPlatform(platform),
 	}
 
 	if rt != nil {
