@@ -1,4 +1,6 @@
 // Copyright (c) 2025-2026, Sylabs Inc. All rights reserved.
+// Copyright (c) Contributors to the Apptainer project, established as
+//   Apptainer a Series of LF Projects LLC.
 // This software is licensed under a 3-clause BSD license. Please consult the
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
@@ -202,7 +204,7 @@ func (c ctx) singularity(t *testing.T) {
 		},
 		{
 			name:         "root/build",
-			outerProfile: e2e.FakerootProfile,
+			outerProfile: e2e.RootProfile,
 			outerArgs:    []string{},
 			innerCommand: "build",
 			innerArgs:    []string{"--force", tmpBuildSIF, "examples/library/Singularity"},
@@ -234,7 +236,7 @@ func (c ctx) singularity(t *testing.T) {
 		{
 			name:         "rootOCI/exec",
 			outerProfile: e2e.OCIRootProfile,
-			outerArgs:    []string{"--keep-privs"},
+			outerArgs:    []string{"--keep-privs", "-B /dev/loop-control"},
 			innerCommand: "exec",
 			innerArgs:    []string{c.env.OrasTestImage, "/bin/true"},
 		},
@@ -242,7 +244,7 @@ func (c ctx) singularity(t *testing.T) {
 		{
 			name:         "fakerootOCI/exec",
 			outerProfile: e2e.OCIFakerootProfile,
-			outerArgs:    []string{"--keep-privs"},
+			outerArgs:    []string{"--keep-privs", "-B /dev/loop-control"},
 			innerCommand: "exec",
 			innerArgs:    []string{c.env.OrasTestImage, "/bin/true"},
 		},
@@ -256,7 +258,7 @@ func (c ctx) singularity(t *testing.T) {
 			t,
 			e2e.AsSubtest(tt.name),
 			e2e.WithDir(buildcfg.SOURCEDIR),
-			e2e.WithProfile(e2e.RootProfile),
+			e2e.WithProfile(tt.outerProfile),
 			e2e.WithCommand("run"),
 			e2e.WithArgs(cmdArgs...),
 			e2e.ExpectExit(0),
