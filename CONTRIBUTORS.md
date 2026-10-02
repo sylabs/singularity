@@ -1,16 +1,5 @@
 # Contributors to SingularityCE
 
-## Maintainers
-
-The SingularityCE maintainers are responsible for stewardship of the project,
-and maintaining the repository and infrastructure.
-
-```text
-- Adam Hughes <adam@sylabs.io>, <stickmanica@gmail.com>
-- David Trudgian <david.trudgian@sylabs.io>, <dave@trudgian.net>
-- Mike Frisch <michael.frisch@sylabs.io>
-```
-
 ## Contributors
 
 The following have contributed code and/or documentation to this repository.

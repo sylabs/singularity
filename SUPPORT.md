@@ -11,7 +11,6 @@ questions can be asked and problems reported.
   discussions, and announcements.
 - [Slack](#slack) - Real time chat.
 - [GitHub Issues](#github-issues) - Bug reports & feature requests.
-- [Community Calls](#community-calls) - Development updates and discussion.
 
 ## Documentation
 
@@ -129,13 +128,3 @@ review some of these reasons, along with strategies for managing them:
 1. *Consider contributing code* If you are able, opening a PR, even if it is
    imperfect or incomplete, can often provided the momentum needed to get a fix
    or enhancement rolling.
-
-## Community Calls
-
-Regular community calls are held for the project, on the first Thursday of each
-month, via Zoom. These calls are an excellent place to raise feature suggestions
-or kick-off discussion about something you'd like to see in SingularityCE.
-Meeting details are posted in [GitHub
-Discussions](https://github.com/sylabs/singularity/discussions/categories/community-call),
-and recordings at the [Sylabs YouTube
-Channel](https://www.youtube.com/channel/UCsxpqAJKGJBMEFHFr-5VL2w).
