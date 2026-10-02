@@ -1,5 +1,21 @@
 # SingularityCE Changelog
 
+## Unreleased Changes
+
+SingularityCE now includes the following functionality that was previously
+limited to SingularityPRO:
+
+- A customizable log-plugin using templates.
+- An enterprise-plugin to query / manage Singularity Enterprise instances.
+- Native hooks functionality, to allow configurable external tasks to be
+  run on container startup.
+- A 'trusted bind paths' configuration option, which if set to 'yes' disables
+  the remount of bind mounts configured in `singularity.conf`, so that they
+  maintain the same mount flags as on the host. `MS_NOSUID` and `MS_NODEV` will
+  not be forced. setuid execution is still blocked by `PR_SET_NO_NEW_PRIVS`.
+
+Please see the admin guide and user guide for further detail.
+
 ## 4.5.1 \[2026-08-20\]
 
 ## Packaging
