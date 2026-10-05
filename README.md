@@ -2,6 +2,16 @@
 
 [![CircleCI](https://circleci.com/gh/sylabs/singularity/tree/main.svg?style=svg)](https://circleci.com/gh/sylabs/singularity/tree/main)
 
+## End of Life / End of Engineering
+
+Please see the EOL / EOE announcement at <https://sylabs.io>
+
+SingularityCE 4.6.0 is expected to be the final release managed by Sylabs. As
+always, the code remains available under an open source license. The 4.6.0
+release also incorporates code that was previously part of SingularityPRO only.
+However, security, bugfix, and feature development will no longer be performed
+by Sylabs.
+
 ## Quick Links
 
 - [Documentation](https://www.sylabs.io/docs/)

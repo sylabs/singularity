@@ -1,6 +1,16 @@
 # SingularityCE Changelog
 
-## Unreleased Changes
+## 4.6.0 \[2026-10-05\]
+
+Please see the EOL / EOE announcement at <https://sylabs.io>
+
+SingularityCE 4.6.0 is expected to be the final release managed by Sylabs. As
+always, the code remains available under an open source license. The 4.6.0
+release also incorporates code that was previously part of SingularityPRO only.
+However, security, bugfix, and feature development will no longer be performed
+by Sylabs.
+
+## New Features
 
 SingularityCE now includes the following functionality that was previously
 limited to SingularityPRO:
@@ -15,6 +25,10 @@ limited to SingularityPRO:
   not be forced. setuid execution is still blocked by `PR_SET_NO_NEW_PRIVS`.
 
 Please see the admin guide and user guide for further detail.
+
+## Requirements / Packaging
+
+- Requires Go 1.26.8 or newer due to updated dependencies.
 
 ## 4.5.1 \[2026-08-20\]
 
