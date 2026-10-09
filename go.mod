@@ -30,8 +30,8 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/go-log/log v0.2.0
 	github.com/go-openapi/errors v0.22.9
-	github.com/go-openapi/runtime v0.33.2
-	github.com/go-openapi/strfmt v0.27.2
+	github.com/go-openapi/runtime v0.33.3
+	github.com/go-openapi/strfmt v0.27.3
 	github.com/go-openapi/swag v0.29.2
 	github.com/go-openapi/validate v1.0.0
 	github.com/gofrs/flock v0.13.1
@@ -59,7 +59,7 @@ require (
 	github.com/samber/lo v1.53.0
 	github.com/sebdah/goldie/v2 v2.8.0
 	github.com/seccomp/libseccomp-golang v0.12.0
-	github.com/shopspring/decimal v1.4.0
+	github.com/shopspring/decimal v1.5.0
 	github.com/sigstore/cosign/v2 v2.6.5
 	github.com/sigstore/sigstore v1.10.11
 	github.com/sirupsen/logrus v1.10.2
@@ -148,10 +148,10 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/analysis v1.0.0 // indirect
 	github.com/go-openapi/jsonpointer v1.0.1 // indirect
-	github.com/go-openapi/jsonreference v1.0.1 // indirect
-	github.com/go-openapi/loads v0.25.2 // indirect
-	github.com/go-openapi/runtime/server-middleware v0.33.2 // indirect
-	github.com/go-openapi/spec v1.0.0 // indirect
+	github.com/go-openapi/jsonreference v1.0.2 // indirect
+	github.com/go-openapi/loads v0.25.3 // indirect
+	github.com/go-openapi/runtime/server-middleware v0.33.3 // indirect
+	github.com/go-openapi/spec v1.0.1 // indirect
 	github.com/go-openapi/swag/cmdutils v0.29.2 // indirect
 	github.com/go-openapi/swag/conv v0.29.2 // indirect
 	github.com/go-openapi/swag/fileutils v0.29.2 // indirect
@@ -283,7 +283,7 @@ require (
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/mod v0.41.0 // indirect
-	golang.org/x/net v0.58.0 // indirect
+	golang.org/x/net v0.59.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260803160001-6ac0973c030d // indirect
