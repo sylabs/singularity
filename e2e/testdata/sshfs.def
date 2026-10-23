@@ -1,4 +1,4 @@
-bootstrap: library
+bootstrap: docker
 from: alpine:3.15
 
 %post

@@ -3,6 +3,12 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// NOTE: Singularity Container Services (cloud.sylabs.io, library.sylabs.io,
+// keys.sylabs.io) was retired on 2026-10-22. Tests in this file that depended
+// on it are disabled (marked "Disabled: Singularity Container Services has been
+// retired") rather than deleted, so they can be re-enabled against another
+// SCS-compatible service.
+
 package actions
 
 import (
@@ -116,11 +122,12 @@ func (c actionTests) actionOciRun(t *testing.T) {
 			imageRef: c.env.OrasTestImage,
 			exit:     0,
 		},
-		{
-			name:     "native-sif-library",
-			imageRef: "library://busybox:1.31.1",
-			exit:     0,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:     "native-sif-library",
+		// 	imageRef: "library://busybox:1.31.1",
+		// 	exit:     0,
+		// },
 	}
 
 	for _, profile := range e2e.OCIProfiles {

@@ -3,6 +3,12 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// NOTE: Singularity Container Services (cloud.sylabs.io, library.sylabs.io,
+// keys.sylabs.io) was retired on 2026-10-22. Tests in this file that depended
+// on it are disabled (marked "Disabled: Singularity Container Services has been
+// retired") rather than deleted, so they can be re-enabled against another
+// SCS-compatible service.
+
 package delete
 
 import (
@@ -25,18 +31,20 @@ func (c ctx) testDeleteCmd(t *testing.T) {
 		expectExit int
 		expect     e2e.SingularityCmdResultOp
 	}{
-		{
-			name:       "delete unauthorized arch",
-			args:       []string{"--arch=amd64", "library://test/default/test:v0.0.3"},
-			agree:      "y",
-			expectExit: 255,
-		},
-		{
-			name:       "delete unauthorized no arch",
-			args:       []string{"library://test/default/test:v0.0.3"},
-			agree:      "y",
-			expectExit: 255,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:       "delete unauthorized arch",
+		// 	args:       []string{"--arch=amd64", "library://test/default/test:v0.0.3"},
+		// 	agree:      "y",
+		// 	expectExit: 255,
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:       "delete unauthorized no arch",
+		// 	args:       []string{"library://test/default/test:v0.0.3"},
+		// 	agree:      "y",
+		// 	expectExit: 255,
+		// },
 		{
 			name:       "delete disagree arch",
 			args:       []string{"--arch=amd64", "library://test/default/test:v0.0.3"},
@@ -49,24 +57,27 @@ func (c ctx) testDeleteCmd(t *testing.T) {
 			agree:      "n",
 			expectExit: 0,
 		},
-		{
-			name:       "delete unauthorized force arch",
-			args:       []string{"--force", "--arch=amd64", "library://test/default/test:v0.0.3"},
-			agree:      "",
-			expectExit: 255,
-		},
-		{
-			name:       "delete unauthorized force noarch",
-			args:       []string{"--force", "library://test/default/test:v0.0.3"},
-			agree:      "",
-			expectExit: 255,
-		},
-		{
-			name:       "delete unauthorized custom library",
-			args:       []string{"--library=https://cloud.staging.sylabs.io", "library://test/default/test:v0.0.3"},
-			agree:      "y",
-			expectExit: 255,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:       "delete unauthorized force arch",
+		// 	args:       []string{"--force", "--arch=amd64", "library://test/default/test:v0.0.3"},
+		// 	agree:      "",
+		// 	expectExit: 255,
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:       "delete unauthorized force noarch",
+		// 	args:       []string{"--force", "library://test/default/test:v0.0.3"},
+		// 	agree:      "",
+		// 	expectExit: 255,
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:       "delete unauthorized custom library",
+		// 	args:       []string{"--library=https://cloud.staging.sylabs.io", "library://test/default/test:v0.0.3"},
+		// 	agree:      "y",
+		// 	expectExit: 255,
+		// },
 		{
 			name:       "delete host in uri",
 			args:       []string{"library://library.example.com/test/default/test:v0.0.3"},

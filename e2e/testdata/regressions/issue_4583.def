@@ -1,4 +1,4 @@
-bootstrap: library
+bootstrap: docker
 from: alpine:3.11.5
 stage: one
 
@@ -7,7 +7,7 @@ stage: one
     touch /original/a_file
     ln -s /original/a_file /copy/a_file
 
-bootstrap: library
+bootstrap: docker
 from: alpine
 stage: two
 

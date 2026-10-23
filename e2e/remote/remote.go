@@ -4,6 +4,12 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// NOTE: Singularity Container Services (cloud.sylabs.io, library.sylabs.io,
+// keys.sylabs.io) was retired on 2026-10-22. Tests in this file that depended
+// on it are disabled (marked "Disabled: Singularity Container Services has been
+// retired") rather than deleted, so they can be re-enabled against another
+// SCS-compatible service.
+
 package remote
 
 import (
@@ -357,24 +363,25 @@ func (c ctx) remoteStatus(t *testing.T) {
 		)
 	}
 
-	testPass := []struct {
-		name   string
-		remote string
-	}{
-		{"ValidRemote", "cloud"},
-	}
-
-	for _, tt := range testPass {
-		argv := []string{"--config", config.Name(), "status", tt.remote}
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest(tt.name),
-			e2e.WithProfile(e2e.UserProfile),
-			e2e.WithCommand("remote"),
-			e2e.WithArgs(argv...),
-			e2e.ExpectExit(0),
-		)
-	}
+	// Disabled: Singularity Container Services has been retired.
+	// testPass := []struct {
+	// 	name   string
+	// 	remote string
+	// }{
+	// 	{"ValidRemote", "cloud"},
+	// }
+	//
+	// for _, tt := range testPass {
+	// 	argv := []string{"--config", config.Name(), "status", tt.remote}
+	// 	c.env.RunSingularity(
+	// 		t,
+	// 		e2e.AsSubtest(tt.name),
+	// 		e2e.WithProfile(e2e.UserProfile),
+	// 		e2e.WithCommand("remote"),
+	// 		e2e.WithArgs(argv...),
+	// 		e2e.ExpectExit(0),
+	// 	)
+	// }
 
 	testFail := []struct {
 		name   string

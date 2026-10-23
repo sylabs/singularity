@@ -6,6 +6,12 @@
 // The E2E PULL group tests image pulls of SIF format images (library, oras
 // sources). Docker / OCI image pull is tested as part of the DOCKER E2E group.
 
+// NOTE: Singularity Container Services (cloud.sylabs.io, library.sylabs.io,
+// keys.sylabs.io) was retired on 2026-10-22. Tests in this file that depended
+// on it are disabled (marked "Disabled: Singularity Container Services has been
+// retired") rather than deleted, so they can be re-enabled against another
+// SCS-compatible service.
+
 package pull
 
 import (
@@ -218,102 +224,114 @@ func (c ctx) testPullCmd(t *testing.T) {
 		// library:// URIs
 		// SCS / Singularity Enterprise & compatible.
 		//
-		{
-			desc:             "library non-existent",
-			srcURI:           "library://sylabs/tests/does_not_exist:0",
-			expectedExitCode: 255,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:             "library non-existent",
+		// 	srcURI:           "library://sylabs/tests/does_not_exist:0",
+		// 	expectedExitCode: 255,
+		// },
 		// --allow-unauthenticated tests
-		{
-			desc:             "library allow-unauthenticated",
-			srcURI:           "library://sylabs/tests/unsigned:1.0.0",
-			unauthenticated:  true,
-			expectedExitCode: 0,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:             "library allow-unauthenticated",
+		// 	srcURI:           "library://sylabs/tests/unsigned:1.0.0",
+		// 	unauthenticated:  true,
+		// 	expectedExitCode: 0,
+		// },
 		// --force tests
-		{
-			desc:             "library force existing",
-			srcURI:           "library://alpine:3.11.5",
-			force:            true,
-			createDst:        true,
-			unauthenticated:  true,
-			expectedExitCode: 0,
-		},
-		{
-			desc:             "library force non-existing",
-			srcURI:           "library://alpine:3.11.5",
-			force:            true,
-			createDst:        false,
-			unauthenticated:  true,
-			expectedExitCode: 0,
-		},
-		{
-			// --force should not have an effect on --allow-unauthenticated=false
-			desc:             "library force allow-unauthenticated",
-			srcURI:           "library://sylabs/tests/unsigned:1.0.0",
-			force:            true,
-			unauthenticated:  false,
-			expectedExitCode: 0,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:             "library force existing",
+		// 	srcURI:           "library://alpine:3.11.5",
+		// 	force:            true,
+		// 	createDst:        true,
+		// 	unauthenticated:  true,
+		// 	expectedExitCode: 0,
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:             "library force non-existing",
+		// 	srcURI:           "library://alpine:3.11.5",
+		// 	force:            true,
+		// 	createDst:        false,
+		// 	unauthenticated:  true,
+		// 	expectedExitCode: 0,
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	// --force should not have an effect on --allow-unauthenticated=false
+		// 	desc:             "library force allow-unauthenticated",
+		// 	srcURI:           "library://sylabs/tests/unsigned:1.0.0",
+		// 	force:            true,
+		// 	unauthenticated:  false,
+		// 	expectedExitCode: 0,
+		// },
 		// test version specifications
-		{
-			desc:             "library hash",
-			srcURI:           "library://alpine:sha256.03883ca565b32e58fa0a496316d69de35741f2ef34b5b4658a6fec04ed8149a8",
-			arch:             "amd64",
-			unauthenticated:  true,
-			expectedExitCode: 0,
-		},
-		{
-			desc:             "library tag",
-			srcURI:           "library://alpine:latest",
-			unauthenticated:  true,
-			expectedExitCode: 0,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:             "library hash",
+		// 	srcURI:           "library://alpine:sha256.03883ca565b32e58fa0a496316d69de35741f2ef34b5b4658a6fec04ed8149a8",
+		// 	arch:             "amd64",
+		// 	unauthenticated:  true,
+		// 	expectedExitCode: 0,
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:             "library tag",
+		// 	srcURI:           "library://alpine:latest",
+		// 	unauthenticated:  true,
+		// 	expectedExitCode: 0,
+		// },
 		// forced arch and platform equivalent
-		{
-			desc:             "library non-oci arch",
-			srcURI:           "library://alpine:3.11.5",
-			arch:             "ppc64le",
-			expectedExitCode: 0,
-		},
-		{
-			desc:             "library non-oci platform",
-			srcURI:           "library://alpine:3.11.5",
-			platform:         "linux/ppc64le",
-			expectedExitCode: 0,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:             "library non-oci arch",
+		// 	srcURI:           "library://alpine:3.11.5",
+		// 	arch:             "ppc64le",
+		// 	expectedExitCode: 0,
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:             "library non-oci platform",
+		// 	srcURI:           "library://alpine:3.11.5",
+		// 	platform:         "linux/ppc64le",
+		// 	expectedExitCode: 0,
+		// },
 		// --dir tests
-		{
-			desc:             "library dir",
-			srcURI:           "library://alpine:3.11.5",
-			unauthenticated:  true,
-			setPullDir:       true,
-			setImagePath:     false,
-			expectedExitCode: 0,
-		},
-		{
-			// XXX(mem): this specific test is passing both --path and an image path to
-			// singularity pull. The current behavior is that the code is joining both paths and
-			// failing to find the image in the expected location indicated by image path
-			// because image path is absolute, so after joining /tmp/a/b/c and
-			// /tmp/a/b/image.sif, the code expects to find /tmp/a/b/c/tmp/a/b/image.sif. Since
-			// the directory /tmp/a/b/c/tmp/a/b does not exist, it fails to create the file
-			// image.sif in there.
-			desc:             "library dir with image path",
-			srcURI:           "library://alpine:3.11.5",
-			unauthenticated:  true,
-			setPullDir:       true,
-			setImagePath:     true,
-			expectedExitCode: 255,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:             "library dir",
+		// 	srcURI:           "library://alpine:3.11.5",
+		// 	unauthenticated:  true,
+		// 	setPullDir:       true,
+		// 	setImagePath:     false,
+		// 	expectedExitCode: 0,
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	// XXX(mem): this specific test is passing both --path and an image path to
+		// 	// singularity pull. The current behavior is that the code is joining both paths and
+		// 	// failing to find the image in the expected location indicated by image path
+		// 	// because image path is absolute, so after joining /tmp/a/b/c and
+		// 	// /tmp/a/b/image.sif, the code expects to find /tmp/a/b/c/tmp/a/b/image.sif. Since
+		// 	// the directory /tmp/a/b/c/tmp/a/b does not exist, it fails to create the file
+		// 	// image.sif in there.
+		// 	desc:             "library dir with image path",
+		// 	srcURI:           "library://alpine:3.11.5",
+		// 	unauthenticated:  true,
+		// 	setPullDir:       true,
+		// 	setImagePath:     true,
+		// 	expectedExitCode: 255,
+		// },
 		// default transport should be library
-		{
-			desc:             "library default transport",
-			srcURI:           "alpine:3.11.5",
-			force:            true,
-			unauthenticated:  true,
-			expectedExitCode: 0,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:             "library default transport",
+		// 	srcURI:           "alpine:3.11.5",
+		// 	force:            true,
+		// 	unauthenticated:  true,
+		// 	expectedExitCode: 0,
+		// },
 		// pulling with library URI argument
 		{
 			desc:             "library bad library flag",
@@ -321,13 +339,14 @@ func (c ctx) testPullCmd(t *testing.T) {
 			library:          "https://bad-library.sylabs.io",
 			expectedExitCode: 255,
 		},
-		{
-			desc:             "library default library flag",
-			srcURI:           "library://busybox:1.31.1",
-			library:          "https://library.sylabs.io",
-			force:            true,
-			expectedExitCode: 0,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:             "library default library flag",
+		// 	srcURI:           "library://busybox:1.31.1",
+		// 	library:          "https://library.sylabs.io",
+		// 	force:            true,
+		// 	expectedExitCode: 0,
+		// },
 		// pulling with library URI containing host name and library argument
 		{
 			desc:             "library URI containing host name and library argument",
@@ -341,57 +360,62 @@ func (c ctx) testPullCmd(t *testing.T) {
 			srcURI:           "library://notlibrary.sylabs.io/library/default/busybox:1.31.1",
 			expectedExitCode: 255,
 		},
-		{
-			desc:             "library URI containing host name",
-			srcURI:           "library://library.sylabs.io/library/default/busybox:1.31.1",
-			force:            true,
-			expectedExitCode: 0,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:             "library URI containing host name",
+		// 	srcURI:           "library://library.sylabs.io/library/default/busybox:1.31.1",
+		// 	force:            true,
+		// 	expectedExitCode: 0,
+		// },
 		// pulling an OCI-SIF image from library backing registry
-		{
-			desc:   "library oci-sif fallback",
-			srcURI: "library://sylabs/tests/alpine-oci-sif:latest",
-			// will try library protocol first, should then attempt oci pull
-			oci:               false,
-			expectedOCI:       true,
-			expectedOCILayers: 1,
-			expectedExitCode:  0,
-			requirements: func(t *testing.T) {
-				require.Arch(t, "amd64")
-			},
-		},
-		{
-			desc:   "library oci-sif direct",
-			srcURI: "library://sylabs/tests/alpine-oci-sif:latest",
-			// direct oci pull
-			oci:               true,
-			expectedOCI:       true,
-			expectedOCILayers: 1,
-			expectedExitCode:  0,
-			requirements: func(t *testing.T) {
-				require.Arch(t, "amd64")
-			},
-		},
-		{
-			desc:   "library oci-sif platform",
-			srcURI: "library://sylabs/tests/alpine-ppc64le-oci-sif:latest",
-			// direct oci pull
-			platform:          "linux/ppc64le",
-			oci:               true,
-			expectedOCI:       true,
-			expectedOCILayers: 1,
-			expectedExitCode:  0,
-		},
-		{
-			desc:   "library oci-sif arch",
-			srcURI: "library://sylabs/tests/alpine-ppc64le-oci-sif:latest",
-			// direct oci pull
-			arch:              "ppc64le",
-			oci:               true,
-			expectedOCI:       true,
-			expectedOCILayers: 1,
-			expectedExitCode:  0,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:   "library oci-sif fallback",
+		// 	srcURI: "library://sylabs/tests/alpine-oci-sif:latest",
+		// 	// will try library protocol first, should then attempt oci pull
+		// 	oci:               false,
+		// 	expectedOCI:       true,
+		// 	expectedOCILayers: 1,
+		// 	expectedExitCode:  0,
+		// 	requirements: func(t *testing.T) {
+		// 		require.Arch(t, "amd64")
+		// 	},
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:   "library oci-sif direct",
+		// 	srcURI: "library://sylabs/tests/alpine-oci-sif:latest",
+		// 	// direct oci pull
+		// 	oci:               true,
+		// 	expectedOCI:       true,
+		// 	expectedOCILayers: 1,
+		// 	expectedExitCode:  0,
+		// 	requirements: func(t *testing.T) {
+		// 		require.Arch(t, "amd64")
+		// 	},
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:   "library oci-sif platform",
+		// 	srcURI: "library://sylabs/tests/alpine-ppc64le-oci-sif:latest",
+		// 	// direct oci pull
+		// 	platform:          "linux/ppc64le",
+		// 	oci:               true,
+		// 	expectedOCI:       true,
+		// 	expectedOCILayers: 1,
+		// 	expectedExitCode:  0,
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	desc:   "library oci-sif arch",
+		// 	srcURI: "library://sylabs/tests/alpine-ppc64le-oci-sif:latest",
+		// 	// direct oci pull
+		// 	arch:              "ppc64le",
+		// 	oci:               true,
+		// 	expectedOCI:       true,
+		// 	expectedOCILayers: 1,
+		// 	expectedExitCode:  0,
+		// },
 		//
 		// shub:// URIs
 		// Singularity Hub (retired) and compatible.
@@ -685,18 +709,20 @@ func (c ctx) testPullDisableCacheCmd(t *testing.T) {
 		oci       bool
 		noHTTPS   bool
 	}{
-		{
-			name:      "library native",
-			imagePath: filepath.Join(c.env.TestDir, "nocache-library.sif"),
-			imageSrc:  "library://alpine:latest",
-		},
-		{
-			name:      "library oci-sif",
-			imagePath: filepath.Join(c.env.TestDir, "nocache-library.oci.sif"),
-			imageSrc:  "library://sylabs/tests/alpine-oci-sif:latest",
-			platform:  "linux/amd64",
-			oci:       true,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:      "library native",
+		// 	imagePath: filepath.Join(c.env.TestDir, "nocache-library.sif"),
+		// 	imageSrc:  "library://alpine:latest",
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:      "library oci-sif",
+		// 	imagePath: filepath.Join(c.env.TestDir, "nocache-library.oci.sif"),
+		// 	imageSrc:  "library://sylabs/tests/alpine-oci-sif:latest",
+		// 	platform:  "linux/amd64",
+		// 	oci:       true,
+		// },
 		{
 			name:      "oras",
 			imagePath: filepath.Join(c.env.TestDir, "nocache-oras.sif"),
@@ -1016,7 +1042,8 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 			t.Run("pull", c.testPullCmd)
 			t.Run("pullDisableCache", c.testPullDisableCacheCmd)
 			t.Run("concurrencyConfig", c.testConcurrencyConfig)
-			t.Run("concurrentPulls", c.testConcurrentPulls)
+			// Disabled: Singularity Container Services has been retired.
+			// t.Run("concurrentPulls", c.testConcurrentPulls)
 			t.Run("oci overlay", c.testPullOCIOverlay)
 		},
 		"cosign":    c.testCosignRoundTrip,
@@ -1025,7 +1052,8 @@ func E2ETests(env e2e.TestEnv) testhelper.Tests {
 		// causing permission issues for other tests.
 		"pullUmaskCheck": np(c.testPullUmask),
 		// Regressions
+		// Disabled: Singularity Container Services has been retired.
 		// Manipulates remotes, so must run alone
-		"issue5808": np(c.issue5808),
+		// "issue5808": np(c.issue5808),
 	}
 }

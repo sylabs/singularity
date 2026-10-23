@@ -1,4 +1,4 @@
-Bootstrap: library
+Bootstrap: docker
 From: alpine:3.11.5
 Stage: one
 
@@ -7,7 +7,7 @@ touch /bar
 mkdir -p /foo
 ln -s ../bar /foo/bar
 
-Bootstrap: library
+Bootstrap: docker
 From: alpine:3.11.5
 Stage: two
 

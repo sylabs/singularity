@@ -5,6 +5,12 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// NOTE: Singularity Container Services (cloud.sylabs.io, library.sylabs.io,
+// keys.sylabs.io) was retired on 2026-10-22. Tests in this file that depended
+// on it are disabled (marked "Disabled: Singularity Container Services has been
+// retired") rather than deleted, so they can be re-enabled against another
+// SCS-compatible service.
+
 package nested
 
 import (
@@ -24,7 +30,9 @@ type ctx struct {
 	env e2e.TestEnv
 }
 
-//nolint:dupl
+// Disabled: Singularity Container Services has been retired.
+// Restore the directive below when the buildSIF step is re-enabled.
+// //nolint:dupl
 func (c ctx) docker(t *testing.T) {
 	require.Command(t, "docker")
 	e2e.EnsureORASImage(t, c.env)
@@ -45,7 +53,8 @@ func (c ctx) docker(t *testing.T) {
 	dockerRunPrivileged(t, "exec", dockerRef, tmpHome, "exec", c.env.OrasTestImage, "/bin/true")
 	dockerRunPrivileged(t, "execUserNS", dockerRef, tmpHome, "exec", "-u", c.env.OrasTestImage, "/bin/true")
 	dockerRunPrivileged(t, "execOCI", dockerRef, tmpHome, "exec", "--oci", c.env.TestRegistryOCISIF, "/bin/true")
-	dockerRunPrivileged(t, "buildSIF", dockerRef, tmpHome, "build", "test.sif", "singularity-src/examples/library/Singularity")
+	// Disabled: Singularity Container Services has been retired.
+	// dockerRunPrivileged(t, "buildSIF", dockerRef, tmpHome, "build", "test.sif", "singularity-src/examples/library/Singularity")
 }
 
 func dockerBuild(t *testing.T, dockerFile, dockerRef, contextPath, homeDir string) {
@@ -91,7 +100,9 @@ func dockerRunPrivileged(t *testing.T, name, dockerRef, homeDir string, args ...
 	}))
 }
 
-//nolint:dupl
+// Disabled: Singularity Container Services has been retired.
+// Restore the directive below when the buildSIF step is re-enabled.
+// //nolint:dupl
 func (c ctx) podman(t *testing.T) {
 	require.Command(t, "podman")
 	e2e.EnsureORASImage(t, c.env)
@@ -112,7 +123,8 @@ func (c ctx) podman(t *testing.T) {
 	podmanRun(t, "exec", dockerRef, tmpHome, "exec", c.env.OrasTestImage, "/bin/true")
 	podmanRun(t, "execUserNS", dockerRef, tmpHome, "exec", "-u", c.env.OrasTestImage, "/bin/true")
 	podmanRun(t, "execOCI", dockerRef, tmpHome, "exec", "--oci", c.env.TestRegistryOCISIF, "/bin/true")
-	podmanRun(t, "buildSIF", dockerRef, tmpHome, "build", "test.sif", "singularity-src/examples/library/Singularity")
+	// Disabled: Singularity Container Services has been retired.
+	// podmanRun(t, "buildSIF", dockerRef, tmpHome, "build", "test.sif", "singularity-src/examples/library/Singularity")
 }
 
 func podmanBuild(t *testing.T, dockerFile, dockerRef, contextPath, homeDir string) {
@@ -185,7 +197,9 @@ func (c ctx) singularity(t *testing.T) {
 		e2e.ExpectExit(0),
 	)
 
-	tmpBuildSIF := filepath.Join(testDir, "build.sif")
+	// Disabled: Singularity Container Services has been retired.
+	// Only used by the commented-out build cases below.
+	// tmpBuildSIF := filepath.Join(testDir, "build.sif")
 
 	tests := []struct {
 		name         string
@@ -202,13 +216,14 @@ func (c ctx) singularity(t *testing.T) {
 			innerCommand: "exec",
 			innerArgs:    []string{c.env.OrasTestImage, "/bin/true"},
 		},
-		{
-			name:         "root/build",
-			outerProfile: e2e.RootProfile,
-			outerArgs:    []string{},
-			innerCommand: "build",
-			innerArgs:    []string{"--force", tmpBuildSIF, "examples/library/Singularity"},
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:         "root/build",
+		// 	outerProfile: e2e.RootProfile,
+		// 	outerArgs:    []string{},
+		// 	innerCommand: "build",
+		// 	innerArgs:    []string{"--force", tmpBuildSIF, "examples/library/Singularity"},
+		// },
 		// User host -> fakeroot outer -> fakeroot inner
 		// Failing - deactivated due to 4.6.0 release timeline.
 		//{
@@ -218,13 +233,14 @@ func (c ctx) singularity(t *testing.T) {
 		//	innerCommand: "exec",
 		//	innerArgs:    []string{c.env.OrasTestImage, "/bin/true"},
 		//},
-		{
-			name:         "fakeroot/build",
-			outerProfile: e2e.FakerootProfile,
-			outerArgs:    []string{},
-			innerCommand: "build",
-			innerArgs:    []string{"--force", tmpBuildSIF, "examples/library/Singularity"},
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:         "fakeroot/build",
+		// 	outerProfile: e2e.FakerootProfile,
+		// 	outerArgs:    []string{},
+		// 	innerCommand: "build",
+		// 	innerArgs:    []string{"--force", tmpBuildSIF, "examples/library/Singularity"},
+		// },
 		// User outside -> user (userns) outer -> user (userns) inner
 		{
 			name:         "userns/exec",

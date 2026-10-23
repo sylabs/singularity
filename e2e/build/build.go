@@ -5,6 +5,12 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// NOTE: Singularity Container Services (cloud.sylabs.io, library.sylabs.io,
+// keys.sylabs.io) was retired on 2026-10-22. Tests in this file that depended
+// on it are disabled (marked "Disabled: Singularity Container Services has been
+// retired") rather than deleted, so they can be re-enabled against another
+// SCS-compatible service.
+
 package build
 
 import (
@@ -94,14 +100,16 @@ func (c imgBuildTests) buildFrom(t *testing.T) {
 		// 	name:       "ShubDefFile",
 		// 	buildSpec:  "../examples/shub/Singularity",
 		// },
-		{
-			name:      "LibraryURI",
-			buildSpec: "library://alpine:3.11.5",
-		},
-		{
-			name:      "LibraryDefFile",
-			buildSpec: "../examples/library/Singularity",
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:      "LibraryURI",
+		// 	buildSpec: "library://alpine:3.11.5",
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:      "LibraryDefFile",
+		// 	buildSpec: "../examples/library/Singularity",
+		// },
 		{
 			name:      "OrasURI",
 			buildSpec: c.env.OrasTestImage,
@@ -224,15 +232,17 @@ func (c imgBuildTests) nonRootBuild(t *testing.T) {
 			buildSpec: busyboxSIF,
 			args:      []string{"--sandbox"},
 		},
-		{
-			name:      "library sif",
-			buildSpec: "library://busybox:1.31.1",
-		},
-		{
-			name:      "library sif sandbox",
-			buildSpec: "library://busybox:1.31.1",
-			args:      []string{"--sandbox"},
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:      "library sif",
+		// 	buildSpec: "library://busybox:1.31.1",
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:      "library sif sandbox",
+		// 	buildSpec: "library://busybox:1.31.1",
+		// 	args:      []string{"--sandbox"},
+		// },
 		// TODO: uncomment when shub is working
 		//{
 		//		name:      "shub busybox",
