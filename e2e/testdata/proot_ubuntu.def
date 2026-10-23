@@ -1,4 +1,4 @@
-bootstrap: library
+bootstrap: docker
 from: ubuntu:20.04
 
 %post

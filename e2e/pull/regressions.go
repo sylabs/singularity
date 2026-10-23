@@ -3,6 +3,12 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// NOTE: Singularity Container Services (cloud.sylabs.io, library.sylabs.io,
+// keys.sylabs.io) was retired on 2026-10-22. Tests in this file that depended
+// on it are disabled (marked "Disabled: Singularity Container Services has been
+// retired") rather than deleted, so they can be re-enabled against another
+// SCS-compatible service.
+
 package pull
 
 import (
@@ -10,70 +16,70 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
 	"path/filepath"
 	"testing"
 
 	"github.com/sylabs/singularity/v4/e2e/internal/e2e"
 )
 
-// If a remote is set to a different endpoint we should be able to pull
-// with `--library https://library.sylabs.io` from the default Sylabs cloud library.
-func (c ctx) issue5808(t *testing.T) {
-	testEndpoint := "issue5808"
-	testEndpointURI := "https://cloud.staging.sylabs.io"
-	defaultLibraryURI := "https://library.sylabs.io"
-	testImage := "library://sylabs/tests/signed:1.0.0"
-
-	pullDir, cleanup := e2e.MakeTempDir(t, "", "issue5808", "")
-	defer cleanup(t)
-
-	// Add another endpoint
-	argv := []string{"add", "--no-login", testEndpoint, testEndpointURI}
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("remote add"),
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("remote"),
-		e2e.WithArgs(argv...),
-		e2e.ExpectExit(0),
-	)
-	// Remove test remote when we are done here
-	defer func(t *testing.T) {
-		argv := []string{"remove", testEndpoint}
-		c.env.RunSingularity(
-			t,
-			e2e.AsSubtest("remote remove"),
-			e2e.WithProfile(e2e.UserProfile),
-			e2e.WithCommand("remote"),
-			e2e.WithArgs(argv...),
-			e2e.ExpectExit(0),
-		)
-	}(t)
-
-	// Set as default
-	argv = []string{"use", testEndpoint}
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("remote use"),
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("remote"),
-		e2e.WithArgs(argv...),
-		e2e.ExpectExit(0),
-	)
-
-	// Pull a library image
-	dest := path.Join(pullDir, "alpine.sif")
-	argv = []string{"--arch", "amd64", "--library", defaultLibraryURI, dest, testImage}
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("pull"),
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("pull"),
-		e2e.WithArgs(argv...),
-		e2e.ExpectExit(0),
-	)
-}
+// Disabled: Singularity Container Services has been retired.
+// // If a remote is set to a different endpoint we should be able to pull
+// // with `--library https://library.sylabs.io` from the default Sylabs cloud library.
+// func (c ctx) issue5808(t *testing.T) {
+// 	testEndpoint := "issue5808"
+// 	testEndpointURI := "https://cloud.staging.sylabs.io"
+// 	defaultLibraryURI := "https://library.sylabs.io"
+// 	testImage := "library://sylabs/tests/signed:1.0.0"
+//
+// 	pullDir, cleanup := e2e.MakeTempDir(t, "", "issue5808", "")
+// 	defer cleanup(t)
+//
+// 	// Add another endpoint
+// 	argv := []string{"add", "--no-login", testEndpoint, testEndpointURI}
+// 	c.env.RunSingularity(
+// 		t,
+// 		e2e.AsSubtest("remote add"),
+// 		e2e.WithProfile(e2e.UserProfile),
+// 		e2e.WithCommand("remote"),
+// 		e2e.WithArgs(argv...),
+// 		e2e.ExpectExit(0),
+// 	)
+// 	// Remove test remote when we are done here
+// 	defer func(t *testing.T) {
+// 		argv := []string{"remove", testEndpoint}
+// 		c.env.RunSingularity(
+// 			t,
+// 			e2e.AsSubtest("remote remove"),
+// 			e2e.WithProfile(e2e.UserProfile),
+// 			e2e.WithCommand("remote"),
+// 			e2e.WithArgs(argv...),
+// 			e2e.ExpectExit(0),
+// 		)
+// 	}(t)
+//
+// 	// Set as default
+// 	argv = []string{"use", testEndpoint}
+// 	c.env.RunSingularity(
+// 		t,
+// 		e2e.AsSubtest("remote use"),
+// 		e2e.WithProfile(e2e.UserProfile),
+// 		e2e.WithCommand("remote"),
+// 		e2e.WithArgs(argv...),
+// 		e2e.ExpectExit(0),
+// 	)
+//
+// 	// Pull a library image
+// 	dest := path.Join(pullDir, "alpine.sif")
+// 	argv = []string{"--arch", "amd64", "--library", defaultLibraryURI, dest, testImage}
+// 	c.env.RunSingularity(
+// 		t,
+// 		e2e.AsSubtest("pull"),
+// 		e2e.WithProfile(e2e.UserProfile),
+// 		e2e.WithCommand("pull"),
+// 		e2e.WithArgs(argv...),
+// 		e2e.ExpectExit(0),
+// 	)
+// }
 
 // Must be able to pull from an http(s) source that doesn't set content-length correctly
 func (c ctx) issue1087(t *testing.T) {

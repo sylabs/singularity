@@ -6,6 +6,12 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// NOTE: Singularity Container Services (cloud.sylabs.io, library.sylabs.io,
+// keys.sylabs.io) was retired on 2026-10-22. Tests in this file that depended
+// on it are disabled (marked "Disabled: Singularity Container Services has been
+// retired") rather than deleted, so they can be re-enabled against another
+// SCS-compatible service.
+
 package key
 
 import (
@@ -89,26 +95,30 @@ func (c *ctx) singularityKeySearch(t *testing.T) {
 			args:   []string{"search", "--help"},
 			stdout: "^Search for keys on a key server",
 		},
-		{
-			name:   "key search 0x<key id>",
-			args:   []string{"search", "0x8BD91BEE"},
-			stdout: "^Showing 1 results",
-		},
-		{
-			name:   "key search <key id>",
-			args:   []string{"search", "8BD91BEE"},
-			stdout: "^Showing 1 results",
-		},
-		{
-			name:   "key search 0x<key fingerprint>",
-			args:   []string{"search", "0x7605BC2716168DF057D6C600ACEEC62C8BD91BEE"},
-			stdout: "^Showing 1 results",
-		},
-		{
-			name:   "key search <key fingerprint>",
-			args:   []string{"search", "7605BC2716168DF057D6C600ACEEC62C8BD91BEE"},
-			stdout: "^Showing 1 results",
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:   "key search 0x<key id>",
+		// 	args:   []string{"search", "0x8BD91BEE"},
+		// 	stdout: "^Showing 1 results",
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:   "key search <key id>",
+		// 	args:   []string{"search", "8BD91BEE"},
+		// 	stdout: "^Showing 1 results",
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:   "key search 0x<key fingerprint>",
+		// 	args:   []string{"search", "0x7605BC2716168DF057D6C600ACEEC62C8BD91BEE"},
+		// 	stdout: "^Showing 1 results",
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:   "key search <key fingerprint>",
+		// 	args:   []string{"search", "7605BC2716168DF057D6C600ACEEC62C8BD91BEE"},
+		// 	stdout: "^Showing 1 results",
+		// },
 		{
 			name:   "key search -u https://keys.openpgp.org 0x<key fingerprint>",
 			args:   []string{"search", "-u", "https://keys.openpgp.org", "0x7605BC2716168DF057D6C600ACEEC62C8BD91BEE"},
@@ -129,11 +139,12 @@ func (c *ctx) singularityKeySearch(t *testing.T) {
 			args:   []string{"search", "-u", "https://keys.openpgp.org", "-l", "dwd@fnal.gov"},
 			stdout: "\n  .*@",
 		},
-		{
-			name:   "key search <name>",
-			args:   []string{"search", "Library"},
-			stdout: "^Showing",
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:   "key search <name>",
+		// 	args:   []string{"search", "Library"},
+		// 	stdout: "^Showing",
+		// },
 		{
 			name:   "key search --url <open key server> <name>",
 			args:   []string{"search", "--url", "https://keyserver.ubuntu.com", "ftpmaster@ubuntu.com"},

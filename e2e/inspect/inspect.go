@@ -3,6 +3,12 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// NOTE: Singularity Container Services (cloud.sylabs.io, library.sylabs.io,
+// keys.sylabs.io) was retired on 2026-10-22. Tests in this file that depended
+// on it are disabled (marked "Disabled: Singularity Container Services has been
+// retired") rather than deleted, so they can be re-enabled against another
+// SCS-compatible service.
+
 package inspect
 
 import (
@@ -143,11 +149,12 @@ func (c ctx) singularityInspect(t *testing.T) {
 			insType:   "--labels",
 			compareFn: compareLabel("org.label-schema.usage", "/.singularity.d/runscript.help", ""),
 		},
-		{
-			name:      "label_org.label-schema.usage.singularity.deffile.bootstrap",
-			insType:   "--labels",
-			compareFn: compareLabel("org.label-schema.usage.singularity.deffile.bootstrap", "library", ""),
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:      "label_org.label-schema.usage.singularity.deffile.bootstrap",
+		// 	insType:   "--labels",
+		// 	compareFn: compareLabel("org.label-schema.usage.singularity.deffile.bootstrap", "library", ""),
+		// },
 		{
 			name:      "label_org.label-schema.usage.singularity.deffile.from",
 			insType:   "--labels",

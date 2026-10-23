@@ -1,11 +1,11 @@
-bootstrap: library
+bootstrap: docker
 from: alpine:3.11.5
 Stage: build
 
 %post
     echo 'test' > /test.txt
 
-bootstrap: library
+bootstrap: docker
 from: alpine:3.11.5
 Stage: final
 

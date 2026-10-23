@@ -4,6 +4,12 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// NOTE: Singularity Container Services (cloud.sylabs.io, library.sylabs.io,
+// keys.sylabs.io) was retired on 2026-10-22. Tests in this file that depended
+// on it are disabled (marked "Disabled: Singularity Container Services has been
+// retired") rather than deleted, so they can be re-enabled against another
+// SCS-compatible service.
+
 package keyserver
 
 import (
@@ -22,6 +28,12 @@ type ctx struct {
 }
 
 func (c ctx) keyserver(t *testing.T) {
+	// Keyserver management operates on the default SylabsCloud remote, whose
+	// keyserver is discovered from cloud.sylabs.io. Singularity Container Services
+	// has been retired, so this cannot run until the test is reworked against a
+	// local endpoint.
+	t.Skip("requires Singularity Container Services (cloud.sylabs.io), which has been retired")
+
 	config, err := os.CreateTemp(c.env.TestDir, "testConfig-")
 	if err != nil {
 		log.Fatal(err)

@@ -5,6 +5,12 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// NOTE: Singularity Container Services (cloud.sylabs.io, library.sylabs.io,
+// keys.sylabs.io) was retired on 2026-10-22. Tests in this file that depended
+// on it are disabled (marked "Disabled: Singularity Container Services has been
+// retired") rather than deleted, so they can be re-enabled against another
+// SCS-compatible service.
+
 package actions
 
 import (
@@ -487,20 +493,22 @@ func (c actionTests) STDPipe(t *testing.T) {
 			input:   "bye",
 			exit:    1,
 		},
-		{
-			name:    "TrueLibrary",
-			command: "shell",
-			argv:    []string{"library://busybox:1.31.1"},
-			input:   "true",
-			exit:    0,
-		},
-		{
-			name:    "FalseLibrary",
-			command: "shell",
-			argv:    []string{"library://busybox:1.31.1"},
-			input:   "false",
-			exit:    1,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:    "TrueLibrary",
+		// 	command: "shell",
+		// 	argv:    []string{"library://busybox:1.31.1"},
+		// 	input:   "true",
+		// 	exit:    0,
+		// },
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:    "FalseLibrary",
+		// 	command: "shell",
+		// 	argv:    []string{"library://busybox:1.31.1"},
+		// 	input:   "false",
+		// 	exit:    1,
+		// },
 		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:    "TrueShub",
@@ -617,13 +625,14 @@ func (c actionTests) RunFromURI(t *testing.T) {
 		profile e2e.Profile
 	}{
 		// Run from supported URI's and check the runscript call works
-		{
-			name:    "RunFromLibraryOK",
-			command: "run",
-			argv:    []string{"--bind", bind, "library://busybox:1.31.1", size},
-			exit:    0,
-			profile: e2e.UserProfile,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:    "RunFromLibraryOK",
+		// 	command: "run",
+		// 	argv:    []string{"--bind", bind, "library://busybox:1.31.1", size},
+		// 	exit:    0,
+		// 	profile: e2e.UserProfile,
+		// },
 		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:    "RunFromShubOK",
@@ -639,13 +648,14 @@ func (c actionTests) RunFromURI(t *testing.T) {
 			exit:    0,
 			profile: e2e.UserProfile,
 		},
-		{
-			name:    "RunFromLibraryKO",
-			command: "run",
-			argv:    []string{"--bind", bind, "library://busybox:1.31.1", "0"},
-			exit:    1,
-			profile: e2e.UserProfile,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:    "RunFromLibraryKO",
+		// 	command: "run",
+		// 	argv:    []string{"--bind", bind, "library://busybox:1.31.1", "0"},
+		// 	exit:    1,
+		// 	profile: e2e.UserProfile,
+		// },
 		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:    "RunFromShubKO",
@@ -676,13 +686,14 @@ func (c actionTests) RunFromURI(t *testing.T) {
 			exit:    0,
 			profile: e2e.UserProfile,
 		},
-		{
-			name:    "ExecFalseLibrary",
-			command: "exec",
-			argv:    []string{"library://busybox:1.31.1", "false"},
-			exit:    1,
-			profile: e2e.UserProfile,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:    "ExecFalseLibrary",
+		// 	command: "exec",
+		// 	argv:    []string{"library://busybox:1.31.1", "false"},
+		// 	exit:    1,
+		// 	profile: e2e.UserProfile,
+		// },
 		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:    "ExecFalseShub",
@@ -700,13 +711,14 @@ func (c actionTests) RunFromURI(t *testing.T) {
 		},
 
 		// exec from URI with user namespace enabled
-		{
-			name:    "ExecTrueLibraryUserns",
-			command: "exec",
-			argv:    []string{"library://busybox:1.31.1", "true"},
-			exit:    0,
-			profile: e2e.UserNamespaceProfile,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:    "ExecTrueLibraryUserns",
+		// 	command: "exec",
+		// 	argv:    []string{"library://busybox:1.31.1", "true"},
+		// 	exit:    0,
+		// 	profile: e2e.UserNamespaceProfile,
+		// },
 		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:    "ExecTrueShubUserns",
@@ -722,13 +734,14 @@ func (c actionTests) RunFromURI(t *testing.T) {
 			exit:    0,
 			profile: e2e.UserNamespaceProfile,
 		},
-		{
-			name:    "ExecFalseLibraryUserns",
-			command: "exec",
-			argv:    []string{"library://busybox:1.31.1", "false"},
-			exit:    1,
-			profile: e2e.UserNamespaceProfile,
-		},
+		// Disabled: Singularity Container Services has been retired.
+		// {
+		// 	name:    "ExecFalseLibraryUserns",
+		// 	command: "exec",
+		// 	argv:    []string{"library://busybox:1.31.1", "false"},
+		// 	exit:    1,
+		// 	profile: e2e.UserNamespaceProfile,
+		// },
 		// TODO(mem): re-enable this; disabled while shub is down
 		// {
 		// 	name:    "ExecFalseShubUserns",

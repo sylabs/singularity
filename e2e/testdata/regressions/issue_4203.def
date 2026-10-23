@@ -1,4 +1,4 @@
-bootstrap: library
+bootstrap: docker
 from: ubuntu:18.04
 stage: build
 
@@ -35,7 +35,7 @@ rpc:            bad
 netgroup:       bad
 EOF
 
-bootstrap: library
+bootstrap: docker
 from: ubuntu:18.04
 stage: final
 

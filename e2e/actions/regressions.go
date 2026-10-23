@@ -5,6 +5,12 @@
 // LICENSE.md file distributed with the sources of this project regarding your
 // rights to use or distribute this software.
 
+// NOTE: Singularity Container Services (cloud.sylabs.io, library.sylabs.io,
+// keys.sylabs.io) was retired on 2026-10-22. Tests in this file that depended
+// on it are disabled (marked "Disabled: Singularity Container Services has been
+// retired") rather than deleted, so they can be re-enabled against another
+// SCS-compatible service.
+
 package actions
 
 import (
@@ -643,19 +649,20 @@ func (c actionTests) invalidRemote(t *testing.T) {
 	testEndpointURI := "https://cloud.example.com"
 	testImage := "library://alpine"
 
-	// Exec library image from the default remote... ensure it succeeds
-	argv := []string{testImage, "/bin/true"}
-	c.env.RunSingularity(
-		t,
-		e2e.AsSubtest("exec default"),
-		e2e.WithProfile(e2e.UserProfile),
-		e2e.WithCommand("exec"),
-		e2e.WithArgs(argv...),
-		e2e.ExpectExit(0),
-	)
+	// Disabled: Singularity Container Services has been retired.
+	// // Exec library image from the default remote... ensure it succeeds
+	// argv := []string{testImage, "/bin/true"}
+	// c.env.RunSingularity(
+	// 	t,
+	// 	e2e.AsSubtest("exec default"),
+	// 	e2e.WithProfile(e2e.UserProfile),
+	// 	e2e.WithCommand("exec"),
+	// 	e2e.WithArgs(argv...),
+	// 	e2e.ExpectExit(0),
+	// )
 
 	// Add another endpoint
-	argv = []string{"add", "--no-login", testEndpoint, testEndpointURI}
+	argv := []string{"add", "--no-login", testEndpoint, testEndpointURI}
 	c.env.RunSingularity(
 		t,
 		e2e.AsSubtest("remote add"),
